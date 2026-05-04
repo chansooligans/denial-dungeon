@@ -19,7 +19,15 @@ const DEFAULT_STATE: GameState = {
   inWaitingRoom: false,
 }
 
-let currentState: GameState = structuredClone(DEFAULT_STATE)
+let currentState: GameState = loadFromStorage() ?? structuredClone(DEFAULT_STATE)
+
+function loadFromStorage(): GameState | null {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY)
+    if (raw) return JSON.parse(raw)
+  } catch { /* ignore */ }
+  return null
+}
 
 export function getState(): GameState {
   return currentState

@@ -78,6 +78,6 @@ export class TitleScene extends Phaser.Scene {
   }
 
   private openCodex() {
-    // TODO: CodexScene
+    this.scene.start('Codex')
   }
 }

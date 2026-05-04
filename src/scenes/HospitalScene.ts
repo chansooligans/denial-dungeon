@@ -1,7 +1,7 @@
 import Phaser from 'phaser'
 import { NPCS } from '../content/npcs'
 import { LEVELS } from '../content/levels'
-import { getState, unlockCodex, unlockTool, saveGame } from '../state'
+import { getState, saveGame } from '../state'
 import type { NPC } from '../types'
 
 const TILE = 32
@@ -49,6 +49,10 @@ export class HospitalScene extends Phaser.Scene {
   private wasdKeys!: Record<string, Phaser.Input.Keyboard.Key>
   private hudHp!: Phaser.GameObjects.Text
   private hudLevel!: Phaser.GameObjects.Text
+  private crackSprite!: Phaser.GameObjects.Graphics
+  private crackPrompt!: Phaser.GameObjects.Text
+  private readonly crackTileX = 14
+  private readonly crackTileY = 10
 
   constructor() {
     super('Hospital')
@@ -60,6 +64,7 @@ export class HospitalScene extends Phaser.Scene {
     this.npcSprites = []
 
     this.buildMap()
+    this.placeCrack()
     this.placePlayer()
     this.placeNPCs()
     this.setupInput()
@@ -97,6 +102,33 @@ export class HospitalScene extends Phaser.Scene {
         }
       }
     }
+  }
+
+  private placeCrack() {
+    const px = this.crackTileX * TILE + TILE / 2
+    const py = this.crackTileY * TILE + TILE / 2
+
+    this.crackSprite = this.add.graphics().setDepth(3)
+    this.crackSprite.lineStyle(2, 0xb18bd6, 0.6)
+    this.crackSprite.lineBetween(px - 8, py - 12, px + 2, py)
+    this.crackSprite.lineBetween(px + 2, py, px - 4, py + 12)
+    this.crackSprite.lineStyle(1, 0xb18bd6, 0.3)
+    this.crackSprite.lineBetween(px + 2, py, px + 8, py + 6)
+
+    this.tweens.add({
+      targets: this.crackSprite,
+      alpha: 0.4,
+      duration: 2000,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    })
+
+    this.crackPrompt = this.add.text(px, py - 24, '[E] Enter the crack', {
+      fontSize: '9px', fontFamily: 'monospace', color: '#b18bd6',
+      backgroundColor: '#0e1116',
+      padding: { x: 4, y: 2 },
+    }).setOrigin(0.5).setDepth(20).setVisible(false)
   }
 
   private placePlayer() {
@@ -250,21 +282,42 @@ export class HospitalScene extends Phaser.Scene {
     if (closest) {
       this.interactPrompt.setPosition(closest.sprite.x, closest.sprite.y - 36)
       this.interactPrompt.setVisible(true)
+      this.crackPrompt.setVisible(false)
     } else {
       this.interactPrompt.setVisible(false)
+
+      const crackPx = this.crackTileX * TILE + TILE / 2
+      const crackPy = this.crackTileY * TILE + TILE / 2
+      const crackDist = Phaser.Math.Distance.Between(
+        this.player.x, this.player.y, crackPx, crackPy
+      )
+      this.crackPrompt.setVisible(crackDist < TILE * 2)
     }
   }
 
   private interact() {
-    if (!this.nearbyNpc) return
+    if (this.nearbyNpc) {
+      this.canMove = false
+      this.interactPrompt.setVisible(false)
 
-    this.canMove = false
-    this.interactPrompt.setVisible(false)
+      this.scene.pause()
+      this.scene.launch('Dialogue', {
+        dialogueKey: this.nearbyNpc.npc.dialogueKey,
+        callingScene: 'Hospital',
+      })
+      return
+    }
 
-    this.scene.pause()
-    this.scene.launch('Dialogue', {
-      dialogueKey: this.nearbyNpc.npc.dialogueKey,
-      callingScene: 'Hospital',
-    })
+    const crackPx = this.crackTileX * TILE + TILE / 2
+    const crackPy = this.crackTileY * TILE + TILE / 2
+    const crackDist = Phaser.Math.Distance.Between(
+      this.player.x, this.player.y, crackPx, crackPy
+    )
+    if (crackDist < TILE * 2) {
+      const state = getState()
+      state.inWaitingRoom = true
+      saveGame()
+      this.scene.start('WaitingRoom')
+    }
   }
 }
