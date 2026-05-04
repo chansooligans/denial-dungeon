@@ -1,73 +1,57 @@
-# React + TypeScript + Vite
+# Denial Dungeon
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A turn-based RPG that teaches the US healthcare revenue cycle. Walk through a hospital, talk to billing staff, fight claim denials, and discover the surreal "Waiting Room" where lost claims go.
 
-Currently, two official plugins are available:
+**[Play it](https://chansooligans.github.io/denial-dungeon/)** (GitHub Pages)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## What You'll Learn
 
-## React Compiler
+The game progressively teaches across 10 levels:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Claim forms (CMS-1500, UB-04)
+- Medical coding (ICD-10, CPT, HCPCS, modifiers)
+- X12 transactions (270/271 eligibility, 837 claims, 835 remittance)
+- CARC/RARC denial codes and how to resolve them
+- Prior authorization, coordination of benefits, patient cost share
+- CDI, audit compliance, payer policy navigation
 
-## Expanding the ESLint configuration
+## How to Play
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **Arrow keys / WASD** — Move around the hospital
+- **E / Space** — Talk to NPCs, interact with objects
+- **1-9** — Select tools during battle
+- **ESC** — Skip intro cutscene
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+Walk through the hospital lobby, talk to NPCs in offices, and find the glowing crack in the floor to enter The Waiting Room. Resolve claim denials in turn-based encounters using billing tools — effectiveness depends on matching the right tool to the denial's root cause.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Tech Stack
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- **Phaser 3** — Game engine
+- **TypeScript** — Type safety
+- **Vite** — Dev server and bundler
+- All sprites are procedurally generated (no external art assets)
+
+## Development
+
+```bash
+npm install
+npm run dev          # Dev server on localhost:5173
+npm run build        # Production build to dist/
+npx tsc --noEmit     # Type-check
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Project Structure
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
 ```
+src/
+├── main.ts           # Phaser config, scene registry
+├── types.ts          # Game types
+├── state.ts          # Save/load via localStorage
+├── content/          # Game data (maps, NPCs, dialogue, encounters, codex)
+└── scenes/           # Phaser scenes (Boot, Intro, Title, Hospital,
+                      #   Dialogue, Battle, Form, WaitingRoom, Codex)
+```
+
+## License
+
+Open source educational game.

@@ -129,6 +129,7 @@ export class IntroScene extends Phaser.Scene {
   private sceneContainer!: Phaser.GameObjects.Container
   private skipText!: Phaser.GameObjects.Text
   private advancing = false
+  private pendingTimer?: Phaser.Time.TimerEvent
 
   constructor() {
     super('Intro')
@@ -156,6 +157,12 @@ export class IntroScene extends Phaser.Scene {
     if (this.advancing) return
     this.advancing = true
 
+    // Cancel any pending wait timer so it doesn't double-fire
+    if (this.pendingTimer) {
+      this.pendingTimer.remove(false)
+      this.pendingTimer = undefined
+    }
+
     const beat = BEATS[this.currentBeat]
     if (!beat) {
       this.skipToTitle()
@@ -163,14 +170,12 @@ export class IntroScene extends Phaser.Scene {
     }
 
     if (beat.type === 'wait') {
-      // Skip the wait, move to next beat
       this.currentBeat++
       this.advancing = false
       this.playBeat()
       return
     }
 
-    // For other beats, just move forward
     this.currentBeat++
     this.advancing = false
     this.playBeat()
@@ -192,7 +197,8 @@ export class IntroScene extends Phaser.Scene {
         break
 
       case 'wait':
-        this.time.delayedCall(beat.duration!, () => {
+        this.pendingTimer = this.time.delayedCall(beat.duration!, () => {
+          this.pendingTimer = undefined
           if (this.currentBeat < BEATS.length) {
             this.currentBeat++
             this.playBeat()
@@ -527,6 +533,10 @@ export class IntroScene extends Phaser.Scene {
   }
 
   private skipToTitle() {
+    if (this.pendingTimer) {
+      this.pendingTimer.remove(false)
+      this.pendingTimer = undefined
+    }
     this.scene.start('Title')
   }
 }

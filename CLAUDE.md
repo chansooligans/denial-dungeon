@@ -17,30 +17,36 @@ real people (not monsters), form puzzles (CMS-1500, UB-04), and a growing
 codex of billing knowledge.
 
 ## Current State
-**Phases 1-4 + 7.1 complete** — Core engine, battle system, hospital
-overworld, dialogue, form puzzles, game state, and Level 1 vertical slice.
+**Phases 1-6 complete + map overhaul** — Core engine, battle system,
+data-driven hospital overworld with multi-room layouts, dialogue, form
+puzzles, game state, Waiting Room, Codex system, and Level 1 vertical slice.
 
 ### What's Done
 - [x] Project scaffold (Phaser 3, Vite, TypeScript)
 - [x] Game design finalized (V3: "The Waiting Room")
 - [x] types.ts for turn-based RPG
 - [x] BootScene (procedural sprites for NPCs, hospital, Waiting Room, UI, documents)
-- [x] IntroScene (cutscene — the $215 hook, 8 beats)
+- [x] IntroScene (cutscene — the $215 hook, 8 beats, skip/advance support)
 - [x] TitleScene (menu with floating papers)
 - [x] BattleScene (turn-based combat, effectiveness system, CARC reveal on victory)
-- [x] HospitalScene (tile-based overworld, NPC placement, camera follow, HUD)
+- [x] HospitalScene (data-driven tile map, NPC placement, camera follow, HUD)
 - [x] DialogueScene (branching dialogue, effects, triggers battle/form)
 - [x] FormScene (CMS-1500 / UB-04 puzzles — find and correct errors)
-- [x] Game state manager (save/load via localStorage)
+- [x] WaitingRoomScene (surreal overworld layer)
+- [x] CodexScene (collection screen with 4 categories, locked/unlocked entries)
+- [x] Game state manager (save/load via localStorage, auto-loads on init)
+- [x] Data-driven map system (MapDef interface, 5 level layouts 60×45 to 75×52)
+- [x] Multi-room hospital layouts with corridors and linear south→north flow
 - [x] 10 level definitions with titles, concepts, NPCs
 - [x] 7 NPCs with dialogue trees
+- [x] 22 codex entries across 4 categories
 - [x] 11 encounters with real CARC codes
 - [x] 12 player tools with faction effectiveness
 - [x] 2 patient cases with real billing errors
 
 ### What's NOT Done
-- [ ] The Waiting Room overworld (surreal layer per level)
-- [ ] Codex system (CodexScene + codex entries content)
+- [ ] Art overhaul (improve procedural sprites beyond basic rectangles)
+- [ ] Battle system polish (visual feedback, encounter portraits, flee option)
 - [ ] Levels 2-10 content (encounters, cases, dialogues per level)
 - [ ] Level progression (complete level → advance)
 - [ ] Sound design
@@ -63,16 +69,30 @@ src/
 │   ├── npcs.ts          # 7 NPCs
 │   ├── dialogue.ts      # Branching dialogue trees
 │   ├── cases.ts         # Patient cases for form puzzles
-│   └── levels.ts        # 10 level definitions
+│   ├── codex.ts         # 22 codex entries across 4 categories
+│   ├── levels.ts        # 10 level definitions
+│   └── maps.ts          # 5 hospital layouts (MapDef + normalize helper)
 ├── scenes/
 │   ├── BootScene.ts     # Procedural sprite generation
 │   ├── IntroScene.ts    # Opening cutscene
 │   ├── TitleScene.ts    # Main menu
-│   ├── HospitalScene.ts # Top-down overworld
+│   ├── HospitalScene.ts # Data-driven tile map overworld
 │   ├── DialogueScene.ts # NPC dialogue overlay
 │   ├── BattleScene.ts   # Turn-based combat
-│   └── FormScene.ts     # Claim form puzzles
+│   ├── FormScene.ts     # Claim form puzzles
+│   ├── WaitingRoomScene.ts # Surreal underworld
+│   └── CodexScene.ts    # Knowledge collection screen
 ```
+
+## Map System
+Maps are defined as ASCII layouts in `content/maps.ts`. Each level has a
+distinct hospital floor plan with rooms connected by corridors. Player
+starts at the south (lobby), walks north through corridors to reach the
+crack (portal to Waiting Room) at the north end.
+
+Tile legend: W=wall, D=door, .=floor, ~=floor2, _=carpet, c=desk, h=chair,
+E=equipment, P=plant, w=water, F=cabinet, B=whiteboard, R=counter,
+V=vending, b=bulletin, H=bed, X=fax
 
 ## Dev Commands
 ```bash
@@ -84,7 +104,8 @@ npx tsc --noEmit         # Type-check only
 ## Game Flow
 Title → Hospital (walk around, talk to NPCs) → Dialogue (branching choices)
 → Battle (turn-based, use tools, effectiveness matters) → Victory (CARC reveal)
-→ back to Hospital. Form puzzles triggered via dialogue choices.
+→ back to Hospital. Form puzzles triggered via dialogue choices. Crack in
+hospital floor leads to The Waiting Room.
 
 ## Content Pillars
 The game teaches: CMS-1500 / UB-04 claim forms, ICD-10-CM/PCS codes,
