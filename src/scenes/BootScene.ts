@@ -73,13 +73,34 @@ export class BootScene extends Phaser.Scene {
   }
 
   private makeHospitalTiles() {
+    let g: Phaser.GameObjects.Graphics
+
     // Floor — warm linoleum
-    let g = this.make.graphics({ x: 0, y: 0 })
+    g = this.make.graphics({ x: 0, y: 0 })
     g.fillStyle(0x2a2e35)
     g.fillRect(0, 0, 16, 16)
     g.lineStyle(1, 0x323840, 0.3)
     g.strokeRect(0, 0, 16, 16)
     g.generateTexture('h_floor', 16, 16)
+    g.destroy()
+
+    // Floor variant — slightly different shade for visual variety
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0x282c33)
+    g.fillRect(0, 0, 16, 16)
+    g.lineStyle(1, 0x303840, 0.2)
+    g.strokeRect(0, 0, 16, 16)
+    g.generateTexture('h_floor2', 16, 16)
+    g.destroy()
+
+    // Carpet — for waiting areas
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0x2a3040)
+    g.fillRect(0, 0, 16, 16)
+    g.fillStyle(0x2e3448, 0.5)
+    g.fillRect(0, 0, 8, 8)
+    g.fillRect(8, 8, 8, 8)
+    g.generateTexture('h_carpet', 16, 16)
     g.destroy()
 
     // Wall
@@ -104,12 +125,12 @@ export class BootScene extends Phaser.Scene {
     g.generateTexture('h_door', 16, 16)
     g.destroy()
 
-    // Desk
+    // Desk with monitor
     g = this.make.graphics({ x: 0, y: 0 })
     g.fillStyle(0x6d5540)
     g.fillRect(0, 4, 16, 10)
     g.fillStyle(0x7ee2c1, 0.4)
-    g.fillRect(2, 5, 5, 4) // monitor glow
+    g.fillRect(2, 5, 5, 4)
     g.generateTexture('h_desk', 16, 16)
     g.destroy()
 
@@ -122,13 +143,132 @@ export class BootScene extends Phaser.Scene {
     g.generateTexture('h_chair', 16, 16)
     g.destroy()
 
-    // Medical equipment
+    // Medical equipment (vitals monitor)
     g = this.make.graphics({ x: 0, y: 0 })
     g.fillStyle(0xb0b8c0)
     g.fillRect(4, 0, 8, 14)
     g.fillStyle(0x6cd49a)
     g.fillRect(6, 2, 4, 4)
     g.generateTexture('h_equipment', 16, 16)
+    g.destroy()
+
+    // Plant — potted fern
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0x5a3a2a)
+    g.fillRect(5, 10, 6, 6)
+    g.fillStyle(0x3a6a3a)
+    g.fillCircle(8, 6, 5)
+    g.fillStyle(0x4a7a4a)
+    g.fillCircle(6, 4, 3)
+    g.fillCircle(10, 5, 3)
+    g.generateTexture('h_plant', 16, 16)
+    g.destroy()
+
+    // Water cooler
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0xd0d8e0)
+    g.fillRect(5, 0, 6, 12)
+    g.fillStyle(0x6da9e3)
+    g.fillRect(6, 1, 4, 4)
+    g.fillStyle(0x808890)
+    g.fillRect(4, 12, 8, 4)
+    g.generateTexture('h_water', 16, 16)
+    g.destroy()
+
+    // Filing cabinet
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0x606870)
+    g.fillRect(2, 0, 12, 16)
+    g.lineStyle(1, 0x505860)
+    g.lineBetween(4, 4, 12, 4)
+    g.lineBetween(4, 8, 12, 8)
+    g.lineBetween(4, 12, 12, 12)
+    g.fillStyle(0x808890)
+    g.fillRect(7, 1, 2, 2)
+    g.fillRect(7, 5, 2, 2)
+    g.fillRect(7, 9, 2, 2)
+    g.generateTexture('h_cabinet', 16, 16)
+    g.destroy()
+
+    // Whiteboard
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0xe8e8e0)
+    g.fillRect(1, 2, 14, 10)
+    g.lineStyle(1, 0x808080)
+    g.strokeRect(1, 2, 14, 10)
+    g.fillStyle(0xef5b7b, 0.3)
+    g.fillRect(3, 4, 8, 1)
+    g.fillStyle(0x6da9e3, 0.3)
+    g.fillRect(3, 6, 6, 1)
+    g.fillStyle(0x6cd49a, 0.3)
+    g.fillRect(3, 8, 10, 1)
+    g.generateTexture('h_whiteboard', 16, 16)
+    g.destroy()
+
+    // Reception counter (long horizontal)
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0x5a4a3a)
+    g.fillRect(0, 4, 16, 8)
+    g.fillStyle(0x6d5a4a)
+    g.fillRect(0, 4, 16, 3)
+    g.lineStyle(1, 0x4a3a2a)
+    g.strokeRect(0, 4, 16, 8)
+    g.generateTexture('h_counter', 16, 16)
+    g.destroy()
+
+    // Vending machine
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0x3a3a5a)
+    g.fillRect(2, 0, 12, 16)
+    g.fillStyle(0x4a6a8a, 0.6)
+    g.fillRect(4, 2, 8, 8)
+    g.fillStyle(0xf0a868)
+    g.fillRect(5, 11, 2, 2)
+    g.fillStyle(0x6cd49a)
+    g.fillRect(9, 11, 2, 2)
+    g.generateTexture('h_vending', 16, 16)
+    g.destroy()
+
+    // Bulletin board
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0x6d5540)
+    g.fillRect(1, 1, 14, 14)
+    g.lineStyle(1, 0x8d7560)
+    g.strokeRect(1, 1, 14, 14)
+    g.fillStyle(0xf4d06f)
+    g.fillRect(3, 3, 4, 4)
+    g.fillStyle(0xef5b7b)
+    g.fillRect(9, 4, 4, 3)
+    g.fillStyle(0xd0d8e0)
+    g.fillRect(4, 9, 5, 4)
+    g.fillStyle(0x6da9e3)
+    g.fillRect(10, 9, 3, 3)
+    g.generateTexture('h_bulletin', 16, 16)
+    g.destroy()
+
+    // Bed (hospital)
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0xd0d8e0)
+    g.fillRect(1, 2, 14, 12)
+    g.fillStyle(0x8090a0)
+    g.fillRect(1, 2, 14, 3)
+    g.fillStyle(0x606870)
+    g.fillRect(0, 14, 4, 2)
+    g.fillRect(12, 14, 4, 2)
+    g.generateTexture('h_bed', 16, 16)
+    g.destroy()
+
+    // Fax machine
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0xd0d0c8)
+    g.fillRect(2, 6, 12, 8)
+    g.fillStyle(0xe8e8e0)
+    g.fillRect(4, 2, 8, 4)
+    g.fillStyle(0x606060)
+    g.fillRect(5, 8, 6, 2)
+    g.fillStyle(0x6cd49a)
+    g.fillRect(10, 11, 2, 2)
+    g.generateTexture('h_fax', 16, 16)
     g.destroy()
   }
 

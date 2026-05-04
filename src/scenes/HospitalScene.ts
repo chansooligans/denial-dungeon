@@ -1,35 +1,32 @@
 import Phaser from 'phaser'
 import { NPCS } from '../content/npcs'
 import { LEVELS } from '../content/levels'
+import { getMapForLevel } from '../content/maps'
+import type { MapDef } from '../content/maps'
 import { getState, saveGame } from '../state'
 import type { NPC } from '../types'
 
 const TILE = 32
-const MAP_W = 30
-const MAP_H = 20
 
-const LAYOUT = [
-  'WWWWWWWWWWWWWWWWWWWWWWWWWWWWWW',
-  'W............................W',
-  'W............................W',
-  'W...WWDWW....WWDWW....WWWW..W',
-  'W...W...W....W...W....W..W..W',
-  'W...W.c.W....W.c.W....W..W..W',
-  'W...W...W....W...W....WDWW..W',
-  'W...WWWWW....WWWWW..........W',
-  'W............................W',
-  'W............................W',
-  'W.....E........E............W',
-  'W............................W',
-  'W...WWDWW....WWDWW....WWDWW.W',
-  'W...W...W....W...W....W...W.W',
-  'W...W.c.W....W.c.W....W.c.W.W',
-  'W...W...W....W...W....W...W.W',
-  'W...WWWWW....WWWWW....WWWWW.W',
-  'W............................W',
-  'W............................W',
-  'WWWWWWWWWWWWWWWWWWWWWWWWWWWWWW',
-]
+const TILE_TEXTURES: Record<string, { floor: string; obj?: string; solid?: boolean }> = {
+  'W': { floor: 'h_wall', solid: true },
+  'D': { floor: 'h_door' },
+  '.': { floor: 'h_floor' },
+  '~': { floor: 'h_floor2' },
+  '_': { floor: 'h_carpet' },
+  'c': { floor: 'h_floor', obj: 'h_desk' },
+  'h': { floor: 'h_floor', obj: 'h_chair' },
+  'E': { floor: 'h_floor', obj: 'h_equipment' },
+  'P': { floor: 'h_floor', obj: 'h_plant' },
+  'w': { floor: 'h_floor', obj: 'h_water', solid: true },
+  'F': { floor: 'h_floor', obj: 'h_cabinet', solid: true },
+  'B': { floor: 'h_floor', obj: 'h_whiteboard', solid: true },
+  'R': { floor: 'h_floor', obj: 'h_counter', solid: true },
+  'V': { floor: 'h_floor', obj: 'h_vending', solid: true },
+  'b': { floor: 'h_floor', obj: 'h_bulletin', solid: true },
+  'H': { floor: 'h_floor', obj: 'h_bed', solid: true },
+  'X': { floor: 'h_floor', obj: 'h_fax' },
+}
 
 interface NPCSprite {
   sprite: Phaser.GameObjects.Image
@@ -44,24 +41,29 @@ export class HospitalScene extends Phaser.Scene {
   private interactPrompt!: Phaser.GameObjects.Text
   private nearbyNpc: NPCSprite | null = null
   private canMove = true
-  private playerTileX = 4
-  private playerTileY = 8
+  private playerTileX = 0
+  private playerTileY = 0
   private wasdKeys!: Record<string, Phaser.Input.Keyboard.Key>
   private hudHp!: Phaser.GameObjects.Text
   private hudLevel!: Phaser.GameObjects.Text
   private crackSprite!: Phaser.GameObjects.Graphics
   private crackPrompt!: Phaser.GameObjects.Text
-  private readonly crackTileX = 14
-  private readonly crackTileY = 10
+  private mapDef!: MapDef
 
   constructor() {
     super('Hospital')
   }
 
   create() {
-    this.cameras.main.setBackgroundColor(0x0e1116)
+    const state = getState()
+    this.mapDef = getMapForLevel(state.currentLevel)
+
+    this.playerTileX = this.mapDef.playerStart.x
+    this.playerTileY = this.mapDef.playerStart.y
     this.canMove = true
     this.npcSprites = []
+
+    this.cameras.main.setBackgroundColor(0x0e1116)
 
     this.buildMap()
     this.placeCrack()
@@ -73,6 +75,7 @@ export class HospitalScene extends Phaser.Scene {
 
     this.cameras.main.startFollow(this.player, true, 0.1, 0.1)
     this.cameras.main.setZoom(1.5)
+    this.cameras.main.setBounds(0, 0, this.mapDef.width * TILE, this.mapDef.height * TILE)
 
     this.events.on('resume', () => {
       this.canMove = true
@@ -81,32 +84,29 @@ export class HospitalScene extends Phaser.Scene {
   }
 
   private buildMap() {
-    for (let y = 0; y < MAP_H; y++) {
-      for (let x = 0; x < MAP_W; x++) {
-        const ch = LAYOUT[y][x]
+    const { width: mw, height: mh, layout } = this.mapDef
+
+    for (let y = 0; y < mh; y++) {
+      const row = layout[y] || ''
+      for (let x = 0; x < mw; x++) {
+        const ch = row[x] || '.'
         const px = x * TILE + TILE / 2
         const py = y * TILE + TILE / 2
+        const tileDef = TILE_TEXTURES[ch] || TILE_TEXTURES['.']
 
-        if (ch === 'W') {
-          this.add.image(px, py, 'h_wall').setScale(2)
-        } else if (ch === 'D') {
-          this.add.image(px, py, 'h_door').setScale(2)
-        } else if (ch === 'c') {
-          this.add.image(px, py, 'h_floor').setScale(2)
-          this.add.image(px, py, 'h_desk').setScale(2)
-        } else if (ch === 'E') {
-          this.add.image(px, py, 'h_floor').setScale(2)
-          this.add.image(px, py, 'h_equipment').setScale(2)
-        } else {
-          this.add.image(px, py, 'h_floor').setScale(2)
+        this.add.image(px, py, tileDef.floor).setScale(2)
+
+        if (tileDef.obj) {
+          this.add.image(px, py, tileDef.obj).setScale(2).setDepth(2)
         }
       }
     }
   }
 
   private placeCrack() {
-    const px = this.crackTileX * TILE + TILE / 2
-    const py = this.crackTileY * TILE + TILE / 2
+    const ct = this.mapDef.crackTile
+    const px = ct.x * TILE + TILE / 2
+    const py = ct.y * TILE + TILE / 2
 
     this.crackSprite = this.add.graphics().setDepth(3)
     this.crackSprite.lineStyle(2, 0xb18bd6, 0.6)
@@ -144,17 +144,7 @@ export class HospitalScene extends Phaser.Scene {
     const level = LEVELS[state.currentLevel - 1]
     const activeNpcs = level?.npcsActive ?? Object.keys(NPCS)
 
-    const placements: { npcId: string; tileX: number; tileY: number }[] = [
-      { npcId: 'dana', tileX: 6, tileY: 1 },
-      { npcId: 'kim', tileX: 5, tileY: 5 },
-      { npcId: 'martinez', tileX: 14, tileY: 5 },
-      { npcId: 'jordan', tileX: 5, tileY: 14 },
-      { npcId: 'pat', tileX: 14, tileY: 14 },
-      { npcId: 'alex', tileX: 23, tileY: 14 },
-      { npcId: 'sam', tileX: 23, tileY: 5 },
-    ]
-
-    for (const p of placements) {
+    for (const p of this.mapDef.npcPlacements) {
       if (!activeNpcs.includes(p.npcId)) continue
       const npc = NPCS[p.npcId]
       if (!npc) continue
@@ -234,14 +224,19 @@ export class HospitalScene extends Phaser.Scene {
     this.checkNpcProximity()
   }
 
+  private isSolid(x: number, y: number): boolean {
+    const { width: mw, height: mh, layout } = this.mapDef
+    if (x < 0 || x >= mw || y < 0 || y >= mh) return true
+    const ch = layout[y]?.[x] || '.'
+    const def = TILE_TEXTURES[ch]
+    return def?.solid === true
+  }
+
   private tryMove(dx: number, dy: number) {
     const newX = this.playerTileX + dx
     const newY = this.playerTileY + dy
 
-    if (newX < 0 || newX >= MAP_W || newY < 0 || newY >= MAP_H) return
-
-    const ch = LAYOUT[newY][newX]
-    if (ch === 'W') return
+    if (this.isSolid(newX, newY)) return
 
     for (const ns of this.npcSprites) {
       const npcTileX = Math.round((ns.sprite.x - TILE / 2) / TILE)
@@ -286,8 +281,9 @@ export class HospitalScene extends Phaser.Scene {
     } else {
       this.interactPrompt.setVisible(false)
 
-      const crackPx = this.crackTileX * TILE + TILE / 2
-      const crackPy = this.crackTileY * TILE + TILE / 2
+      const ct = this.mapDef.crackTile
+      const crackPx = ct.x * TILE + TILE / 2
+      const crackPy = ct.y * TILE + TILE / 2
       const crackDist = Phaser.Math.Distance.Between(
         this.player.x, this.player.y, crackPx, crackPy
       )
@@ -308,8 +304,9 @@ export class HospitalScene extends Phaser.Scene {
       return
     }
 
-    const crackPx = this.crackTileX * TILE + TILE / 2
-    const crackPy = this.crackTileY * TILE + TILE / 2
+    const ct = this.mapDef.crackTile
+    const crackPx = ct.x * TILE + TILE / 2
+    const crackPy = ct.y * TILE + TILE / 2
     const crackDist = Phaser.Math.Distance.Between(
       this.player.x, this.player.y, crackPx, crackPy
     )
