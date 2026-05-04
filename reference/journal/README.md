@@ -11,3 +11,6 @@ Chronological log of design decisions, pivots, and plans for Denial Dungeon.
 Turn-based RPG. Normal hospital (Animal Crossing cozy) + The Waiting Room
 (surreal bureaucratic underworld). Chase a lost claim through 10 levels,
 learning the real US revenue cycle. Phaser 3 + TypeScript + Vite.
+
+## Build Plan
+- [2026-05-04 Build Plan](2026-05-04-build-plan.md) — Step-by-step implementation plan with 8 phases

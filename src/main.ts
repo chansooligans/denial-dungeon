@@ -1,10 +1,7 @@
 import Phaser from 'phaser'
 import { BootScene } from './scenes/BootScene'
-import { GameScene } from './scenes/GameScene'
-import { HUDScene } from './scenes/HUDScene'
+import { IntroScene } from './scenes/IntroScene'
 import { TitleScene } from './scenes/TitleScene'
-import { BoonScene } from './scenes/BoonScene'
-import { SummaryScene } from './scenes/SummaryScene'
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
@@ -20,7 +17,7 @@ const config: Phaser.Types.Core.GameConfig = {
       debug: false,
     },
   },
-  scene: [BootScene, TitleScene, GameScene, HUDScene, BoonScene, SummaryScene],
+  scene: [BootScene, IntroScene, TitleScene],
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,

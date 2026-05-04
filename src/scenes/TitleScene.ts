@@ -1,11 +1,6 @@
 import Phaser from 'phaser'
-import { CLASSES } from '../content/classes'
-import { getDailySeed } from '../store/seed'
-import type { ClassId } from '../types'
 
 export class TitleScene extends Phaser.Scene {
-  private selectedClass: ClassId = 'rural'
-
   constructor() {
     super('Title')
   }
@@ -13,137 +8,74 @@ export class TitleScene extends Phaser.Scene {
   create() {
     const { width, height } = this.scale
 
+    // Floating papers in background
+    for (let i = 0; i < 12; i++) {
+      const paper = this.add.image(
+        Phaser.Math.Between(50, width - 50),
+        Phaser.Math.Between(50, height - 50),
+        'wr_paper'
+      ).setScale(Phaser.Math.FloatBetween(1.5, 3)).setAlpha(0.1)
+
+      this.tweens.add({
+        targets: paper,
+        y: paper.y - 10,
+        x: paper.x + Phaser.Math.Between(-8, 8),
+        duration: Phaser.Math.Between(3000, 5000),
+        yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+        delay: i * 400,
+      })
+    }
+
     // Title
-    this.add.text(width / 2, 60, 'DENIAL DUNGEON', {
-      fontSize: '32px',
-      fontFamily: 'monospace',
-      color: '#7ee2c1',
+    this.add.text(width / 2, 120, 'DENIAL DUNGEON', {
+      fontSize: '32px', fontFamily: 'monospace', color: '#ef5b7b',
+      fontStyle: 'bold',
     }).setOrigin(0.5)
 
-    this.add.text(width / 2, 92, 'a revenue-cycle roguelike', {
-      fontSize: '14px',
-      fontFamily: 'monospace',
-      color: '#8b95a5',
+    this.add.text(width / 2, 155, 'a revenue cycle RPG', {
+      fontSize: '13px', fontFamily: 'monospace', color: '#8b95a5',
     }).setOrigin(0.5)
 
-    // Daily seed
-    this.add.text(width / 2, 120, `Daily Seed: ${getDailySeed()}`, {
-      fontSize: '12px',
-      fontFamily: 'monospace',
-      color: '#f0a868',
-    }).setOrigin(0.5)
+    // Menu options
+    const menuItems = [
+      { label: 'NEW GAME', action: () => this.startGame() },
+      { label: 'CODEX', action: () => this.openCodex() },
+      { label: 'REPLAY INTRO', action: () => this.scene.start('Intro') },
+    ]
 
-    // Class selection
-    this.add.text(width / 2, 160, 'SELECT YOUR FACILITY', {
-      fontSize: '14px',
-      fontFamily: 'monospace',
-      color: '#e6edf3',
-    }).setOrigin(0.5)
+    menuItems.forEach((item, i) => {
+      const y = 260 + i * 55
+      const btn = this.add.text(width / 2, y, `[ ${item.label} ]`, {
+        fontSize: '16px', fontFamily: 'monospace', color: '#7ee2c1',
+      }).setOrigin(0.5).setInteractive({ useHandCursor: true })
 
-    const classIds: ClassId[] = ['rural', 'specialty', 'academic']
-    const cardWidth = 220
-    const gap = 20
-    const totalWidth = classIds.length * cardWidth + (classIds.length - 1) * gap
-    const startX = (width - totalWidth) / 2
-
-    classIds.forEach((id, i) => {
-      const cls = CLASSES[id]
-      const x = startX + i * (cardWidth + gap)
-      const y = 190
-
-      const bg = this.add.rectangle(x + cardWidth / 2, y + 80, cardWidth, 160, 0x161b22)
-        .setStrokeStyle(1, 0x2a323d)
-        .setInteractive({ useHandCursor: true })
-
-      const title = this.add.text(x + 10, y + 10, cls.name, {
-        fontSize: '14px',
-        fontFamily: 'monospace',
-        color: '#e6edf3',
-        fontStyle: 'bold',
-      })
-
-      const diff = this.add.text(x + cardWidth - 10, y + 10, cls.difficulty, {
-        fontSize: '11px',
-        fontFamily: 'monospace',
-        color: cls.difficulty === 'Easy' ? '#6cd49a' : cls.difficulty === 'Medium' ? '#f0a868' : '#ef5b7b',
-      }).setOrigin(1, 0)
-
-      const blurb = this.add.text(x + 10, y + 35, cls.blurb, {
-        fontSize: '11px',
-        fontFamily: 'monospace',
-        color: '#8b95a5',
-        wordWrap: { width: cardWidth - 20 },
-      })
-
-      const stats = this.add.text(x + 10, y + 100, `HP: ${cls.startingHp}  Abilities: ${cls.startingAbilities.length}`, {
-        fontSize: '11px',
-        fontFamily: 'monospace',
-        color: '#7ee2c1',
-      })
-
-      bg.on('pointerdown', () => {
-        this.selectedClass = id
-        this.highlightSelection(classIds, startX, cardWidth, gap)
-      })
-
-      if (id === this.selectedClass) {
-        bg.setStrokeStyle(2, 0x7ee2c1)
-      }
-
-      // Store reference for highlighting
-      bg.setData('classId', id)
-      bg.setData('refs', { bg, title, diff, blurb, stats })
+      btn.on('pointerover', () => btn.setColor('#ffffff'))
+      btn.on('pointerout', () => btn.setColor('#7ee2c1'))
+      btn.on('pointerdown', item.action)
     })
 
-    // Controls hint
-    this.add.text(width / 2, 400, 'WASD — move  |  SPACE — dash  |  1-4 — abilities  |  Mouse — aim', {
-      fontSize: '11px',
-      fontFamily: 'monospace',
-      color: '#8b95a5',
-    }).setOrigin(0.5)
-
-    // Start button
-    const startBtn = this.add.text(width / 2, 460, '[ START RUN ]', {
-      fontSize: '18px',
-      fontFamily: 'monospace',
-      color: '#7ee2c1',
-      padding: { x: 20, y: 10 },
-    }).setOrigin(0.5).setInteractive({ useHandCursor: true })
-
-    startBtn.on('pointerover', () => startBtn.setColor('#ffffff'))
-    startBtn.on('pointerout', () => startBtn.setColor('#7ee2c1'))
-    startBtn.on('pointerdown', () => {
-      this.scene.start('Game', {
-        classId: this.selectedClass,
-        seed: getDailySeed(),
-      })
-    })
-
-    // Info
-    this.add.text(width / 2, 540, 'Navigate 11 phases of the revenue cycle.\nFight denial codes. Learn who really caused them.', {
-      fontSize: '11px',
-      fontFamily: 'monospace',
-      color: '#8b95a5',
+    // Flavor text
+    this.add.text(width / 2, height - 80, 'Chase a lost claim through The Waiting Room.\nLearn how healthcare billing actually works.', {
+      fontSize: '11px', fontFamily: 'monospace', color: '#3a4a5d',
       align: 'center',
     }).setOrigin(0.5)
 
-    this.add.text(width / 2, 590, 'An open-source educational game', {
-      fontSize: '10px',
-      fontFamily: 'monospace',
-      color: '#3a4a5d',
+    this.add.text(width / 2, height - 30, 'An open-source educational game', {
+      fontSize: '10px', fontFamily: 'monospace', color: '#2a323d',
     }).setOrigin(0.5)
+
+    // Keyboard nav
+    const keys = this.input.keyboard!
+    keys.on('keydown-ONE', () => this.startGame())
+    keys.on('keydown-TWO', () => this.openCodex())
+    keys.on('keydown-THREE', () => this.scene.start('Intro'))
   }
 
-  private highlightSelection(classIds: ClassId[], startX: number, cardWidth: number, gap: number) {
-    this.children.each((child) => {
-      if (child instanceof Phaser.GameObjects.Rectangle && child.getData('classId')) {
-        const id = child.getData('classId')
-        if (id === this.selectedClass) {
-          child.setStrokeStyle(2, 0x7ee2c1)
-        } else {
-          child.setStrokeStyle(1, 0x2a323d)
-        }
-      }
-    })
+  private startGame() {
+    this.scene.start('Game')
+  }
+
+  private openCodex() {
+    // TODO: CodexScene
   }
 }

@@ -1,3 +1,5 @@
+// === Factions ===
+
 export type Faction =
   | 'payer'
   | 'provider'
@@ -24,18 +26,16 @@ export const FACTION_COLOR: Record<Faction, number> = {
   system: 0xa3aab5,
 }
 
-export type CardId = string
-export type EnemyId = string
+// === Tools (player actions in battle) ===
 
-export interface Ability {
+export interface Tool {
   id: string
   name: string
   faction: Faction
-  cooldown: number
   damage: number
-  range: number
-  projectileSpeed: number
-  blocksFactions?: Faction[]
+  accuracy: number
+  turnCost: number
+  effectiveFactions: Faction[]
   effect: string
   teaches: string
   shadow?: boolean
@@ -44,36 +44,119 @@ export interface Ability {
   cashDelta?: number
 }
 
-export interface EnemyDef {
-  id: EnemyId
-  carcCode: string
-  name: string
-  hp: number
-  surfaceFaction: Faction
-  rootFaction: Faction
-  speed: number
-  attackDamage: number
-  attackCooldown: number
-  projectileSpeed: number
-  counterFactions: Faction[]
+// === Encounters (what you face in battle) ===
+
+export interface Encounter {
+  id: string
+  title: string
   description: string
+  surfaceSymptom: string
+  rootCause: Faction
+  hp: number
+  attackDamage: number
+  carcCode: string
+  carcName: string
   watchpoint: string
+  correctTools: string[]
+  level: number
 }
 
-export type NodeType = 'combat' | 'event' | 'shop' | 'boss'
+// === NPCs ===
 
-export interface RoomDef {
-  phase: number
-  type: NodeType
-  enemies: EnemyId[]
-  cleared: boolean
+export interface NPC {
+  id: string
+  name: string
+  department: string
+  spriteKey: string
+  dialogueKey: string
+  description: string
 }
 
-export interface RunState {
-  seed: string
-  classId: 'rural' | 'specialty' | 'academic'
-  phase: number
-  room: number
+// === Dialogue ===
+
+export interface DialogueChoice {
+  text: string
+  next?: string
+  effect?: DialogueEffect
+}
+
+export interface DialogueEffect {
+  reputationDelta?: number
+  auditDelta?: number
+  cashDelta?: number
+  addTool?: string
+  unlockCodex?: string
+  triggerBattle?: string
+  triggerForm?: string
+}
+
+export interface DialogueNode {
+  id: string
+  speaker: string
+  text: string
+  choices?: DialogueChoice[]
+  next?: string
+}
+
+// === Codex ===
+
+export type CodexCategory = 'codes' | 'forms' | 'transactions' | 'concepts' | 'stats'
+
+export interface CodexEntry {
+  id: string
+  name: string
+  category: CodexCategory
+  description: string
+  detail: string
+  levelDiscovered?: number
+}
+
+// === Patient Cases (form puzzles) ===
+
+export interface PatientCase {
+  id: string
+  patientName: string
+  age: number
+  insurance: string
+  diagnosis: string
+  diagnosisCode: string
+  procedure: string
+  procedureCode: string
+  modifiers?: string[]
+  revenueCode?: string
+  formType: 'cms1500' | 'ub04'
+  errors?: FormError[]
+  level: number
+}
+
+export interface FormError {
+  field: string
+  currentValue: string
+  correctValue: string
+  explanation: string
+}
+
+// === Level ===
+
+export interface LevelDef {
+  id: number
+  title: string
+  subtitle: string
+  hospitalDescription: string
+  waitingRoomDescription: string
+  concepts: string[]
+  encounters: string[]
+  cases: string[]
+  npcsActive: string[]
+  bossEncounter?: string
+}
+
+// === Game State ===
+
+export interface GameState {
+  currentLevel: number
+  levelComplete: boolean[]
+  levelStars: number[]
   resources: {
     hp: number
     maxHp: number
@@ -81,33 +164,32 @@ export interface RunState {
     reputation: number
     auditRisk: number
   }
-  abilities: string[]
-  rooms: RoomDef[]
-  discovered: EnemyId[]
-  status: 'playing' | 'won' | 'lost'
+  tools: string[]
+  codexUnlocked: string[]
+  decisions: Decision[]
+  inWaitingRoom: boolean
 }
+
+export interface Decision {
+  level: number
+  description: string
+  choice: string
+  consequence: string
+}
+
+// === Constants ===
 
 export const PHASE_NAMES = [
-  'Search',
-  'Eligibility',
-  'Prior Auth',
-  'Care',
-  'Documentation',
-  'Coding',
-  'Clearinghouse',
-  'Adjudication',
-  'Appeals',
-  'Patient Bill',
-  'Contracting',
+  'Orientation',
+  'The Front Door',
+  'The Gate',
+  'The Copy',
+  'The Library',
+  'The Conveyor',
+  'The Courtroom',
+  'The River',
+  'The Maze',
+  'The Audit',
 ] as const
 
-export type ClassId = 'rural' | 'specialty' | 'academic'
-
-export interface ClassDef {
-  id: ClassId
-  name: string
-  blurb: string
-  startingHp: number
-  startingAbilities: string[]
-  difficulty: 'Easy' | 'Medium' | 'Hard'
-}
+export const EFFECTIVENESS_BONUS = 1.6

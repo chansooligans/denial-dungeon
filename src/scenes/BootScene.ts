@@ -9,120 +9,296 @@ export class BootScene extends Phaser.Scene {
 
   create() {
     this.generateSprites()
-    this.scene.start('Title')
+    this.scene.start('Intro')
   }
 
   private generateSprites() {
-    // Player sprite — 16x16 white/cyan humanoid
-    const player = this.make.graphics({ x: 0, y: 0 })
-    player.fillStyle(0x7ee2c1)
-    player.fillRect(5, 0, 6, 4) // head
-    player.fillRect(4, 4, 8, 8) // torso
-    player.fillRect(4, 12, 3, 4) // left leg
-    player.fillRect(9, 12, 3, 4) // right leg
-    player.fillRect(1, 5, 3, 6) // left arm
-    player.fillRect(12, 5, 3, 6) // right arm
-    player.generateTexture('player', 16, 16)
-    player.destroy()
+    this.makePlayerSprite()
+    this.makeNPCSprites()
+    this.makeHospitalTiles()
+    this.makeWaitingRoomTiles()
+    this.makeUIElements()
+    this.makeDocumentSprites()
+  }
 
-    // Player dash ghost
-    const ghost = this.make.graphics({ x: 0, y: 0 })
-    ghost.fillStyle(0x7ee2c1, 0.3)
-    ghost.fillRect(5, 0, 6, 4)
-    ghost.fillRect(4, 4, 8, 8)
-    ghost.fillRect(4, 12, 3, 4)
-    ghost.fillRect(9, 12, 3, 4)
-    ghost.generateTexture('player_ghost', 16, 16)
-    ghost.destroy()
+  private makePlayerSprite() {
+    const g = this.make.graphics({ x: 0, y: 0 })
+    // Analyst — teal/cyan shirt, dark pants, friendly
+    g.fillStyle(0xf5deb3) // skin
+    g.fillRect(5, 0, 6, 5) // head
+    g.fillStyle(0x4a9e8e) // teal shirt
+    g.fillRect(3, 5, 10, 7) // torso
+    g.fillRect(1, 6, 2, 5) // left arm
+    g.fillRect(13, 6, 2, 5) // right arm
+    g.fillStyle(0x2a323d) // dark pants
+    g.fillRect(4, 12, 3, 4) // left leg
+    g.fillRect(9, 12, 3, 4) // right leg
+    g.fillStyle(0x3a3a3a) // hair
+    g.fillRect(5, 0, 6, 2)
+    g.generateTexture('player', 16, 16)
+    g.destroy()
+  }
 
-    // Enemy sprites per faction — 16x16 document/entity shapes
-    const factions: Faction[] = ['payer', 'provider', 'vendor', 'patient', 'employer', 'system']
-    for (const f of factions) {
-      const color = FACTION_COLOR[f]
+  private makeNPCSprites() {
+    const npcs: { key: string; shirt: number; hair: number; skin: number }[] = [
+      { key: 'npc_dana', shirt: 0x6da9e3, hair: 0xc4a35a, skin: 0xf5deb3 },
+      { key: 'npc_martinez', shirt: 0xffffff, hair: 0x2a2a2a, skin: 0xc68642 },
+      { key: 'npc_kim', shirt: 0xa8d8a8, hair: 0x1a1a1a, skin: 0xf0c8a0 },
+      { key: 'npc_jordan', shirt: 0xd4a0d4, hair: 0x8b4513, skin: 0x8d5524 },
+      { key: 'npc_eddi', shirt: 0x808080, hair: 0x808080, skin: 0xb0b0b0 },
+      { key: 'npc_pat', shirt: 0x3a3a6a, hair: 0xc0c0c0, skin: 0xf5deb3 },
+      { key: 'npc_alex', shirt: 0x2a2a2a, hair: 0x4a2a0a, skin: 0xdeb887 },
+      { key: 'npc_sam', shirt: 0xf0a868, hair: 0x6a3a1a, skin: 0xc68642 },
+      { key: 'npc_carl', shirt: 0x6a6a6a, hair: 0x5a5a5a, skin: 0xf5deb3 },
+      { key: 'npc_chen', shirt: 0x4a4a7a, hair: 0x1a1a1a, skin: 0xf0c8a0 },
+      { key: 'npc_rivera', shirt: 0x2a4a6a, hair: 0x3a3a3a, skin: 0xc68642 },
+    ]
+
+    for (const npc of npcs) {
       const g = this.make.graphics({ x: 0, y: 0 })
-      // Document shape with colored border
-      g.fillStyle(0x1f262f)
-      g.fillRect(2, 1, 12, 14)
-      g.lineStyle(1, color)
-      g.strokeRect(2, 1, 12, 14)
-      // Colored accent bar at top
-      g.fillStyle(color)
-      g.fillRect(3, 2, 10, 3)
-      // "Text lines"
-      g.fillStyle(0x8b95a5)
-      g.fillRect(4, 7, 8, 1)
-      g.fillRect(4, 9, 6, 1)
-      g.fillRect(4, 11, 7, 1)
-      g.generateTexture(`enemy_${f}`, 16, 16)
+      g.fillStyle(npc.skin)
+      g.fillRect(5, 0, 6, 5)
+      g.fillStyle(npc.shirt)
+      g.fillRect(3, 5, 10, 7)
+      g.fillRect(1, 6, 2, 5)
+      g.fillRect(13, 6, 2, 5)
+      g.fillStyle(0x2a323d)
+      g.fillRect(4, 12, 3, 4)
+      g.fillRect(9, 12, 3, 4)
+      g.fillStyle(npc.hair)
+      g.fillRect(5, 0, 6, 2)
+      g.generateTexture(npc.key, 16, 16)
       g.destroy()
     }
+  }
 
-    // Boss sprite — larger 24x24
-    const boss = this.make.graphics({ x: 0, y: 0 })
-    boss.fillStyle(0x1f262f)
-    boss.fillRect(2, 2, 20, 20)
-    boss.lineStyle(2, 0xef5b7b)
-    boss.strokeRect(2, 2, 20, 20)
-    boss.fillStyle(0xef5b7b)
-    boss.fillRect(4, 4, 16, 4)
-    boss.fillStyle(0xf0a868)
-    boss.fillRect(6, 10, 12, 2)
-    boss.fillRect(6, 13, 10, 2)
-    boss.fillRect(6, 16, 8, 2)
-    boss.generateTexture('enemy_boss', 24, 24)
-    boss.destroy()
+  private makeHospitalTiles() {
+    // Floor — warm linoleum
+    let g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0x2a2e35)
+    g.fillRect(0, 0, 16, 16)
+    g.lineStyle(1, 0x323840, 0.3)
+    g.strokeRect(0, 0, 16, 16)
+    g.generateTexture('h_floor', 16, 16)
+    g.destroy()
 
-    // Projectile — player
-    const pBullet = this.make.graphics({ x: 0, y: 0 })
-    pBullet.fillStyle(0x7ee2c1)
-    pBullet.fillCircle(4, 4, 3)
-    pBullet.generateTexture('bullet_player', 8, 8)
-    pBullet.destroy()
+    // Wall
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0x3d4550)
+    g.fillRect(0, 0, 16, 16)
+    g.lineStyle(1, 0x4d5560)
+    g.strokeRect(0, 0, 16, 16)
+    g.fillStyle(0x4d5560)
+    g.fillRect(2, 2, 12, 2)
+    g.generateTexture('h_wall', 16, 16)
+    g.destroy()
 
-    // Projectile — enemy (per faction)
-    for (const f of factions) {
-      const b = this.make.graphics({ x: 0, y: 0 })
-      b.fillStyle(FACTION_COLOR[f])
-      b.fillCircle(3, 3, 3)
-      b.generateTexture(`bullet_${f}`, 6, 6)
-      b.destroy()
-    }
+    // Door
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0x6d5540)
+    g.fillRect(0, 0, 16, 16)
+    g.fillStyle(0xf0a868)
+    g.fillRect(10, 6, 3, 3)
+    g.lineStyle(1, 0x8d7560)
+    g.strokeRect(0, 0, 16, 16)
+    g.generateTexture('h_door', 16, 16)
+    g.destroy()
 
-    // Wall tile
-    const wall = this.make.graphics({ x: 0, y: 0 })
-    wall.fillStyle(0x2a323d)
-    wall.fillRect(0, 0, 16, 16)
-    wall.lineStyle(1, 0x3a4a5d)
-    wall.strokeRect(0, 0, 16, 16)
-    wall.generateTexture('wall', 16, 16)
-    wall.destroy()
+    // Desk
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0x6d5540)
+    g.fillRect(0, 4, 16, 10)
+    g.fillStyle(0x7ee2c1, 0.4)
+    g.fillRect(2, 5, 5, 4) // monitor glow
+    g.generateTexture('h_desk', 16, 16)
+    g.destroy()
 
-    // Floor tile
-    const floor = this.make.graphics({ x: 0, y: 0 })
-    floor.fillStyle(0x161b22)
-    floor.fillRect(0, 0, 16, 16)
-    // subtle grid lines
-    floor.lineStyle(1, 0x1c2129, 0.5)
-    floor.strokeRect(0, 0, 16, 16)
-    floor.generateTexture('floor', 16, 16)
-    floor.destroy()
+    // Chair
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0x3a3a5a)
+    g.fillRect(3, 2, 10, 10)
+    g.fillStyle(0x2a2a3a)
+    g.fillRect(6, 12, 4, 4)
+    g.generateTexture('h_chair', 16, 16)
+    g.destroy()
 
-    // Door tile
-    const door = this.make.graphics({ x: 0, y: 0 })
-    door.fillStyle(0x7ee2c1, 0.3)
-    door.fillRect(0, 0, 16, 16)
-    door.lineStyle(1, 0x7ee2c1)
-    door.strokeRect(1, 1, 14, 14)
-    door.generateTexture('door', 16, 16)
-    door.destroy()
+    // Medical equipment
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0xb0b8c0)
+    g.fillRect(4, 0, 8, 14)
+    g.fillStyle(0x6cd49a)
+    g.fillRect(6, 2, 4, 4)
+    g.generateTexture('h_equipment', 16, 16)
+    g.destroy()
+  }
 
-    // Heart/HP icon
-    const heart = this.make.graphics({ x: 0, y: 0 })
-    heart.fillStyle(0xef5b7b)
-    heart.fillCircle(4, 4, 3)
-    heart.fillCircle(10, 4, 3)
-    heart.fillTriangle(1, 5, 13, 5, 7, 12)
-    heart.generateTexture('heart', 14, 13)
-    heart.destroy()
+  private makeWaitingRoomTiles() {
+    // Floor — slightly off, cracked
+    let g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0x1a1e25)
+    g.fillRect(0, 0, 16, 16)
+    g.lineStyle(1, 0x252a33, 0.4)
+    g.strokeRect(0, 0, 16, 16)
+    g.lineStyle(1, 0x3a3a3a, 0.2)
+    g.lineBetween(3, 0, 12, 16) // crack
+    g.generateTexture('wr_floor', 16, 16)
+    g.destroy()
+
+    // Wall — darker, unsettling
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0x252833)
+    g.fillRect(0, 0, 16, 16)
+    g.lineStyle(1, 0x353845)
+    g.strokeRect(0, 0, 16, 16)
+    g.generateTexture('wr_wall', 16, 16)
+    g.destroy()
+
+    // Waiting chair — infinite repeating
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0x4a4a5a)
+    g.fillRect(2, 4, 12, 8)
+    g.fillStyle(0x3a3a4a)
+    g.fillRect(4, 12, 3, 4)
+    g.fillRect(9, 12, 3, 4)
+    g.generateTexture('wr_chair', 16, 16)
+    g.destroy()
+
+    // Ticket counter
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0x3a3a4a)
+    g.fillRect(0, 2, 16, 12)
+    g.fillStyle(0xef5b7b)
+    g.fillRect(4, 4, 8, 6) // red number display
+    g.generateTexture('wr_counter', 16, 16)
+    g.destroy()
+
+    // Floating paper particle
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0xd0d0d0, 0.6)
+    g.fillRect(0, 0, 6, 8)
+    g.lineStyle(1, 0xa0a0a0, 0.4)
+    g.lineBetween(1, 2, 5, 2)
+    g.lineBetween(1, 4, 4, 4)
+    g.generateTexture('wr_paper', 6, 8)
+    g.destroy()
+  }
+
+  private makeUIElements() {
+    // Text box background
+    let g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0x0e1116, 0.92)
+    g.fillRoundedRect(0, 0, 400, 120, 8)
+    g.lineStyle(2, 0x2a323d)
+    g.strokeRoundedRect(0, 0, 400, 120, 8)
+    g.generateTexture('ui_textbox', 400, 120)
+    g.destroy()
+
+    // Heart icon
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0xef5b7b)
+    g.fillCircle(4, 4, 3)
+    g.fillCircle(10, 4, 3)
+    g.fillTriangle(1, 5, 13, 5, 7, 12)
+    g.generateTexture('ui_heart', 14, 13)
+    g.destroy()
+
+    // Cash icon
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0x6cd49a)
+    g.fillCircle(6, 6, 6)
+    g.fillStyle(0x1a1e25)
+    g.fillRect(5, 2, 2, 8)
+    g.generateTexture('ui_cash', 12, 12)
+    g.destroy()
+
+    // Battle action button bg
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0x1f262f)
+    g.fillRoundedRect(0, 0, 180, 40, 6)
+    g.lineStyle(1, 0x2a323d)
+    g.strokeRoundedRect(0, 0, 180, 40, 6)
+    g.generateTexture('ui_action_btn', 180, 40)
+    g.destroy()
+
+    // Battle action button hover
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0x1f262f)
+    g.fillRoundedRect(0, 0, 180, 40, 6)
+    g.lineStyle(2, 0x7ee2c1)
+    g.strokeRoundedRect(0, 0, 180, 40, 6)
+    g.generateTexture('ui_action_btn_hover', 180, 40)
+    g.destroy()
+  }
+
+  private makeDocumentSprites() {
+    // CMS-1500 form (simplified icon)
+    let g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0xffffff)
+    g.fillRect(0, 0, 12, 16)
+    g.lineStyle(1, 0xcccccc)
+    g.strokeRect(0, 0, 12, 16)
+    g.fillStyle(0xef5b7b)
+    g.fillRect(1, 1, 10, 2) // red header
+    g.fillStyle(0xaaaaaa)
+    g.fillRect(2, 5, 8, 1)
+    g.fillRect(2, 7, 6, 1)
+    g.fillRect(2, 9, 7, 1)
+    g.fillRect(2, 11, 5, 1)
+    g.fillRect(2, 13, 8, 1)
+    g.generateTexture('doc_cms1500', 12, 16)
+    g.destroy()
+
+    // UB-04 form
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0xffffff)
+    g.fillRect(0, 0, 12, 16)
+    g.lineStyle(1, 0xcccccc)
+    g.strokeRect(0, 0, 12, 16)
+    g.fillStyle(0x6da9e3)
+    g.fillRect(1, 1, 10, 2) // blue header
+    g.fillStyle(0xaaaaaa)
+    g.fillRect(2, 5, 8, 1)
+    g.fillRect(2, 7, 6, 1)
+    g.fillRect(2, 9, 7, 1)
+    g.fillRect(2, 11, 5, 1)
+    g.fillRect(2, 13, 8, 1)
+    g.generateTexture('doc_ub04', 12, 16)
+    g.destroy()
+
+    // 835 remittance
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0xf0f0e8)
+    g.fillRect(0, 0, 12, 16)
+    g.lineStyle(1, 0xcccccc)
+    g.strokeRect(0, 0, 12, 16)
+    g.fillStyle(0x6cd49a)
+    g.fillRect(1, 1, 10, 2)
+    g.fillStyle(0xaaaaaa)
+    g.fillRect(2, 5, 8, 1)
+    g.fillRect(2, 7, 6, 1)
+    g.fillRect(2, 9, 7, 1)
+    g.generateTexture('doc_835', 12, 16)
+    g.destroy()
+
+    // EOB
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0xfff8e8)
+    g.fillRect(0, 0, 12, 16)
+    g.lineStyle(1, 0xcccccc)
+    g.strokeRect(0, 0, 12, 16)
+    g.fillStyle(0xf0a868)
+    g.fillRect(1, 1, 10, 2)
+    g.fillStyle(0xaaaaaa)
+    g.fillRect(2, 5, 8, 1)
+    g.fillRect(2, 9, 6, 1)
+    g.generateTexture('doc_eob', 12, 16)
+    g.destroy()
+
+    // DENIED stamp overlay
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.lineStyle(3, 0xef5b7b, 0.8)
+    g.strokeRect(2, 6, 60, 20)
+    g.generateTexture('stamp_denied', 64, 32)
+    g.destroy()
   }
 }
