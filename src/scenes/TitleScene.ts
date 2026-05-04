@@ -127,7 +127,7 @@ export class TitleScene extends Phaser.Scene {
       align: 'center',
     }).setOrigin(0.5)
 
-    this.add.text(width / 2, 590, 'Built by Turquoise Health', {
+    this.add.text(width / 2, 590, 'An open-source educational game', {
       fontSize: '10px',
       fontFamily: 'monospace',
       color: '#3a4a5d',

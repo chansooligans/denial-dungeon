@@ -1,7 +1,7 @@
 # 2026-05-03 — Initial Design & Pivot to Action RPG
 
 ## Context
-Building a web-based educational game about hospital revenue cycle for Turquoise Health.
+Building a web-based educational game about hospital revenue cycle.
 Audience: devs/engineers + solutions engineers who are already RCM experts.
 Hosted on GitHub Pages as a static SPA.
 
