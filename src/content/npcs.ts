@@ -1,0 +1,60 @@
+import type { NPC } from '../types'
+
+export const NPCS: Record<string, NPC> = {
+  dana: {
+    id: 'dana',
+    name: 'Dana',
+    department: 'Revenue Cycle',
+    spriteKey: 'npc_dana',
+    dialogueKey: 'dana_intro',
+    description: 'Your mentor. Knows where every claim goes and why.',
+  },
+  martinez: {
+    id: 'martinez',
+    name: 'Dr. Martinez',
+    department: 'Surgery',
+    spriteKey: 'npc_martinez',
+    dialogueKey: 'martinez_intro',
+    description: 'Brilliant surgeon, terrible at documentation.',
+  },
+  kim: {
+    id: 'kim',
+    name: 'Kim',
+    department: 'Registration',
+    spriteKey: 'npc_kim',
+    dialogueKey: 'kim_intro',
+    description: 'Front desk. First point of contact, first point of failure.',
+  },
+  jordan: {
+    id: 'jordan',
+    name: 'Jordan',
+    department: 'Patient Financial Services',
+    spriteKey: 'npc_jordan',
+    dialogueKey: 'jordan_intro',
+    description: 'Explains bills to confused patients all day.',
+  },
+  pat: {
+    id: 'pat',
+    name: 'Pat',
+    department: 'Coding',
+    spriteKey: 'npc_pat',
+    dialogueKey: 'pat_intro',
+    description: 'Senior coder. ICD-10 in their sleep.',
+  },
+  alex: {
+    id: 'alex',
+    name: 'Alex',
+    department: 'IT / EDI',
+    spriteKey: 'npc_alex',
+    dialogueKey: 'alex_intro',
+    description: 'Manages the clearinghouse connection. Speaks in X12.',
+  },
+  sam: {
+    id: 'sam',
+    name: 'Sam',
+    department: 'Denials Management',
+    spriteKey: 'npc_sam',
+    dialogueKey: 'sam_intro',
+    description: 'Works the appeal queue. Tired but determined.',
+  },
+}

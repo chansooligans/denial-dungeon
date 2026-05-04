@@ -72,7 +72,7 @@ export class TitleScene extends Phaser.Scene {
   }
 
   private startGame() {
-    this.scene.start('Game')
+    this.scene.start('Hospital')
   }
 
   private openCodex() {
