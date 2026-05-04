@@ -228,16 +228,13 @@ export class IntroScene extends Phaser.Scene {
       const t = this.add.text(width / 2, startY + i * 22, '', {
         fontSize: '16px', fontFamily: 'monospace', color,
         align: 'center',
-      }).setOrigin(0.5).setAlpha(0).setDepth(50)
-
-      // Typewriter effect
-      this.tweens.add({ targets: t, alpha: 1, duration: 300, delay: i * 100 })
+      }).setOrigin(0.5).setDepth(50)
 
       let charIndex = 0
       this.time.addEvent({
         delay: 30,
         repeat: line.length - 1,
-        startAt: i * 100,
+        startAt: i * 80,
         callback: () => {
           charIndex++
           t.setText(line.substring(0, charIndex))
