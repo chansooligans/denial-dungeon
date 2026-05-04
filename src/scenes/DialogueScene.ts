@@ -1,6 +1,7 @@
 import Phaser from 'phaser'
 import { DIALOGUES } from '../content/dialogue'
-import type { DialogueNode, DialogueChoice } from '../types'
+import { unlockCodex, unlockTool, updateResources, saveGame } from '../state'
+import type { DialogueNode, DialogueChoice, DialogueEffect } from '../types'
 
 export class DialogueScene extends Phaser.Scene {
   private currentNode!: DialogueNode
@@ -100,15 +101,35 @@ export class DialogueScene extends Phaser.Scene {
     this.endDialogue()
   }
 
+  private applyEffects() {
+    for (const effect of this.collectedEffects) {
+      if (effect.unlockCodex) unlockCodex(effect.unlockCodex)
+      if (effect.addTool) unlockTool(effect.addTool)
+      if (effect.reputationDelta) updateResources({ reputation: effect.reputationDelta })
+      if (effect.cashDelta) updateResources({ cash: effect.cashDelta })
+      if (effect.auditDelta) updateResources({ auditRisk: effect.auditDelta })
+    }
+    saveGame()
+  }
+
   private endDialogue() {
+    this.applyEffects()
+
     if (this.onComplete) {
       this.onComplete(this.collectedEffects)
     }
 
     const battleEffect = this.collectedEffects.find(e => e.triggerBattle)
+    const formEffect = this.collectedEffects.find(e => e.triggerForm)
+
     if (battleEffect) {
       this.scene.stop()
+      this.scene.stop(this.callingScene)
       this.scene.start('Battle', { encounterId: battleEffect.triggerBattle })
+    } else if (formEffect) {
+      this.scene.stop()
+      this.scene.stop(this.callingScene)
+      this.scene.start('Form', { caseId: formEffect.triggerForm })
     } else {
       this.scene.stop()
       this.scene.resume(this.callingScene)

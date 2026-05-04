@@ -1,6 +1,7 @@
 import Phaser from 'phaser'
-import { TOOLS, TOOL_LIST } from '../content/abilities'
+import { TOOLS } from '../content/abilities'
 import { ENCOUNTERS } from '../content/enemies'
+import { getState, updateResources, unlockCodex, saveGame } from '../state'
 import type { Encounter, Tool } from '../types'
 import { EFFECTIVENESS_BONUS, FACTION_COLOR } from '../types'
 
@@ -35,12 +36,14 @@ export class BattleScene extends Phaser.Scene {
     const encounter = ENCOUNTERS[encounterId]
     if (!encounter) throw new Error(`Unknown encounter: ${encounterId}`)
 
+    const gameState = getState()
+
     this.state = {
       encounter,
       encounterHp: encounter.hp,
-      playerHp: data.playerHp ?? 100,
-      playerMaxHp: data.playerMaxHp ?? 100,
-      playerTools: data.playerTools ?? ['submit_837p', 'eligibility_270', 'prior_auth_278', 'cdi_query'],
+      playerHp: data.playerHp ?? gameState.resources.hp,
+      playerMaxHp: data.playerMaxHp ?? gameState.resources.maxHp,
+      playerTools: data.playerTools ?? gameState.tools,
       turn: 'player',
       turnCount: 0,
     }
@@ -326,8 +329,10 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private exitBattle(won: boolean) {
-    // For now, go back to title. Later this returns to the overworld.
-    this.scene.start('Title')
+    updateResources({ hp: this.state.playerHp - getState().resources.hp })
+    unlockCodex(this.state.encounter.id)
+    saveGame()
+    this.scene.start('Hospital')
   }
 
   private showMessage(text: string) {

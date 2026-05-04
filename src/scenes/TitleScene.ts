@@ -1,4 +1,5 @@
 import Phaser from 'phaser'
+import { newGame } from '../state'
 
 export class TitleScene extends Phaser.Scene {
   constructor() {
@@ -72,6 +73,7 @@ export class TitleScene extends Phaser.Scene {
   }
 
   private startGame() {
+    newGame()
     this.scene.start('Hospital')
   }
 

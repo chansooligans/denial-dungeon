@@ -1,5 +1,7 @@
 import Phaser from 'phaser'
 import { NPCS } from '../content/npcs'
+import { LEVELS } from '../content/levels'
+import { getState, unlockCodex, unlockTool, saveGame } from '../state'
 import type { NPC } from '../types'
 
 const TILE = 32
@@ -38,7 +40,6 @@ interface NPCSprite {
 export class HospitalScene extends Phaser.Scene {
   private player!: Phaser.GameObjects.Image
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys
-  private walls: Phaser.GameObjects.Image[] = []
   private npcSprites: NPCSprite[] = []
   private interactPrompt!: Phaser.GameObjects.Text
   private nearbyNpc: NPCSprite | null = null
@@ -46,6 +47,8 @@ export class HospitalScene extends Phaser.Scene {
   private playerTileX = 4
   private playerTileY = 8
   private wasdKeys!: Record<string, Phaser.Input.Keyboard.Key>
+  private hudHp!: Phaser.GameObjects.Text
+  private hudLevel!: Phaser.GameObjects.Text
 
   constructor() {
     super('Hospital')
@@ -53,17 +56,22 @@ export class HospitalScene extends Phaser.Scene {
 
   create() {
     this.cameras.main.setBackgroundColor(0x0e1116)
+    this.canMove = true
+    this.npcSprites = []
+
     this.buildMap()
     this.placePlayer()
     this.placeNPCs()
     this.setupInput()
     this.buildUI()
+    this.buildHUD()
 
     this.cameras.main.startFollow(this.player, true, 0.1, 0.1)
     this.cameras.main.setZoom(1.5)
 
     this.events.on('resume', () => {
       this.canMove = true
+      this.refreshHUD()
     })
   }
 
@@ -76,7 +84,6 @@ export class HospitalScene extends Phaser.Scene {
 
         if (ch === 'W') {
           this.add.image(px, py, 'h_wall').setScale(2)
-          this.walls.push(this.add.image(px, py, 'h_wall').setScale(2).setAlpha(0))
         } else if (ch === 'D') {
           this.add.image(px, py, 'h_door').setScale(2)
         } else if (ch === 'c') {
@@ -101,6 +108,10 @@ export class HospitalScene extends Phaser.Scene {
   }
 
   private placeNPCs() {
+    const state = getState()
+    const level = LEVELS[state.currentLevel - 1]
+    const activeNpcs = level?.npcsActive ?? Object.keys(NPCS)
+
     const placements: { npcId: string; tileX: number; tileY: number }[] = [
       { npcId: 'dana', tileX: 6, tileY: 1 },
       { npcId: 'kim', tileX: 5, tileY: 5 },
@@ -112,6 +123,7 @@ export class HospitalScene extends Phaser.Scene {
     ]
 
     for (const p of placements) {
+      if (!activeNpcs.includes(p.npcId)) continue
       const npc = NPCS[p.npcId]
       if (!npc) continue
 
@@ -148,6 +160,30 @@ export class HospitalScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(20).setVisible(false)
   }
 
+  private buildHUD() {
+    const state = getState()
+    const level = LEVELS[state.currentLevel - 1]
+
+    this.hudLevel = this.add.text(10, 10, `Level ${state.currentLevel}: ${level?.title ?? ''}`, {
+      fontSize: '10px', fontFamily: 'monospace', color: '#7ee2c1',
+      backgroundColor: '#0e111680',
+      padding: { x: 4, y: 2 },
+    }).setScrollFactor(0).setDepth(100)
+
+    this.hudHp = this.add.text(10, 28, '', {
+      fontSize: '9px', fontFamily: 'monospace', color: '#ef5b7b',
+      backgroundColor: '#0e111680',
+      padding: { x: 4, y: 2 },
+    }).setScrollFactor(0).setDepth(100)
+
+    this.refreshHUD()
+  }
+
+  private refreshHUD() {
+    const state = getState()
+    this.hudHp.setText(`HP: ${state.resources.hp}/${state.resources.maxHp}  Rep: ${state.resources.reputation}  Audit: ${state.resources.auditRisk}%`)
+  }
+
   update() {
     if (!this.canMove) return
 
@@ -175,7 +211,6 @@ export class HospitalScene extends Phaser.Scene {
     const ch = LAYOUT[newY][newX]
     if (ch === 'W') return
 
-    // Check NPC collision
     for (const ns of this.npcSprites) {
       const npcTileX = Math.round((ns.sprite.x - TILE / 2) / TILE)
       const npcTileY = Math.round((ns.sprite.y - TILE / 2) / TILE)

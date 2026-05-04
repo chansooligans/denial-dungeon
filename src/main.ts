@@ -5,6 +5,7 @@ import { TitleScene } from './scenes/TitleScene'
 import { HospitalScene } from './scenes/HospitalScene'
 import { DialogueScene } from './scenes/DialogueScene'
 import { BattleScene } from './scenes/BattleScene'
+import { FormScene } from './scenes/FormScene'
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
@@ -20,7 +21,7 @@ const config: Phaser.Types.Core.GameConfig = {
       debug: false,
     },
   },
-  scene: [BootScene, IntroScene, TitleScene, HospitalScene, DialogueScene, BattleScene],
+  scene: [BootScene, IntroScene, TitleScene, HospitalScene, DialogueScene, BattleScene, FormScene],
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
