@@ -145,35 +145,11 @@ export class IntroScene extends Phaser.Scene {
 
     this.sceneContainer = this.add.container(0, 0)
 
-    this.skipText = this.add.text(width - 20, height - 20, '[SPACE / CLICK to advance · ESC to skip]', {
+    this.skipText = this.add.text(width - 20, height - 20, '[ESC to skip]', {
       fontSize: '10px', fontFamily: 'monospace', color: '#3a4a5d',
     }).setOrigin(1, 1).setDepth(100)
 
-    this.input.keyboard!.on('keydown-SPACE', () => this.advance())
     this.input.keyboard!.on('keydown-ESC', () => this.skipToTitle())
-    this.input.on('pointerdown', () => this.advance())
-
-    this.playBeat()
-  }
-
-  private advance() {
-    if (this.done) return
-
-    if (this.pendingTimer) {
-      this.pendingTimer.remove(false)
-      this.pendingTimer = undefined
-    }
-
-    // Skip forward to the next wait or terminal beat
-    while (this.currentBeat < BEATS.length) {
-      const beat = BEATS[this.currentBeat]
-      if (beat.type === 'wait') {
-        this.currentBeat++
-        break
-      }
-      if (beat.type === 'title') break
-      this.currentBeat++
-    }
 
     this.playBeat()
   }

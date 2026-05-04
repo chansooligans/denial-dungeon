@@ -5,8 +5,7 @@
       "name": "denial-dungeon",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--", "--port", "5173"],
-      "port": 5173,
-      "cwd": "/Users/chansoosong/Desktop/team_repos/games/denial-dungeon"
+      "port": 5173
     }
   ]
 }

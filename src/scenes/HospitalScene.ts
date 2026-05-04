@@ -28,10 +28,22 @@ const TILE_TEXTURES: Record<string, { floor: string; obj?: string; solid?: boole
   'X': { floor: 'h_floor', obj: 'h_fax' },
 }
 
+// Tiles that act as room boundaries for flood-fill: walls and doors.
+// (Doors are passable for the player but separate rooms visually.)
+const BARRIER_CHARS = new Set(['W', 'D', 'L'])
+
+const VIS_HIDDEN = 0
+const VIS_VISITED = 1
+const VIS_CURRENT = 2
+
+const ALPHA_FOR_STATE = [0, 0.28, 1]
+
 interface NPCSprite {
   sprite: Phaser.GameObjects.Image
   npc: NPC
   label: Phaser.GameObjects.Text
+  tileX: number
+  tileY: number
 }
 
 export class HospitalScene extends Phaser.Scene {
@@ -50,6 +62,21 @@ export class HospitalScene extends Phaser.Scene {
   private crackPrompt!: Phaser.GameObjects.Text
   private mapDef!: MapDef
 
+  // Room visibility state
+  private tileFloorSprites: Phaser.GameObjects.Image[][] = []
+  private tileObjSprites: (Phaser.GameObjects.Image | null)[][] = []
+  private roomIds: number[][] = []
+  private tileVisState: number[][] = []
+  private currentRoomId = -1
+
+  // Mini-map
+  private miniMapBg!: Phaser.GameObjects.Graphics
+  private miniMapTiles!: Phaser.GameObjects.Graphics
+  private miniMapPlayer!: Phaser.GameObjects.Graphics
+  private miniMapCell = 2
+  private miniMapX = 0
+  private miniMapY = 0
+
   constructor() {
     super('Hospital')
   }
@@ -62,8 +89,9 @@ export class HospitalScene extends Phaser.Scene {
     this.playerTileY = this.mapDef.playerStart.y
     this.canMove = true
     this.npcSprites = []
+    this.currentRoomId = -1
 
-    this.cameras.main.setBackgroundColor(0x0e1116)
+    this.cameras.main.setBackgroundColor(0x05070a)
 
     this.buildMap()
     this.placeCrack()
@@ -72,10 +100,13 @@ export class HospitalScene extends Phaser.Scene {
     this.setupInput()
     this.buildUI()
     this.buildHUD()
+    this.buildMiniMap()
 
     this.cameras.main.startFollow(this.player, true, 0.1, 0.1)
     this.cameras.main.setZoom(1.5)
     this.cameras.main.setBounds(0, 0, this.mapDef.width * TILE, this.mapDef.height * TILE)
+
+    this.enterRoomAt(this.playerTileX, this.playerTileY)
 
     this.events.on('resume', () => {
       this.canMove = true
@@ -86,6 +117,10 @@ export class HospitalScene extends Phaser.Scene {
   private buildMap() {
     const { width: mw, height: mh, layout } = this.mapDef
 
+    this.tileFloorSprites = Array.from({ length: mh }, () => new Array(mw))
+    this.tileObjSprites = Array.from({ length: mh }, () => new Array(mw).fill(null))
+    this.tileVisState = Array.from({ length: mh }, () => new Array(mw).fill(VIS_HIDDEN))
+
     for (let y = 0; y < mh; y++) {
       const row = layout[y] || ''
       for (let x = 0; x < mw; x++) {
@@ -94,11 +129,49 @@ export class HospitalScene extends Phaser.Scene {
         const py = y * TILE + TILE / 2
         const tileDef = TILE_TEXTURES[ch] || TILE_TEXTURES['.']
 
-        this.add.image(px, py, tileDef.floor).setScale(2)
+        const floor = this.add.image(px, py, tileDef.floor).setScale(2).setAlpha(0)
+        this.tileFloorSprites[y][x] = floor
 
         if (tileDef.obj) {
-          this.add.image(px, py, tileDef.obj).setScale(2).setDepth(2)
+          const obj = this.add.image(px, py, tileDef.obj).setScale(2).setDepth(2).setAlpha(0)
+          this.tileObjSprites[y][x] = obj
         }
+      }
+    }
+
+    this.computeRooms()
+  }
+
+  private computeRooms() {
+    const { width: mw, height: mh, layout } = this.mapDef
+    this.roomIds = Array.from({ length: mh }, () => new Array(mw).fill(-1))
+    let nextId = 0
+
+    const isInterior = (x: number, y: number) => {
+      if (x < 0 || x >= mw || y < 0 || y >= mh) return false
+      const ch = layout[y]?.[x] || '.'
+      return !BARRIER_CHARS.has(ch)
+    }
+
+    for (let y = 0; y < mh; y++) {
+      for (let x = 0; x < mw; x++) {
+        if (this.roomIds[y][x] !== -1) continue
+        if (!isInterior(x, y)) continue
+
+        const queue: [number, number][] = [[x, y]]
+        this.roomIds[y][x] = nextId
+        while (queue.length) {
+          const [cx, cy] = queue.shift()!
+          for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+            const nx = cx + dx
+            const ny = cy + dy
+            if (!isInterior(nx, ny)) continue
+            if (this.roomIds[ny][nx] !== -1) continue
+            this.roomIds[ny][nx] = nextId
+            queue.push([nx, ny])
+          }
+        }
+        nextId++
       }
     }
   }
@@ -108,7 +181,7 @@ export class HospitalScene extends Phaser.Scene {
     const px = ct.x * TILE + TILE / 2
     const py = ct.y * TILE + TILE / 2
 
-    this.crackSprite = this.add.graphics().setDepth(3)
+    this.crackSprite = this.add.graphics().setDepth(3).setAlpha(0)
     this.crackSprite.lineStyle(2, 0xb18bd6, 0.6)
     this.crackSprite.lineBetween(px - 8, py - 12, px + 2, py)
     this.crackSprite.lineBetween(px + 2, py, px - 4, py + 12)
@@ -152,13 +225,13 @@ export class HospitalScene extends Phaser.Scene {
       const px = p.tileX * TILE + TILE / 2
       const py = p.tileY * TILE + TILE / 2
 
-      const sprite = this.add.image(px, py, npc.spriteKey).setScale(2).setDepth(5)
+      const sprite = this.add.image(px, py, npc.spriteKey).setScale(2).setDepth(5).setAlpha(0)
 
       const label = this.add.text(px, py - 22, npc.name, {
         fontSize: '8px', fontFamily: 'monospace', color: '#7ee2c1',
-      }).setOrigin(0.5).setDepth(6)
+      }).setOrigin(0.5).setDepth(6).setAlpha(0)
 
-      this.npcSprites.push({ sprite, npc, label })
+      this.npcSprites.push({ sprite, npc, label, tileX: p.tileX, tileY: p.tileY })
     }
   }
 
@@ -201,6 +274,29 @@ export class HospitalScene extends Phaser.Scene {
     this.refreshHUD()
   }
 
+  private buildMiniMap() {
+    const { width: mw, height: mh } = this.mapDef
+    const cam = this.cameras.main
+
+    this.miniMapCell = Math.max(1, Math.min(3, Math.floor(180 / mw)))
+    const innerW = mw * this.miniMapCell
+    const innerH = mh * this.miniMapCell
+    const pad = 4
+    const totalW = innerW + pad * 2
+    const totalH = innerH + pad * 2
+    this.miniMapX = cam.width - totalW - 8
+    this.miniMapY = 8
+
+    this.miniMapBg = this.add.graphics().setScrollFactor(0).setDepth(99)
+    this.miniMapBg.fillStyle(0x0e1116, 0.85)
+    this.miniMapBg.fillRect(this.miniMapX, this.miniMapY, totalW, totalH)
+    this.miniMapBg.lineStyle(1, 0x7ee2c1, 0.6)
+    this.miniMapBg.strokeRect(this.miniMapX + 0.5, this.miniMapY + 0.5, totalW - 1, totalH - 1)
+
+    this.miniMapTiles = this.add.graphics().setScrollFactor(0).setDepth(100)
+    this.miniMapPlayer = this.add.graphics().setScrollFactor(0).setDepth(101)
+  }
+
   private refreshHUD() {
     const state = getState()
     this.hudHp.setText(`HP: ${state.resources.hp}/${state.resources.maxHp}  Rep: ${state.resources.reputation}  Audit: ${state.resources.auditRisk}%`)
@@ -239,9 +335,7 @@ export class HospitalScene extends Phaser.Scene {
     if (this.isSolid(newX, newY)) return
 
     for (const ns of this.npcSprites) {
-      const npcTileX = Math.round((ns.sprite.x - TILE / 2) / TILE)
-      const npcTileY = Math.round((ns.sprite.y - TILE / 2) / TILE)
-      if (newX === npcTileX && newY === npcTileY) return
+      if (newX === ns.tileX && newY === ns.tileY) return
     }
 
     this.playerTileX = newX
@@ -256,6 +350,125 @@ export class HospitalScene extends Phaser.Scene {
       ease: 'Linear',
       onComplete: () => { this.canMove = true },
     })
+
+    this.enterRoomAt(newX, newY)
+    this.updateMiniMapPlayer()
+  }
+
+  private enterRoomAt(x: number, y: number) {
+    const newRoomId = this.roomIds[y]?.[x] ?? -1
+    // -1 means standing on a door/wall — keep current room.
+    if (newRoomId === -1 || newRoomId === this.currentRoomId) return
+
+    // Demote any tile currently lit to "visited."
+    for (let yy = 0; yy < this.tileVisState.length; yy++) {
+      const row = this.tileVisState[yy]
+      for (let xx = 0; xx < row.length; xx++) {
+        if (row[xx] === VIS_CURRENT) row[xx] = VIS_VISITED
+      }
+    }
+
+    this.revealRoom(newRoomId)
+    this.currentRoomId = newRoomId
+    this.applyTileVisibility()
+    this.applyEntityVisibility()
+    this.redrawMiniMapTiles()
+  }
+
+  private revealRoom(roomId: number) {
+    const { width: mw, height: mh } = this.mapDef
+    for (let y = 0; y < mh; y++) {
+      for (let x = 0; x < mw; x++) {
+        if (this.roomIds[y][x] !== roomId) continue
+        this.tileVisState[y][x] = VIS_CURRENT
+        // Reveal adjacent walls/doors so room boundaries are visible.
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            if (dx === 0 && dy === 0) continue
+            const nx = x + dx
+            const ny = y + dy
+            if (nx < 0 || nx >= mw || ny < 0 || ny >= mh) continue
+            if (this.roomIds[ny][nx] === -1) {
+              this.tileVisState[ny][nx] = VIS_CURRENT
+            }
+          }
+        }
+      }
+    }
+  }
+
+  private applyTileVisibility() {
+    const { width: mw, height: mh } = this.mapDef
+    for (let y = 0; y < mh; y++) {
+      for (let x = 0; x < mw; x++) {
+        const a = ALPHA_FOR_STATE[this.tileVisState[y][x]]
+        this.tileFloorSprites[y][x].setAlpha(a)
+        const obj = this.tileObjSprites[y][x]
+        if (obj) obj.setAlpha(a)
+      }
+    }
+  }
+
+  private applyEntityVisibility() {
+    const ct = this.mapDef.crackTile
+    const crackVis = this.tileVisState[ct.y]?.[ct.x] ?? VIS_HIDDEN
+    this.crackSprite.setVisible(crackVis !== VIS_HIDDEN)
+
+    for (const ns of this.npcSprites) {
+      const v = this.tileVisState[ns.tileY]?.[ns.tileX] ?? VIS_HIDDEN
+      const a = ALPHA_FOR_STATE[v]
+      ns.sprite.setAlpha(a)
+      ns.label.setAlpha(a)
+    }
+  }
+
+  private redrawMiniMapTiles() {
+    const { width: mw, height: mh, layout } = this.mapDef
+    const g = this.miniMapTiles
+    const cell = this.miniMapCell
+    const ox = this.miniMapX + 4
+    const oy = this.miniMapY + 4
+
+    g.clear()
+
+    for (let y = 0; y < mh; y++) {
+      for (let x = 0; x < mw; x++) {
+        const state = this.tileVisState[y][x]
+        if (state === VIS_HIDDEN) continue
+
+        const ch = layout[y]?.[x] || '.'
+        let color: number
+        if (ch === 'W') color = 0x3a3f4d
+        else if (ch === 'D' || ch === 'L') color = 0xf4d06f
+        else color = 0xa89377
+
+        const alpha = state === VIS_CURRENT ? 1 : 0.45
+        g.fillStyle(color, alpha)
+        g.fillRect(ox + x * cell, oy + y * cell, cell, cell)
+      }
+    }
+
+    const ct = this.mapDef.crackTile
+    if (this.tileVisState[ct.y]?.[ct.x] !== VIS_HIDDEN) {
+      g.fillStyle(0xb18bd6, 1)
+      g.fillRect(ox + ct.x * cell - 1, oy + ct.y * cell - 1, cell + 2, cell + 2)
+    }
+
+    this.updateMiniMapPlayer()
+  }
+
+  private updateMiniMapPlayer() {
+    const cell = this.miniMapCell
+    const ox = this.miniMapX + 4
+    const oy = this.miniMapY + 4
+    this.miniMapPlayer.clear()
+    this.miniMapPlayer.fillStyle(0x7ee2c1, 1)
+    this.miniMapPlayer.fillRect(
+      ox + this.playerTileX * cell - 1,
+      oy + this.playerTileY * cell - 1,
+      cell + 2,
+      cell + 2
+    )
   }
 
   private checkNpcProximity() {
@@ -263,6 +476,8 @@ export class HospitalScene extends Phaser.Scene {
     let closestDist = Infinity
 
     for (const ns of this.npcSprites) {
+      const v = this.tileVisState[ns.tileY]?.[ns.tileX] ?? VIS_HIDDEN
+      if (v !== VIS_CURRENT) continue
       const dist = Phaser.Math.Distance.Between(
         this.player.x, this.player.y,
         ns.sprite.x, ns.sprite.y
@@ -282,12 +497,13 @@ export class HospitalScene extends Phaser.Scene {
       this.interactPrompt.setVisible(false)
 
       const ct = this.mapDef.crackTile
+      const crackVis = this.tileVisState[ct.y]?.[ct.x] ?? VIS_HIDDEN
       const crackPx = ct.x * TILE + TILE / 2
       const crackPy = ct.y * TILE + TILE / 2
       const crackDist = Phaser.Math.Distance.Between(
         this.player.x, this.player.y, crackPx, crackPy
       )
-      this.crackPrompt.setVisible(crackDist < TILE * 2)
+      this.crackPrompt.setVisible(crackVis === VIS_CURRENT && crackDist < TILE * 2)
     }
   }
 

@@ -47,40 +47,43 @@ src/
 ### Phase 1: Core Engine (do first)
 Strip the action-RPG code. Lay the foundation for turn-based gameplay.
 
-- [ ] **1.1** Rewrite `types.ts` for turn-based RPG (remove action-RPG fields)
-- [ ] **1.2** Rewrite `BootScene.ts` — generate sprites for:
+- [x] **1.1** Rewrite `types.ts` for turn-based RPG (remove action-RPG fields)
+- [x] **1.2** Rewrite `BootScene.ts` — generate sprites for:
   - Player character (analyst)
   - NPCs (11 characters, distinct looks)
   - Hospital tiles (floor, walls, doors, desks, medical equipment)
   - Waiting Room tiles (surreal versions — cracked floors, floating papers, infinite chairs)
   - UI elements (text boxes, menu frames, bars)
-- [ ] **1.3** Build `IntroScene.ts` — the cutscene (this is the hook, build it well)
+- [x] **1.3** Build `IntroScene.ts` — the cutscene (this is the hook, build it well)
   - Black screen typewriter text ($215 vs $6)
   - Pixel art hospital pan
   - Your desk, the vanishing claim
   - The crack, the fall, floating documents
   - The Waiting Room reveal
   - Title stamp
-- [ ] **1.4** Rewrite `TitleScene.ts` — NEW GAME / CODEX / SETTINGS
+- [x] **1.4** Rewrite `TitleScene.ts` — NEW GAME / CODEX / SETTINGS
   - No class selection yet (save for later — start as generic analyst)
 
 ### Phase 2: Hospital Overworld
 The normal layer. Walk around, enter rooms, talk to NPCs.
 
-- [ ] **2.1** Build `HospitalScene.ts` — top-down tilemap
+- [x] **2.1** Build `HospitalScene.ts` — top-down tilemap
   - Hospital layout: lobby, registration, clinical wing, coding office,
     billing, clearinghouse room, payer relations, patient services,
     compliance, CFO office, break room
   - WASD/arrow movement, collision with walls/furniture
   - Door triggers to enter rooms
   - NPC sprites standing in their departments
-- [ ] **2.2** Build `DialogueScene.ts` — conversation overlay
+- [x] **2.1a** Room-based fog of war (flood-fill rooms via wall/door barriers;
+  current room full alpha, visited rooms dim, unvisited hidden) + corner
+  mini-map overlay showing walls/doors/crack/player. (2026-05-04)
+- [x] **2.2** Build `DialogueScene.ts` — conversation overlay
   - Text box at bottom of screen (RPG style)
   - Character portrait + name
   - Typewriter text with advance on click/space
   - Choice prompts (2-4 options)
   - Dialogue branching based on choices
-- [ ] **2.3** Create `npcs.ts` — all 11 NPCs with:
+- [x] **2.3** Create `npcs.ts` — all 11 NPCs with:
   - Name, department, sprite key, portrait key
   - Dialogue trees per level (they say different things as story progresses)
   - Relationship level (affects dialogue options available)
@@ -88,7 +91,7 @@ The normal layer. Walk around, enter rooms, talk to NPCs.
 ### Phase 3: Turn-Based Battle System
 The core gameplay when encountering denial scenarios.
 
-- [ ] **3.1** Build `BattleScene.ts` — turn-based encounter
+- [x] **3.1** Build `BattleScene.ts` — turn-based encounter
   - Player side: HP bar, available tools/actions, status effects
   - Enemy side: the "problem" (a denial scenario, not a CARC code directly)
     - Shows surface symptoms, player must diagnose
@@ -96,11 +99,11 @@ The core gameplay when encountering denial scenarios.
   - Effectiveness: right tool for right root cause = bonus damage
   - Win: resolve the scenario → codex entry + CARC code reveal + watchpoint
   - Lose: the denial sticks → consequences carry forward
-- [ ] **3.2** Rewrite `abilities.ts` → player tools for turn-based
+- [x] **3.2** Rewrite `abilities.ts` → player tools for turn-based
   - Remove projectile/speed fields
   - Add: accuracy, turn cost, description of what it does narratively
   - Each tool has a "teaches" string shown on use
-- [ ] **3.3** Rewrite `enemies.ts` → encounter scenarios
+- [x] **3.3** Rewrite `enemies.ts` → encounter scenarios
   - Each is a SITUATION, not a monster
   - Surface presentation (what it looks like)
   - Root cause (what actually went wrong)
@@ -111,14 +114,14 @@ The core gameplay when encountering denial scenarios.
 ### Phase 4: Form Puzzles
 Interactive CMS-1500 and UB-04 screens.
 
-- [ ] **4.1** Build `FormScene.ts` — claim form puzzle
+- [x] **4.1** Build `FormScene.ts` — claim form puzzle
   - Render a simplified but recognizable CMS-1500 or UB-04
   - Some fields pre-filled, some blank, some wrong
   - Player fills in or corrects fields
   - Validation: checks against the patient case
   - Wrong answers highlighted with explanation
   - Completed form = claim submitted (triggers battle or progression)
-- [ ] **4.2** Create `cases.ts` — patient case scenarios
+- [~] **4.2** Create `cases.ts` — patient case scenarios (2 of ~30 done)
   - Each level has 2-3 cases
   - Case = patient demographics + diagnosis + procedure + insurance info
   - Maps to specific codes (ICD-10, CPT, revenue codes, modifiers)
@@ -127,7 +130,7 @@ Interactive CMS-1500 and UB-04 screens.
 ### Phase 5: The Waiting Room
 The surreal underworld layer.
 
-- [ ] **5.1** Build `WaitingRoomScene.ts` — surreal overworld
+- [x] **5.1** Build `WaitingRoomScene.ts` — surreal overworld
   - Same top-down movement as hospital, but different tileset
   - Surreal environment per level:
     - L1: A reception desk with an infinite queue number
@@ -150,7 +153,7 @@ The surreal underworld layer.
 ### Phase 6: Codex & Progression
 The knowledge collection system.
 
-- [ ] **6.1** Build `CodexScene.ts` — player's reference book
+- [x] **6.1** Build `CodexScene.ts` — player's reference book
   - Categories: Codes, Forms, Transactions, Concepts, Stats
   - Each entry: name, category, plain-English explanation, where encountered
   - Unlocked by encountering in gameplay
@@ -160,7 +163,7 @@ The knowledge collection system.
   - Codex completion percentage
   - Total score across all levels
   - Decisions tracked for Level 10 audit
-- [ ] **6.3** Build `save.ts` — localStorage persistence
+- [x] **6.3** Build `save.ts` — localStorage persistence (now `state.ts`)
   - Save: current level, codex entries, decisions, scores
   - Load on startup
   - Reset option
@@ -168,7 +171,7 @@ The knowledge collection system.
 ### Phase 7: Content Population
 Fill in all 10 levels with real content.
 
-- [ ] **7.1** Level 1: Orientation (CMS-1500, CPT, ICD-10-CM basics)
+- [~] **7.1** Level 1: Orientation (CMS-1500, CPT, ICD-10-CM basics) — vertical slice playable; full encounter set TBD
 - [ ] **7.2** Level 2: Registration (eligibility, 270/271, demographics)
 - [ ] **7.3** Level 3: Prior Auth (278, medical necessity)
 - [ ] **7.4** Level 4: Documentation (CDI, ICD-10-CM specificity)

@@ -30,6 +30,8 @@ puzzles, game state, Waiting Room, Codex system, and Level 1 vertical slice.
 - [x] TitleScene (menu with floating papers)
 - [x] BattleScene (turn-based combat, effectiveness system, CARC reveal on victory)
 - [x] HospitalScene (data-driven tile map, NPC placement, camera follow, HUD)
+- [x] Room-based fog of war (flood-fill room detection, current room lit, visited rooms dim, unvisited hidden)
+- [x] Mini-map overlay (top-right corner, walls/doors/crack/player, reflects fog state)
 - [x] DialogueScene (branching dialogue, effects, triggers battle/form)
 - [x] FormScene (CMS-1500 / UB-04 puzzles — find and correct errors)
 - [x] WaitingRoomScene (surreal overworld layer)
