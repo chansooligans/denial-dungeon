@@ -128,60 +128,59 @@ export class IntroScene extends Phaser.Scene {
   private textObjects: Phaser.GameObjects.Text[] = []
   private sceneContainer!: Phaser.GameObjects.Container
   private skipText!: Phaser.GameObjects.Text
-  private advancing = false
   private pendingTimer?: Phaser.Time.TimerEvent
+  private done = false
 
   constructor() {
     super('Intro')
   }
 
   create() {
+    this.currentBeat = 0
+    this.done = false
+    this.textObjects = []
+    this.pendingTimer = undefined
+
     const { width, height } = this.scale
 
     this.sceneContainer = this.add.container(0, 0)
 
-    // Skip hint
     this.skipText = this.add.text(width - 20, height - 20, '[SPACE / CLICK to advance · ESC to skip]', {
       fontSize: '10px', fontFamily: 'monospace', color: '#3a4a5d',
     }).setOrigin(1, 1).setDepth(100)
 
-    // Input
     this.input.keyboard!.on('keydown-SPACE', () => this.advance())
-    this.input.keyboard!.on('keydown-ESCAPE', () => this.skipToTitle())
+    this.input.keyboard!.on('keydown-ESC', () => this.skipToTitle())
     this.input.on('pointerdown', () => this.advance())
 
     this.playBeat()
   }
 
   private advance() {
-    if (this.advancing) return
-    this.advancing = true
+    if (this.done) return
 
-    // Cancel any pending wait timer so it doesn't double-fire
     if (this.pendingTimer) {
       this.pendingTimer.remove(false)
       this.pendingTimer = undefined
     }
 
-    const beat = BEATS[this.currentBeat]
-    if (!beat) {
-      this.skipToTitle()
-      return
-    }
-
-    if (beat.type === 'wait') {
+    // Skip forward to the next wait or terminal beat
+    while (this.currentBeat < BEATS.length) {
+      const beat = BEATS[this.currentBeat]
+      if (beat.type === 'wait') {
+        this.currentBeat++
+        break
+      }
+      if (beat.type === 'title') break
       this.currentBeat++
-      this.advancing = false
-      this.playBeat()
-      return
     }
 
-    this.currentBeat++
-    this.advancing = false
     this.playBeat()
   }
 
   private playBeat() {
+    if (this.done) return
+
     if (this.currentBeat >= BEATS.length) {
       this.skipToTitle()
       return
@@ -199,7 +198,7 @@ export class IntroScene extends Phaser.Scene {
       case 'wait':
         this.pendingTimer = this.time.delayedCall(beat.duration!, () => {
           this.pendingTimer = undefined
-          if (this.currentBeat < BEATS.length) {
+          if (!this.done && this.currentBeat < BEATS.length) {
             this.currentBeat++
             this.playBeat()
           }
@@ -213,16 +212,13 @@ export class IntroScene extends Phaser.Scene {
         break
 
       case 'title':
-        this.showTitle()
+        this.skipToTitle()
         break
     }
   }
 
   private showText(lines: string[], color: string) {
-    // Fade out old text
-    for (const t of this.textObjects) {
-      this.tweens.add({ targets: t, alpha: 0, duration: 400, onComplete: () => t.destroy() })
-    }
+    for (const t of this.textObjects) t.destroy()
     this.textObjects = []
 
     const { width, height } = this.scale
@@ -482,57 +478,9 @@ export class IntroScene extends Phaser.Scene {
     }
   }
 
-  private showTitle() {
-    // Clear everything
-    for (const t of this.textObjects) t.destroy()
-    this.textObjects = []
-    this.sceneContainer.removeAll(true)
-    this.skipText.destroy()
-
-    const { width, height } = this.scale
-
-    // Dark bg
-    this.add.rectangle(width / 2, height / 2, width, height, 0x0e1116)
-
-    // DENIED stamp effect for title
-    const title = this.add.text(width / 2, height / 2 - 30, 'DENIAL DUNGEON', {
-      fontSize: '36px', fontFamily: 'monospace', color: '#ef5b7b',
-      fontStyle: 'bold',
-    }).setOrigin(0.5).setAlpha(0).setScale(1.5)
-
-    this.tweens.add({
-      targets: title,
-      alpha: 1, scale: 1,
-      duration: 400, ease: 'Back.easeOut',
-    })
-
-    const subtitle = this.add.text(width / 2, height / 2 + 15, 'a revenue cycle RPG', {
-      fontSize: '14px', fontFamily: 'monospace', color: '#8b95a5',
-    }).setOrigin(0.5).setAlpha(0)
-
-    this.tweens.add({ targets: subtitle, alpha: 1, duration: 800, delay: 500 })
-
-    // Continue prompt
-    const continueText = this.add.text(width / 2, height / 2 + 80, '[ press any key ]', {
-      fontSize: '12px', fontFamily: 'monospace', color: '#3a4a5d',
-    }).setOrigin(0.5).setAlpha(0)
-
-    this.tweens.add({
-      targets: continueText, alpha: 1, duration: 500, delay: 1500,
-    })
-    this.tweens.add({
-      targets: continueText, alpha: 0.3, duration: 1000,
-      yoyo: true, repeat: -1, delay: 2000,
-    })
-
-    // Any key goes to title
-    this.time.delayedCall(1500, () => {
-      this.input.keyboard!.once('keydown', () => this.scene.start('Title'))
-      this.input.once('pointerdown', () => this.scene.start('Title'))
-    })
-  }
-
   private skipToTitle() {
+    if (this.done) return
+    this.done = true
     if (this.pendingTimer) {
       this.pendingTimer.remove(false)
       this.pendingTimer = undefined
