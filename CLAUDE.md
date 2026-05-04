@@ -17,52 +17,74 @@ real people (not monsters), form puzzles (CMS-1500, UB-04), and a growing
 codex of billing knowledge.
 
 ## Current State
-**Phase 1 of 8 in progress** — Core engine rebuild from action-RPG to
-turn-based RPG. See `reference/journal/2026-05-04-build-plan.md` for the
-full build plan with checkboxes.
+**Phases 1-4 + 7.1 complete** — Core engine, battle system, hospital
+overworld, dialogue, form puzzles, game state, and Level 1 vertical slice.
 
 ### What's Done
 - [x] Project scaffold (Phaser 3, Vite, TypeScript)
 - [x] Game design finalized (V3: "The Waiting Room")
-- [x] types.ts rewritten for turn-based RPG
-- [x] BootScene rewritten (procedural sprites for NPCs, hospital, Waiting Room)
-- [ ] IntroScene (cutscene — the $215 hook)
-- [ ] TitleScene rewrite
-- [ ] Hospital overworld
-- [ ] Dialogue system
-- [ ] Turn-based battle system
-- [ ] Form puzzle system (CMS-1500, UB-04)
-- [ ] Codex system
-- [ ] Level 1 content
-- [ ] Levels 2-10
+- [x] types.ts for turn-based RPG
+- [x] BootScene (procedural sprites for NPCs, hospital, Waiting Room, UI, documents)
+- [x] IntroScene (cutscene — the $215 hook, 8 beats)
+- [x] TitleScene (menu with floating papers)
+- [x] BattleScene (turn-based combat, effectiveness system, CARC reveal on victory)
+- [x] HospitalScene (tile-based overworld, NPC placement, camera follow, HUD)
+- [x] DialogueScene (branching dialogue, effects, triggers battle/form)
+- [x] FormScene (CMS-1500 / UB-04 puzzles — find and correct errors)
+- [x] Game state manager (save/load via localStorage)
+- [x] 10 level definitions with titles, concepts, NPCs
+- [x] 7 NPCs with dialogue trees
+- [x] 11 encounters with real CARC codes
+- [x] 12 player tools with faction effectiveness
+- [x] 2 patient cases with real billing errors
 
-### What's NOT done yet
-The current code in `src/scenes/GameScene.ts`, `HUDScene.ts`, `BoonScene.ts`,
-and `SummaryScene.ts` is from the OLD action-RPG prototype (Hades-style).
-It still runs but will be replaced. Don't build on it.
+### What's NOT Done
+- [ ] The Waiting Room overworld (surreal layer per level)
+- [ ] Codex system (CodexScene + codex entries content)
+- [ ] Levels 2-10 content (encounters, cases, dialogues per level)
+- [ ] Level progression (complete level → advance)
+- [ ] Sound design
+- [ ] Polish (transitions, particles, screen shake refinement)
 
 ## Key Design Docs
 - `reference/journal/2026-05-03-v3-the-waiting-room.md` — Full game design
 - `reference/journal/2026-05-04-build-plan.md` — Step-by-step build plan
-- `reference/journal/README.md` — Index of all design entries
+- `reference/aesthetic-inspirations.md` — Mood board (Brazil, Spirited Away, Twin Peaks)
 
 ## Architecture
 ```
 src/
-├── main.ts              # Phaser config
+├── main.ts              # Phaser config, scene registry
 ├── types.ts             # All game types
-├── content/             # Game data (enemies, abilities, NPCs, cases, codex)
-├── scenes/              # Phaser scenes
-├── systems/             # Game logic (dialogue, battle, codex, save)
-└── ui/                  # Reusable UI components
+├── state.ts             # Game state manager (save/load)
+├── content/
+│   ├── abilities.ts     # 12 player tools (TOOLS)
+│   ├── enemies.ts       # 11 encounters (ENCOUNTERS)
+│   ├── npcs.ts          # 7 NPCs
+│   ├── dialogue.ts      # Branching dialogue trees
+│   ├── cases.ts         # Patient cases for form puzzles
+│   └── levels.ts        # 10 level definitions
+├── scenes/
+│   ├── BootScene.ts     # Procedural sprite generation
+│   ├── IntroScene.ts    # Opening cutscene
+│   ├── TitleScene.ts    # Main menu
+│   ├── HospitalScene.ts # Top-down overworld
+│   ├── DialogueScene.ts # NPC dialogue overlay
+│   ├── BattleScene.ts   # Turn-based combat
+│   └── FormScene.ts     # Claim form puzzles
 ```
 
 ## Dev Commands
 ```bash
 npm run dev              # Start dev server (port 5173)
 npm run build            # Production build
-npx tsc -b               # Type-check only
+npx tsc --noEmit         # Type-check only
 ```
+
+## Game Flow
+Title → Hospital (walk around, talk to NPCs) → Dialogue (branching choices)
+→ Battle (turn-based, use tools, effectiveness matters) → Victory (CARC reveal)
+→ back to Hospital. Form puzzles triggered via dialogue choices.
 
 ## Content Pillars
 The game teaches: CMS-1500 / UB-04 claim forms, ICD-10-CM/PCS codes,
