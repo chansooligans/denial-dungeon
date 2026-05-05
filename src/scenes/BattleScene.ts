@@ -99,6 +99,17 @@ export class BattleScene extends Phaser.Scene {
       turnCount: 0,
       returnScene: data.returnScene ?? 'Hospital',
     }
+
+    // Codex-on-sight: first time the player encounters an obstacle
+    // archetype, unlock its codex entry so they can read about the
+    // mechanic between fights. Defeat-time unlocks (in finishBattle)
+    // remain in place as a backstop. Tracks via state.obstaclesSeen.
+    if (!gameState.obstaclesSeen.includes(encounter.id)) {
+      gameState.obstaclesSeen.push(encounter.id)
+      const sightCodexId = encounter.codexOnSight ?? encounter.id
+      unlockCodex(sightCodexId)
+      saveGame()
+    }
     this.formBridged = formBridged
     this.encounterHpRatio = 1
     this.playerHpRatio = 1
