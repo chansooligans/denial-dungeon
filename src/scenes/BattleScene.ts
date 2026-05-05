@@ -3,10 +3,15 @@ import { TOOLS } from '../content/abilities'
 import { ENCOUNTERS } from '../content/enemies'
 import { getState, updateResources, unlockCodex, saveGame } from '../state'
 import type { Encounter, Tool } from '../types'
-import { EFFECTIVENESS_BONUS, FACTION_COLOR } from '../types'
+import { FACTION_COLOR } from '../types'
+import { createMechanic } from '../battle'
+import type { MechanicController } from '../battle'
 
 interface BattleState {
   encounter: Encounter
+  // Cached snapshot of the mechanic's HP for the on-screen text widget.
+  // The mechanic controller owns the source of truth; this is just for
+  // tween animations that need a previous-value to interpolate from.
   encounterHp: number
   playerHp: number
   playerMaxHp: number
@@ -26,7 +31,9 @@ const PORTRAIT_KEY: Record<string, string> = {
 
 export class BattleScene extends Phaser.Scene {
   private state!: BattleState
+  private mechanic!: MechanicController
   private encounterNameText!: Phaser.GameObjects.Text
+  private encounterDescriptionText?: Phaser.GameObjects.Text
   private encounterHpBar!: Phaser.GameObjects.Graphics
   private encounterHpText!: Phaser.GameObjects.Text
   private playerHpBar!: Phaser.GameObjects.Graphics
@@ -35,6 +42,8 @@ export class BattleScene extends Phaser.Scene {
   private toolButtons: Phaser.GameObjects.Container[] = []
   private portrait!: Phaser.GameObjects.Image
   private turnIndicator!: Phaser.GameObjects.Text
+  private statusText?: Phaser.GameObjects.Text
+  private panelTextWidget?: Phaser.GameObjects.Text
   private encounterHpRatio = 1
   private playerHpRatio = 1
 
@@ -49,9 +58,12 @@ export class BattleScene extends Phaser.Scene {
 
     const gameState = getState()
 
+    this.mechanic = createMechanic(encounter)
+    const initialHp = this.mechanic.hpDisplay()
+
     this.state = {
       encounter,
-      encounterHp: encounter.hp,
+      encounterHp: initialHp.current,
       playerHp: data.playerHp ?? gameState.resources.hp,
       playerMaxHp: data.playerMaxHp ?? gameState.resources.maxHp,
       playerTools: data.playerTools ?? gameState.tools,
@@ -78,6 +90,9 @@ export class BattleScene extends Phaser.Scene {
 
     this.showMessage(this.state.encounter.surfaceSymptom)
     this.setTurnIndicator()
+    this.refreshStatus()
+    this.refreshPanel()
+    this.refreshActionButtons()
   }
 
   private buildEncounterPanel(width: number) {
@@ -112,11 +127,15 @@ export class BattleScene extends Phaser.Scene {
       fontSize: '10px', fontFamily: 'monospace', color: '#ffffff',
     }).setOrigin(0.5)
 
-    // Description
-    this.add.text(width / 2, barY + 30, enc.description, {
+    // Description — hidden if a mechanic provides a persistent panel
+    // (the panel content carries the relevant flavor + state in that case).
+    this.encounterDescriptionText = this.add.text(width / 2, barY + 30, enc.description, {
       fontSize: '11px', fontFamily: 'monospace', color: '#8b95a5',
       wordWrap: { width: 500 }, align: 'center',
     }).setOrigin(0.5, 0)
+    if (this.mechanic.panelText()) {
+      this.encounterDescriptionText.setVisible(false)
+    }
   }
 
   private buildPlayerPanel(width: number, height: number) {
@@ -148,6 +167,31 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private buildToolMenu(width: number, height: number) {
+    const customActions = this.mechanic.getActions()
+    if (customActions) {
+      this.buildCustomActionMenu(width, height, customActions)
+    } else {
+      this.buildDefaultToolMenu(width, height)
+    }
+
+    // Flee button (always available)
+    const fleeX = width - 80
+    const fleeY = height - 30
+    const fleeBtn = this.add.text(fleeX, fleeY, '[ FLEE ]', {
+      fontSize: '11px', fontFamily: 'monospace', color: '#5a6a7a',
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true })
+    fleeBtn.on('pointerover', () => fleeBtn.setColor('#f4d06f'))
+    fleeBtn.on('pointerout', () => fleeBtn.setColor('#5a6a7a'))
+    fleeBtn.on('pointerdown', () => this.tryFlee())
+    const fleeContainer = this.add.container(0, 0, [fleeBtn])
+    this.toolButtons.push(fleeContainer)
+
+    this.input.keyboard!.on('keydown-ESC', () => {
+      if (this.state.turn === 'player') this.tryFlee()
+    })
+  }
+
+  private buildDefaultToolMenu(width: number, height: number) {
     const tools = this.state.playerTools.map(id => TOOLS[id]).filter(Boolean)
     const cols = Math.min(tools.length, 4)
     const rows = Math.ceil(tools.length / cols)
@@ -184,28 +228,81 @@ export class BattleScene extends Phaser.Scene {
       this.toolButtons.push(container)
     })
 
-    // Flee button
-    const fleeX = width - 80
-    const fleeY = height - 30
-    const fleeBtn = this.add.text(fleeX, fleeY, '[ FLEE ]', {
-      fontSize: '11px', fontFamily: 'monospace', color: '#5a6a7a',
-    }).setOrigin(0.5).setInteractive({ useHandCursor: true })
-    fleeBtn.on('pointerover', () => fleeBtn.setColor('#f4d06f'))
-    fleeBtn.on('pointerout', () => fleeBtn.setColor('#5a6a7a'))
-    fleeBtn.on('pointerdown', () => this.tryFlee())
-    const fleeContainer = this.add.container(0, 0, [fleeBtn])
-    this.toolButtons.push(fleeContainer)
-
-    // Keyboard shortcuts
     const keys = this.input.keyboard!
     tools.forEach((tool, i) => {
       keys.on(`keydown-${i + 1}`, () => {
         if (this.state.turn === 'player') this.useToolAction(tool)
       })
     })
-    keys.on('keydown-ESC', () => {
-      if (this.state.turn === 'player') this.tryFlee()
+  }
+
+  private buildCustomActionMenu(
+    width: number, height: number,
+    actions: import('../battle/types').MechanicAction[]
+  ) {
+    const cols = Math.min(actions.length, 4)
+    const rows = Math.ceil(actions.length / cols)
+    const btnW = 170
+    const btnH = 40
+    const gap = 8
+    const startX = width / 2 - ((cols - 1) * (btnW + gap)) / 2
+    const startY = height - 20 - rows * (btnH + gap)
+
+    actions.forEach((action, i) => {
+      const col = i % cols
+      const row = Math.floor(i / cols)
+      const x = startX + col * (btnW + gap)
+      const y = startY + row * (btnH + gap)
+      const container = this.add.container(x, y)
+
+      const bg = this.add.image(0, 0, 'ui_action_btn').setDisplaySize(btnW, btnH)
+        .setInteractive({ useHandCursor: true })
+      const numLabel = this.add.text(-btnW / 2 + 10, -8, `${i + 1}`, {
+        fontSize: '9px', fontFamily: 'monospace', color: '#5a6a7a',
+      }).setOrigin(0, 0.5)
+      const label = this.add.text(4, -8, action.label, {
+        fontSize: '12px', fontFamily: 'monospace', color: '#b18bd6', fontStyle: 'bold',
+      }).setOrigin(0.5)
+      const sub = this.add.text(4, 9, action.sub ?? '', {
+        fontSize: '8px', fontFamily: 'monospace', color: '#7a8898',
+      }).setOrigin(0.5)
+      container.add([bg, numLabel, label, sub])
+      container.setData('actionId', action.id)
+      container.setData('label', label)
+
+      bg.on('pointerover', () => { bg.setTexture('ui_action_btn_hover'); label.setColor('#ffffff') })
+      bg.on('pointerout', () => { bg.setTexture('ui_action_btn'); label.setColor('#b18bd6') })
+      bg.on('pointerdown', () => this.useMechanicAction(action.id))
+
+      this.toolButtons.push(container)
     })
+
+    const keys = this.input.keyboard!
+    actions.forEach((action, i) => {
+      keys.on(`keydown-${i + 1}`, () => {
+        if (this.state.turn === 'player') this.useMechanicAction(action.id)
+      })
+    })
+  }
+
+  /** Refresh disabled-state styling on custom action buttons each turn. */
+  private refreshActionButtons() {
+    const actions = this.mechanic.getActions()
+    if (!actions) return
+    for (const container of this.toolButtons) {
+      const id = container.getData('actionId') as string | undefined
+      if (!id) continue
+      const matching = actions.find(a => a.id === id)
+      if (!matching) continue
+      const label = container.getData('label') as Phaser.GameObjects.Text | undefined
+      if (matching.disabled) {
+        container.setAlpha(0.4)
+        label?.setColor('#5a4a6a')
+      } else {
+        container.setAlpha(1)
+        label?.setColor('#b18bd6')
+      }
+    }
   }
 
   private tryFlee() {
@@ -223,49 +320,70 @@ export class BattleScene extends Phaser.Scene {
     }
   }
 
+  /**
+   * Used by mechanics that ship custom action buttons (Investigation,
+   * Timed-with-special-actions, etc.). Same flow as useToolAction but
+   * skips the Tool lookup since actions aren't tied to a tool record.
+   */
+  private useMechanicAction(actionId: string) {
+    if (this.state.turn !== 'player') return
+    this.state.turn = 'animating'
+    this.setToolButtonsVisible(false)
+
+    const result = this.mechanic.applyPlayerTurn(actionId)
+    this.applyTurnResult(result, actionId)
+  }
+
   private useToolAction(tool: Tool) {
     if (this.state.turn !== 'player') return
     this.state.turn = 'animating'
     this.setToolButtonsVisible(false)
 
-    const roll = Phaser.Math.Between(1, 100)
-    if (roll > tool.accuracy) {
-      this.showMessage(`${tool.name} missed!`)
+    const result = this.mechanic.applyPlayerTurn(tool.id)
+    this.applyTurnResult(result, tool.name)
+  }
+
+  /**
+   * Common post-turn handling for both tool and custom-action paths.
+   * Updates HP, plays effects, checks win/lose, schedules enemy turn.
+   */
+  private applyTurnResult(result: import('../battle/types').PlayerTurnResult, actionLabel: string) {
+    if (result.missed) {
+      this.showMessage(result.message ?? `${actionLabel} missed!`)
       this.time.delayedCall(1000, () => this.enemyTurn())
       return
     }
 
-    let damage = tool.damage
-    const isEffective = tool.effectiveFactions.includes(this.state.encounter.rootCause)
-    if (isEffective) {
-      damage = Math.round(damage * EFFECTIVENESS_BONUS)
+    // Sync local snapshot from the controller (source of truth).
+    const { current, max } = this.mechanic.hpDisplay()
+    this.state.encounterHp = current
+    this.animateEncounterHp()
+    this.encounterHpText.setText(`${current} / ${max}`)
+    this.refreshStatus()
+    this.refreshPanel()
+    this.refreshActionButtons()
+
+    if (result.damage > 0) {
+      // Only flash/shake when there's actual HP damage (Investigation
+      // results return damage 0 even on success).
+      this.tweens.add({
+        targets: this.portrait,
+        alpha: 0.3, duration: 80, yoyo: true, repeat: 2,
+      })
+      this.spawnDamageNumber(this.portrait.x, this.portrait.y - 40, result.damage, !!result.super)
+      const intensity = Math.min(result.damage / max, 0.3)
+      this.cameras.main.flash(80, 255, 255, 255, false, undefined, intensity)
     }
 
-    this.state.encounterHp = Math.max(0, this.state.encounterHp - damage)
-    this.animateEncounterHp()
-    this.encounterHpText.setText(`${this.state.encounterHp} / ${this.state.encounter.hp}`)
+    this.showMessage(result.message ?? `${actionLabel}.`)
 
-    // Portrait hit flash
-    this.tweens.add({
-      targets: this.portrait,
-      alpha: 0.3,
-      duration: 80,
-      yoyo: true,
-      repeat: 2,
-    })
-
-    // Floating damage number
-    this.spawnDamageNumber(this.portrait.x, this.portrait.y - 40, damage, isEffective)
-
-    // Screen flash scaled to damage
-    const intensity = Math.min(damage / this.state.encounter.hp, 0.3)
-    this.cameras.main.flash(80, 255, 255, 255, false, undefined, intensity)
-
-    let msg = `${tool.name} deals ${damage} damage!`
-    if (isEffective) msg += '\nSuper effective!'
-    this.showMessage(msg)
-
-    if (this.state.encounterHp <= 0) {
+    // Mechanic-driven loss (Investigation: bad Decide / out-of-time)
+    // takes precedence over a normal victory or enemy turn.
+    if (this.mechanic.isLost()) {
+      this.time.delayedCall(1200, () => this.defeat())
+      return
+    }
+    if (result.ends || this.mechanic.isWon()) {
       this.time.delayedCall(1200, () => this.victory())
       return
     }
@@ -275,23 +393,26 @@ export class BattleScene extends Phaser.Scene {
 
   private enemyTurn() {
     this.state.turn = 'animating'
-    const enc = this.state.encounter
-    const damage = enc.attackDamage + Phaser.Math.Between(-2, 2)
+    const result = this.mechanic.applyEnemyTurn()
+    const damage = result.damage
 
-    this.state.playerHp = Math.max(0, this.state.playerHp - damage)
-    this.animatePlayerHp()
-    this.playerHpText.setText(`${this.state.playerHp} / ${this.state.playerMaxHp}`)
+    if (damage > 0) {
+      this.state.playerHp = Math.max(0, this.state.playerHp - damage)
+      this.animatePlayerHp()
+      this.playerHpText.setText(`${this.state.playerHp} / ${this.state.playerMaxHp}`)
+    }
+    this.refreshStatus()
+    this.refreshPanel()
 
-    this.showMessage(`The claim fights back! -${damage} HP`)
+    if (result.message) this.showMessage(result.message)
 
-    // Damage number on player side
-    this.spawnDamageNumber(90, this.scale.height - 160, damage, false, 0xef5b7b)
+    if (damage > 0) {
+      this.spawnDamageNumber(90, this.scale.height - 160, damage, false, 0xef5b7b)
+      const shakeIntensity = 0.003 + (damage / this.state.playerMaxHp) * 0.01
+      this.cameras.main.shake(250, shakeIntensity)
+    }
 
-    // Shake scaled to damage
-    const shakeIntensity = 0.003 + (damage / this.state.playerMaxHp) * 0.01
-    this.cameras.main.shake(250, shakeIntensity)
-
-    if (this.state.playerHp <= 0) {
+    if (this.mechanic.isLost() || this.state.playerHp <= 0) {
       this.time.delayedCall(1200, () => this.defeat())
       return
     }
@@ -301,8 +422,58 @@ export class BattleScene extends Phaser.Scene {
       this.state.turnCount++
       this.setToolButtonsVisible(true)
       this.setTurnIndicator()
+      this.refreshActionButtons()
       this.showMessage('Choose your action.')
     })
+  }
+
+  /**
+   * Show / refresh the persistent text panel — used by Investigation to
+   * render the case file. Hides the central messageText to avoid overlap
+   * since the panel is wide and tall.
+   */
+  private refreshPanel() {
+    const text = this.mechanic.panelText()
+    if (!text) {
+      this.panelTextWidget?.setVisible(false)
+      return
+    }
+    // Move/hide the centered messageText since the panel takes its space.
+    this.messageText.setVisible(false)
+    if (!this.panelTextWidget) {
+      const { width, height } = this.scale
+      this.panelTextWidget = this.add.text(width / 2, 195, text, {
+        fontSize: '11px',
+        fontFamily: 'monospace',
+        color: '#d0d8e0',
+        backgroundColor: '#0e1116ee',
+        padding: { x: 12, y: 8 },
+        align: 'left',
+        wordWrap: { width: width - 80 },
+      }).setOrigin(0.5, 0).setDepth(40)
+      // Constrain height so it never reaches the action buttons.
+      this.panelTextWidget.setMaxLines(Math.floor((height - 380) / 14))
+    } else {
+      this.panelTextWidget.setText(text).setVisible(true)
+    }
+  }
+
+  /** Show / refresh the optional status line for mechanics that have one. */
+  private refreshStatus() {
+    const line = this.mechanic.statusLine()
+    if (!line) {
+      this.statusText?.setVisible(false)
+      return
+    }
+    if (!this.statusText) {
+      const { width } = this.scale
+      this.statusText = this.add.text(width / 2, 10, line, {
+        fontSize: '11px', fontFamily: 'monospace', color: '#b18bd6',
+        backgroundColor: '#0e1116cc', padding: { x: 6, y: 3 },
+      }).setOrigin(0.5, 0).setDepth(40)
+    } else {
+      this.statusText.setText(line).setVisible(true)
+    }
   }
 
   private spawnDamageNumber(x: number, y: number, damage: number, isSuper: boolean, color?: number) {
@@ -356,14 +527,24 @@ export class BattleScene extends Phaser.Scene {
       }).setOrigin(0.5).setAlpha(0)
       this.tweens.add({ targets: resolved, alpha: 1, duration: 300 })
 
-      // CARC code reveal
-      this.add.text(width / 2, 110, `CARC: ${enc.carcCode}`, {
-        fontSize: '16px', fontFamily: 'monospace', color: '#ef5b7b',
-      }).setOrigin(0.5)
+      // CARC code reveal — only shown for obstacles wrapping a real
+      // denial code. Non-CARC obstacles (e.g. eligibility, charge capture,
+      // AR aging) display their archetype name instead.
+      if (enc.carcCode) {
+        this.add.text(width / 2, 110, `CARC: ${enc.carcCode}`, {
+          fontSize: '16px', fontFamily: 'monospace', color: '#ef5b7b',
+        }).setOrigin(0.5)
 
-      this.add.text(width / 2, 135, enc.carcName, {
-        fontSize: '12px', fontFamily: 'monospace', color: '#ffffff',
-      }).setOrigin(0.5)
+        if (enc.carcName) {
+          this.add.text(width / 2, 135, enc.carcName, {
+            fontSize: '12px', fontFamily: 'monospace', color: '#ffffff',
+          }).setOrigin(0.5)
+        }
+      } else if (enc.archetype) {
+        this.add.text(width / 2, 110, enc.archetype, {
+          fontSize: '16px', fontFamily: 'monospace', color: '#b18bd6',
+        }).setOrigin(0.5)
+      }
 
       // Watchpoint
       this.add.text(width / 2, 180, `"${enc.watchpoint}"`, {

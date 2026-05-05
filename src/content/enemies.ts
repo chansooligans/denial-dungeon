@@ -45,17 +45,64 @@ export const ENCOUNTERS: Record<string, Encounter> = {
   },
   co_50: {
     id: 'co_50',
-    title: 'Not Medically Necessary',
-    description: 'The payer says the service wasn\'t necessary for the documented condition. But the patient clearly needed it.',
+    title: 'Medical Necessity Wraith',
+    description:
+      'A semi-transparent figure of half-finished documentation. Won\'t resolve until you assemble enough supporting evidence — wrong moves only feed it.',
     surfaceSymptom: 'Payer denies medical necessity',
     rootCause: 'provider',
-    hp: 65,
-    attackDamage: 16,
+    hp: 1, // unused by Investigation; kept for backward compat / display
+    attackDamage: 0,
     carcCode: 'CO-50',
     carcName: 'Not medically necessary',
     watchpoint: 'CDI before coding prevents this; appeals after submission rarely fix it.',
     correctTools: ['cdi_query', 'medical_policy'],
     level: 4,
+    archetype: 'Medical Necessity Wraith',
+    wing: 'appeals',
+    mechanic: 'investigation',
+    caseFile: {
+      threshold: 3,
+      intro: 'From the chart and the LCD:',
+      facts: [
+        {
+          id: 'ckd_history',
+          label: 'Patient has chronic kidney disease, stage 3',
+          relevance: 'relevant',
+        },
+        {
+          id: 'lcd_creatinine',
+          label: 'LCD requires creatinine > 2.5 mg/dL for coverage',
+          relevance: 'relevant',
+        },
+        {
+          id: 'labs_recent',
+          label: 'Labs from 3 months ago show creatinine 2.8',
+          relevance: 'relevant',
+          weakOnReveal: true,
+        },
+        {
+          id: 'symptoms_doc',
+          label: 'Documented fatigue, edema, declining GFR',
+          relevance: 'relevant',
+          weakOnReveal: true,
+        },
+        {
+          id: 'wrong_tuesday',
+          label: 'Procedure was performed at 9:00 AM Tuesday',
+          relevance: 'distractor',
+        },
+        {
+          id: 'wrong_zone',
+          label: 'Patient lives in service-area Zone 2',
+          relevance: 'distractor',
+        },
+        {
+          id: 'wrong_referrer',
+          label: 'Referring provider is in-network',
+          relevance: 'distractor',
+        },
+      ],
+    },
   },
   co_97: {
     id: 'co_97',
@@ -140,6 +187,26 @@ export const ENCOUNTERS: Record<string, Encounter> = {
     watchpoint: 'Not a denial — fix and resubmit fast.',
     correctTools: ['claim_scrubber'],
     level: 6,
+  },
+  co_29_reaper: {
+    id: 'co_29_reaper',
+    title: 'Timely Filing Reaper',
+    description:
+      'A robed bureaucrat with an hourglass-blade. Each turn it sharpens. Time is the weapon, not the claim.',
+    surfaceSymptom: 'Claim approaches the timely filing deadline.',
+    rootCause: 'payer',
+    hp: 70,
+    attackDamage: 8, // base; escalates by +4 per day lost
+    carcCode: 'CO-29',
+    carcName: 'Timely filing limit expired',
+    watchpoint:
+      'Timely filing is contractual. Once the deadline passes, no appeal will recover the claim.',
+    correctTools: ['claim_scrubber', 'submit_837p'],
+    level: 7,
+    archetype: 'Timely Filing Reaper',
+    wing: 'appeals',
+    mechanic: 'timed',
+    cashRecovered: 1400,
   },
   boss_audit: {
     id: 'boss_audit',

@@ -12,11 +12,17 @@ const DEFAULT_STATE: GameState = {
     cash: 0,
     reputation: 50,
     auditRisk: 0,
+    stress: 0,
   },
   tools: ['submit_837p', 'eligibility_270'],
   codexUnlocked: [],
   decisions: [],
   inWaitingRoom: false,
+  activeTickets: [],
+  defeatedObstacles: [],
+  // L1 starts with only the Eligibility wing open; later levels unlock more.
+  wingsUnlocked: ['eligibility'],
+  obstaclesSeen: [],
 }
 
 let currentState: GameState = loadFromStorage() ?? structuredClone(DEFAULT_STATE)
@@ -24,9 +30,28 @@ let currentState: GameState = loadFromStorage() ?? structuredClone(DEFAULT_STATE
 function loadFromStorage(): GameState | null {
   try {
     const raw = localStorage.getItem(SAVE_KEY)
-    if (raw) return JSON.parse(raw)
+    if (raw) return migrateState(JSON.parse(raw))
   } catch { /* ignore */ }
   return null
+}
+
+/**
+ * Forward-compat migration for older saves: fill in any fields that
+ * didn't exist when this save was first persisted. Idempotent.
+ */
+function migrateState(loaded: Partial<GameState> & Record<string, unknown>): GameState {
+  const base = structuredClone(DEFAULT_STATE)
+  const merged: GameState = {
+    ...base,
+    ...loaded,
+    resources: { ...base.resources, ...(loaded.resources ?? {}) },
+  }
+  // Defensive: ensure new arrays exist even if the old save was partial.
+  merged.activeTickets ??= []
+  merged.defeatedObstacles ??= []
+  merged.obstaclesSeen ??= []
+  merged.wingsUnlocked ??= base.wingsUnlocked
+  return merged
 }
 
 export function getState(): GameState {
@@ -43,6 +68,7 @@ export function updateResources(deltas: Partial<GameState['resources']>) {
   if (deltas.cash !== undefined) r.cash += deltas.cash
   if (deltas.reputation !== undefined) r.reputation = Math.max(0, Math.min(100, r.reputation + deltas.reputation))
   if (deltas.auditRisk !== undefined) r.auditRisk = Math.max(0, Math.min(100, r.auditRisk + deltas.auditRisk))
+  if (deltas.stress !== undefined) r.stress = Math.max(0, Math.min(100, r.stress + deltas.stress))
 }
 
 export function unlockTool(toolId: string) {
