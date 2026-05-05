@@ -31,7 +31,7 @@ puzzles, game state, Waiting Room, Codex system, and Level 1 vertical slice.
 - [x] BattleScene (turn-based combat, effectiveness system, CARC reveal on victory)
 - [x] HospitalScene (data-driven tile map, NPC placement, camera follow, HUD)
 - [x] Room-based fog of war (flood-fill room detection, current room lit, visited rooms dim, unvisited hidden)
-- [x] Mini-map overlay (top-right corner, walls/doors/crack/player, reflects fog state)
+- [x] Mini-map overlay (top-right corner, walls/doors/gap/player, reflects fog state)
 - [x] DialogueScene (branching dialogue, effects, triggers battle/form)
 - [x] FormScene (CMS-1500 / UB-04 puzzles — find and correct errors)
 - [x] WaitingRoomScene (surreal overworld layer)
@@ -90,7 +90,7 @@ src/
 Maps are defined as ASCII layouts in `content/maps.ts`. Each level has a
 distinct hospital floor plan with rooms connected by corridors. Player
 starts at the south (lobby), walks north through corridors to reach the
-crack (portal to Waiting Room) at the north end.
+gap (portal to Waiting Room) at the north end.
 
 Tile legend: W=wall, D=door, .=floor, ~=floor2, _=carpet, c=desk, h=chair,
 E=equipment, P=plant, w=water, F=cabinet, B=whiteboard, R=counter,
@@ -106,8 +106,8 @@ npx tsc --noEmit         # Type-check only
 ## Game Flow
 Title → Hospital (walk around, talk to NPCs) → Dialogue (branching choices)
 → Battle (turn-based, use tools, effectiveness matters) → Victory (CARC reveal)
-→ back to Hospital. Form puzzles triggered via dialogue choices. Crack in
-hospital floor leads to The Waiting Room.
+→ back to Hospital. Form puzzles triggered via dialogue choices. The Gap in
+the hospital floor leads to The Waiting Room.
 
 ## Content Pillars
 The game teaches: CMS-1500 / UB-04 claim forms, ICD-10-CM/PCS codes,

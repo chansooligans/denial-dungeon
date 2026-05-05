@@ -11,6 +11,7 @@ const TILE = 32
 const TILE_TEXTURES: Record<string, { floor: string; obj?: string; solid?: boolean }> = {
   'W': { floor: 'h_wall', solid: true },
   'D': { floor: 'h_door' },
+  'L': { floor: 'h_door', solid: true },  // locked door — visible but impassable (foreshadow)
   '.': { floor: 'h_floor' },
   '~': { floor: 'h_floor2' },
   '_': { floor: 'h_carpet' },
@@ -58,8 +59,8 @@ export class HospitalScene extends Phaser.Scene {
   private wasdKeys!: Record<string, Phaser.Input.Keyboard.Key>
   private hudHp!: Phaser.GameObjects.Text
   private hudLevel!: Phaser.GameObjects.Text
-  private crackSprite!: Phaser.GameObjects.Graphics
-  private crackPrompt!: Phaser.GameObjects.Text
+  private gapSprite!: Phaser.GameObjects.Graphics
+  private gapPrompt!: Phaser.GameObjects.Text
   private mapDef!: MapDef
 
   // Room visibility state
@@ -76,6 +77,7 @@ export class HospitalScene extends Phaser.Scene {
   private miniMapCell = 2
   private miniMapX = 0
   private miniMapY = 0
+  private uiCamera!: Phaser.Cameras.Scene2D.Camera
 
   constructor() {
     super('Hospital')
@@ -94,17 +96,23 @@ export class HospitalScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor(0x05070a)
 
     this.buildMap()
-    this.placeCrack()
+    this.placeGap()
     this.placePlayer()
     this.placeNPCs()
     this.setupInput()
     this.buildUI()
     this.buildHUD()
-    this.buildMiniMap()
 
     this.cameras.main.startFollow(this.player, true, 0.1, 0.1)
     this.cameras.main.setZoom(1.5)
     this.cameras.main.setBounds(0, 0, this.mapDef.width * TILE, this.mapDef.height * TILE)
+
+    // Dedicated UI camera (zoom 1, no scroll) so HUD/mini-map aren't affected
+    // by the main camera's zoom or follow.
+    this.uiCamera = this.cameras.add(0, 0, this.scale.width, this.scale.height)
+    this.uiCamera.setScroll(0, 0)
+
+    this.buildMiniMap()
 
     this.enterRoomAt(this.playerTileX, this.playerTileY)
 
@@ -176,20 +184,20 @@ export class HospitalScene extends Phaser.Scene {
     }
   }
 
-  private placeCrack() {
-    const ct = this.mapDef.crackTile
+  private placeGap() {
+    const ct = this.mapDef.gapTile
     const px = ct.x * TILE + TILE / 2
     const py = ct.y * TILE + TILE / 2
 
-    this.crackSprite = this.add.graphics().setDepth(3).setAlpha(0)
-    this.crackSprite.lineStyle(2, 0xb18bd6, 0.6)
-    this.crackSprite.lineBetween(px - 8, py - 12, px + 2, py)
-    this.crackSprite.lineBetween(px + 2, py, px - 4, py + 12)
-    this.crackSprite.lineStyle(1, 0xb18bd6, 0.3)
-    this.crackSprite.lineBetween(px + 2, py, px + 8, py + 6)
+    this.gapSprite = this.add.graphics().setDepth(3).setAlpha(0)
+    this.gapSprite.lineStyle(2, 0xb18bd6, 0.6)
+    this.gapSprite.lineBetween(px - 8, py - 12, px + 2, py)
+    this.gapSprite.lineBetween(px + 2, py, px - 4, py + 12)
+    this.gapSprite.lineStyle(1, 0xb18bd6, 0.3)
+    this.gapSprite.lineBetween(px + 2, py, px + 8, py + 6)
 
     this.tweens.add({
-      targets: this.crackSprite,
+      targets: this.gapSprite,
       alpha: 0.4,
       duration: 2000,
       yoyo: true,
@@ -197,7 +205,7 @@ export class HospitalScene extends Phaser.Scene {
       ease: 'Sine.easeInOut',
     })
 
-    this.crackPrompt = this.add.text(px, py - 24, '[E] Enter the crack', {
+    this.gapPrompt = this.add.text(px, py - 24, '[E] Enter the gap', {
       fontSize: '9px', fontFamily: 'monospace', color: '#b18bd6',
       backgroundColor: '#0e1116',
       padding: { x: 4, y: 2 },
@@ -276,25 +284,31 @@ export class HospitalScene extends Phaser.Scene {
 
   private buildMiniMap() {
     const { width: mw, height: mh } = this.mapDef
-    const cam = this.cameras.main
+    const screenW = this.scale.width
 
-    this.miniMapCell = Math.max(1, Math.min(3, Math.floor(180 / mw)))
+    this.miniMapCell = Math.max(1, Math.min(3, Math.floor(180 / mw))) || 1
     const innerW = mw * this.miniMapCell
     const innerH = mh * this.miniMapCell
     const pad = 4
     const totalW = innerW + pad * 2
     const totalH = innerH + pad * 2
-    this.miniMapX = cam.width - totalW - 8
+    this.miniMapX = screenW - totalW - 8
     this.miniMapY = 8
 
-    this.miniMapBg = this.add.graphics().setScrollFactor(0).setDepth(99)
+    this.miniMapBg = this.add.graphics().setDepth(99)
     this.miniMapBg.fillStyle(0x0e1116, 0.85)
     this.miniMapBg.fillRect(this.miniMapX, this.miniMapY, totalW, totalH)
     this.miniMapBg.lineStyle(1, 0x7ee2c1, 0.6)
     this.miniMapBg.strokeRect(this.miniMapX + 0.5, this.miniMapY + 0.5, totalW - 1, totalH - 1)
 
-    this.miniMapTiles = this.add.graphics().setScrollFactor(0).setDepth(100)
-    this.miniMapPlayer = this.add.graphics().setScrollFactor(0).setDepth(101)
+    this.miniMapTiles = this.add.graphics().setDepth(100)
+    this.miniMapPlayer = this.add.graphics().setDepth(101)
+
+    // Main camera ignores the minimap; UI camera ignores everything else.
+    this.cameras.main.ignore([this.miniMapBg, this.miniMapTiles, this.miniMapPlayer])
+    this.uiCamera.ignore(this.children.list.filter(
+      c => c !== this.miniMapBg && c !== this.miniMapTiles && c !== this.miniMapPlayer
+    ))
   }
 
   private refreshHUD() {
@@ -410,9 +424,9 @@ export class HospitalScene extends Phaser.Scene {
   }
 
   private applyEntityVisibility() {
-    const ct = this.mapDef.crackTile
-    const crackVis = this.tileVisState[ct.y]?.[ct.x] ?? VIS_HIDDEN
-    this.crackSprite.setVisible(crackVis !== VIS_HIDDEN)
+    const ct = this.mapDef.gapTile
+    const gapVis = this.tileVisState[ct.y]?.[ct.x] ?? VIS_HIDDEN
+    this.gapSprite.setVisible(gapVis !== VIS_HIDDEN)
 
     for (const ns of this.npcSprites) {
       const v = this.tileVisState[ns.tileY]?.[ns.tileX] ?? VIS_HIDDEN
@@ -448,7 +462,7 @@ export class HospitalScene extends Phaser.Scene {
       }
     }
 
-    const ct = this.mapDef.crackTile
+    const ct = this.mapDef.gapTile
     if (this.tileVisState[ct.y]?.[ct.x] !== VIS_HIDDEN) {
       g.fillStyle(0xb18bd6, 1)
       g.fillRect(ox + ct.x * cell - 1, oy + ct.y * cell - 1, cell + 2, cell + 2)
@@ -492,18 +506,18 @@ export class HospitalScene extends Phaser.Scene {
     if (closest) {
       this.interactPrompt.setPosition(closest.sprite.x, closest.sprite.y - 36)
       this.interactPrompt.setVisible(true)
-      this.crackPrompt.setVisible(false)
+      this.gapPrompt.setVisible(false)
     } else {
       this.interactPrompt.setVisible(false)
 
-      const ct = this.mapDef.crackTile
-      const crackVis = this.tileVisState[ct.y]?.[ct.x] ?? VIS_HIDDEN
-      const crackPx = ct.x * TILE + TILE / 2
-      const crackPy = ct.y * TILE + TILE / 2
-      const crackDist = Phaser.Math.Distance.Between(
-        this.player.x, this.player.y, crackPx, crackPy
+      const ct = this.mapDef.gapTile
+      const gapVis = this.tileVisState[ct.y]?.[ct.x] ?? VIS_HIDDEN
+      const gapPx = ct.x * TILE + TILE / 2
+      const gapPy = ct.y * TILE + TILE / 2
+      const gapDist = Phaser.Math.Distance.Between(
+        this.player.x, this.player.y, gapPx, gapPy
       )
-      this.crackPrompt.setVisible(crackVis === VIS_CURRENT && crackDist < TILE * 2)
+      this.gapPrompt.setVisible(gapVis === VIS_CURRENT && gapDist < TILE * 2)
     }
   }
 
@@ -520,13 +534,13 @@ export class HospitalScene extends Phaser.Scene {
       return
     }
 
-    const ct = this.mapDef.crackTile
-    const crackPx = ct.x * TILE + TILE / 2
-    const crackPy = ct.y * TILE + TILE / 2
-    const crackDist = Phaser.Math.Distance.Between(
-      this.player.x, this.player.y, crackPx, crackPy
+    const ct = this.mapDef.gapTile
+    const gapPx = ct.x * TILE + TILE / 2
+    const gapPy = ct.y * TILE + TILE / 2
+    const gapDist = Phaser.Math.Distance.Between(
+      this.player.x, this.player.y, gapPx, gapPy
     )
-    if (crackDist < TILE * 2) {
+    if (gapDist < TILE * 2) {
       const state = getState()
       state.inWaitingRoom = true
       saveGame()
