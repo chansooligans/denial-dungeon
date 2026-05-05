@@ -75,13 +75,15 @@ export const WING_LABEL: Record<Wing, string> = {
  * incrementally (Phase 4); 'none' is the default behavior.
  */
 export type BattleMechanic =
-  | 'none'        // straight fight
-  | 'block'       // immune every other turn (Prior Auth Gatekeeper)
-  | 'mirror'      // same tool used twice in a row does no damage (Doppelgänger)
-  | 'turnLimit'   // hard turn cap; lose if not defeated (Timely Filing Reaper)
-  | 'multiHead'   // multiple HP pools, each with own weakness (COB Hydra)
-  | 'blind'       // tool accuracy degraded until cleared (Eligibility Fog)
-  | 'spawn'       // adds reinforcements every N turns (Sprite swarm)
+  | 'simple'        // HP attrition + faction effectiveness (default)
+  | 'none'          // alias of 'simple'
+  | 'investigation' // case-file fact-finding, time budget instead of HP
+  | 'timed'         // HP + countdown; attacks escalate as time runs (Reaper)
+  | 'block'         // immune every other turn (Prior Auth Gatekeeper)
+  | 'mirror'        // same tool used twice in a row does no damage (Doppelgänger)
+  | 'multiHead'     // multiple HP pools, each with own weakness (COB Hydra)
+  | 'blind'         // tool accuracy degraded until cleared (Eligibility Fog)
+  | 'spawn'         // adds reinforcements every N turns (Sprite swarm)
 
 // === Encounters (what you face in battle) ===
 
@@ -121,6 +123,31 @@ export interface Encounter {
   codexOnSight?: string
   /** Approximate dollar amount recovered on win (display + cash delta). */
   cashRecovered?: number
+  /**
+   * Case-file data for `mechanic: 'investigation'` encounters. Each fact
+   * is either relevant to the resolution or a distractor. Some facts are
+   * "weakly supported" on reveal — the player must use Document to make
+   * them count toward the win threshold.
+   */
+  caseFile?: CaseFile
+}
+
+export interface CaseFact {
+  id: string
+  /** Short text shown in the case file panel (≤ ~70 chars). */
+  label: string
+  /** Whether this fact actually matters to the resolution. */
+  relevance: 'relevant' | 'distractor'
+  /** When true, this fact reveals as "weakly supported" — needs Document. */
+  weakOnReveal?: boolean
+}
+
+export interface CaseFile {
+  /** Number of relevant + supported facts needed to win Decide. */
+  threshold: number
+  facts: CaseFact[]
+  /** Optional flavor shown above the panel ("From the chart:" etc.). */
+  intro?: string
 }
 
 // === Tickets ===

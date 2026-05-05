@@ -30,6 +30,19 @@ export class SimpleController implements MechanicController {
     return ''
   }
 
+  panelText(): string {
+    return ''
+  }
+
+  getActions() {
+    // SimpleController uses the player's normal tool ribbon.
+    return null
+  }
+
+  isLost(): boolean {
+    return false
+  }
+
   applyPlayerTurn(toolId: string): PlayerTurnResult {
     const tool = TOOLS[toolId]
     if (!tool) {

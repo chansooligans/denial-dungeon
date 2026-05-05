@@ -30,11 +30,20 @@ export interface EnemyTurnResult {
   message?: string
 }
 
+/** A custom action button for mechanics that don't use the tool ribbon. */
+export interface MechanicAction {
+  id: string
+  label: string
+  /** Subtitle shown below the label. */
+  sub?: string
+  disabled?: boolean
+}
+
 /**
  * One controller per battle. Implementations:
  *   - `SimpleController`  — the original HP attrition fight.
- *   - (Phase 2) `InvestigationController` — case-file fact-finding.
- *   - (Phase 2) `TimedController` — turn budget + escalating damage.
+ *   - `InvestigationController` — case-file fact-finding.
+ *   - (next) `TimedController` — turn budget + escalating damage.
  *   - (later) `MultiHeadController`, `MirrorController`, etc.
  */
 export interface MechanicController {
@@ -53,12 +62,34 @@ export interface MechanicController {
    */
   statusLine(): string
 
-  /** Apply the player's chosen tool. */
-  applyPlayerTurn(toolId: string): PlayerTurnResult
+  /**
+   * Persistent multi-line text panel rendered to the side of the enemy
+   * panel. Used by Investigation to display the case file. Return '' to
+   * suppress the panel.
+   */
+  panelText(): string
+
+  /**
+   * If non-null, BattleScene renders these buttons instead of the
+   * player's tool ribbon. The action `id` is what gets passed to
+   * `applyPlayerTurn`. SimpleController returns null to keep tools.
+   */
+  getActions(): MechanicAction[] | null
+
+  /** Apply the player's chosen action (a tool id, or a mechanic action id). */
+  applyPlayerTurn(actionId: string): PlayerTurnResult
 
   /** Resolve the enemy's response. Called after a successful player turn. */
   applyEnemyTurn(): EnemyTurnResult
 
   /** True when the encounter is resolved as a win. */
   isWon(): boolean
+
+  /**
+   * True when the mechanic itself decides the battle is lost — independent
+   * of player HP. Investigation uses this when the player decides badly or
+   * the time budget runs out. Defaults to false (HP loss handled by the
+   * scene).
+   */
+  isLost(): boolean
 }

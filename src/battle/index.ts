@@ -8,10 +8,13 @@
 import type { Encounter } from '../types'
 import type { MechanicController } from './types'
 import { SimpleController } from './mechanics/simple'
+import { InvestigationController } from './mechanics/investigation'
 
 export function createMechanic(encounter: Encounter): MechanicController {
   switch (encounter.mechanic) {
-    // Phase 2 will add 'investigation' and 'timed' controllers here.
+    case 'investigation':
+      return new InvestigationController(encounter)
+    // 'timed', 'multiHead', 'mirror', etc. land in follow-up PRs.
     case 'simple':
     case 'none':
     default:
