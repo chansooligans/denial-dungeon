@@ -42,19 +42,41 @@ const BUTTONS: BtnSpec[] = [
 // is removed mid-press (e.g. on scene shutdown).
 const heldKeys = new Map<string, BtnSpec>()
 
+// Calls Phaser's KeyboardManager directly with a fake event object
+// instead of dispatching a synthetic KeyboardEvent on window. iOS
+// WebKit (iPhone Safari/Chrome) treats programmatically-dispatched
+// KeyboardEvents inconsistently — sometimes they reach window
+// listeners with keyCode=0, sometimes they don't reach Phaser's
+// queue at all. Going straight to the manager bypasses all of that
+// and is the only path that's been verified to work on iOS.
 function fireKey(type: 'keydown' | 'keyup', spec: BtnSpec) {
-  // keyCode and which are read-only on KeyboardEvent in some browsers,
-  // so set them via Object.defineProperty after construction. Phaser's
-  // KeyboardPlugin matches Key objects by event.keyCode.
-  const event = new KeyboardEvent(type, {
-    key: spec.key, code: spec.code, bubbles: true, cancelable: true,
-    keyCode: spec.keyCode, which: spec.keyCode,
-  } as KeyboardEventInit)
-  if (event.keyCode !== spec.keyCode) {
-    Object.defineProperty(event, 'keyCode', { get: () => spec.keyCode })
-    Object.defineProperty(event, 'which',   { get: () => spec.keyCode })
+  const game = (window as unknown as { __PHASER_GAME__?: Phaser.Game }).__PHASER_GAME__
+  const manager = game?.input?.keyboard as
+    | (Phaser.Input.Keyboard.KeyboardManager & {
+        onKeyDown?: (e: unknown) => void
+        onKeyUp?: (e: unknown) => void
+      })
+    | null
+    | undefined
+  if (!manager) return
+
+  const fakeEvent = {
+    type,
+    keyCode: spec.keyCode,
+    which: spec.keyCode,
+    key: spec.key,
+    code: spec.code,
+    altKey: false, ctrlKey: false, shiftKey: false, metaKey: false,
+    repeat: false,
+    defaultPrevented: false,
+    timeStamp: performance.now(),
+    preventDefault() {},
+    stopPropagation() {},
+    stopImmediatePropagation() {},
   }
-  window.dispatchEvent(event)
+
+  const handler = type === 'keydown' ? manager.onKeyDown : manager.onKeyUp
+  handler?.call(manager, fakeEvent)
 }
 
 function ensureStyles() {
