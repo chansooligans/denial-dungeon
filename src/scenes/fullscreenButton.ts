@@ -35,18 +35,30 @@ export function addFullscreenButton(_scene: Phaser.Scene) {
   ].join(';')
 
   btn.addEventListener('click', () => {
-    const fsEl = document.fullscreenElement
-      || (document as unknown as { webkitFullscreenElement?: Element }).webkitFullscreenElement
+    const doc = document as unknown as {
+      fullscreenElement: Element | null
+      webkitFullscreenElement?: Element | null
+      exitFullscreen?: () => Promise<void>
+      webkitExitFullscreen?: () => Promise<void>
+    }
+    const fsEl = doc.fullscreenElement || doc.webkitFullscreenElement
     if (fsEl) {
-      const exit = document.exitFullscreen
-        || (document as unknown as { webkitExitFullscreen?: () => Promise<void> }).webkitExitFullscreen
+      const exit = doc.exitFullscreen || doc.webkitExitFullscreen
       exit?.call(document)
       return
     }
     const target = document.getElementById('game') || document.documentElement
-    const req = target.requestFullscreen
-      || (target as unknown as { webkitRequestFullscreen?: (opts?: unknown) => Promise<void> }).webkitRequestFullscreen
-    req?.call(target, { navigationUI: 'hide' })
+    const wk = target as unknown as {
+      webkitRequestFullscreen?: (flag?: number) => Promise<void> | void
+    }
+    if (target.requestFullscreen) {
+      // Standard API. iOS 16.4+ supports this on arbitrary elements.
+      target.requestFullscreen({ navigationUI: 'hide' }).catch(() => {})
+    } else if (wk.webkitRequestFullscreen) {
+      // Older WebKit (iOS Safari < 16.4). Only works on <video> in
+      // practice, but call it anyway in case a future iOS exposes it.
+      wk.webkitRequestFullscreen()
+    }
   })
 
   document.body.appendChild(btn)
