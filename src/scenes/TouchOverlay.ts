@@ -99,12 +99,13 @@ function ensureStyles() {
     }
     #${ROOT_ID} button:active { background: rgba(31,42,54,0.85); }
     #${ROOT_ID} .tc-dpad-btn {
-      width: 56px; height: 56px; border-radius: 50%;
+      width: 42px; height: 42px; border-radius: 50%;
+      font-size: 14px;
     }
-    #${ROOT_ID} .tc-up    { left: 62px;  bottom: 146px; }
-    #${ROOT_ID} .tc-down  { left: 62px;  bottom: 34px;  }
-    #${ROOT_ID} .tc-left  { left: 6px;   bottom: 90px;  }
-    #${ROOT_ID} .tc-right { left: 118px; bottom: 90px;  }
+    #${ROOT_ID} .tc-up    { left: 50px; bottom: 110px; }
+    #${ROOT_ID} .tc-down  { left: 50px; bottom: 26px;  }
+    #${ROOT_ID} .tc-left  { left: 8px;  bottom: 68px;  }
+    #${ROOT_ID} .tc-right { left: 92px; bottom: 68px;  }
     #${ROOT_ID} .tc-e {
       right: 16px; bottom: 64px;
       width: 108px; height: 108px; border-radius: 50%;

@@ -9,7 +9,16 @@
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
       html, body { height: 100%; background: #0e1116; overflow: hidden; }
-      #game { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; }
+      #game {
+        width: 100vw;
+        /* 100vh on iOS includes the URL bar; dvh tracks the visible
+           viewport as browser chrome shows/hides. */
+        height: 100vh;
+        height: 100dvh;
+        /* No flex centering — Phaser's Scale.CENTER_BOTH already
+           centers the canvas inside this div via margin. Layering
+           both causes double-centering off the visible center. */
+      }
     </style>
   </head>
   <body>
