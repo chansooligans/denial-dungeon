@@ -375,8 +375,8 @@ function renderBriefingInline(): string {
 function renderBriefingPopover(): string {
   if (!state.briefingOpen) return ''
   return `
-    <div class="briefing-popover-backdrop" data-action="close-briefing">
-      <div class="briefing-popover" onclick="event.stopPropagation()">
+    <div class="briefing-popover-backdrop">
+      <div class="briefing-popover">
         <button class="briefing-popover-close" data-action="close-briefing" aria-label="Close">×</button>
         ${briefingContent()}
         <button class="btn ghost" data-action="close-briefing">Back to the encounter</button>
@@ -620,8 +620,8 @@ function renderTermPopover(): string {
   const entry = glossary[state.openTermId]
   if (!entry) return ''
   return `
-    <div class="term-popover-backdrop" data-action="close-term">
-      <div class="term-popover" onclick="event.stopPropagation()">
+    <div class="term-popover-backdrop">
+      <div class="term-popover">
         <div class="term-popover-h">
           <span class="term-popover-name">${escape(entry.term)}</span>
           <button class="term-popover-close" data-action="close-term" aria-label="Close">×</button>
@@ -775,6 +775,22 @@ function closeTerm() {
 
 function handleClick(e: MouseEvent) {
   const target = e.target as HTMLElement
+
+  // Backdrop-as-close: only fires when the click is *directly* on the
+  // backdrop element, not when it bubbled up from a descendant. This
+  // is why we don't put data-action on the backdrop — we'd close on
+  // every click inside the popover.
+  if (target.classList.contains('briefing-popover-backdrop')) {
+    closeBriefing()
+    rerender()
+    return
+  }
+  if (target.classList.contains('term-popover-backdrop')) {
+    closeTerm()
+    rerender()
+    return
+  }
+
   const el = target.closest('[data-action]') as HTMLElement | null
   if (!el) return
   const action = el.dataset.action
