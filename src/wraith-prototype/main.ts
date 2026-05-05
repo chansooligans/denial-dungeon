@@ -291,8 +291,8 @@ function render(): string {
     ${renderHospitalIntro()}
     ${!state.briefingDone ? renderBriefingInline() : `
       ${renderClaim()}
-      ${renderCitationBuilder()}
       ${renderWorkbench()}
+      ${renderCitationBuilder()}
       ${renderChecklist()}
       ${renderWraith()}
     `}
