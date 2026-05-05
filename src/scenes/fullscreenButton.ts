@@ -30,6 +30,8 @@ export function addFullscreenButton(_scene: Phaser.Scene) {
     'border:1px solid #3a4a5d', 'border-radius:4px',
     'padding:6px 10px', 'font:bold 20px monospace',
     'line-height:1', 'cursor:pointer',
+    '-webkit-user-select:none', 'user-select:none',
+    '-webkit-touch-callout:none',
     '-webkit-tap-highlight-color:transparent',
     'touch-action:manipulation',
   ].join(';')

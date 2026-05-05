@@ -93,7 +93,9 @@ function ensureStyles() {
       background: rgba(14,17,22,0.55);
       color: #7ee2c1; border: 1px solid rgba(58,74,93,0.9);
       font: bold 18px monospace; line-height: 1;
-      cursor: pointer; user-select: none;
+      cursor: pointer;
+      -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;
+      -webkit-touch-callout: none;
       -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
     }
