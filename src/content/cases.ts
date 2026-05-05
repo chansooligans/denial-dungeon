@@ -128,6 +128,40 @@ export const CASES: Record<string, PatientCase> = {
     },
   },
 
+  // Linked to encounter `co_197` (Prior Auth Gatekeeper).
+  case_gatekeeper_okafor: {
+    id: 'case_gatekeeper_okafor',
+    patientName: 'Tunde Okafor',
+    age: 58,
+    insurance: 'UnitedHealthcare Choice Plus',
+    diagnosis: 'Lumbar disc herniation with radiculopathy',
+    diagnosisCode: 'M51.16',
+    procedure: 'Lumbar MRI without contrast',
+    procedureCode: '72148',
+    formType: 'cms1500',
+    level: 3,
+    claim: {
+      type: 'cms1500',
+      claimId: 'CLM-2026-02-09-15208',
+      insuranceType: 'Group',
+      patient: { name: 'OKAFOR, TUNDE', dob: '1967-09-04', sex: 'M' },
+      insured: { id: 'UHC1182904', name: 'OKAFOR, TUNDE', group: '0091772' },
+      diagnoses: [
+        { code: 'M51.16', label: 'Lumbar disc, radiculopathy' },
+      ],
+      serviceLines: [
+        {
+          dos: '2026-02-09',
+          pos: '11',
+          cpt: { code: '72148', label: 'MRI lumbar w/o contrast' },
+          dxPointer: 'A',
+          charges: '$1,425.00',
+        },
+      ],
+      provider: { name: 'Dr. P. Reyes, MD', npi: '1928374650' },
+    },
+  },
+
   // Linked to encounter `co_97` (The Bundle / Bundling Beast).
   case_bundle_kim: {
     id: 'case_bundle_kim',
