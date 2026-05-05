@@ -122,10 +122,18 @@ export class HospitalScene extends Phaser.Scene {
     })
 
     // Mobile / accessibility: parallel scene with virtual D-pad + E + ESC.
-    // Stops itself on scene shutdown via the SHUTDOWN event below.
     if (!this.scene.isActive('TouchOverlay')) this.scene.launch('TouchOverlay')
+    // Deferred stop: when this scene shuts down, defer to the next tick
+    // so the next scene has had a chance to start. If we're transitioning
+    // to another scene that also wants the overlay (Hospital ⇄ WaitingRoom),
+    // leave it running; otherwise stop it.
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-      this.scene.stop('TouchOverlay')
+      const sm = this.game.scene
+      setTimeout(() => {
+        if (!sm.isActive('Hospital') && !sm.isActive('WaitingRoom')) {
+          sm.stop('TouchOverlay')
+        }
+      }, 0)
     })
   }
 

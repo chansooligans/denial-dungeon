@@ -104,8 +104,14 @@ export class WaitingRoomScene extends Phaser.Scene {
 
     // Mobile / accessibility: virtual D-pad + E button.
     if (!this.scene.isActive('TouchOverlay')) this.scene.launch('TouchOverlay')
+    // See HospitalScene for the rationale on this deferred stop.
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-      this.scene.stop('TouchOverlay')
+      const sm = this.game.scene
+      setTimeout(() => {
+        if (!sm.isActive('Hospital') && !sm.isActive('WaitingRoom')) {
+          sm.stop('TouchOverlay')
+        }
+      }, 0)
     })
   }
 
