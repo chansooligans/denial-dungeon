@@ -60,6 +60,7 @@ const OBSTACLES: ObstacleMarker[] = [
   { tileX: 3,  tileY: 14, encounterId: 'oa_23_hydra' },
   // --- Coding wing ---
   { tileX: 12, tileY: 12, encounterId: 'co_97' },
+  { tileX: 11, tileY: 14, encounterId: 'co_16_swarm' }, // Sprite Swarm
   // --- Billing wing ---
   { tileX: 20, tileY: 12, encounterId: 'co_18_doppelganger' },
   // --- Appeals wing (east) — three obstacles ---

@@ -328,6 +328,58 @@ export const CASES: Record<string, PatientCase> = {
     },
   },
 
+  // Linked to encounter `co_16_swarm` (Documentation Sprite Swarm).
+  case_swarm_yamada: {
+    id: 'case_swarm_yamada',
+    patientName: 'Hiro Yamada',
+    age: 58,
+    insurance: 'United Healthcare PPO',
+    diagnosis: 'Hypertensive heart disease without heart failure',
+    diagnosisCode: 'I11.9',
+    procedure: 'Office visit, established patient, moderate complexity',
+    procedureCode: '99214',
+    formType: 'cms1500',
+    level: 6,
+    // The chart originally listed an unspecified diagnosis (I10) and the
+    // taxonomy was blank in the rendering provider segment. Both fields
+    // tripped 277CA rejects from the clearinghouse. CDI cleans both
+    // upstream so the swarm never spawns.
+    errors: [
+      {
+        field: 'Diagnosis Code',
+        currentValue: 'I10',
+        correctValue: 'I11.9',
+        explanation: 'I10 (essential hypertension) is too unspecified for the cardiology workup billed. The chart supports I11.9 — hypertensive heart disease without heart failure. Specific dx kills the missing-info reject at the source.',
+      },
+      {
+        field: 'Provider Taxonomy',
+        currentValue: '',
+        correctValue: '207RC0000X',
+        explanation: 'Loop 2310B PRV segment was blank. UHC requires the rendering provider taxonomy on every electronic claim. Cardiology = 207RC0000X. Empty taxonomy is the #1 cause of 277CA rejects.',
+      },
+    ],
+    claim: {
+      type: 'cms1500',
+      claimId: 'CLM-2026-04-12-44091',
+      insuranceType: 'Group',
+      patient: { name: 'YAMADA, HIRO', dob: '1968-06-19', sex: 'M' },
+      insured: { id: 'UHC502118', name: 'YAMADA, HIRO', group: '0091224' },
+      diagnoses: [
+        { code: 'I11.9', label: 'Hypertensive heart dz, no HF' },
+      ],
+      serviceLines: [
+        {
+          dos: '2026-04-12',
+          pos: '11',
+          cpt: { code: '99214', label: 'Office E&M, established, moderate' },
+          dxPointer: 'A',
+          charges: '$240.00',
+        },
+      ],
+      provider: { name: 'Dr. T. Mendez, MD', npi: '1593028477' },
+    },
+  },
+
   // Linked to encounter `co_18_doppelganger` (Duplicate Claim Doppelgänger).
   case_doppel_reyes: {
     id: 'case_doppel_reyes',
