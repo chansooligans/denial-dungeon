@@ -162,6 +162,64 @@ export interface Encounter {
    * did.
    */
   toolEffects?: Record<string, ToolEffect[]>
+  /**
+   * Design-time draft for re-imagining this encounter as a puzzle
+   * rather than an HP fight. Rendered on the public battle catalog
+   * (battles.html) when present; ignored at runtime by the battle
+   * engine. Lets us iterate on a puzzle structure (issue checklist,
+   * payer replies, win condition) outside the live game.
+   *
+   * The shape is intentionally narrative — these are sketches, not
+   * runnable specs. Once a draft feels right, port it into a
+   * MechanicController in src/battle/mechanics/.
+   */
+  puzzleDraft?: PuzzleDraft
+}
+
+/**
+ * A draft puzzle reframe for an Encounter. Author once in
+ * `enemies.ts`; the catalog renders it. None of these fields run in
+ * the live game.
+ */
+export interface PuzzleDraft {
+  /** One-line summary of what the puzzle is about. */
+  premise: string
+  /**
+   * Ordered list of issues the player must resolve to win. Hidden
+   * issues (revealed via investigation) get `hidden: true`. Each
+   * issue suggests the canonical resolving tool/action.
+   */
+  issues: PuzzleIssue[]
+  /**
+   * Win condition prose — when does the claim adjudicate clean?
+   * Usually "all issues resolved + Submit pressed".
+   */
+  winCondition: string
+  /**
+   * Failure / penalty modes — what wrong moves cost. Filing-window
+   * burn, goodwill loss, audit risk, etc. Replaces "HP damage" in
+   * the puzzle frame.
+   */
+  costs: string[]
+  /**
+   * Sample payer replies (string keys = tool id or action label,
+   * values = the response shown to the player). Optional — used to
+   * sketch the dialogue feel without committing to one wording.
+   */
+  payerReplies?: Record<string, string>
+  /** Free-form design notes / open questions / risks. */
+  notes?: string
+}
+
+export interface PuzzleIssue {
+  /** Short label (≤ ~70 chars). */
+  label: string
+  /** Hidden until investigation reveals it. */
+  hidden?: boolean
+  /** Canonical tool / action that resolves this issue. */
+  resolvedBy?: string
+  /** Why this is the issue — the teaching beat. */
+  teaching?: string
 }
 
 /** A visible mutation applied to a CMS-1500 field during battle. */

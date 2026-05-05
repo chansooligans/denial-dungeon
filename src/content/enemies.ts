@@ -121,6 +121,50 @@ export const ENCOUNTERS: Record<string, Encounter> = {
         },
       ],
     },
+    puzzleDraft: {
+      premise:
+        'CO-50 medical necessity: payer denies a TTE (93306) for unspecified heart failure (I50.9), citing LCD L33526 which requires evidence of LVEF<35% or specific symptomatology. Investigate the chart and the LCD; build a defensible case before pressing DECIDE.',
+      issues: [
+        {
+          label: 'Read the LCD — what does the payer actually require?',
+          resolvedBy: 'lookup',
+          teaching: 'Most medical-necessity denials are predictable. The policy is public; read it before you appeal.',
+        },
+        {
+          label: 'Find supporting clinical evidence in the chart',
+          hidden: true,
+          resolvedBy: 'investigate',
+          teaching: 'Chart often has the evidence but it\'s scattered (CKD III, recent labs, sx documentation).',
+        },
+        {
+          label: 'Document the connection (weak facts → strong)',
+          hidden: true,
+          resolvedBy: 'document',
+          teaching: 'Weak evidence flags need explicit linkage to the LCD criteria — that\'s the CDI loop.',
+        },
+        {
+          label: 'Decide: submit appeal with documented packet',
+          hidden: true,
+          resolvedBy: 'decide',
+          teaching: 'Decide is irreversible. If the evidence isn\'t there yet, you lose the appeal — and the claim.',
+        },
+      ],
+      winCondition: 'Threshold of strong-supporting facts met → Decide → appeal accepted.',
+      costs: [
+        'Decide too early (below threshold): appeal denied, claim closes, +10 stress, +1 audit risk.',
+        'Documenting a distractor fact (e.g. service-area Zone 2): wastes a turn off the filing window with no progress.',
+        'Skipping Lookup: you\'ll be guessing what evidence the LCD demands.',
+      ],
+      payerReplies: {
+        lookup: 'LCD L33526 requires LVEF<35% OR creatinine > 2.5 with documented symptomatology to support medical necessity.',
+        investigate: '(reveals one fact from the chart — relevant or distractor)',
+        document: 'Fact upgraded — explicitly linked to LCD criteria. (or: distractor noted, no progress)',
+        decide_pass: 'Appeal accepted. CDI packet supports medical necessity per LCD. Claim adjudicates.',
+        decide_fail: 'Appeal denied. Insufficient documentation linking clinical evidence to LCD requirements. Claim closes.',
+      },
+      notes:
+        'The Wraith already runs as Investigation — this draft just makes the issue checklist + payer-reply structure explicit so the player sees the puzzle shape, not just a turn budget. Most of the work is already done in InvestigationController; the reframe is mostly UI / messaging.',
+    },
   },
   co_97: {
     id: 'co_97',
@@ -152,6 +196,43 @@ export const ENCOUNTERS: Record<string, Encounter> = {
       submit_837p:   [{ box: '24D-1', kind: 'check' }],
       appeal_letter: [{ box: '24D-1', kind: 'stamp', value: 'APPEAL' }],
       medical_policy:[{ box: '24D-1', kind: 'note',  value: 'NCCI policy ref' }],
+    },
+    puzzleDraft: {
+      premise:
+        'A claim came back CO-97. The payer says 99214 was bundled into 11102 per NCCI. Reading the chart, the E&M was significant and separately identifiable from the lesion removal — but the claim went out without modifier 25.',
+      issues: [
+        {
+          label: 'Why was this bundled? (NCCI edit pair, not a bundling error)',
+          resolvedBy: 'medical_policy',
+          teaching: 'Reading the actual NCCI rationale before reaching for tools — most bundles are unbundlable with the right modifier.',
+        },
+        {
+          label: 'Modifier 25 missing on E&M (24D line 1)',
+          hidden: true,
+          resolvedBy: 'cdi_query',
+          teaching: 'CDI clarifies that the E&M was significant and separately identifiable, justifying mod-25.',
+        },
+        {
+          label: 'Resubmit cleanly (no NCCI edit triggers on rescrub)',
+          hidden: true,
+          resolvedBy: 'claim_scrubber',
+          teaching: 'Rescrub before resubmit — confirms the modifier addition cleared the front-end edit.',
+        },
+      ],
+      winCondition: 'All three issues resolved → Submit Replacement → claim adjudicates clean.',
+      costs: [
+        'Premature Appeal Letter: −2 days off filing window, +5 stress; payer responds "claim correction required first".',
+        'Submitting before mod-25 added: re-denied with same CO-97 + new RARC, +1 attempt counter (3 max).',
+        'Wrong modifier (e.g. 59 instead of 25): payer responds "modifier 59 inappropriate; documentation supports 25".',
+      ],
+      payerReplies: {
+        medical_policy: 'NCCI edit pair 11102/99214 reviewed. E&M may be unbundled with modifier 25 if significant and separately identifiable.',
+        cdi_query: 'Rendering provider attests E&M was significant and separately identifiable. Modifier 25 added to line 1.',
+        appeal_letter: 'Appeal premature. Resubmit corrected claim with appropriate modifier first; appeal only after second denial.',
+        submit_837p: '✓ Claim accepted. CCI edits cleared. Adjudication pending.',
+      },
+      notes:
+        'This is the lightest possible reframe — the existing toolEffects already do the right things visually. The reframe just adds (1) a visible issue checklist instead of an HP bar, (2) explicit payer reply text after each move, and (3) wrong-move costs that aren\'t damage rolls.',
     },
   },
   co_109: {
@@ -202,6 +283,48 @@ export const ENCOUNTERS: Record<string, Encounter> = {
       claim_scrubber: [{ box: '24D-1', kind: 'note', value: 'rescrubbed' }],
       cdi_query:      [{ box: '21A',   kind: 'note', value: 'supporting docs' }],
       appeal_letter:  [{ box: '24D-1', kind: 'stamp', value: 'APPEAL' }],
+    },
+    puzzleDraft: {
+      premise:
+        'CPT 72148 (MRI lumbar) was denied — no prior auth on file. The patient already had the scan; you have a denied claim and a closed gate. The 278 is the only key.',
+      issues: [
+        {
+          label: 'Read the policy — what auth is required and how?',
+          resolvedBy: 'medical_policy',
+          teaching: 'Auth requirements live in payer policy. UHC CMP.PHARM.213 specifies the 278 channel and turnaround.',
+        },
+        {
+          label: 'File the 278 retroactively',
+          resolvedBy: 'prior_auth_278',
+          teaching: 'Most payers allow retroactive 278 within X days post-service for emergent / unplanned imaging. The 278 is the actual transaction.',
+        },
+        {
+          label: 'Document medical necessity for the retro auth',
+          hidden: true,
+          resolvedBy: 'cdi_query',
+          teaching: 'Retro 278s require justification — the chart needs to show why pre-auth wasn\'t feasible.',
+        },
+        {
+          label: 'Resubmit with auth number on Box 23',
+          hidden: true,
+          resolvedBy: 'submit_837p',
+          teaching: 'Box 23 (prior auth number) connects the 278 to the claim. Without it, the gate stays closed.',
+        },
+      ],
+      winCondition: 'Auth approved + auth number populated + claim resubmitted → adjudication.',
+      costs: [
+        'Submit before 278: claim re-denies CO-197, no progress, −1 day off filing window.',
+        'Appeal Letter without 278: payer responds "appeal premature; obtain authorization first".',
+        'Wrong tool against the gate: explicit "GATE CLOSED — 278 required" reply, no damage abstraction.',
+      ],
+      payerReplies: {
+        prior_auth_278: 'Retro 278 received. Pending medical-necessity review. Auth number AUTH-9981420 issued; populate Box 23 on resubmission.',
+        medical_policy: 'CMP.PHARM.213: MRI lumbar requires prior auth via 278. Retroactive submissions accepted within 14 days of service for emergent presentations.',
+        appeal_letter: 'Appeal premature — no authorization on file. Submit 278 first.',
+        submit_837p: '✓ Claim accepted with auth on file. Adjudication pending.',
+      },
+      notes:
+        'Block becomes "the gate is the puzzle." Today the gate just makes alternating turns useless; the reframe makes it a discrete obstacle that the 278 specifically unlocks. Other tools have explicit replies instead of "did 0 damage."',
     },
   },
   co_16_swarm: {

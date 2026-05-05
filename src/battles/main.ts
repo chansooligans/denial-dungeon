@@ -175,6 +175,54 @@ function renderCase(c: PatientCase | undefined): string {
     </div>`
 }
 
+function renderPuzzleDraft(enc: Encounter): string {
+  const d = enc.puzzleDraft
+  if (!d) return ''
+  const issues = d.issues
+    .map((iss, i) => {
+      const tag = iss.hidden ? '<span class="iss-hidden">hidden</span>' : '<span class="iss-visible">visible</span>'
+      const by = iss.resolvedBy ? `<code>${escapeHtml(iss.resolvedBy)}</code>` : '—'
+      return `
+        <li>
+          <div class="iss-h"><span class="iss-n">#${i + 1}</span> ${escapeHtml(iss.label)} ${tag}</div>
+          <div class="iss-meta">resolved by: ${by}</div>
+          ${iss.teaching ? `<div class="iss-teach">${escapeHtml(iss.teaching)}</div>` : ''}
+        </li>`
+    })
+    .join('')
+  const replies = d.payerReplies
+    ? Object.entries(d.payerReplies)
+        .map(([k, v]) => `<dt><code>${escapeHtml(k)}</code></dt><dd>"${escapeHtml(v)}"</dd>`)
+        .join('')
+    : ''
+  return `
+    <div class="puzzle">
+      <div class="puzzle-h">
+        <span class="puzzle-tag">PUZZLE DRAFT</span>
+        <span class="puzzle-sub">a sketched reframe — not yet wired into the engine</span>
+      </div>
+      <div class="puzzle-premise">${escapeHtml(d.premise)}</div>
+      <div class="puzzle-section">
+        <div class="puzzle-section-h">Issue checklist (${d.issues.length})</div>
+        <ol class="issues">${issues}</ol>
+      </div>
+      <div class="puzzle-section">
+        <div class="puzzle-section-h">Win condition</div>
+        <div class="puzzle-prose">${escapeHtml(d.winCondition)}</div>
+      </div>
+      <div class="puzzle-section">
+        <div class="puzzle-section-h">Costs of wrong moves (no HP loss)</div>
+        <ul class="costs">${d.costs.map(c => `<li>${escapeHtml(c)}</li>`).join('')}</ul>
+      </div>
+      ${replies ? `
+      <div class="puzzle-section">
+        <div class="puzzle-section-h">Sample payer replies</div>
+        <dl class="replies">${replies}</dl>
+      </div>` : ''}
+      ${d.notes ? `<div class="puzzle-notes"><b>Notes:</b> ${escapeHtml(d.notes)}</div>` : ''}
+    </div>`
+}
+
 function renderToolEffects(enc: Encounter): string {
   const fx = enc.toolEffects
   if (!fx || Object.keys(fx).length === 0) return ''
@@ -205,11 +253,12 @@ function renderEncounter(enc: Encounter): string {
   const carcPill = enc.carcCode ? `<span class="pill carc">${escapeHtml(enc.carcCode)}</span>` : ''
   const lvPill = `<span class="pill lv">L${enc.level}</span>`
   const archPill = enc.archetype ? `<span class="pill arch">${escapeHtml(enc.archetype)}</span>` : ''
+  const draftPill = enc.puzzleDraft ? `<span class="pill draft">puzzle draft</span>` : ''
   return `
-    <article class="enc" id="${escapeHtml(enc.id)}">
+    <article class="enc${enc.puzzleDraft ? ' has-draft' : ''}" id="${escapeHtml(enc.id)}">
       <header>
         <h2>${escapeHtml(enc.title)}</h2>
-        <div class="pills">${lvPill}${carcPill}${archPill}${wingPill}<span class="pill mech">${escapeHtml(mech)}</span></div>
+        <div class="pills">${lvPill}${carcPill}${archPill}${wingPill}<span class="pill mech">${escapeHtml(mech)}</span>${draftPill}</div>
       </header>
       <p class="desc">${escapeHtml(enc.description)}</p>
 
@@ -233,6 +282,7 @@ function renderEncounter(enc: Encounter): string {
           ${renderCase(c)}
         </div>
       </div>
+      ${renderPuzzleDraft(enc)}
     </article>`
 }
 
@@ -261,7 +311,7 @@ function render(): string {
     <header class="page-h">
       <h1>Denial Dungeon · Battle Catalog</h1>
       <p class="lede">Every encounter in the game — its mechanic, payer note, claim form, and the revenue-cycle workflow it teaches. <a href="./">Back to the game →</a></p>
-      <p class="meta">${all.length} encounters · ${byMech.size} mechanics</p>
+      <p class="meta">${all.length} encounters · ${byMech.size} mechanics · ${all.filter(e => e.puzzleDraft).length} with puzzle drafts <button id="toggle-drafts" class="filter-btn">Show drafts only</button></p>
     </header>
 
     <nav class="toc">
@@ -332,6 +382,17 @@ const css = `
   .pill.carc { color: var(--accent-2); border-color: #4a3a2a; }
   .pill.arch { color: #c8b6e0; border-color: #3a324a; }
   .pill.mech { color: #a3c5ff; border-color: #2c3a55; font-family: monospace; }
+  .pill.draft { color: var(--accent); border-color: #2c5547; background: rgba(126, 226, 193, 0.08); }
+
+  .filter-btn {
+    margin-left: 14px; font: inherit; font-size: 11.5px;
+    background: var(--panel-2); color: var(--ink); border: 1px solid #2a3142;
+    padding: 3px 10px; border-radius: 4px; cursor: pointer;
+  }
+  .filter-btn:hover { border-color: var(--accent); color: var(--accent); }
+  body.drafts-only .enc:not(.has-draft) { display: none; }
+  /* Collapse mechanic sections that end up with no visible encounters. */
+  body.drafts-only .mech-group:not(:has(.has-draft)) { display: none; }
   .desc { color: var(--ink); margin: 12px 0 14px; font-size: 14px; }
   .grid2 { display: grid; grid-template-columns: 1.05fr 1fr; gap: 22px; }
   @media (max-width: 880px) { .grid2 { grid-template-columns: 1fr; } }
@@ -380,6 +441,40 @@ const css = `
   .err-why { font-size: 12px; color: var(--ink-dim); }
 
   .muted { color: var(--ink-dim); }
+
+  .puzzle {
+    margin-top: 18px; padding: 14px 16px;
+    background: linear-gradient(180deg, rgba(126, 226, 193, 0.05), rgba(126, 226, 193, 0.02));
+    border: 1px dashed #2c5547;
+    border-radius: 8px;
+  }
+  .puzzle-h { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+  .puzzle-tag {
+    font-size: 10.5px; font-weight: 700; letter-spacing: 0.12em;
+    color: var(--accent); padding: 2px 8px;
+    background: rgba(126, 226, 193, 0.1); border: 1px solid #2c5547; border-radius: 4px;
+  }
+  .puzzle-sub { font-size: 11.5px; color: var(--ink-dim); font-style: italic; }
+  .puzzle-premise { font-size: 13.5px; color: var(--ink); margin-bottom: 12px; line-height: 1.5; }
+  .puzzle-section { margin: 10px 0; }
+  .puzzle-section-h { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-dim); margin-bottom: 4px; }
+  .puzzle-prose { font-size: 13px; }
+  .issues { padding-left: 0; list-style: none; }
+  .issues li { padding: 8px 0; border-top: 1px dashed #2a3142; }
+  .issues li:first-child { border-top: none; padding-top: 0; }
+  .iss-h { font-size: 13px; }
+  .iss-n { color: var(--ink-dim); font-family: monospace; margin-right: 6px; }
+  .iss-hidden, .iss-visible { font-size: 10px; padding: 1px 6px; border-radius: 3px; margin-left: 6px; vertical-align: middle; }
+  .iss-hidden { background: rgba(177, 139, 214, 0.15); color: #c8b6e0; }
+  .iss-visible { background: rgba(126, 226, 193, 0.12); color: var(--accent); }
+  .iss-meta { font-size: 11.5px; color: var(--ink-dim); margin: 2px 0 0; }
+  .iss-teach { font-size: 12px; color: var(--ink); margin: 3px 0 0; padding-left: 10px; border-left: 2px solid #2c3a55; }
+  .costs { padding-left: 18px; }
+  .costs li { font-size: 12.5px; margin: 3px 0; }
+  .replies { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 0; }
+  .replies dt { font-size: 12px; }
+  .replies dd { font-size: 12.5px; margin: 0; color: var(--ink); font-style: italic; }
+  .puzzle-notes { font-size: 12px; color: var(--ink-dim); margin-top: 10px; padding-top: 8px; border-top: 1px dashed #2a3142; }
 `
 
 function mount() {
@@ -388,6 +483,17 @@ function mount() {
   document.head.appendChild(style)
   const root = document.getElementById('catalog')
   if (root) root.innerHTML = render()
+
+  // "Show drafts only" filter — toggles a body class that hides
+  // encounters without a `puzzleDraft`. Empty mech-group sections
+  // collapse via CSS too.
+  const btn = document.getElementById('toggle-drafts')
+  if (btn) {
+    btn.addEventListener('click', () => {
+      const on = document.body.classList.toggle('drafts-only')
+      btn.textContent = on ? 'Show all' : 'Show drafts only'
+    })
+  }
 }
 
 mount()
