@@ -8,6 +8,8 @@ import { FACTION_COLOR } from '../types'
 import { createMechanic } from '../battle'
 import type { MechanicController } from '../battle'
 import { ClaimSheet } from '../battle/ClaimSheet'
+import { showVictoryScreen, showDefeatScreen } from '../battle/screens'
+import { ToolMenu } from '../battle/toolMenu'
 
 interface BattleState {
   encounter: Encounter
@@ -44,7 +46,12 @@ export class BattleScene extends Phaser.Scene {
   private playerHpBar!: Phaser.GameObjects.Graphics
   private playerHpText!: Phaser.GameObjects.Text
   private messageText!: Phaser.GameObjects.Text
-  private toolButtons: Phaser.GameObjects.Container[] = []
+  private toolMenu!: ToolMenu
+  // Convenience accessor for code that needs the raw button list
+  // (victory + defeat screens, setToolButtonsVisible).
+  private get toolButtons(): Phaser.GameObjects.Container[] {
+    return this.toolMenu?.buttons ?? []
+  }
   private portrait!: Phaser.GameObjects.Image
   private turnIndicator!: Phaser.GameObjects.Text
   private statusText?: Phaser.GameObjects.Text
@@ -85,7 +92,6 @@ export class BattleScene extends Phaser.Scene {
     }
     this.encounterHpRatio = 1
     this.playerHpRatio = 1
-    this.toolButtons = []
     // Clear lazy-created widgets — Phaser destroys them on scene
     // restart but the field references survive, leading to drawImage
     // crashes if we call setText/setVisible on them in create().
@@ -93,6 +99,9 @@ export class BattleScene extends Phaser.Scene {
     this.panelTextWidget = undefined
     this.claimSheet = undefined
     this.encounterDescriptionText = undefined
+    // ToolMenu is freshly constructed in create() each scene start.
+    // Field is non-null until then; getter returns [] safely.
+    this.toolMenu = undefined as unknown as ToolMenu
   }
 
   create() {
@@ -102,7 +111,19 @@ export class BattleScene extends Phaser.Scene {
     this.buildEncounterPanel(width)
     this.buildPlayerPanel(width, height)
     this.buildMessageArea(width, height)
-    this.buildToolMenu(width, height)
+    this.toolMenu = new ToolMenu(
+      this, width, height,
+      this.state.playerTools.map(id => TOOLS[id]).filter(Boolean) as Tool[],
+      this.mechanic.getActions(),
+      {
+        isPlayerTurn: () => this.state.turn === 'player',
+        toolGateReason: (tool) => this.toolGateReason(tool),
+        showMessage: (msg) => this.showMessage(msg),
+        onUseTool: (tool) => this.useToolAction(tool),
+        onUseAction: (id) => this.useMechanicAction(id),
+        onFlee: () => this.tryFlee(),
+      },
+    )
 
     this.turnIndicator = this.add.text(width / 2, height / 2 + 30, '', {
       fontSize: '10px', fontFamily: 'monospace', color: '#5a6a7a',
@@ -112,8 +133,7 @@ export class BattleScene extends Phaser.Scene {
     this.setTurnIndicator()
     this.refreshStatus()
     this.refreshPanel()
-    this.refreshActionButtons()
-    this.styleToolButtons()
+    this.toolMenu.refreshGates(this.mechanic.getActions())
   }
 
   private buildEncounterPanel(width: number) {
@@ -236,108 +256,13 @@ export class BattleScene extends Phaser.Scene {
     }).setOrigin(0.5)
   }
 
-  private buildToolMenu(width: number, height: number) {
-    const customActions = this.mechanic.getActions()
-    if (customActions) {
-      this.buildCustomActionMenu(width, height, customActions)
-    } else {
-      this.buildDefaultToolMenu(width, height)
-    }
-
-    // Flee button (always available)
-    const fleeX = width - 80
-    const fleeY = height - 30
-    const fleeBtn = this.add.text(fleeX, fleeY, '[ FLEE ]', {
-      fontSize: '11px', fontFamily: 'monospace', color: '#5a6a7a',
-    }).setOrigin(0.5).setInteractive({ useHandCursor: true })
-    fleeBtn.on('pointerover', () => fleeBtn.setColor('#f4d06f'))
-    fleeBtn.on('pointerout', () => fleeBtn.setColor('#5a6a7a'))
-    fleeBtn.on('pointerdown', () => this.tryFlee())
-    const fleeContainer = this.add.container(0, 0, [fleeBtn])
-    this.toolButtons.push(fleeContainer)
-
-    this.input.keyboard!.on('keydown-ESC', () => {
-      if (this.state.turn === 'player') this.tryFlee()
-    })
-  }
-
-  private buildDefaultToolMenu(width: number, height: number) {
-    const tools = this.state.playerTools.map(id => TOOLS[id]).filter(Boolean)
-    const cols = Math.min(tools.length, 4)
-    const rows = Math.ceil(tools.length / cols)
-    const btnW = 160
-    const btnH = 36
-    const gap = 8
-    const startX = width / 2 - ((cols - 1) * (btnW + gap)) / 2
-    const startY = height - 20 - rows * (btnH + gap)
-
-    tools.forEach((tool, i) => {
-      const col = i % cols
-      const row = Math.floor(i / cols)
-      const x = startX + col * (btnW + gap)
-      const y = startY + row * (btnH + gap)
-      const container = this.add.container(x, y)
-
-      const bg = this.add.image(0, 0, 'ui_action_btn').setDisplaySize(btnW, btnH).setInteractive({ useHandCursor: true })
-      const numLabel = this.add.text(-btnW / 2 + 10, -6, `${i + 1}`, {
-        fontSize: '9px', fontFamily: 'monospace', color: '#5a6a7a',
-      }).setOrigin(0, 0.5)
-      const label = this.add.text(4, -6, tool.name, {
-        fontSize: '11px', fontFamily: 'monospace', color: '#7ee2c1',
-      }).setOrigin(0.5)
-      const sub = this.add.text(4, 8, `DMG:${tool.damage} ACC:${tool.accuracy}%`, {
-        fontSize: '8px', fontFamily: 'monospace', color: '#5a6a7a',
-      }).setOrigin(0.5)
-
-      container.add([bg, numLabel, label, sub])
-      container.setData('tool', tool)
-      container.setData('label', label)
-      container.setData('sub', sub)
-      container.setData('bg', bg)
-
-      bg.on('pointerover', () => {
-        if (this.toolGateReason(tool)) return
-        bg.setTexture('ui_action_btn_hover')
-        label.setColor('#ffffff')
-      })
-      bg.on('pointerout', () => {
-        if (this.toolGateReason(tool)) return
-        bg.setTexture('ui_action_btn')
-        label.setColor('#7ee2c1')
-      })
-      bg.on('pointerdown', () => {
-        const reason = this.toolGateReason(tool)
-        if (reason) {
-          this.showMessage(reason)
-          return
-        }
-        this.useToolAction(tool)
-      })
-
-      this.toolButtons.push(container)
-    })
-
-    const keys = this.input.keyboard!
-    tools.forEach((tool, i) => {
-      keys.on(`keydown-${i + 1}`, () => {
-        if (this.state.turn !== 'player') return
-        const reason = this.toolGateReason(tool)
-        if (reason) {
-          this.showMessage(reason)
-          return
-        }
-        this.useToolAction(tool)
-      })
-    })
-  }
-
   /**
    * If a tool is currently unusable, return a short user-facing reason.
-   * Drives both the click handler and the per-button visual state.
+   * ToolMenu calls this both to gate clicks and to style buttons.
    *
    * Today's only gate: stress ≥ 75 disables tools with turnCost ≥ 2.
-   * The thematic read is "you don't have the time to file a 2-hour
-   * appeal when you're this stressed" — appeals fold first.
+   * Thematic read is "no time to file a 2-hour appeal when you're this
+   * stressed" — appeals fold first.
    */
   private toolGateReason(tool: Tool): string | null {
     const stress = getState().resources.stress
@@ -345,99 +270,6 @@ export class BattleScene extends Phaser.Scene {
       return `Too stressed for ${tool.name}. No time for slow tools.`
     }
     return null
-  }
-
-  /** Apply the gated/disabled styling to default tool buttons. */
-  private styleToolButtons() {
-    for (const container of this.toolButtons) {
-      const tool = container.getData('tool') as Tool | undefined
-      if (!tool) continue
-      const label = container.getData('label') as Phaser.GameObjects.Text | undefined
-      const sub = container.getData('sub') as Phaser.GameObjects.Text | undefined
-      const bg = container.getData('bg') as Phaser.GameObjects.Image | undefined
-      const reason = this.toolGateReason(tool)
-      if (reason) {
-        container.setAlpha(0.55)
-        label?.setColor('#ef5b7b')
-        sub?.setText('STRESSED — unavailable')
-        sub?.setColor('#ef5b7b')
-        bg?.setTexture('ui_action_btn')
-      } else {
-        container.setAlpha(1)
-        label?.setColor('#7ee2c1')
-        sub?.setText(`DMG:${tool.damage} ACC:${tool.accuracy}%`)
-        sub?.setColor('#5a6a7a')
-      }
-    }
-  }
-
-  private buildCustomActionMenu(
-    width: number, height: number,
-    actions: import('../battle/types').MechanicAction[]
-  ) {
-    const cols = Math.min(actions.length, 4)
-    const rows = Math.ceil(actions.length / cols)
-    const btnW = 170
-    const btnH = 40
-    const gap = 8
-    const startX = width / 2 - ((cols - 1) * (btnW + gap)) / 2
-    const startY = height - 20 - rows * (btnH + gap)
-
-    actions.forEach((action, i) => {
-      const col = i % cols
-      const row = Math.floor(i / cols)
-      const x = startX + col * (btnW + gap)
-      const y = startY + row * (btnH + gap)
-      const container = this.add.container(x, y)
-
-      const bg = this.add.image(0, 0, 'ui_action_btn').setDisplaySize(btnW, btnH)
-        .setInteractive({ useHandCursor: true })
-      const numLabel = this.add.text(-btnW / 2 + 10, -8, `${i + 1}`, {
-        fontSize: '9px', fontFamily: 'monospace', color: '#5a6a7a',
-      }).setOrigin(0, 0.5)
-      const label = this.add.text(4, -8, action.label, {
-        fontSize: '12px', fontFamily: 'monospace', color: '#b18bd6', fontStyle: 'bold',
-      }).setOrigin(0.5)
-      const sub = this.add.text(4, 9, action.sub ?? '', {
-        fontSize: '8px', fontFamily: 'monospace', color: '#7a8898',
-      }).setOrigin(0.5)
-      container.add([bg, numLabel, label, sub])
-      container.setData('actionId', action.id)
-      container.setData('label', label)
-
-      bg.on('pointerover', () => { bg.setTexture('ui_action_btn_hover'); label.setColor('#ffffff') })
-      bg.on('pointerout', () => { bg.setTexture('ui_action_btn'); label.setColor('#b18bd6') })
-      bg.on('pointerdown', () => this.useMechanicAction(action.id))
-
-      this.toolButtons.push(container)
-    })
-
-    const keys = this.input.keyboard!
-    actions.forEach((action, i) => {
-      keys.on(`keydown-${i + 1}`, () => {
-        if (this.state.turn === 'player') this.useMechanicAction(action.id)
-      })
-    })
-  }
-
-  /** Refresh disabled-state styling on custom action buttons each turn. */
-  private refreshActionButtons() {
-    const actions = this.mechanic.getActions()
-    if (!actions) return
-    for (const container of this.toolButtons) {
-      const id = container.getData('actionId') as string | undefined
-      if (!id) continue
-      const matching = actions.find(a => a.id === id)
-      if (!matching) continue
-      const label = container.getData('label') as Phaser.GameObjects.Text | undefined
-      if (matching.disabled) {
-        container.setAlpha(0.4)
-        label?.setColor('#5a4a6a')
-      } else {
-        container.setAlpha(1)
-        label?.setColor('#b18bd6')
-      }
-    }
   }
 
   private tryFlee() {
@@ -504,7 +336,7 @@ export class BattleScene extends Phaser.Scene {
     this.encounterHpText.setText(`${current} / ${max}`)
     this.refreshStatus()
     this.refreshPanel()
-    this.refreshActionButtons()
+    this.toolMenu?.refreshGates(this.mechanic.getActions())
 
     if (result.damage > 0) {
       // Only flash/shake when there's actual HP damage (Investigation
@@ -565,8 +397,7 @@ export class BattleScene extends Phaser.Scene {
       this.state.turnCount++
       this.setToolButtonsVisible(true)
       this.setTurnIndicator()
-      this.refreshActionButtons()
-      this.styleToolButtons()
+      this.toolMenu?.refreshGates(this.mechanic.getActions())
       this.showMessage('Choose your action.')
     })
   }
@@ -650,93 +481,14 @@ export class BattleScene extends Phaser.Scene {
 
   private victory() {
     this.state.turn = 'done'
-    const enc = this.state.encounter
-
-    this.toolButtons.forEach(c => c.setVisible(false))
-    this.messageText.setVisible(false)
-    this.turnIndicator.setVisible(false)
-
-    const { width, height } = this.scale
-
-    // Overlay
-    const overlay = this.add.rectangle(width / 2, height / 2, width, height, 0x0e1116, 0)
-    this.tweens.add({ targets: overlay, fillAlpha: 0.85, duration: 400 })
-
-    // Portrait scales up
-    this.tweens.add({
-      targets: this.portrait,
-      scaleX: 1.5,
-      scaleY: 1.5,
-      alpha: 0.3,
-      duration: 600,
-      ease: 'Power2',
-    })
-
-    this.time.delayedCall(400, () => {
-      const resolved = this.add.text(width / 2, 60, 'RESOLVED', {
-        fontSize: '28px', fontFamily: 'monospace', color: '#7ee2c1', fontStyle: 'bold',
-      }).setOrigin(0.5).setAlpha(0)
-      this.tweens.add({ targets: resolved, alpha: 1, duration: 300 })
-
-      // CARC code reveal — only shown for obstacles wrapping a real
-      // denial code. Non-CARC obstacles (e.g. eligibility, charge capture,
-      // AR aging) display their archetype name instead.
-      if (enc.carcCode) {
-        this.add.text(width / 2, 110, `CARC: ${enc.carcCode}`, {
-          fontSize: '16px', fontFamily: 'monospace', color: '#ef5b7b',
-        }).setOrigin(0.5)
-
-        if (enc.carcName) {
-          this.add.text(width / 2, 135, enc.carcName, {
-            fontSize: '12px', fontFamily: 'monospace', color: '#ffffff',
-          }).setOrigin(0.5)
-        }
-      } else if (enc.archetype) {
-        this.add.text(width / 2, 110, enc.archetype, {
-          fontSize: '16px', fontFamily: 'monospace', color: '#b18bd6',
-        }).setOrigin(0.5)
-      }
-
-      // Watchpoint
-      this.add.text(width / 2, 180, `"${enc.watchpoint}"`, {
-        fontSize: '12px', fontFamily: 'monospace', color: '#f4d06f',
-        fontStyle: 'italic', wordWrap: { width: 500 }, align: 'center',
-      }).setOrigin(0.5)
-
-      // Best tools
-      const correctNames = enc.correctTools.map(id => TOOLS[id]?.name || id).join(', ')
-      this.add.text(width / 2, 230, `Best tools: ${correctNames}`, {
-        fontSize: '11px', fontFamily: 'monospace', color: '#8b95a5',
-      }).setOrigin(0.5)
-
-      // Turn count + rating
-      const turns = this.state.turnCount + 1
-      const stars = turns <= 2 ? 3 : turns <= 4 ? 2 : 1
-      this.add.text(width / 2, 260, `Resolved in ${turns} turns  ${'★'.repeat(stars)}${'☆'.repeat(3 - stars)}`, {
-        fontSize: '11px', fontFamily: 'monospace', color: '#f4d06f',
-      }).setOrigin(0.5)
-
-      // New tools earned (if first defeat). Surfaced so the player notices
-      // the kit growing — exitBattle() does the actual unlock.
-      const earned = enc.unlocksOnDefeat ?? []
-      const previouslyHad = new Set(getState().tools)
-      const newlyEarned = earned.filter(id => !previouslyHad.has(id))
-      if (newlyEarned.length > 0) {
-        const names = newlyEarned.map(id => TOOLS[id]?.name || id).join(', ')
-        this.add.text(width / 2, 285, `New tool unlocked: ${names}`, {
-          fontSize: '11px', fontFamily: 'monospace', color: '#7ee2c1', fontStyle: 'bold',
-        }).setOrigin(0.5)
-      }
-
-      // Continue button
-      const btn = this.add.text(width / 2, 330, '[ CONTINUE ]', {
-        fontSize: '14px', fontFamily: 'monospace', color: '#7ee2c1',
-      }).setOrigin(0.5).setInteractive({ useHandCursor: true })
-      btn.on('pointerover', () => btn.setColor('#ffffff'))
-      btn.on('pointerout', () => btn.setColor('#7ee2c1'))
-      btn.on('pointerdown', () => this.exitBattle(true))
-
-      this.input.keyboard!.on('keydown-SPACE', () => this.exitBattle(true))
+    showVictoryScreen(this, {
+      encounter: this.state.encounter,
+      toolButtons: this.toolButtons,
+      messageText: this.messageText,
+      turnIndicator: this.turnIndicator,
+      portrait: this.portrait,
+      turnCount: this.state.turnCount,
+      onContinue: () => this.exitBattle(true),
     })
   }
 
@@ -746,40 +498,12 @@ export class BattleScene extends Phaser.Scene {
     updateResources({ stress: +10 })
     saveGame()
 
-    this.toolButtons.forEach(c => c.setVisible(false))
-    this.messageText.setVisible(false)
-    this.turnIndicator.setVisible(false)
-
-    const { width, height } = this.scale
-
-    const overlay = this.add.rectangle(width / 2, height / 2, width, height, 0x0e1116, 0)
-    this.tweens.add({ targets: overlay, fillAlpha: 0.85, duration: 400 })
-
-    this.tweens.add({
-      targets: this.portrait,
-      scaleX: 2.5,
-      scaleY: 2.5,
-      alpha: 0.15,
-      duration: 800,
-      ease: 'Power2',
-    })
-
-    this.time.delayedCall(400, () => {
-      this.add.text(width / 2, height / 2 - 60, 'CLAIM LOST', {
-        fontSize: '28px', fontFamily: 'monospace', color: '#ef5b7b', fontStyle: 'bold',
-      }).setOrigin(0.5)
-
-      this.add.text(width / 2, height / 2 - 20, 'The denial stands. The patient gets a surprise bill.', {
-        fontSize: '12px', fontFamily: 'monospace', color: '#8b95a5',
-        wordWrap: { width: 400 }, align: 'center',
-      }).setOrigin(0.5)
-
-      const retryBtn = this.add.text(width / 2, height / 2 + 40, '[ RETRY ]', {
-        fontSize: '14px', fontFamily: 'monospace', color: '#f4d06f',
-      }).setOrigin(0.5).setInteractive({ useHandCursor: true })
-      retryBtn.on('pointerover', () => retryBtn.setColor('#ffffff'))
-      retryBtn.on('pointerout', () => retryBtn.setColor('#f4d06f'))
-      retryBtn.on('pointerdown', () => {
+    showDefeatScreen(this, {
+      toolButtons: this.toolButtons,
+      messageText: this.messageText,
+      turnIndicator: this.turnIndicator,
+      portrait: this.portrait,
+      onRetry: () => {
         this.scene.restart({
           encounterId: this.state.encounter.id,
           playerHp: this.state.playerMaxHp,
@@ -787,14 +511,8 @@ export class BattleScene extends Phaser.Scene {
           playerTools: this.state.playerTools,
           returnScene: this.state.returnScene,
         })
-      })
-
-      const exitBtn = this.add.text(width / 2, height / 2 + 80, '[ BACK TO TITLE ]', {
-        fontSize: '12px', fontFamily: 'monospace', color: '#5a6a7a',
-      }).setOrigin(0.5).setInteractive({ useHandCursor: true })
-      exitBtn.on('pointerover', () => exitBtn.setColor('#ffffff'))
-      exitBtn.on('pointerout', () => exitBtn.setColor('#5a6a7a'))
-      exitBtn.on('pointerdown', () => this.scene.start('Title'))
+      },
+      onExitToTitle: () => this.scene.start('Title'),
     })
   }
 
@@ -837,12 +555,8 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private setToolButtonsVisible(visible: boolean) {
-    this.toolButtons.forEach(c => {
-      c.setVisible(visible)
-      c.setAlpha(visible ? 1 : 0.3)
-    })
-    if (visible) this.turnIndicator.setVisible(true)
-    else this.turnIndicator.setVisible(false)
+    this.toolMenu?.setVisible(visible)
+    this.turnIndicator.setVisible(visible)
   }
 
   private animateEncounterHp() {
