@@ -589,7 +589,7 @@ export class BattleScene extends Phaser.Scene {
       duration: 400,
       ease: 'Power2',
       onUpdate: (tween) => {
-        this.encounterHpRatio = tween.getValue() / 100
+        this.encounterHpRatio = (tween.getValue() ?? 0) / 100
         this.drawEncounterHp()
       },
     })
@@ -603,7 +603,7 @@ export class BattleScene extends Phaser.Scene {
       duration: 400,
       ease: 'Power2',
       onUpdate: (tween) => {
-        this.playerHpRatio = tween.getValue() / 100
+        this.playerHpRatio = (tween.getValue() ?? 0) / 100
         this.drawPlayerHp()
       },
     })
