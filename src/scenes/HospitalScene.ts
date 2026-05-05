@@ -121,6 +121,13 @@ export class HospitalScene extends Phaser.Scene {
       this.refreshHUD()
     })
 
+    // Level-1 atmosphere: occasionally a sheet of paper scuttles across
+    // the floor — a hint that the Waiting Room is bleeding through. No
+    // interaction, no codex; just sensation. Higher levels skip this.
+    if (state.currentLevel === 1) {
+      this.scheduleGhostPaper()
+    }
+
     // Mobile / accessibility: parallel scene with virtual D-pad + E + ESC.
     if (!this.scene.isActive('TouchOverlay')) this.scene.launch('TouchOverlay')
     // Deferred stop: when this scene shuts down, defer to the next tick
@@ -566,5 +573,68 @@ export class HospitalScene extends Phaser.Scene {
       saveGame()
       this.scene.start('WaitingRoom')
     }
+  }
+
+  /**
+   * Periodically launch a "ghost paper" — a faint piece of paper
+   * scuttles across the camera viewport. Atmosphere only; no
+   * interaction. Hints that the Waiting Room is bleeding through.
+   *
+   * Spawned in screen-space (scrollFactor 0) so it's always visible
+   * regardless of where the camera is following the player.
+   */
+  private scheduleGhostPaper() {
+    const fire = () => {
+      // Skip if we're paused, transitioning, or generally not focused.
+      if (!this.scene.isActive()) return
+      this.spawnGhostPaper()
+      // Re-arm with a randomized interval so it doesn't feel timed.
+      this.time.delayedCall(Phaser.Math.Between(35_000, 70_000), fire)
+    }
+    // First glimpse fires after the player has had a moment to orient.
+    this.time.delayedCall(Phaser.Math.Between(15_000, 30_000), fire)
+  }
+
+  private spawnGhostPaper() {
+    const { width, height } = this.scale
+    // Pick a horizontal direction; spawn just off the matching edge,
+    // drift across with a slight vertical wobble + rotation.
+    const goingRight = Phaser.Math.Between(0, 1) === 0
+    const startX = goingRight ? -32 : width + 32
+    const endX = goingRight ? width + 32 : -32
+    const y = Phaser.Math.Between(Math.floor(height * 0.55), height - 80)
+
+    const paper = this.add.image(startX, y, 'wr_paper')
+      .setScale(2.2)
+      .setAlpha(0)
+      .setAngle(Phaser.Math.Between(-25, 25))
+      .setScrollFactor(0)
+      .setDepth(15)
+
+    // The UI camera at zoom 1 owns scrollFactor-0 widgets cleanly.
+    this.cameras.main.ignore(paper)
+
+    const duration = Phaser.Math.Between(1800, 3200)
+    this.tweens.add({
+      targets: paper,
+      alpha: 0.55,
+      duration: 300,
+    })
+    this.tweens.add({
+      targets: paper,
+      x: endX,
+      y: y + Phaser.Math.Between(-12, 12),
+      angle: paper.angle + Phaser.Math.Between(-30, 30),
+      duration,
+      ease: 'Sine.easeInOut',
+      onComplete: () => {
+        this.tweens.add({
+          targets: paper,
+          alpha: 0,
+          duration: 250,
+          onComplete: () => paper.destroy(),
+        })
+      },
+    })
   }
 }
