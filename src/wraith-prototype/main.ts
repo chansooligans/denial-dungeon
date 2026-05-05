@@ -1,70 +1,72 @@
 // Wraith @ L4 — first-sketch prototype.
 //
-// A standalone playable single-encounter sketch. Imports real case
-// data from src/content/cases.ts so the encounter is grounded; the
-// rest is hand-authored as a *first* answer to "what does a battle
-// look like with no HP, no tools-as-damage, no multiple choice?"
+// Standalone single-encounter sketch demonstrating the verb space:
+// no HP, no tools-as-damage, no multiple choice. Player connects
+// payer phrases ↔ chart facts ↔ LCD clauses to build a defense
+// packet against a CO-50 medical-necessity denial.
 //
-// Key design choices being demonstrated:
-//   - Verb space is INSPECT + CITE + SUBMIT, not attack/defend.
-//   - Player builds a defense packet by connecting (payer phrase ↔
-//     chart fact ↔ LCD clause) into citations. Each valid citation
-//     resolves an issue.
-//   - Distractors exist; selecting them yields informative feedback,
-//     not damage.
-//   - The Wraith is a presence, not an enemy. She "becomes more
-//     readable" as the packet builds.
-//   - No HP. No turn timer. No damage.
+// Designed for someone with no revenue-cycle background:
+//   - Plain-English summary on every chart fact + LCD clause
+//   - Glossary tooltips on technical terms (click to reveal)
+//   - Dana's briefing before the encounter explains the verbs
+//   - Post-citation recap explains what argument the player made
 //
-// Design notes panel at the top of the page makes the placeholder
-// vs intentional split explicit so reviewers know what to react to.
+// (An Expert mode that strips this scaffolding is a future toggle.)
 
 import { CASES } from '../content/cases'
 
 interface PayerPhrase {
   id: string
   text: string
-  /** Issue this phrase belongs to. */
+  /** Plain-English version shown alongside the technical phrase. */
+  plain: string
   issueId: string
 }
 
 interface ChartFact {
   id: string
   text: string
+  plain: string
   /** Which issue this fact addresses (null = distractor). */
   issueId: string | null
-  /** A line of feedback if used as a distractor (clarifies why). */
   distractorReason?: string
 }
 
 interface LcdClause {
   id: string
   text: string
+  plain: string
   issueId: string
 }
 
 interface Issue {
   id: string
+  /** Plain-English label (this is what the player sees). */
   label: string
-  /** Short description of what resolving this gets you. */
-  whatItDoes: string
+  /** Plain-English recap of what the player argued when this resolves. */
+  recap: string
+}
+
+interface GlossaryEntry {
+  term: string
+  plain: string
 }
 
 const issues: Issue[] = [
   {
     id: 'specificity',
-    label: 'Address diagnosis specificity (I50.9 → I50.42)',
-    whatItDoes: 'Replaces the unspecified dx with one that supports the LCD.',
+    label: 'Get a more specific diagnosis on the claim.',
+    recap: 'You just argued: the doctor *did* document a specific kind of heart failure (the kind with reduced pumping). The original biller just used the vague code. Fix the code, claim survives.',
   },
   {
     id: 'criterion',
-    label: 'Cite an alternative LCD criterion',
-    whatItDoes: 'LCD allows creatinine > 2.5 instead of LVEF<35%.',
+    label: "Find another way the patient qualifies under the insurance company's policy.",
+    recap: "You just argued: even though we don't have the heart-pumping measurement, the patient's kidney readings AND symptoms qualify them under an *alternative path* in the insurance company's own policy.",
   },
   {
     id: 'symptomatology',
-    label: 'Document supporting symptomatology',
-    whatItDoes: 'LCD requires "documented symptomatology" alongside labs.',
+    label: "Show the patient's documented symptoms support coverage.",
+    recap: 'You just argued: the chart documents specific symptoms (fatigue, swelling, declining kidneys). The policy explicitly accepts this kind of evidence in place of the heart-pumping measurement.',
   },
 ]
 
@@ -72,16 +74,19 @@ const payerPhrases: PayerPhrase[] = [
   {
     id: 'unspec-dx',
     text: 'I50.9 (heart failure, unspecified)',
+    plain: 'The diagnosis on the claim was vague — just "heart failure," no specifics.',
     issueId: 'specificity',
   },
   {
     id: 'lvef',
     text: 'without supporting evidence of LVEF<35%',
+    plain: 'No proof of how poorly the heart was pumping (LVEF is a measurement of heart function).',
     issueId: 'criterion',
   },
   {
     id: 'no-evidence',
     text: 'absent supporting documentation',
+    plain: "The chart didn't include enough evidence of the patient's symptoms.",
     issueId: 'symptomatology',
   },
 ]
@@ -90,40 +95,47 @@ const chartFacts: ChartFact[] = [
   {
     id: 'systolic',
     text: 'Echo report on file: documented systolic dysfunction',
+    plain: "Heart imaging shows the heart isn't pumping properly (this is exactly what the vague code missed).",
     issueId: 'specificity',
   },
   {
     id: 'creat',
     text: 'Labs (3 mo prior): creatinine 2.8',
+    plain: 'Kidney function test from 3 months ago — high reading, meaning kidneys are struggling.',
     issueId: 'criterion',
   },
   {
     id: 'sx',
     text: 'Documented fatigue, edema, declining GFR',
+    plain: 'Patient is tired, has swelling, kidney function is getting worse — all written in the chart.',
     issueId: 'symptomatology',
   },
   {
     id: 'ckd',
     text: 'Patient has chronic kidney disease, stage 3',
+    plain: 'Long-term kidney disease, moderate severity — supports the kidney-criterion argument.',
     issueId: 'criterion',
   },
   {
     id: 'tuesday',
     text: 'Procedure performed at 9:00 AM Tuesday',
+    plain: 'When the test was done. Not relevant to whether insurance should pay.',
     issueId: null,
-    distractorReason: 'Time of procedure is not relevant to medical-necessity criteria.',
+    distractorReason: "When the test happened isn't part of the policy's medical-necessity criteria.",
   },
   {
     id: 'zone',
     text: 'Patient lives in service-area Zone 2',
+    plain: 'Where the patient lives geographically. Not relevant here.',
     issueId: null,
-    distractorReason: 'Geography is not part of LCD L33526.',
+    distractorReason: "Geography isn't part of LCD L33526's coverage criteria.",
   },
   {
     id: 'referrer',
     text: 'Referring provider is in-network',
+    plain: 'The doctor who referred the patient is contracted with the insurance company. True but not relevant to *medical necessity*.',
     issueId: null,
-    distractorReason: 'Network status doesn\'t address medical necessity.',
+    distractorReason: "Network status doesn't address whether the test was medically necessary.",
   },
 ]
 
@@ -131,19 +143,57 @@ const lcdClauses: LcdClause[] = [
   {
     id: 'specificity-rule',
     text: 'Coverage requires a specific cardiac dx (I50.x with severity), not unspecified heart failure.',
+    plain: "The insurance only pays if the doctor wrote a *specific* type of heart failure, not just 'heart failure'.",
     issueId: 'specificity',
   },
   {
     id: 'creat-alt',
     text: 'Alternative criterion: creatinine > 2.5 mg/dL with documented symptomatology.',
+    plain: "If kidney function is worse than 2.5 AND the patient has symptoms documented, that's enough — even without the heart-pumping number.",
     issueId: 'criterion',
   },
   {
     id: 'sx-required',
     text: 'Documented symptomatology required for coverage when LVEF data not on file.',
+    plain: "If we don't have the heart-pumping measurement, the chart needs to document the patient's actual symptoms.",
     issueId: 'symptomatology',
   },
 ]
+
+const glossary: Record<string, GlossaryEntry> = {
+  'CO-50': {
+    term: 'CO-50',
+    plain: 'A "denial code" insurance companies use. CO-50 means: "we won\'t pay because we don\'t think this was medically necessary." It\'s one of the most common denials.',
+  },
+  'LCD': {
+    term: 'LCD (Local Coverage Determination)',
+    plain: 'A document the insurance company writes that says, in detail, the conditions under which they will and won\'t cover a particular service. Public; the player can read them.',
+  },
+  'LCD L33526': {
+    term: 'LCD L33526',
+    plain: 'The specific Local Coverage Determination policy that governs cardiac imaging like echocardiograms. The "L33526" is just its filing number.',
+  },
+  'CDI specialist': {
+    term: 'CDI specialist',
+    plain: 'A nurse or coder who reviews charts before claims drop, and writes "queries" to doctors asking for clarification. The most upstream defense against medical-necessity denials.',
+  },
+  'I50.9': {
+    term: 'I50.9 (Heart failure, unspecified)',
+    plain: 'A diagnosis code. The "unspecified" version of heart failure — meaning the chart didn\'t say what kind. Insurance companies often deny unspecified codes because they don\'t prove medical necessity.',
+  },
+  '93306': {
+    term: 'CPT 93306',
+    plain: 'The specific billing code for "echocardiogram, complete with Doppler" — the test Walker had.',
+  },
+  'CMS-1500': {
+    term: 'CMS-1500',
+    plain: 'The standard claim form doctors\' offices use to bill insurance. It has numbered boxes; the one we care about is Box 21 (diagnoses).',
+  },
+  'BCBS': {
+    term: 'BCBS (Blue Cross Blue Shield)',
+    plain: 'A large network of insurance companies. Walker\'s plan is BCBS of North Carolina.',
+  },
+}
 
 // === Runtime state ===
 
@@ -154,13 +204,16 @@ interface SelectionState {
 }
 
 const state = {
+  briefingDone: false,
   selection: { payerId: null, chartId: null, lcdId: null } as SelectionState,
   resolvedIssues: new Set<string>(),
   citationCount: 0,
   failedAttempts: 0,
   feedback: '' as string,
   feedbackKind: 'neutral' as 'neutral' | 'good' | 'bad',
+  lastRecap: '' as string,
   packetSubmitted: false,
+  openTermId: null as string | null,
 }
 
 // === Rendering ===
@@ -174,17 +227,28 @@ function escape(s: string): string {
     .replace(/>/g, '&gt;')
 }
 
+/** Wrap a phrase in a glossary tooltip span. */
+function term(termId: string, displayText?: string): string {
+  const entry = glossary[termId]
+  const text = displayText ?? termId
+  if (!entry) return escape(text)
+  return `<span class="term" data-action="open-term" data-term="${termId}">${escape(text)}<span class="term-icon">?</span></span>`
+}
+
 function render(): string {
-  if (state.packetSubmitted) return renderVictory()
+  if (state.packetSubmitted) return renderVictory() + renderTermPopover()
   return `
     ${renderHeader()}
     ${renderHospitalIntro()}
-    ${renderClaim()}
-    ${renderWorkbench()}
-    ${renderCitationBuilder()}
-    ${renderChecklist()}
-    ${renderWraith()}
+    ${!state.briefingDone ? renderBriefing() : `
+      ${renderClaim()}
+      ${renderWorkbench()}
+      ${renderCitationBuilder()}
+      ${renderChecklist()}
+      ${renderWraith()}
+    `}
     ${renderDesignNotes()}
+    ${renderTermPopover()}
   `
 }
 
@@ -197,10 +261,10 @@ function renderHeader(): string {
       </div>
       <p class="lede">
         A redesign sketch of the Medical Necessity Wraith encounter
-        (CO-50). Drops HP, tools-as-damage, and multiple choice.
-        First answer to "what does a battle look like in this game."
-        See the <a href="#design-notes">design notes</a> for what's
-        intentional vs placeholder.
+        (${term('CO-50')}). Drops HP, tools-as-damage, and multiple
+        choice. First answer to "what does a battle look like in
+        this game." See the <a href="#design-notes">design notes</a>
+        for what's intentional vs placeholder.
       </p>
     </header>
   `
@@ -212,10 +276,13 @@ function renderHospitalIntro(): string {
       <div class="register hospital">HOSPITAL · earlier today</div>
       <p>
         Mrs. Walker's daughter called this morning. Her mother's
-        echocardiogram came back denied — CO-50, "not medically
-        necessary." She's 67 and her cardiologist is worried.
-        Martinez, the CDI specialist, is on vacation. The case
-        is on your desk.
+        echocardiogram (a heart ultrasound) came back denied —
+        ${term('CO-50')}, "not medically necessary." She's 67 and
+        her cardiologist is worried.
+      </p>
+      <p>
+        The ${term('CDI specialist')}, Martinez, is on vacation.
+        The case is on your desk.
       </p>
       <p>
         You walk to the CDI workroom to read the chart. You pull
@@ -231,22 +298,82 @@ function renderHospitalIntro(): string {
   `
 }
 
+function renderBriefing(): string {
+  return `
+    <section class="briefing">
+      <div class="briefing-h">
+        <span class="briefing-tag">DANA, IN YOUR EAR</span>
+        <span class="briefing-sub">First time, so listen up.</span>
+      </div>
+      <div class="briefing-body">
+        <p>
+          "Walker's claim got denied. Insurance said it wasn't
+          medically necessary. Your job is to <strong>argue
+          back</strong> — make the case that they should pay
+          anyway."
+        </p>
+        <p>"There are three places you can argue from:"</p>
+        <ul>
+          <li>
+            <strong>The denial letter.</strong> What the insurance
+            company specifically said when they refused.
+          </li>
+          <li>
+            <strong>The patient's chart.</strong> What the doctor
+            actually wrote — symptoms, lab results, history.
+          </li>
+          <li>
+            <strong>The insurance company's own policy</strong>
+            (called an ${term('LCD')}). Their public rules for
+            when they cover this kind of test.
+          </li>
+        </ul>
+        <p>
+          "Pick one piece from each. Connect them so the chart
+          fact + the policy clause answer the insurance company's
+          specific complaint. That's <strong>one citation</strong>.
+          You need three valid citations to build a complete
+          defense packet."
+        </p>
+        <p>
+          "Some chart facts won't help. They'll be true but not
+          relevant. The builder will tell you why. There's no
+          penalty for trying — it's how you learn the shape of
+          the policy."
+        </p>
+        <p>
+          "Click any underlined term for a plain-English
+          explanation. There's a lot of jargon in this work; I
+          got tired of pretending it's intuitive."
+        </p>
+        <p class="briefing-sign">"Don't be most people. — D."</p>
+      </div>
+      <button class="btn primary" data-action="dismiss-briefing">
+        Got it — start the encounter
+      </button>
+    </section>
+  `
+}
+
 function renderClaim(): string {
   const claim = wraithCase.claim
   if (!claim || claim.type !== 'cms1500') return ''
   return `
     <section class="claim">
-      <div class="claim-h">CMS-1500 · ${escape(claim.claimId)}</div>
+      <div class="claim-h">
+        ${term('CMS-1500')} · ${escape(claim.claimId)}
+        <span class="claim-explainer">(this is the bill the doctor's office sent to insurance)</span>
+      </div>
       <div class="claim-grid">
         <div><b>Patient:</b> ${escape(claim.patient.name)} · ${escape(claim.patient.dob)}</div>
-        <div><b>Insurer:</b> ${escape(claim.insured.name ?? '')} · ${escape(claim.insured.id)}</div>
+        <div><b>Insurer:</b> ${term('BCBS', escape(claim.insured.name ?? ''))} · ${escape(claim.insured.id)}</div>
       </div>
       <div class="claim-section">
         <div class="claim-section-h">Box 21 · Diagnoses (DISPUTED)</div>
         <ul class="dx">
           ${claim.diagnoses.map((d, i) => {
             const letter = String.fromCharCode(65 + i)
-            return `<li class="hi"><b>${letter}.</b> ${escape(d.code)}${d.label ? ' — ' + escape(d.label) : ''}</li>`
+            return `<li class="hi"><b>${letter}.</b> ${term('I50.9', escape(d.code) + (d.label ? ' — ' + escape(d.label) : ''))}</li>`
           }).join('')}
         </ul>
       </div>
@@ -259,7 +386,7 @@ function renderClaim(): string {
               <tr class="hi">
                 <td>${escape(sl.dos)}</td>
                 <td>${escape(sl.pos)}</td>
-                <td>${escape(sl.cpt.code)}${sl.cpt.label ? ' — ' + escape(sl.cpt.label) : ''}</td>
+                <td>${term('93306', escape(sl.cpt.code) + (sl.cpt.label ? ' — ' + escape(sl.cpt.label) : ''))}</td>
                 <td>${escape(sl.charges)}</td>
               </tr>
             `).join('')}
@@ -276,23 +403,24 @@ function renderWorkbench(): string {
       <div class="col col-payer">
         <div class="col-h">
           <span class="col-tag">PAYER NOTE</span>
-          <span class="col-sub">Click a phrase to select it.</span>
+          <span class="col-sub">Click a phrase to select it. These are the insurance company's specific complaints.</span>
         </div>
         <p class="col-prose">
-          ${payerPhrases.map(p => phraseSpan(p, 'payer')).join(' ')}
-          The claim is denied per LCD L33526.
+          ${payerPhrases.map(p => phraseSpan(p)).join(' ')}
+          The claim is denied per ${term('LCD L33526')}.
         </p>
       </div>
       <div class="col col-chart">
         <div class="col-h">
           <span class="col-tag">CHART (Walker, A.)</span>
-          <span class="col-sub">Click a fact to cite it.</span>
+          <span class="col-sub">Click a fact to cite it. These are things the doctor wrote.</span>
         </div>
         <ul class="facts">
           ${chartFacts.map(f => `
             <li class="fact ${state.selection.chartId === f.id ? 'selected' : ''}"
                 data-action="select-chart" data-id="${f.id}">
-              ${escape(f.text)}
+              <div class="fact-text">${escape(f.text)}</div>
+              <div class="fact-plain">${escape(f.plain)}</div>
             </li>
           `).join('')}
         </ul>
@@ -300,13 +428,14 @@ function renderWorkbench(): string {
       <div class="col col-lcd">
         <div class="col-h">
           <span class="col-tag">LCD L33526</span>
-          <span class="col-sub">Click a clause to back the citation.</span>
+          <span class="col-sub">Click a clause to back the citation. This is the insurance company's own policy.</span>
         </div>
         <ul class="clauses">
           ${lcdClauses.map(c => `
             <li class="clause ${state.selection.lcdId === c.id ? 'selected' : ''}"
                 data-action="select-lcd" data-id="${c.id}">
-              ${escape(c.text)}
+              <div class="clause-text">${escape(c.text)}</div>
+              <div class="clause-plain">${escape(c.plain)}</div>
             </li>
           `).join('')}
         </ul>
@@ -315,22 +444,16 @@ function renderWorkbench(): string {
   `
 }
 
-function phraseSpan(p: PayerPhrase, _kind: string): string {
+function phraseSpan(p: PayerPhrase): string {
   const sel = state.selection.payerId === p.id ? 'selected' : ''
-  return `<span class="phrase ${sel}" data-action="select-payer" data-id="${p.id}">${escape(p.text)}</span>`
+  return `<span class="phrase ${sel}" data-action="select-payer" data-id="${p.id}">${escape(p.text)}<span class="phrase-tip">(${escape(p.plain)})</span></span>`
 }
 
 function renderCitationBuilder(): string {
   const sel = state.selection
-  const payerLabel = sel.payerId
-    ? payerPhrases.find(p => p.id === sel.payerId)?.text
-    : null
-  const chartLabel = sel.chartId
-    ? chartFacts.find(f => f.id === sel.chartId)?.text
-    : null
-  const lcdLabel = sel.lcdId
-    ? lcdClauses.find(c => c.id === sel.lcdId)?.text
-    : null
+  const payerLabel = sel.payerId ? payerPhrases.find(p => p.id === sel.payerId)?.text : null
+  const chartLabel = sel.chartId ? chartFacts.find(f => f.id === sel.chartId)?.text : null
+  const lcdLabel = sel.lcdId ? lcdClauses.find(c => c.id === sel.lcdId)?.text : null
   const ready = !!(sel.payerId && sel.chartId && sel.lcdId)
   const fbClass = state.feedback ? `fb-${state.feedbackKind}` : ''
   return `
@@ -357,6 +480,12 @@ function renderCitationBuilder(): string {
         <button class="btn ghost" data-action="clear">Clear</button>
       </div>
       ${state.feedback ? `<div class="feedback ${fbClass}">${escape(state.feedback)}</div>` : ''}
+      ${state.lastRecap ? `
+        <div class="recap">
+          <div class="recap-h">What you just argued</div>
+          <p>${escape(state.lastRecap)}</p>
+        </div>
+      ` : ''}
     </section>
   `
 }
@@ -374,7 +503,6 @@ function renderChecklist(): string {
               <span class="check">${done ? '✓' : '○'}</span>
               <div class="issue-body">
                 <div class="issue-label">${escape(i.label)}</div>
-                <div class="issue-sub">${escape(i.whatItDoes)}</div>
               </div>
             </li>
           `
@@ -385,19 +513,17 @@ function renderChecklist(): string {
               data-action="submit">
         SUBMIT DEFENSE PACKET
       </button>
-      ${state.failedAttempts > 0 ? `<div class="fail-counter">Failed citations this session: ${state.failedAttempts}. (No penalty — informative only.)</div>` : ''}
+      ${state.failedAttempts > 0 ? `<div class="fail-counter">Tried citations that didn't fit: ${state.failedAttempts}. (No penalty — it's how you learn.)</div>` : ''}
     </section>
   `
 }
 
 function renderWraith(): string {
-  // She "becomes more readable" as issues resolve. We model this
-  // with opacity + a CSS filter that goes from blurry to crisp.
   const total = issues.length
   const resolved = state.resolvedIssues.size
   const ratio = resolved / total
-  const opacity = 0.25 + ratio * 0.6 // 0.25 → 0.85
-  const blur = 6 - ratio * 5 // 6px → 1px
+  const opacity = 0.25 + ratio * 0.6
+  const blur = 6 - ratio * 5
   return `
     <aside class="wraith">
       <div class="wraith-svg" style="opacity: ${opacity.toFixed(2)}; filter: blur(${blur.toFixed(1)}px);">
@@ -413,8 +539,6 @@ function renderWraith(): string {
 }
 
 function wraithSvg(): string {
-  // Quick figure made of CMS-1500-shaped fragments. Just enough to
-  // suggest "person made of half-finished forms."
   return `
     <svg viewBox="0 0 120 180" xmlns="http://www.w3.org/2000/svg" aria-label="Medical Necessity Wraith">
       <defs>
@@ -461,6 +585,23 @@ function renderVictory(): string {
   `
 }
 
+function renderTermPopover(): string {
+  if (!state.openTermId) return ''
+  const entry = glossary[state.openTermId]
+  if (!entry) return ''
+  return `
+    <div class="term-popover-backdrop" data-action="close-term">
+      <div class="term-popover" onclick="event.stopPropagation()">
+        <div class="term-popover-h">
+          <span class="term-popover-name">${escape(entry.term)}</span>
+          <button class="term-popover-close" data-action="close-term" aria-label="Close">×</button>
+        </div>
+        <p>${escape(entry.plain)}</p>
+      </div>
+    </div>
+  `
+}
+
 function renderDesignNotes(): string {
   return `
     <section class="design-notes" id="design-notes">
@@ -469,26 +610,27 @@ function renderDesignNotes(): string {
         <div>
           <h3>Intentional</h3>
           <ul>
-            <li><b>No HP.</b> The Wraith doesn't take damage. She becomes more *readable* as the packet builds.</li>
-            <li><b>No "tools" buttons.</b> The verbs are <em>select payer phrase / chart fact / LCD clause</em>, then <em>cite</em>, then <em>submit</em>. Nothing is a damage ability.</li>
-            <li><b>No multiple choice.</b> Connections are drawn freely from real text, not picked from A/B/C.</li>
-            <li><b>Distractors give feedback, not damage.</b> Pick "patient lives in Zone 2" and the citation builder tells you why it doesn't follow. No HP loss.</li>
-            <li><b>The case data is real.</b> Imported from <code>src/content/cases.ts</code> — Walker, the dx, the LCD reference. The encounter is grounded in the existing form-bridge case.</li>
-            <li><b>Heavy → light register flip.</b> Hospital intro carries the patient weight (Walker's daughter, Martinez on vacation). Waiting Room is the catharsis where the player gets to <em>do something</em>.</li>
-            <li><b>The dreamlike fall.</b> The Hospital intro ends with "the floor ripples"; the Waiting Room begins immediately. No menu, no "descend" button.</li>
+            <li><b>No HP.</b> Wraith doesn't take damage; she becomes more <em>readable</em> as the packet builds.</li>
+            <li><b>No tools-as-buttons.</b> Verbs are <em>select payer phrase / chart fact / LCD clause</em>, then <em>cite</em>, then <em>submit</em>.</li>
+            <li><b>No multiple choice.</b> Connections are drawn freely from real text.</li>
+            <li><b>Distractors give feedback, not damage.</b> Pick a chart fact that doesn't fit and the builder explains why.</li>
+            <li><b>Designed for someone with no revenue-cycle background.</b> Plain-English summaries on every fact, glossary tooltips on every code, Dana's briefing up front, recaps after each citation. (An "Expert mode" toggle to strip this scaffolding is a future improvement.)</li>
+            <li><b>Real case data.</b> Imported from <code>src/content/cases.ts</code> — Walker, the dx, the LCD reference.</li>
+            <li><b>Heavy → light register flip.</b> Hospital intro carries patient weight; Waiting Room is the catharsis.</li>
+            <li><b>The dreamlike fall.</b> Hospital intro ends with "the floor ripples"; the Waiting Room begins immediately.</li>
           </ul>
         </div>
         <div>
           <h3>Placeholder / first-draft</h3>
           <ul>
-            <li><b>Three issues, three citations.</b> Number is arbitrary; could be 2 or 4. We picked three because the LCD has three natural criteria.</li>
-            <li><b>Distractors are obvious.</b> "Tuesday at 9am" is too easy. Real distractors should look more like signals.</li>
-            <li><b>No time pressure.</b> Filing window not modeled. Open question — should it be?</li>
-            <li><b>Form-bridge buff not wired.</b> Pre-fixing the dx in FormScene would presumably auto-resolve issue 1 ("specificity"). Demo doesn't simulate this yet.</li>
-            <li><b>The Wraith art is a sketch.</b> SVG figure. Real implementation should be evocative; this is just enough to show the "becomes readable" effect.</li>
-            <li><b>No surreal humor.</b> The Wraith doesn't speak. Real version probably has lines that are <em>funny</em> in the Reaper-with-numbered-ticket way. See <a href="./reference/narrative/tone.md">narrative/tone.md</a>.</li>
-            <li><b>No shortcut paths.</b> Player can't fabricate or upcode. Probably should be possible (with audit-risk cost) per the existing shadow-tool econ.</li>
-            <li><b>Submit is final.</b> Player can't walk away and come back. Open question — should they be able to?</li>
+            <li><b>Three issues, three citations.</b> Number is arbitrary; could be 2 or 4.</li>
+            <li><b>No time pressure.</b> Filing window not modeled. Open question.</li>
+            <li><b>Form-bridge buff not wired.</b> Pre-fixing the dx in FormScene would auto-resolve issue 1.</li>
+            <li><b>Wraith art is a sketch.</b> Real version would be evocative.</li>
+            <li><b>No surreal humor in Wraith's voice.</b> She doesn't speak yet; real version probably does.</li>
+            <li><b>No shortcut paths.</b> Player can't fabricate or upcode (with audit-risk cost) per existing shadow-tool econ.</li>
+            <li><b>Submit is final.</b> Player can't walk away and come back. Open question.</li>
+            <li><b>Glossary is short.</b> Only covers terms in this encounter. Real version probably builds across the run.</li>
           </ul>
         </div>
       </div>
@@ -524,45 +666,43 @@ function attemptCite() {
   const chart = findFact(sel.chartId)!
   const lcd = findLcd(sel.lcdId)!
 
-  // Distractor on chart fact?
   if (chart.issueId === null) {
     state.failedAttempts += 1
     setFeedback(
       `That fact doesn't follow. ${chart.distractorReason ?? ''} Try another.`,
       'bad'
     )
+    state.lastRecap = ''
     return
   }
 
-  // All three address the same issue?
-  if (
-    payer.issueId === chart.issueId &&
-    chart.issueId === lcd.issueId
-  ) {
+  if (payer.issueId === chart.issueId && chart.issueId === lcd.issueId) {
     if (state.resolvedIssues.has(chart.issueId)) {
       setFeedback(
         'Already cited. Try a different issue — there are still gaps in the packet.',
         'neutral'
       )
+      state.lastRecap = ''
       return
     }
     state.resolvedIssues.add(chart.issueId)
     state.citationCount += 1
     const issue = issues.find(i => i.id === chart.issueId)!
     setFeedback(
-      `Citation accepted. Issue addressed: ${issue.label}.`,
+      `Citation accepted. Issue addressed: ${issue.label}`,
       'good'
     )
+    state.lastRecap = issue.recap
     clearSelection()
     return
   }
 
-  // Mismatch — three pieces don't address the same issue.
   state.failedAttempts += 1
   setFeedback(
-    'Those three pieces don\'t address the same issue. The chart fact and the LCD clause should answer the payer\'s assertion, not three different ones.',
+    "Those three pieces don't address the same issue. The chart fact and the LCD clause should answer the *specific* payer assertion you picked, not three different ones.",
     'bad'
   )
+  state.lastRecap = ''
 }
 
 function attemptSubmit() {
@@ -577,7 +717,21 @@ function reset() {
   state.failedAttempts = 0
   state.feedback = ''
   state.feedbackKind = 'neutral'
+  state.lastRecap = ''
   state.packetSubmitted = false
+  state.briefingDone = false
+}
+
+function dismissBriefing() {
+  state.briefingDone = true
+}
+
+function openTerm(termId: string) {
+  state.openTermId = termId
+}
+
+function closeTerm() {
+  state.openTermId = null
 }
 
 function handleClick(e: MouseEvent) {
@@ -606,12 +760,22 @@ function handleClick(e: MouseEvent) {
     case 'clear':
       clearSelection()
       setFeedback('')
+      state.lastRecap = ''
       break
     case 'submit':
       attemptSubmit()
       break
     case 'reset':
       reset()
+      break
+    case 'dismiss-briefing':
+      dismissBriefing()
+      break
+    case 'open-term':
+      if (el.dataset.term) openTerm(el.dataset.term)
+      break
+    case 'close-term':
+      closeTerm()
       break
     default:
       return
@@ -646,8 +810,6 @@ const css = `
     max-width: 1180px; margin: 0 auto;
     position: relative;
   }
-
-  /* Subtle Waiting-Room atmosphere */
   body::before {
     content: "";
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -674,6 +836,7 @@ const css = `
   h3 { font-size: 14px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-dim); }
   code { background: #0a0d12; padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
   ul, ol { margin: 0; padding-left: 22px; }
+  em { font-style: italic; }
 
   .page-h { margin-bottom: 22px; }
   .title-row { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
@@ -687,25 +850,80 @@ const css = `
   .register.hospital { background: rgba(240, 168, 104, 0.12); color: var(--accent-2); border: 1px solid #4a3a2a; }
   .register.waiting-room { background: rgba(177, 139, 214, 0.12); color: #c8b6e0; border: 1px solid #3a324a; }
   .register-flip { margin: 16px 0; padding: 12px 16px; border-left: 3px solid #c8b6e0; background: rgba(177, 139, 214, 0.05); font-size: 13.5px; }
-  .ripple {
-    width: 100%; height: 2px; margin-bottom: 8px;
-    background: linear-gradient(90deg, transparent, #c8b6e0, transparent);
-    animation: ripple 4s infinite ease-in-out;
-  }
+  .ripple { width: 100%; height: 2px; margin-bottom: 8px; background: linear-gradient(90deg, transparent, #c8b6e0, transparent); animation: ripple 4s infinite ease-in-out; }
   @keyframes ripple {
     0%, 100% { transform: translateX(-100%); opacity: 0; }
     50% { transform: translateX(0); opacity: 0.6; }
   }
 
+  .briefing {
+    background: linear-gradient(180deg, rgba(240, 168, 104, 0.06), transparent);
+    border: 1px solid #4a3a2a; border-left-width: 4px;
+    border-radius: 8px; padding: 20px 24px; margin-bottom: 22px;
+  }
+  .briefing-h { display: flex; align-items: baseline; gap: 12px; margin-bottom: 10px; }
+  .briefing-tag { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent-2); }
+  .briefing-sub { font-size: 12px; color: var(--ink-dim); font-style: italic; }
+  .briefing-body p { margin: 10px 0; }
+  .briefing-body ul { margin: 10px 0; padding-left: 22px; }
+  .briefing-body li { margin: 6px 0; }
+  .briefing-sign { color: var(--ink-dim); font-style: italic; margin-top: 14px; }
+
+  .term {
+    color: var(--accent);
+    text-decoration: underline dotted;
+    text-underline-offset: 2px;
+    cursor: help;
+    position: relative;
+  }
+  .term:hover { color: #a8efd4; }
+  .term-icon {
+    display: inline-block; vertical-align: super;
+    font-size: 9px; margin-left: 2px;
+    background: var(--accent); color: #0a0d12;
+    width: 12px; height: 12px; border-radius: 50%;
+    text-align: center; line-height: 12px;
+    font-weight: 700;
+  }
+
+  .term-popover-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(10, 13, 18, 0.7);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100;
+    padding: 20px;
+  }
+  .term-popover {
+    background: var(--panel); border: 1px solid var(--accent);
+    border-radius: 8px; padding: 20px 24px; max-width: 520px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  }
+  .term-popover-h { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .term-popover-name { font-weight: 700; color: var(--accent); }
+  .term-popover-close {
+    background: transparent; border: none; color: var(--ink-dim);
+    font-size: 24px; cursor: pointer; line-height: 1;
+    padding: 0 8px;
+  }
+  .term-popover-close:hover { color: var(--ink); }
+  .term-popover p { margin: 0; line-height: 1.6; }
+
   .claim { background: var(--paper); color: #1c1c1c; border-radius: 6px; padding: 14px 18px; margin-bottom: 22px; box-shadow: inset 0 0 0 1px #d6cfb8; font-size: 12.5px; }
-  .claim-h { font-weight: 700; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #5a4d2b; padding-bottom: 6px; border-bottom: 1px solid #c8bf9d; margin-bottom: 8px; }
+  .claim-h { font-weight: 700; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #5a4d2b; padding-bottom: 6px; border-bottom: 1px solid #c8bf9d; margin-bottom: 8px; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .claim-h .term { color: #5a4d2b; }
+  .claim-h .term-icon { background: #5a4d2b; color: var(--paper); }
+  .claim-explainer { font-weight: 400; font-size: 10.5px; text-transform: none; letter-spacing: normal; color: #7a6b4d; font-style: italic; }
   .claim-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 14px; margin: 6px 0; }
   .claim-section { margin-top: 10px; }
   .claim-section-h { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; color: #5a4d2b; margin-bottom: 4px; }
   .claim ul.dx { padding-left: 18px; margin: 4px 0; list-style: none; }
   .claim ul.dx li { margin: 2px 0; }
+  .claim ul.dx .term { color: #1c1c1c; }
+  .claim ul.dx .term-icon { background: #5a4d2b; color: var(--paper); }
   .claim table.lines { width: 100%; border-collapse: collapse; }
   .claim table.lines th, .claim table.lines td { text-align: left; padding: 4px 8px; border-bottom: 1px solid #d6cfb8; }
+  .claim table.lines .term { color: #1c1c1c; }
+  .claim table.lines .term-icon { background: #5a4d2b; color: var(--paper); }
   .claim .hi { background: var(--hi); box-shadow: inset 0 0 0 1px var(--hi-border); border-radius: 3px; }
 
   .workbench { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 22px; }
@@ -717,7 +935,8 @@ const css = `
   .col-chart .col-tag { color: var(--accent); }
   .col-lcd .col-tag { color: #a3c5ff; }
   .col-sub { font-size: 11.5px; color: var(--ink-dim); }
-  .col-prose { font-size: 13.5px; line-height: 1.6; margin: 0; }
+  .col-prose { font-size: 13.5px; line-height: 1.7; margin: 0; }
+
   .phrase {
     cursor: pointer;
     background: rgba(239, 91, 123, 0.12);
@@ -728,38 +947,49 @@ const css = `
   }
   .phrase:hover { background: rgba(239, 91, 123, 0.25); }
   .phrase.selected { background: rgba(239, 91, 123, 0.45); border-bottom-style: solid; color: #fff; }
+  .phrase-tip {
+    display: block;
+    font-size: 11.5px;
+    color: var(--ink-dim);
+    font-style: italic;
+    padding: 2px 0 4px;
+    border-bottom: none;
+    background: transparent;
+  }
+
   .facts, .clauses { list-style: none; padding-left: 0; margin: 0; }
   .fact, .clause {
-    padding: 8px 10px;
-    margin: 4px 0;
+    padding: 10px 12px;
+    margin: 6px 0;
     background: var(--panel-2);
     border-radius: 5px;
     border-left: 3px solid transparent;
     cursor: pointer;
-    font-size: 13px;
     transition: all 0.15s;
   }
   .fact:hover, .clause:hover { background: #232b3a; }
   .fact.selected { border-left-color: var(--accent); background: rgba(126, 226, 193, 0.1); }
   .clause.selected { border-left-color: #a3c5ff; background: rgba(163, 197, 255, 0.08); }
+  .fact-text, .clause-text { font-size: 13px; }
+  .fact-plain, .clause-plain {
+    font-size: 12px;
+    color: var(--ink-dim);
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 1px dashed rgba(138, 147, 163, 0.2);
+    line-height: 1.5;
+  }
 
   .builder { background: var(--panel); border: 1px solid #232a36; border-radius: 8px; padding: 16px 18px; margin-bottom: 22px; }
   .builder-h { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-dim); margin-bottom: 10px; }
   .builder-row { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: 10px; align-items: stretch; }
   @media (max-width: 980px) { .builder-row { grid-template-columns: 1fr; } .connector { text-align: center; padding: 4px 0; } }
-  .slot {
-    padding: 10px 12px;
-    background: var(--panel-2);
-    border: 1px dashed #2a3142;
-    border-radius: 5px;
-    min-height: 60px;
-  }
+  .slot { padding: 10px 12px; background: var(--panel-2); border: 1px dashed #2a3142; border-radius: 5px; min-height: 60px; }
   .slot.filled { border-style: solid; border-color: #3a4658; }
   .slot-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-dim); margin-bottom: 4px; }
   .slot-text { font-size: 13px; }
   .placeholder { color: var(--ink-dim); font-style: italic; }
   .connector { color: var(--ink-dim); font-size: 12px; align-self: center; padding: 0 6px; font-style: italic; }
-
   .builder-actions { margin-top: 12px; display: flex; gap: 10px; }
   .btn {
     font: inherit;
@@ -777,11 +1007,20 @@ const css = `
   .btn.submit { background: var(--accent-2); color: #0a0d12; font-weight: 700; padding: 12px 24px; margin-top: 14px; }
   .btn.submit:hover:not(.disabled) { background: #f7c08a; }
   .btn.disabled { opacity: 0.4; cursor: not-allowed; }
-
   .feedback { margin-top: 10px; padding: 8px 12px; border-radius: 4px; font-size: 13px; }
   .fb-good { background: rgba(126, 226, 193, 0.1); border-left: 3px solid var(--good); color: var(--good); }
   .fb-bad { background: rgba(239, 91, 123, 0.08); border-left: 3px solid var(--bad); color: #f3a4b6; }
   .fb-neutral { background: var(--panel-2); border-left: 3px solid var(--ink-dim); color: var(--ink); }
+
+  .recap {
+    margin-top: 12px;
+    padding: 12px 14px;
+    background: rgba(240, 168, 104, 0.06);
+    border: 1px solid #4a3a2a;
+    border-radius: 5px;
+  }
+  .recap-h { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent-2); margin-bottom: 4px; font-weight: 600; }
+  .recap p { margin: 0; font-size: 13.5px; line-height: 1.5; }
 
   .checklist { background: var(--panel); border: 1px solid #232a36; border-radius: 8px; padding: 16px 18px; margin-bottom: 22px; }
   .checklist-h { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-dim); margin-bottom: 10px; }
@@ -793,28 +1032,12 @@ const css = `
   .check { font-size: 18px; color: var(--accent); width: 20px; flex-shrink: 0; }
   .issue-body { flex: 1; }
   .issue-label { font-size: 13.5px; }
-  .issue-sub { font-size: 12px; color: var(--ink-dim); margin-top: 2px; }
   .fail-counter { margin-top: 10px; font-size: 12px; color: var(--ink-dim); font-style: italic; }
 
-  .wraith {
-    position: fixed;
-    bottom: 28px;
-    right: 28px;
-    width: 140px;
-    z-index: 5;
-    text-align: center;
-    pointer-events: none;
-  }
-  .wraith-svg {
-    transition: opacity 0.6s, filter 0.6s;
-  }
+  .wraith { position: fixed; bottom: 28px; right: 28px; width: 140px; z-index: 5; text-align: center; pointer-events: none; }
+  .wraith-svg { transition: opacity 0.6s, filter 0.6s; }
   .wraith-svg svg { width: 100%; height: auto; }
-  .wraith-line {
-    margin-top: 8px;
-    font-size: 11.5px;
-    color: var(--ink-dim);
-    line-height: 1.4;
-  }
+  .wraith-line { margin-top: 8px; font-size: 11.5px; color: var(--ink-dim); line-height: 1.4; }
 
   .design-notes { margin-top: 60px; padding: 24px; background: var(--panel); border: 1px solid #232a36; border-radius: 8px; }
   .notes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 12px; }
@@ -843,6 +1066,12 @@ function mount() {
   document.head.appendChild(style)
   rerender()
   document.body.addEventListener('click', handleClick)
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && state.openTermId) {
+      closeTerm()
+      rerender()
+    }
+  })
 }
 
 mount()
