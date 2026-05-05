@@ -43,8 +43,29 @@ interface Issue {
   id: string
   /** Plain-English label (this is what the player sees). */
   label: string
-  /** Plain-English recap of what the player argued when this resolves. */
+  /** Plain-English recap of what the player did when this resolves. */
   recap: string
+  /**
+   * How this issue gets resolved:
+   *   'amend' — change a field on the claim directly (cheap fix)
+   *   'cite'  — argue with chart fact + LCD clause (real appeal)
+   */
+  verb: 'amend' | 'cite'
+}
+
+interface DxOption {
+  code: string
+  label: string
+  /**
+   * Whether the chart actually supports this code:
+   *   'current' — what's currently on the claim (don't pick this)
+   *   'wrong'   — chart contradicts (e.g. systolic chart, diastolic code)
+   *   'partial' — better than current, but not what chart best supports
+   *   'correct' — best match given documented evidence
+   */
+  support: 'current' | 'wrong' | 'partial' | 'correct'
+  /** Why this is right (or what's wrong with it). */
+  feedback: string
 }
 
 interface GlossaryEntry {
@@ -55,18 +76,48 @@ interface GlossaryEntry {
 const issues: Issue[] = [
   {
     id: 'specificity',
-    label: 'Get a more specific diagnosis on the claim.',
-    recap: 'You just argued: the doctor *did* document a specific kind of heart failure (the kind with reduced pumping). The original biller just used the vague code. Fix the code, claim survives.',
+    label: 'Replace the vague diagnosis on the claim with a specific one.',
+    recap: "Fixed at the source. The chart documented systolic dysfunction all along; the original biller just used the unspecific code. Once the dx is right, the policy's specificity rule no longer applies. No argument needed.",
+    verb: 'amend',
   },
   {
     id: 'criterion',
-    label: "Find another way the patient qualifies under the insurance company's policy.",
-    recap: "You just argued: even though we don't have the heart-pumping measurement, the patient's kidney readings AND symptoms qualify them under an *alternative path* in the insurance company's own policy.",
+    label: "Argue an alternative path in the insurance company's policy applies.",
+    recap: "You just argued: even though we don't have the heart-pumping measurement, the patient's kidney readings AND documented symptoms qualify them under an *alternative path* in the insurance company's own policy.",
+    verb: 'cite',
   },
   {
     id: 'symptomatology',
-    label: "Show the patient's documented symptoms support coverage.",
-    recap: 'You just argued: the chart documents specific symptoms (fatigue, swelling, declining kidneys). The policy explicitly accepts this kind of evidence in place of the heart-pumping measurement.',
+    label: "Argue the patient's documented symptoms support coverage.",
+    recap: "You just argued: the chart documents specific symptoms (fatigue, swelling, declining kidneys). The policy explicitly accepts this kind of evidence in place of the heart-pumping measurement.",
+    verb: 'cite',
+  },
+]
+
+const dxOptions: DxOption[] = [
+  {
+    code: 'I50.9',
+    label: 'Heart failure, unspecified',
+    support: 'current',
+    feedback: "This is what's already on the claim — the vague code that triggered the denial.",
+  },
+  {
+    code: 'I50.20',
+    label: 'Systolic heart failure, unspecified',
+    support: 'partial',
+    feedback: "Better than I50.9 — at least it's systolic. But the chart documents this as *chronic*, so we can be more specific.",
+  },
+  {
+    code: 'I50.22',
+    label: 'Chronic systolic (congestive) heart failure',
+    support: 'correct',
+    feedback: "Matches the chart: documented systolic dysfunction, long-standing. This is what the chart actually supports.",
+  },
+  {
+    code: 'I50.30',
+    label: 'Diastolic heart failure, unspecified',
+    support: 'wrong',
+    feedback: "The chart documents *systolic* dysfunction, not diastolic. This would be wrong — and arguably worse than the current code.",
   },
 ]
 
@@ -205,8 +256,10 @@ interface SelectionState {
 
 const state = {
   briefingDone: false,
-  /** Modal open state for re-reading the briefing after dismissal. */
   briefingOpen: false,
+  amendOpen: false,
+  /** Current dx code on the claim (changes when player amends). */
+  currentDxCode: 'I50.9',
   selection: { payerId: null, chartId: null, lcdId: null } as SelectionState,
   resolvedIssues: new Set<string>(),
   citationCount: 0,
@@ -239,7 +292,7 @@ function term(termId: string, displayText?: string): string {
 
 function render(): string {
   if (state.packetSubmitted) {
-    return renderVictory() + renderTermPopover() + renderBriefingPopover()
+    return renderVictory() + renderTermPopover() + renderBriefingPopover() + renderAmendModal()
   }
   return `
     ${renderHeader()}
@@ -254,6 +307,7 @@ function render(): string {
     ${renderDesignNotes()}
     ${renderTermPopover()}
     ${renderBriefingPopover()}
+    ${renderAmendModal()}
   `
 }
 
@@ -339,17 +393,31 @@ function briefingContent(): string {
         </li>
       </ul>
       <p>
-        "Pick one piece from each. Connect them so the chart
-        fact + the policy clause answer the insurance company's
-        specific complaint. That's <strong>one citation</strong>.
-        You need three valid citations to build a complete
-        defense packet."
+        "Two ways to address an issue, and you need to know
+        which to reach for:"
       </p>
+      <ul>
+        <li>
+          <strong>Amend the claim.</strong> Sometimes the issue
+          is just that the wrong code was billed. The chart
+          supports something more specific; you change it.
+          Click directly on a disputed box on the claim form
+          (Box 21 is the diagnosis) to amend it. <em>This is
+          the cheap fix.</em> Always try it first.
+        </li>
+        <li>
+          <strong>Build a citation.</strong> When there's
+          nothing simple to fix — when the policy has an
+          alternative path, or when the chart's evidence
+          supports a real argument — connect a chart fact
+          and a policy clause to the payer's specific
+          assertion. That's an <strong>appeal</strong>."
+        </li>
+      </ul>
       <p>
-        "Some chart facts won't help. They'll be true but not
-        relevant. The builder will tell you why. There's no
-        penalty for trying — it's how you learn the shape of
-        the policy."
+        "Some chart facts won't help any single issue. The
+        tools will tell you why. There's no penalty for
+        trying."
       </p>
       <p>
         "Click any underlined term for a plain-English
@@ -388,6 +456,12 @@ function renderBriefingPopover(): string {
 function renderClaim(): string {
   const claim = wraithCase.claim
   if (!claim || claim.type !== 'cms1500') return ''
+  const amended = state.currentDxCode !== 'I50.9'
+  const currentDx = dxOptions.find(d => d.code === state.currentDxCode)
+  const dxDisplay = amended && currentDx
+    ? `${escape(currentDx.code)} — ${escape(currentDx.label)}`
+    : `${escape(claim.diagnoses[0].code)}${claim.diagnoses[0].label ? ' — ' + escape(claim.diagnoses[0].label) : ''}`
+  const specificityResolved = state.resolvedIssues.has('specificity')
   return `
     <section class="claim">
       <div class="claim-h">
@@ -399,12 +473,18 @@ function renderClaim(): string {
         <div><b>Insurer:</b> ${term('BCBS', escape(claim.insured.name ?? ''))} · ${escape(claim.insured.id)}</div>
       </div>
       <div class="claim-section">
-        <div class="claim-section-h">Box 21 · Diagnoses (DISPUTED)</div>
+        <div class="claim-section-h">
+          Box 21 · Diagnoses
+          ${specificityResolved
+            ? '<span class="claim-status amended">AMENDED</span>'
+            : '<span class="claim-status disputed">DISPUTED — click to amend</span>'}
+        </div>
         <ul class="dx">
-          ${claim.diagnoses.map((d, i) => {
-            const letter = String.fromCharCode(65 + i)
-            return `<li class="hi"><b>${letter}.</b> ${term('I50.9', escape(d.code) + (d.label ? ' — ' + escape(d.label) : ''))}</li>`
-          }).join('')}
+          <li class="${specificityResolved ? 'amended' : 'hi clickable'}"
+              ${specificityResolved ? '' : 'data-action="open-amend"'}>
+            <b>A.</b> ${specificityResolved ? escape(dxDisplay) : term('I50.9', dxDisplay)}
+            ${!specificityResolved ? '<span class="amend-hint">✎ click to amend</span>' : ''}
+          </li>
         </ul>
       </div>
       <div class="claim-section">
@@ -424,6 +504,40 @@ function renderClaim(): string {
         </table>
       </div>
     </section>
+  `
+}
+
+function renderAmendModal(): string {
+  if (!state.amendOpen) return ''
+  return `
+    <div class="amend-modal-backdrop">
+      <div class="amend-modal">
+        <button class="amend-modal-close" data-action="close-amend" aria-label="Close">×</button>
+        <div class="amend-modal-h">
+          <span class="amend-tag">AMEND BOX 21 · DIAGNOSIS</span>
+          <span class="amend-sub">Pick the code the chart actually supports.</span>
+        </div>
+        <div class="amend-context">
+          <strong>The chart says:</strong> documented systolic dysfunction, long-standing CKD, fatigue + edema.
+        </div>
+        <ul class="amend-options">
+          ${dxOptions.map(opt => `
+            <li class="amend-option ${opt.support === 'current' ? 'current' : ''}"
+                ${opt.support === 'current' ? '' : `data-action="pick-dx" data-code="${opt.code}"`}>
+              <div class="amend-option-h">
+                <code>${escape(opt.code)}</code>
+                <span class="amend-option-label">${escape(opt.label)}</span>
+                ${opt.support === 'current' ? '<span class="amend-option-badge current">currently on claim</span>' : ''}
+              </div>
+            </li>
+          `).join('')}
+        </ul>
+        <p class="amend-hint-text">
+          Picking a code that doesn't fit gives you feedback (and no penalty).
+          The chart is the source of truth.
+        </p>
+      </div>
+    </div>
   `
 }
 
@@ -707,6 +821,20 @@ function attemptCite() {
   }
 
   if (payer.issueId === chart.issueId && chart.issueId === lcd.issueId) {
+    const issue = issues.find(i => i.id === chart.issueId)!
+
+    // If this issue is solved by amending the claim, citing it is the
+    // wrong tool — redirect the player to the amend path.
+    if (issue.verb === 'amend') {
+      state.failedAttempts += 1
+      setFeedback(
+        "These pieces all line up — but this one doesn't need an argument. The chart supports a more specific code; just *amend* the dx on the claim. Click Box 21 in the form above.",
+        'bad'
+      )
+      state.lastRecap = ''
+      return
+    }
+
     if (state.resolvedIssues.has(chart.issueId)) {
       setFeedback(
         'Already cited. Try a different issue — there are still gaps in the packet.',
@@ -717,7 +845,6 @@ function attemptCite() {
     }
     state.resolvedIssues.add(chart.issueId)
     state.citationCount += 1
-    const issue = issues.find(i => i.id === chart.issueId)!
     setFeedback(
       `Citation accepted. Issue addressed: ${issue.label}`,
       'good'
@@ -735,6 +862,46 @@ function attemptCite() {
   state.lastRecap = ''
 }
 
+function attemptAmend(code: string) {
+  const opt = dxOptions.find(d => d.code === code)
+  if (!opt) return
+
+  if (opt.support === 'wrong') {
+    state.failedAttempts += 1
+    setFeedback(opt.feedback, 'bad')
+    state.lastRecap = ''
+    return
+  }
+
+  if (opt.support === 'partial') {
+    state.failedAttempts += 1
+    setFeedback(opt.feedback, 'bad')
+    state.lastRecap = ''
+    return
+  }
+
+  // 'correct' — apply the amendment
+  state.currentDxCode = opt.code
+  state.amendOpen = false
+  if (!state.resolvedIssues.has('specificity')) {
+    state.resolvedIssues.add('specificity')
+    const issue = issues.find(i => i.id === 'specificity')!
+    setFeedback(
+      `Claim amended. Box 21 now reads ${opt.code} (${opt.label}). Issue addressed.`,
+      'good'
+    )
+    state.lastRecap = issue.recap
+  }
+}
+
+function openAmend() {
+  state.amendOpen = true
+}
+
+function closeAmend() {
+  state.amendOpen = false
+}
+
 function attemptSubmit() {
   if (state.resolvedIssues.size < issues.length) return
   state.packetSubmitted = true
@@ -750,6 +917,8 @@ function reset() {
   state.lastRecap = ''
   state.packetSubmitted = false
   state.briefingDone = false
+  state.amendOpen = false
+  state.currentDxCode = 'I50.9'
 }
 
 function dismissBriefing() {
@@ -787,6 +956,11 @@ function handleClick(e: MouseEvent) {
   }
   if (target.classList.contains('term-popover-backdrop')) {
     closeTerm()
+    rerender()
+    return
+  }
+  if (target.classList.contains('amend-modal-backdrop')) {
+    closeAmend()
     rerender()
     return
   }
@@ -831,6 +1005,15 @@ function handleClick(e: MouseEvent) {
       break
     case 'close-briefing':
       closeBriefing()
+      break
+    case 'open-amend':
+      openAmend()
+      break
+    case 'close-amend':
+      closeAmend()
+      break
+    case 'pick-dx':
+      if (el.dataset.code) attemptAmend(el.dataset.code)
       break
     case 'open-term':
       if (el.dataset.term) openTerm(el.dataset.term)
@@ -1025,6 +1208,116 @@ const css = `
   .claim table.lines .term { color: #1c1c1c; }
   .claim table.lines .term-icon { background: #5a4d2b; color: var(--paper); }
   .claim .hi { background: var(--hi); box-shadow: inset 0 0 0 1px var(--hi-border); border-radius: 3px; }
+  .claim .clickable { cursor: pointer; transition: background 0.15s; padding: 4px 8px; }
+  .claim .clickable:hover { background: rgba(239, 91, 123, 0.4); }
+  .claim .amend-hint {
+    display: inline-block;
+    margin-left: 10px;
+    font-size: 10.5px;
+    color: var(--bad);
+    font-style: italic;
+    opacity: 0.85;
+  }
+  .claim .amended {
+    background: rgba(126, 226, 193, 0.15);
+    box-shadow: inset 0 0 0 1px var(--accent);
+    border-radius: 3px;
+    padding: 4px 8px;
+  }
+  .claim-status {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-left: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+  }
+  .claim-status.disputed {
+    background: rgba(239, 91, 123, 0.15);
+    color: var(--bad);
+    border: 1px solid var(--bad);
+  }
+  .claim-status.amended {
+    background: rgba(126, 226, 193, 0.15);
+    color: var(--accent);
+    border: 1px solid var(--accent);
+  }
+
+  /* Amend modal */
+  .amend-modal-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(10, 13, 18, 0.7);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100;
+    padding: 20px;
+    overflow-y: auto;
+  }
+  .amend-modal {
+    background: var(--panel);
+    border: 1px solid var(--accent);
+    border-left-width: 4px;
+    border-radius: 8px;
+    padding: 24px 28px 20px;
+    max-width: 640px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    position: relative;
+    margin: auto;
+  }
+  .amend-modal-close {
+    position: absolute; top: 8px; right: 12px;
+    background: transparent; border: none; color: var(--ink-dim);
+    font-size: 28px; cursor: pointer; line-height: 1;
+    padding: 4px 10px;
+  }
+  .amend-modal-close:hover { color: var(--ink); }
+  .amend-modal-h { display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px; }
+  .amend-tag {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--accent);
+  }
+  .amend-sub { font-size: 13px; color: var(--ink-dim); }
+  .amend-context {
+    background: var(--panel-2);
+    padding: 10px 14px;
+    border-radius: 5px;
+    font-size: 13px;
+    margin-bottom: 14px;
+    border-left: 3px solid var(--accent);
+  }
+  .amend-context strong { color: var(--accent); }
+  .amend-options { list-style: none; padding-left: 0; margin: 0; }
+  .amend-option {
+    padding: 12px 14px;
+    margin: 6px 0;
+    background: var(--panel-2);
+    border-radius: 5px;
+    border-left: 3px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .amend-option:hover:not(.current) { background: #232b3a; border-left-color: var(--accent); }
+  .amend-option.current { opacity: 0.55; cursor: not-allowed; }
+  .amend-option-h { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .amend-option code { font-weight: 700; color: var(--ink); }
+  .amend-option-label { color: var(--ink); flex: 1; }
+  .amend-option-badge {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 2px 8px;
+    border-radius: 3px;
+  }
+  .amend-option-badge.current {
+    background: rgba(239, 91, 123, 0.12);
+    color: var(--bad);
+    border: 1px solid #4a2a32;
+  }
+  .amend-hint-text {
+    font-size: 12px;
+    color: var(--ink-dim);
+    margin-top: 14px;
+    font-style: italic;
+  }
 
   .workbench { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 22px; }
   @media (max-width: 980px) { .workbench { grid-template-columns: 1fr; } }
@@ -1171,6 +1464,7 @@ function mount() {
       let changed = false
       if (state.openTermId) { closeTerm(); changed = true }
       if (state.briefingOpen) { closeBriefing(); changed = true }
+      if (state.amendOpen) { closeAmend(); changed = true }
       if (changed) rerender()
     }
   })
