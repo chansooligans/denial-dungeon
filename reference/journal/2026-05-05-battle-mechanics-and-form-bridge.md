@@ -12,8 +12,10 @@ foundation in `2026-05-04-waiting-room-combat-foundation.md`.
 | `timed` | `TimedController` | CO-29 Timely Filing Reaper | HP + Days Remaining; enemy damage escalates as days lapse; out-of-time = auto-loss |
 | `block` | `BlockController` | CO-197 Prior Auth Gatekeeper | Every odd turn the gate is shut (0 damage); `prior_auth_278` opens it permanently |
 | `mirror` | `MirrorController` | CO-18 Duplicate Claim Doppelgänger | Same tool used twice in a row → 0 damage, +heal to enemy, kickback to player |
+| `blind` | `BlindController` | Eligibility Fog | Fog reduces accuracy by 30 every turn; `eligibility_270` clears it permanently |
+| `multiHead` | `MultiHeadController` | OA-23 Coordination Hydra | Three heads (Primary / Secondary / COB) cycled in sequence; super-effective only against the active head's rootCause |
 
-`multiHead`, `blind`, `spawn` are still ahead.
+`spawn` is the last unbuilt mechanic.
 
 ## ClaimSheet — pedagogy as the centerpiece
 
@@ -50,6 +52,36 @@ the hospital→Waiting-Room loop closes for the entire bestiary:
 | `case_reaper_park` | Subscriber ID transposed | Timely Filing Reaper |
 | `case_gatekeeper_okafor` | Box 23 prior-auth number missing | Prior Auth Gatekeeper |
 | `case_doppel_reyes` | Subscriber ID transposed (resubmit avoids dup) | Duplicate Doppelgänger |
+| `case_fog_nguyen` | Member ID typo (270 returns clean elig) | Eligibility Fog |
+| `case_hydra_okwu` | Add COB segment / order of benefits | Coordination Hydra |
+| `case_level1_ub` | First UB-04 puzzle (revenue codes + DRG) | (didactic) |
+
+## Multi-wing Waiting Room
+
+The Waiting Room reorganized from a flat obstacle pile into four
+text-labeled department clusters: **Eligibility**, **Coding**,
+**Billing**, **Appeals**. Each obstacle marker sits inside its
+thematic wing — e.g. the Eligibility Fog and Hydra cluster under
+Eligibility, the Bundle Beast and Wraith under Coding. Wing labels
+float above their cluster as a wayfinding cue, which doubles as the
+player's mental map of the revenue cycle stages.
+
+## Hospital glimpse
+
+Level 1 hospital has a small atmospheric beat: a ghost paper sprite
+periodically scuttles across the screen, hinting at the Waiting Room
+breach before the player descends. Tied to `currentLevel === 1` so it
+won't keep re-firing once the player has caught on.
+
+## UB-04 ClaimSheet
+
+`ClaimSheetData` is now a discriminated union (`CMS1500Data |
+UB04Data`). The same `ClaimSheet` Phaser container dispatches on the
+`form` field and renders either layout — UB-04 has its own service
+lines (revenue codes + HCPCS + units), patient/insurer panels, and
+DRG / value codes box. Tool effects (`applyEffect()`) and box-bounds
+lookups work uniformly across both forms, so future UB-04 obstacles
+can ship with no battle-system changes.
 
 ## Hospital decoupled
 
@@ -78,12 +110,13 @@ publishes to Pages on each push to `main`.
 
 - `src/battle/index.ts` — mechanic factory
 - `src/battle/types.ts` — `MechanicController` interface, `PlayerTurnResult.formEffects`
-- `src/battle/mechanics/{simple,investigation,timed,block,mirror}.ts`
-- `src/battle/ClaimSheet.ts` — CMS-1500 renderer + `applyEffect()`
+- `src/battle/mechanics/{simple,investigation,timed,block,mirror,blind,multiHead}.ts`
+- `src/battle/ClaimSheet.ts` — CMS-1500 + UB-04 renderer + `applyEffect()`
 - `src/battle/screens.ts` — victory + defeat overlays (depth 200+)
 - `src/battle/toolMenu.ts` — default ribbon + custom action ribbon + flee + gating
 - `src/content/cases.ts` — PatientCases (form puzzle errors + claim data)
 - `src/content/enemies.ts` — encounter table with toolEffects, caseId, highlightedBoxes, payerNote
 - `src/scenes/BattleScene.ts` — orchestration, form-bridge buff in init
 - `src/scenes/FormScene.ts` — CMS-1500/UB-04 puzzle + formsPerfected push
-- `src/scenes/WaitingRoomScene.ts` — obstacle marker layer
+- `src/scenes/WaitingRoomScene.ts` — multi-wing obstacle marker layer
+- `src/scenes/HospitalScene.ts` — `scheduleGhostPaper()` Level 1 atmosphere
