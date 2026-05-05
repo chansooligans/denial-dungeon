@@ -26,10 +26,11 @@ being grim.
 
 The narrative through-line that braids these registers together —
 why the Waiting Room exists, what the two layers mean, who Dana is
-and why her notebook matters — lives in
-[`narrative.md`](narrative.md). This doc focuses on *what* each
-level teaches; the narrative doc focuses on *how the story frames
-it*.
+and why her notebook matters — lives in the
+[`narrative/`](narrative/README.md) folder. This doc focuses on
+*what* each level teaches; the narrative folder focuses on *how
+the story frames it*. Start at
+[`narrative/README.md`](narrative/README.md) for the index.
 
 ## Three axes
 
@@ -420,7 +421,7 @@ The v1 questions are answered. New ones for the room-level pass:
 
 ## See also
 
-- [`narrative.md`](narrative.md) — cosmology, philosophy, Dana
+- [`narrative/`](narrative/README.md) — cosmology, philosophy, Dana
   and the notebook, L10 reveal, tone guidelines
 - `reference/journal/2026-05-03-v3-the-waiting-room.md` — original
   game design
