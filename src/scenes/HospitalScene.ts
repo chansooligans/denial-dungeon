@@ -120,6 +120,13 @@ export class HospitalScene extends Phaser.Scene {
       this.canMove = true
       this.refreshHUD()
     })
+
+    // Mobile / accessibility: parallel scene with virtual D-pad + E + ESC.
+    // Stops itself on scene shutdown via the SHUTDOWN event below.
+    if (!this.scene.isActive('TouchOverlay')) this.scene.launch('TouchOverlay')
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.scene.stop('TouchOverlay')
+    })
   }
 
   private buildMap() {

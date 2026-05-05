@@ -99,6 +99,12 @@ export class WaitingRoomScene extends Phaser.Scene {
       this.canMove = true
       this.refreshObstacleVisibility()
     })
+
+    // Mobile / accessibility: virtual D-pad + E button.
+    if (!this.scene.isActive('TouchOverlay')) this.scene.launch('TouchOverlay')
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.scene.stop('TouchOverlay')
+    })
   }
 
   private buildMap() {
