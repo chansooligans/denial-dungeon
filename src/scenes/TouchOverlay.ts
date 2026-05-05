@@ -19,17 +19,23 @@ interface BtnSpec {
   label: string
   key: string
   code: string
+  /**
+   * Numeric keyCode for the synthetic KeyboardEvent. Phaser's
+   * KeyboardPlugin looks up its Key objects by event.keyCode — without
+   * this, synthetic events match nothing and arrow taps do nothing.
+   */
+  keyCode: number
   className: string
   hold: boolean
 }
 
 const BUTTONS: BtnSpec[] = [
-  { label: '▲', key: 'ArrowUp',    code: 'ArrowUp',    className: 'tc-up',    hold: true  },
-  { label: '▼', key: 'ArrowDown',  code: 'ArrowDown',  className: 'tc-down',  hold: true  },
-  { label: '◀', key: 'ArrowLeft',  code: 'ArrowLeft',  className: 'tc-left',  hold: true  },
-  { label: '▶', key: 'ArrowRight', code: 'ArrowRight', className: 'tc-right', hold: true  },
-  { label: 'E', key: 'e',          code: 'KeyE',       className: 'tc-e',     hold: false },
-  { label: 'ESC', key: 'Escape',   code: 'Escape',     className: 'tc-esc',   hold: false },
+  { label: '▲', key: 'ArrowUp',    code: 'ArrowUp',    keyCode: 38, className: 'tc-up',    hold: true  },
+  { label: '▼', key: 'ArrowDown',  code: 'ArrowDown',  keyCode: 40, className: 'tc-down',  hold: true  },
+  { label: '◀', key: 'ArrowLeft',  code: 'ArrowLeft',  keyCode: 37, className: 'tc-left',  hold: true  },
+  { label: '▶', key: 'ArrowRight', code: 'ArrowRight', keyCode: 39, className: 'tc-right', hold: true  },
+  { label: 'E', key: 'e',          code: 'KeyE',       keyCode: 69, className: 'tc-e',     hold: false },
+  { label: 'ESC', key: 'Escape',   code: 'Escape',     keyCode: 27, className: 'tc-esc',   hold: false },
 ]
 
 // Tracks live keys per button so we can synthesize keyup if the button
@@ -37,9 +43,18 @@ const BUTTONS: BtnSpec[] = [
 const heldKeys = new Map<string, BtnSpec>()
 
 function fireKey(type: 'keydown' | 'keyup', spec: BtnSpec) {
-  window.dispatchEvent(new KeyboardEvent(type, {
-    key: spec.key, code: spec.code, bubbles: true,
-  }))
+  // keyCode and which are read-only on KeyboardEvent in some browsers,
+  // so set them via Object.defineProperty after construction. Phaser's
+  // KeyboardPlugin matches Key objects by event.keyCode.
+  const event = new KeyboardEvent(type, {
+    key: spec.key, code: spec.code, bubbles: true, cancelable: true,
+    keyCode: spec.keyCode, which: spec.keyCode,
+  } as KeyboardEventInit)
+  if (event.keyCode !== spec.keyCode) {
+    Object.defineProperty(event, 'keyCode', { get: () => spec.keyCode })
+    Object.defineProperty(event, 'which',   { get: () => spec.keyCode })
+  }
+  window.dispatchEvent(event)
 }
 
 function ensureStyles() {
