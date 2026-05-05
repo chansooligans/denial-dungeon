@@ -1,5 +1,6 @@
 import Phaser from 'phaser'
 import { CASES } from '../content/cases'
+import { getState, saveGame } from '../state'
 import type { PatientCase, FormError } from '../types'
 
 interface FieldDisplay {
@@ -160,6 +161,15 @@ export class FormScene extends Phaser.Scene {
   private formComplete() {
     const { width, height } = this.scale
 
+    // Form-bridge: mark this case as perfected. Any obstacle whose
+    // `caseId` is this case will now start the matching battle at full
+    // HP. Idempotent — re-perfecting just keeps the entry.
+    const state = getState()
+    if (!state.formsPerfected.includes(this.patientCase.id)) {
+      state.formsPerfected.push(this.patientCase.id)
+      saveGame()
+    }
+
     this.add.rectangle(width / 2, height / 2, width, height, 0x0e1116, 0.85)
 
     this.add.text(width / 2, height / 2 - 40, 'CLAIM CORRECTED', {
@@ -168,6 +178,11 @@ export class FormScene extends Phaser.Scene {
 
     this.add.text(width / 2, height / 2, 'All errors found and fixed. This claim is ready to submit.', {
       fontSize: '11px', fontFamily: 'monospace', color: '#d0d8e0',
+    }).setOrigin(0.5)
+
+    this.add.text(width / 2, height / 2 + 22, 'The Waiting Room obstacle for this claim will start at full HP.', {
+      fontSize: '10px', fontFamily: 'monospace', color: '#7ee2c1',
+      fontStyle: 'italic',
     }).setOrigin(0.5)
 
     const btn = this.add.text(width / 2, height / 2 + 50, '[ CONTINUE ]', {

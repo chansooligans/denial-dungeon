@@ -32,6 +32,7 @@ const DEFAULT_STATE: GameState = {
   // L1 starts with only the Eligibility wing open; later levels unlock more.
   wingsUnlocked: ['eligibility'],
   obstaclesSeen: [],
+  formsPerfected: [],
 }
 
 let currentState: GameState = loadFromStorage() ?? structuredClone(DEFAULT_STATE)
@@ -59,6 +60,7 @@ function migrateState(loaded: Partial<GameState> & Record<string, unknown>): Gam
   merged.activeTickets ??= []
   merged.defeatedObstacles ??= []
   merged.obstaclesSeen ??= []
+  merged.formsPerfected ??= []
   merged.wingsUnlocked ??= base.wingsUnlocked
   merged.tools ??= []
   // Top up the tool list with any missing default tools. Players don't
