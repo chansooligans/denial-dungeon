@@ -302,6 +302,15 @@ export class WaitingRoomScene extends Phaser.Scene {
       backgroundColor: '#0a0d1280',
       padding: { x: 4, y: 2 },
     }).setScrollFactor(0).setDepth(100)
+
+    // Player stat strip — same layout as Hospital so the player's
+    // resources stay visible underground too.
+    const r = state.resources
+    this.add.text(10, 46, `HP: ${r.hp}/${r.maxHp}  Rep: ${r.reputation}  Audit: ${r.auditRisk}%  Stress: ${r.stress}`, {
+      fontSize: '9px', fontFamily: 'monospace', color: '#ef5b7b',
+      backgroundColor: '#0a0d1280',
+      padding: { x: 4, y: 2 },
+    }).setScrollFactor(0).setDepth(100)
   }
 
   update() {

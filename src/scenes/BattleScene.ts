@@ -146,6 +146,23 @@ export class BattleScene extends Phaser.Scene {
     if (this.mechanic.panelText()) {
       this.encounterDescriptionText.setVisible(false)
     }
+
+    // "Likely effective" hint — surface the encounter's correctTools so
+    // the player can pick informed instead of trial-and-error. Filtered
+    // to only show tools the player has unlocked (don't tease tools they
+    // don't have access to). Hidden when a mechanic owns the panel.
+    if (!this.mechanic.panelText()) {
+      const ownedTools = new Set(this.state.playerTools)
+      const ownedHints = enc.correctTools.filter(id => ownedTools.has(id))
+      if (ownedHints.length > 0) {
+        const names = ownedHints.map(id => TOOLS[id]?.name || id).join(', ')
+        this.add.text(width / 2, barY + 80, `Likely effective: ${names}`, {
+          fontSize: '10px', fontFamily: 'monospace', color: '#7ee2c1',
+          fontStyle: 'italic',
+          wordWrap: { width: 500 }, align: 'center',
+        }).setOrigin(0.5, 0)
+      }
+    }
   }
 
   private buildPlayerPanel(width: number, height: number) {
@@ -167,6 +184,13 @@ export class BattleScene extends Phaser.Scene {
     }).setOrigin(0.5)
 
     this.add.image(px - 72, py + 6, 'ui_heart').setScale(1.2)
+
+    // Stress indicator below HP — color-coded so high stress is visible.
+    const stress = getState().resources.stress
+    const stressColor = stress >= 75 ? '#ef5b7b' : stress >= 50 ? '#f0a868' : '#8b95a5'
+    this.add.text(px, py + 22, `Stress ${stress}`, {
+      fontSize: '9px', fontFamily: 'monospace', color: stressColor,
+    }).setOrigin(0.5)
   }
 
   private buildMessageArea(width: number, height: number) {
@@ -348,6 +372,14 @@ export class BattleScene extends Phaser.Scene {
     if (this.state.turn !== 'player') return
     this.state.turn = 'animating'
     this.setToolButtonsVisible(false)
+
+    // Shadow tools (upcode, aggressive collections) cost stress every
+    // time you reach for them, regardless of outcome. The audit /
+    // reputation deltas they already declare are applied by the engine
+    // separately; this is the persistent emotional tax.
+    if (tool.shadow) {
+      updateResources({ stress: +5 })
+    }
 
     const result = this.mechanic.applyPlayerTurn(tool.id)
     this.applyTurnResult(result, tool.name)
@@ -601,6 +633,10 @@ export class BattleScene extends Phaser.Scene {
 
   private defeat() {
     this.state.turn = 'done'
+    // A lost claim haunts you — significant persistent stress hit.
+    updateResources({ stress: +10 })
+    saveGame()
+
     this.toolButtons.forEach(c => c.setVisible(false))
     this.messageText.setVisible(false)
     this.turnIndicator.setVisible(false)
@@ -656,20 +692,24 @@ export class BattleScene extends Phaser.Scene {
   private exitBattle(won: boolean) {
     const state = getState()
     if (won) {
-      updateResources({ hp: this.state.playerHp - state.resources.hp })
+      updateResources({
+        hp: this.state.playerHp - state.resources.hp,
+        // Resolution brings a small relief; persistent across run.
+        stress: -3,
+      })
       unlockCodex(this.state.encounter.id)
       // Track defeated obstacles so Waiting Room markers can hide once
-      // their encounter is resolved. SimpleController encounters that win
-      // via dialogue + exitBattle still flow through here, so they get
-      // marked too — that's fine; the list is only consulted by the
-      // Waiting Room marker renderer for now.
+      // their encounter is resolved.
       if (!state.defeatedObstacles.includes(this.state.encounter.id)) {
         state.defeatedObstacles.push(this.state.encounter.id)
       }
-      // Tools the encounter teaches on first defeat. Idempotent —
-      // unlockTool dedupes against state.tools.
+      // Tools the encounter teaches on first defeat. Idempotent.
       const earned = this.state.encounter.unlocksOnDefeat ?? []
       for (const toolId of earned) unlockTool(toolId)
+      saveGame()
+    } else {
+      // Fled or otherwise didn't win — minor stress but no claim cost.
+      updateResources({ stress: +2 })
       saveGame()
     }
     this.scene.start(this.state.returnScene)

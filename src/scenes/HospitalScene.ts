@@ -313,7 +313,12 @@ export class HospitalScene extends Phaser.Scene {
 
   private refreshHUD() {
     const state = getState()
-    this.hudHp.setText(`HP: ${state.resources.hp}/${state.resources.maxHp}  Rep: ${state.resources.reputation}  Audit: ${state.resources.auditRisk}%`)
+    this.hudHp.setText(
+      `HP: ${state.resources.hp}/${state.resources.maxHp}  ` +
+      `Rep: ${state.resources.reputation}  ` +
+      `Audit: ${state.resources.auditRisk}%  ` +
+      `Stress: ${state.resources.stress}`
+    )
   }
 
   update() {
