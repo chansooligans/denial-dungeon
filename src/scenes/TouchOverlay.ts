@@ -10,6 +10,7 @@
 // Always visible: harmless on desktop, essential on mobile.
 
 import Phaser from 'phaser'
+import { addFullscreenButton } from './fullscreenButton'
 
 interface Btn {
   /** Container holding the button graphics (for hover/press effects). */
@@ -47,6 +48,9 @@ export class TouchOverlay extends Phaser.Scene {
 
     // Top-right secondary action: ESC (skip intro / flee / back to menu)
     this.makeButton(width - 40, 40, 'ESC', 'Escape', 'Escape', 28, '#3a4a5d')
+
+    // Top-left: fullscreen toggle
+    addFullscreenButton(this)
 
     // Release any held buttons if focus is lost (avoids stuck movement).
     this.scale.on('resize', () => this.releaseAll())

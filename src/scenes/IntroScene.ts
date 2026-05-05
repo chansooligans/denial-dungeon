@@ -1,4 +1,5 @@
 import Phaser from 'phaser'
+import { addFullscreenButton } from './fullscreenButton'
 
 interface Beat {
   type: 'text' | 'scene' | 'wait' | 'title' | 'cover' | 'backdrop'
@@ -180,9 +181,20 @@ export class IntroScene extends Phaser.Scene {
 
     this.sceneContainer = this.add.container(0, 0)
 
-    this.skipText = this.add.text(width - 20, height - 20, '[ESC to skip intro]', {
-      fontSize: '10px', fontFamily: 'monospace', color: '#3a4a5d',
-    }).setOrigin(1, 1).setDepth(100)
+    this.skipText = this.add.text(width - 16, height - 16, '⏭ skip intro', {
+      fontSize: '14px', fontFamily: 'monospace', color: '#7ee2c1',
+      backgroundColor: '#0e1116cc',
+      padding: { left: 10, right: 10, top: 6, bottom: 6 },
+    }).setOrigin(1, 1).setDepth(1100).setInteractive({ useHandCursor: true })
+    this.skipText.on('pointerdown', (
+      _p: Phaser.Input.Pointer, _x: number, _y: number,
+      event?: { stopPropagation?: () => void },
+    ) => {
+      event?.stopPropagation?.()
+      this.skipToTitle()
+    })
+
+    addFullscreenButton(this)
 
     this.continuePrompt = this.add.text(
       width / 2, height - 30,
