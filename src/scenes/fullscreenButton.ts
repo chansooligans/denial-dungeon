@@ -1,21 +1,53 @@
 import Phaser from 'phaser'
 
-// Small tappable fullscreen toggle for mobile play. Browsers require a
-// user gesture to enter fullscreen, so this lives as a button rather than
-// auto-triggering. Used by Intro, Title, and TouchOverlay.
-export function addFullscreenButton(scene: Phaser.Scene, x = 16, y = 16) {
-  const btn = scene.add.text(x, y, '⛶', {
-    fontSize: '20px', fontFamily: 'monospace', color: '#7ee2c1',
-    backgroundColor: '#0e1116cc',
-    padding: { left: 8, right: 8, top: 4, bottom: 4 },
-  }).setOrigin(0, 0).setDepth(1100).setScrollFactor(0)
-    .setInteractive({ useHandCursor: true })
+// Fullscreen toggle for mobile play.
+//
+// Why a DOM button instead of a Phaser Text object: the Fullscreen API
+// requires "transient activation" — the call must happen synchronously
+// inside a real user-input event handler. Phaser queues pointer events
+// and dispatches them on the next update tick, by which time the browser
+// has already discarded the user-gesture context, so requestFullscreen
+// silently fails. A native <button> click listener stays inside that
+// context.
+//
+// Singleton: idempotent across scenes. Calling addFullscreenButton from
+// multiple scenes is safe and only mounts the button once.
 
-  btn.on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, event?: { stopPropagation?: () => void }) => {
-    event?.stopPropagation?.()
-    if (scene.scale.isFullscreen) scene.scale.stopFullscreen()
-    else scene.scale.startFullscreen()
+const BUTTON_ID = 'fullscreen-toggle'
+
+export function addFullscreenButton(_scene: Phaser.Scene) {
+  if (typeof document === 'undefined') return
+  if (document.getElementById(BUTTON_ID)) return
+
+  const btn = document.createElement('button')
+  btn.id = BUTTON_ID
+  btn.type = 'button'
+  btn.textContent = '⛶'
+  btn.setAttribute('aria-label', 'Toggle fullscreen')
+  btn.style.cssText = [
+    'position:fixed', 'top:10px', 'left:10px', 'z-index:10000',
+    'background:rgba(14,17,22,0.8)', 'color:#7ee2c1',
+    'border:1px solid #3a4a5d', 'border-radius:4px',
+    'padding:6px 10px', 'font:bold 20px monospace',
+    'line-height:1', 'cursor:pointer',
+    '-webkit-tap-highlight-color:transparent',
+    'touch-action:manipulation',
+  ].join(';')
+
+  btn.addEventListener('click', () => {
+    const fsEl = document.fullscreenElement
+      || (document as unknown as { webkitFullscreenElement?: Element }).webkitFullscreenElement
+    if (fsEl) {
+      const exit = document.exitFullscreen
+        || (document as unknown as { webkitExitFullscreen?: () => Promise<void> }).webkitExitFullscreen
+      exit?.call(document)
+      return
+    }
+    const target = document.getElementById('game') || document.documentElement
+    const req = target.requestFullscreen
+      || (target as unknown as { webkitRequestFullscreen?: (opts?: unknown) => Promise<void> }).webkitRequestFullscreen
+    req?.call(target, { navigationUI: 'hide' })
   })
 
-  return btn
+  document.body.appendChild(btn)
 }
