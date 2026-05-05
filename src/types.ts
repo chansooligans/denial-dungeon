@@ -326,13 +326,29 @@ export interface ServiceLine {
   charges: string
 }
 
+/** One row in boxes 42-47 of a UB-04 (institutional service line). */
+export interface UB04ServiceLine {
+  /** Box 42 — Revenue code (4-digit, e.g. '0250' Pharmacy, '0360' OR). */
+  revCode: string
+  /** Box 43 — Revenue code description (e.g. 'Operating Room'). */
+  description: string
+  /** Box 44 — HCPCS / Rate / HIPPS (where applicable). */
+  hcpcs?: string
+  /** Box 45 — Service date (institutional claims also have line dates). */
+  serviceDate?: string
+  /** Box 46 — Service units. */
+  units?: string
+  /** Box 47 — Total charges. */
+  totalCharges: string
+}
+
 /**
- * Realistic CMS-1500 (or, future, UB-04) field data for the ClaimSheet
- * renderer. Field naming mirrors the actual form's box numbers so that
- * `highlightedBoxes` ids on an Encounter line up with what's drawn.
+ * Realistic CMS-1500 field data for the ClaimSheet renderer. Field
+ * naming mirrors the actual form's box numbers so `highlightedBoxes`
+ * ids on an Encounter line up with what's drawn.
  */
-export interface ClaimSheetData {
-  type: 'cms1500' // 'ub04' lands in a follow-up
+export interface CMS1500Data {
+  type: 'cms1500'
   claimId: string
   /** Box 1 — insurance program type (e.g. 'Group', 'Medicare'). */
   insuranceType?: string
@@ -358,6 +374,55 @@ export interface ClaimSheetData {
     npi?: string
   }
 }
+
+/**
+ * Realistic UB-04 (institutional / hospital billing) field data.
+ * Different fields and box numbers from the CMS-1500 — type-of-bill,
+ * admission, revenue codes, attending provider, DRG.
+ *
+ * Box id convention for `highlightedBoxes`:
+ *   '4'  = type of bill, '6' = statement period, '14' = admission type,
+ *   '42-N' / '43-N' / '44-N' / '47-N' = service line N revcode/desc/hcpcs/charges,
+ *   '67' = principal dx, '67A'..'67Q' = other dx,
+ *   '76' = attending provider, '80' = DRG.
+ */
+export interface UB04Data {
+  type: 'ub04'
+  claimId: string
+  /** Box 4 — type of bill (e.g. '111' inpatient, '131' outpatient). */
+  typeOfBill: string
+  patient: {
+    name: string
+    dob: string
+    sex?: 'M' | 'F'
+  }
+  insured: {
+    id: string
+    name?: string
+    group?: string
+  }
+  /** Box 6 — statement period covered by this bill. */
+  statementPeriod?: { from: string; through: string }
+  /** Box 14 — type of admission (e.g. 'EMG', 'URG', 'ELC'). */
+  admissionType?: string
+  /** Box 67 + 67A..67Q — diagnoses. First entry is principal. */
+  diagnoses: ClaimFieldValue[]
+  /** Box 42-47 — service line table. */
+  serviceLines: UB04ServiceLine[]
+  /** Box 76 — attending provider. */
+  attendingProvider: {
+    name: string
+    npi?: string
+  }
+  /** Box 80 — DRG / occurrence remark. */
+  drg?: string
+}
+
+/**
+ * Discriminated union over the two claim form types. ClaimSheet
+ * dispatches its render based on `data.type`.
+ */
+export type ClaimSheetData = CMS1500Data | UB04Data
 
 export interface FormError {
   field: string

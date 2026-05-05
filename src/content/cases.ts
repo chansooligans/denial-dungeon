@@ -53,6 +53,45 @@ export const CASES: Record<string, PatientCase> = {
         explanation: 'Rev code 0250 is Pharmacy. The OR charge should be 0360 (Operating Room). Revenue codes tell the payer what department provided the service.',
       },
     ],
+    claim: {
+      type: 'ub04',
+      claimId: 'CLM-2026-05-01-04920',
+      typeOfBill: '111',
+      patient: { name: 'CHEN, ROBERT', dob: '1958-04-22', sex: 'M' },
+      insured: { id: 'MED-1A2B3C4D', name: 'CHEN, ROBERT', group: '0M-Part A' },
+      statementPeriod: { from: '2026-05-01', through: '2026-05-03' },
+      admissionType: 'EMG',
+      diagnoses: [
+        { code: 'K35.20', label: 'Acute appendicitis w/ peritonitis' },
+        { code: 'K35.32', label: 'Local peritonitis (other)' },
+      ],
+      serviceLines: [
+        {
+          revCode: '0360',
+          description: 'Operating Room services',
+          hcpcs: '0DTJ4ZZ',
+          serviceDate: '2026-05-01',
+          units: '1',
+          totalCharges: '$28,400.00',
+        },
+        {
+          revCode: '0250',
+          description: 'Pharmacy',
+          serviceDate: '2026-05-01',
+          units: '12',
+          totalCharges: '$1,840.00',
+        },
+        {
+          revCode: '0710',
+          description: 'Recovery Room',
+          serviceDate: '2026-05-01',
+          units: '2',
+          totalCharges: '$2,210.00',
+        },
+      ],
+      attendingProvider: { name: 'Dr. M. Adeyemi, MD', npi: '1827340912' },
+      drg: '343 (Appendectomy w/ peritonitis)',
+    },
   },
 
   // -------------------------------------------------------------------------
