@@ -25,8 +25,10 @@ interface PayerPhrase {
 
 interface ChartFact {
   id: string
-  text: string
+  /** What the player reads first — plain-English summary. */
   plain: string
+  /** The actual chart language, shown smaller below the plain text. */
+  technical: string
   /** Which issue this fact addresses (null = distractor). */
   issueId: string | null
   distractorReason?: string
@@ -34,8 +36,10 @@ interface ChartFact {
 
 interface LcdClause {
   id: string
-  text: string
+  /** What the player reads first — plain-English summary. */
   plain: string
+  /** The actual policy language, shown smaller below the plain text. */
+  technical: string
   issueId: string
 }
 
@@ -145,46 +149,32 @@ const payerPhrases: PayerPhrase[] = [
 const chartFacts: ChartFact[] = [
   {
     id: 'systolic',
-    text: 'Echo report on file: documented systolic dysfunction',
-    plain: "Heart imaging shows the heart isn't pumping properly (this is exactly what the vague code missed).",
+    plain: "The patient's heart isn't pumping well. Imaging confirms it.",
+    technical: 'Echo report on file: documented systolic dysfunction',
     issueId: 'specificity',
   },
   {
     id: 'creat',
-    text: 'Labs (3 mo prior): creatinine 2.8',
-    plain: 'Kidney function test from 3 months ago — high reading, meaning kidneys are struggling.',
+    plain: "Kidney function is poor. (High creatinine reading from a few months ago.)",
+    technical: 'Labs (3 mo prior): creatinine 2.8 mg/dL',
     issueId: 'criterion',
   },
   {
     id: 'sx',
-    text: 'Documented fatigue, edema, declining GFR',
-    plain: 'Patient is tired, has swelling, kidney function is getting worse — all written in the chart.',
+    plain: "The patient has clear symptoms — tired, swelling, kidneys getting worse.",
+    technical: 'Documented fatigue, edema, declining GFR',
     issueId: 'symptomatology',
   },
   {
     id: 'ckd',
-    text: 'Patient has chronic kidney disease, stage 3',
-    plain: 'Long-term kidney disease, moderate severity — supports the kidney-criterion argument.',
+    plain: "The patient has long-standing kidney disease (moderate stage).",
+    technical: 'Patient has chronic kidney disease, stage 3',
     issueId: 'criterion',
   },
   {
-    id: 'tuesday',
-    text: 'Procedure performed at 9:00 AM Tuesday',
-    plain: 'When the test was done. Not relevant to whether insurance should pay.',
-    issueId: null,
-    distractorReason: "When the test happened isn't part of the policy's medical-necessity criteria.",
-  },
-  {
-    id: 'zone',
-    text: 'Patient lives in service-area Zone 2',
-    plain: 'Where the patient lives geographically. Not relevant here.',
-    issueId: null,
-    distractorReason: "Geography isn't part of LCD L33526's coverage criteria.",
-  },
-  {
     id: 'referrer',
-    text: 'Referring provider is in-network',
-    plain: 'The doctor who referred the patient is contracted with the insurance company. True but not relevant to *medical necessity*.',
+    plain: "The doctor who ordered the test is in the insurance company's network.",
+    technical: 'Referring provider is in-network',
     issueId: null,
     distractorReason: "Network status doesn't address whether the test was medically necessary.",
   },
@@ -193,20 +183,20 @@ const chartFacts: ChartFact[] = [
 const lcdClauses: LcdClause[] = [
   {
     id: 'specificity-rule',
-    text: 'Coverage requires a specific cardiac dx (I50.x with severity), not unspecified heart failure.',
-    plain: "The insurance only pays if the doctor wrote a *specific* type of heart failure, not just 'heart failure'.",
+    plain: "The insurance only pays if the doctor wrote a specific type of heart failure — not just 'heart failure.'",
+    technical: 'Coverage requires a specific cardiac dx (I50.x with severity), not unspecified heart failure.',
     issueId: 'specificity',
   },
   {
     id: 'creat-alt',
-    text: 'Alternative criterion: creatinine > 2.5 mg/dL with documented symptomatology.',
-    plain: "If kidney function is worse than 2.5 AND the patient has symptoms documented, that's enough — even without the heart-pumping number.",
+    plain: "Alternate path: poor kidney function plus documented symptoms also qualifies — even without the heart-pumping measurement.",
+    technical: 'Alternative criterion: creatinine > 2.5 mg/dL with documented symptomatology.',
     issueId: 'criterion',
   },
   {
     id: 'sx-required',
-    text: 'Documented symptomatology required for coverage when LVEF data not on file.',
-    plain: "If we don't have the heart-pumping measurement, the chart needs to document the patient's actual symptoms.",
+    plain: "If the heart-pumping measurement isn't on file, documented symptoms can stand in.",
+    technical: 'Documented symptomatology required for coverage when LVEF data not on file.',
     issueId: 'symptomatology',
   },
 ]
@@ -220,9 +210,9 @@ const glossary: Record<string, GlossaryEntry> = {
     term: 'LCD (Local Coverage Determination)',
     plain: 'A document the insurance company writes that says, in detail, the conditions under which they will and won\'t cover a particular service. Public; the player can read them.',
   },
-  'LCD L33526': {
-    term: 'LCD L33526',
-    plain: 'The specific Local Coverage Determination policy that governs cardiac imaging like echocardiograms. The "L33526" is just its filing number.',
+  'LCD L33457': {
+    term: 'LCD L33457 (Echocardiography)',
+    plain: 'A real Medicare policy from Novitas (one of the contractors that processes Medicare claims). It defines when an echocardiogram counts as "medically necessary" and when it doesn\'t. Public; the full policy runs about 20+ pages. Real revenue-cycle analysts read these documents directly when fighting denials. The criteria you see in this encounter — LVEF thresholds, alternative kidney-function paths, documented-symptom requirements — are drawn from real LCD patterns.',
   },
   'CDI specialist': {
     term: 'CDI specialist',
@@ -566,41 +556,42 @@ function renderWorkbench(): string {
       <div class="col col-payer">
         <div class="col-h">
           <span class="col-tag">PAYER NOTE</span>
-          <span class="col-sub">The denial letter. Hover a red phrase to see what it means; click to select it.</span>
+          <span class="col-sub">The insurance company's denial letter. Hover a red phrase to see what it means; click to select it.</span>
         </div>
         <p class="col-prose">
-          The submitted diagnosis ${phraseById('unspec-dx')} does not support
-          medical necessity for CPT 93306. Claim adjudicated
-          ${phraseById('lvef')} per ${term('LCD L33526')}, and is
-          ${phraseById('no-evidence')} of qualifying clinical findings.
+          The insurance company denied this claim. They said:
+          the diagnosis ${phraseById('unspec-dx')} is too vague,
+          there's no proof of ${phraseById('lvef')}, and the
+          chart is ${phraseById('no-evidence')} of why this test
+          was needed. They cited ${term('LCD L33457')}.
         </p>
       </div>
       <div class="col col-chart">
         <div class="col-h">
           <span class="col-tag">CHART (Walker, A.)</span>
-          <span class="col-sub">Notes from the patient's record. Hover for a plain-English explanation; click to cite.</span>
+          <span class="col-sub">What the doctor wrote about this patient. Click a fact to cite it.</span>
         </div>
         <ul class="facts">
           ${chartFacts.map(f => `
             <li class="fact ${state.selection.chartId === f.id ? 'selected' : ''}"
                 data-action="select-chart" data-id="${f.id}">
-              <div class="fact-text">${escape(f.text)}</div>
-              <div class="hover-tip">${escape(f.plain)}</div>
+              <div class="fact-plain">${escape(f.plain)}</div>
+              <div class="fact-technical"><span class="src">from chart:</span> ${escape(f.technical)}</div>
             </li>
           `).join('')}
         </ul>
       </div>
       <div class="col col-lcd">
         <div class="col-h">
-          <span class="col-tag">LCD L33526</span>
-          <span class="col-sub">The insurance company's policy. Hover for a plain-English explanation; click to back a citation.</span>
+          <span class="col-tag">${term('LCD L33457')}</span>
+          <span class="col-sub">Excerpts from the insurance company's coverage policy. Click a clause to back a citation.</span>
         </div>
         <ul class="clauses">
           ${lcdClauses.map(c => `
             <li class="clause ${state.selection.lcdId === c.id ? 'selected' : ''}"
                 data-action="select-lcd" data-id="${c.id}">
-              <div class="clause-text">${escape(c.text)}</div>
-              <div class="hover-tip">${escape(c.plain)}</div>
+              <div class="clause-plain">${escape(c.plain)}</div>
+              <div class="clause-technical"><span class="src">policy reads:</span> ${escape(c.technical)}</div>
             </li>
           `).join('')}
         </ul>
@@ -632,12 +623,12 @@ function renderCitationBuilder(): string {
         <div class="connector">cited by</div>
         <div class="slot ${chart ? 'filled' : ''}">
           <div class="slot-label">CHART FACT</div>
-          <div class="slot-text">${chart ? escape(chart.text) : '<span class="placeholder">Click a chart fact</span>'}</div>
+          <div class="slot-text">${chart ? escape(chart.plain) : '<span class="placeholder">Click a chart fact</span>'}</div>
         </div>
         <div class="connector">per</div>
         <div class="slot ${lcd ? 'filled' : ''}">
           <div class="slot-label">LCD CLAUSE</div>
-          <div class="slot-text">${lcd ? escape(lcd.text) : '<span class="placeholder">Click an LCD clause</span>'}</div>
+          <div class="slot-text">${lcd ? escape(lcd.plain) : '<span class="placeholder">Click an LCD clause</span>'}</div>
         </div>
       </div>
       <div class="builder-actions">
@@ -1483,6 +1474,28 @@ const css = `
   .fact.selected { border-left-color: var(--accent); background: rgba(126, 226, 193, 0.1); }
   .clause.selected { border-left-color: #a3c5ff; background: rgba(163, 197, 255, 0.08); }
   .fact-text, .clause-text { font-size: 13px; }
+  .fact-plain, .clause-plain {
+    font-size: 13.5px;
+    color: var(--ink);
+    line-height: 1.45;
+  }
+  .fact-technical, .clause-technical {
+    font-size: 11px;
+    color: rgba(138, 147, 163, 0.65);
+    margin-top: 6px;
+    padding-top: 5px;
+    border-top: 1px dashed rgba(138, 147, 163, 0.15);
+    line-height: 1.4;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  .fact-technical .src, .clause-technical .src {
+    color: rgba(138, 147, 163, 0.45);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 10px;
+    margin-right: 4px;
+    font-family: inherit;
+  }
 
   .builder { background: var(--panel); border: 1px solid #232a36; border-radius: 8px; padding: 16px 18px; margin-bottom: 22px; }
   .builder-h { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-dim); margin-bottom: 10px; }
