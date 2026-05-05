@@ -23,7 +23,7 @@ const LAYOUT = [
   'W..CC..CC..CC..CC..CC..CC...W',
   'W............................W',
   'W..CC..CC..CC..CC..CC..CC...W',
-  'W..O.........................W',
+  'W..O.....................O...W',
   'W..............O........O....W',
   'W...........D................W',
   'W............................W',
@@ -55,6 +55,8 @@ const OBSTACLES: ObstacleMarker[] = [
   { tileX: 3,  tileY: 15, encounterId: 'co_18_doppelganger' },
   // (12, 6)  — center-north: Eligibility Fog (Blind)
   { tileX: 12, tileY: 6,  encounterId: 'eligibility_fog' },
+  // (26, 15) — south-east: COB Hydra (MultiHead)
+  { tileX: 26, tileY: 15, encounterId: 'oa_23_hydra' },
 ]
 
 interface ObstacleSprite {
