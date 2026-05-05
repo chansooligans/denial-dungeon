@@ -1,11 +1,13 @@
 import Phaser from 'phaser'
 import { TOOLS } from '../content/abilities'
 import { ENCOUNTERS } from '../content/enemies'
+import { CASES } from '../content/cases'
 import { getState, updateResources, unlockCodex, unlockTool, saveGame } from '../state'
 import type { Encounter, Tool } from '../types'
 import { FACTION_COLOR } from '../types'
 import { createMechanic } from '../battle'
 import type { MechanicController } from '../battle'
+import { ClaimSheet } from '../battle/ClaimSheet'
 
 interface BattleState {
   encounter: Encounter
@@ -36,6 +38,7 @@ export class BattleScene extends Phaser.Scene {
   private mechanic!: MechanicController
   private encounterNameText!: Phaser.GameObjects.Text
   private encounterDescriptionText?: Phaser.GameObjects.Text
+  private claimSheet?: ClaimSheet
   private encounterHpBar!: Phaser.GameObjects.Graphics
   private encounterHpText!: Phaser.GameObjects.Text
   private playerHpBar!: Phaser.GameObjects.Graphics
@@ -83,6 +86,13 @@ export class BattleScene extends Phaser.Scene {
     this.encounterHpRatio = 1
     this.playerHpRatio = 1
     this.toolButtons = []
+    // Clear lazy-created widgets — Phaser destroys them on scene
+    // restart but the field references survive, leading to drawImage
+    // crashes if we call setText/setVisible on them in create().
+    this.statusText = undefined
+    this.panelTextWidget = undefined
+    this.claimSheet = undefined
+    this.encounterDescriptionText = undefined
   }
 
   create() {
@@ -139,12 +149,31 @@ export class BattleScene extends Phaser.Scene {
     }).setOrigin(0.5)
 
     // Description — hidden if a mechanic provides a persistent panel
-    // (the panel content carries the relevant flavor + state in that case).
+    // (the panel content carries the relevant flavor + state in that case)
+    // or if a ClaimSheet is being rendered for this encounter.
     this.encounterDescriptionText = this.add.text(width / 2, barY + 30, enc.description, {
       fontSize: '11px', fontFamily: 'monospace', color: '#8b95a5',
       wordWrap: { width: 500 }, align: 'center',
     }).setOrigin(0.5, 0)
-    if (this.mechanic.panelText()) {
+
+    // Realistic claim sheet (CMS-1500) for encounters whose stuck claim
+    // has authored data on its PatientCase. Shared with the form-puzzle
+    // scene so battle and pre-fix see the same form.
+    const linkedCase = enc.caseId ? CASES[enc.caseId] : undefined
+    if (linkedCase?.claim) {
+      const sheetW = Math.min(880, width - 40)
+      const sheetX = (width - sheetW) / 2
+      this.claimSheet = new ClaimSheet(
+        this, sheetX, barY + 28, linkedCase.claim,
+        {
+          highlightedBoxes: enc.highlightedBoxes,
+          payerNote: enc.payerNote,
+          width: sheetW,
+        }
+      )
+      // ClaimSheet takes the panel area; description and panel text both hide.
+      this.encounterDescriptionText.setVisible(false)
+    } else if (this.mechanic.panelText()) {
       this.encounterDescriptionText.setVisible(false)
     }
 
@@ -548,6 +577,13 @@ export class BattleScene extends Phaser.Scene {
    * since the panel is wide and tall.
    */
   private refreshPanel() {
+    // When a ClaimSheet is on screen it owns the panel area; suppress
+    // the mechanic's text panel and keep messageText visible so the
+    // player can read action results.
+    if (this.claimSheet) {
+      this.panelTextWidget?.setVisible(false)
+      return
+    }
     const text = this.mechanic.panelText()
     if (!text) {
       this.panelTextWidget?.setVisible(false)

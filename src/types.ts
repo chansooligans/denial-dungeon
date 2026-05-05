@@ -130,6 +130,24 @@ export interface Encounter {
    * them count toward the win threshold.
    */
   caseFile?: CaseFile
+  /**
+   * References a PatientCase whose `claim` data is rendered as a
+   * realistic CMS-1500 / UB-04 in the battle UI. Lets battle and the
+   * form-puzzle scene share one source of truth per stuck claim.
+   */
+  caseId?: string
+  /**
+   * Box ids on the linked claim that this fight is disputing. Rendered
+   * with a red highlight on the ClaimSheet so the player can see
+   * exactly where the problem is.
+   * Examples: '21A', '24D-1' (line 1 of box 24D), '24A-2'.
+   */
+  highlightedBoxes?: string[]
+  /**
+   * The payer's denial language as it would appear on the 835 ERA or
+   * letter. Rendered beneath the claim form during the fight.
+   */
+  payerNote?: string
 }
 
 export interface CaseFact {
@@ -238,6 +256,74 @@ export interface PatientCase {
   formType: 'cms1500' | 'ub04'
   errors?: FormError[]
   level: number
+  /**
+   * Realistic box-by-box claim data for the ClaimSheet renderer. When
+   * present, both FormScene and BattleScene draw from this to keep the
+   * stuck claim visually consistent across the form puzzle and the
+   * battle. Optional so legacy cases keep working.
+   */
+  claim?: ClaimSheetData
+}
+
+// === Claim sheet (realistic CMS-1500 / UB-04 rendering) ===
+
+/**
+ * A code+label pair. Many CMS-1500 fields are short codes (ICD-10, CPT,
+ * place-of-service) where the label is what the player needs to learn.
+ */
+export interface ClaimFieldValue {
+  code: string
+  /** Optional human-readable label, e.g. "Heart failure, unspecified". */
+  label?: string
+}
+
+/** One row in box 24 of a CMS-1500 (a single billable service). */
+export interface ServiceLine {
+  /** Box 24A — date of service (YYYY-MM-DD or display string). */
+  dos: string
+  /** Box 24B — place of service (numeric, e.g. '11' = office). */
+  pos: string
+  /** Box 24D — procedure code (CPT/HCPCS). */
+  cpt: ClaimFieldValue
+  /** Box 24D — modifier(s), e.g. '25', '59', or '25, 59'. */
+  modifier?: string
+  /** Box 24E — diagnosis pointer (letters A-D pointing into box 21). */
+  dxPointer: string
+  /** Box 24F — charged amount (display string, e.g. '$2,150.00'). */
+  charges: string
+}
+
+/**
+ * Realistic CMS-1500 (or, future, UB-04) field data for the ClaimSheet
+ * renderer. Field naming mirrors the actual form's box numbers so that
+ * `highlightedBoxes` ids on an Encounter line up with what's drawn.
+ */
+export interface ClaimSheetData {
+  type: 'cms1500' // 'ub04' lands in a follow-up
+  claimId: string
+  /** Box 1 — insurance program type (e.g. 'Group', 'Medicare'). */
+  insuranceType?: string
+  /** Box 2 + 3. */
+  patient: {
+    name: string
+    dob: string
+    sex?: 'M' | 'F'
+  }
+  /** Box 1a (id) + 4 (name) + 11 (group #). */
+  insured: {
+    id: string
+    name?: string
+    group?: string
+  }
+  /** Box 21 A-D — diagnoses (typically 1-4 entries). */
+  diagnoses: ClaimFieldValue[]
+  /** Box 24 — one or more service lines. */
+  serviceLines: ServiceLine[]
+  /** Box 31 — rendering provider signature. */
+  provider: {
+    name: string
+    npi?: string
+  }
 }
 
 export interface FormError {

@@ -62,6 +62,10 @@ export const ENCOUNTERS: Record<string, Encounter> = {
     wing: 'appeals',
     mechanic: 'investigation',
     unlocksOnDefeat: ['medical_policy'],
+    caseId: 'case_wraith_walker',
+    highlightedBoxes: ['21A', '24D-1'],
+    payerNote:
+      'TTE 93306 not medically necessary for I50.9 (heart failure, unspecified) without supporting evidence of LVEF<35% per LCD L33526.',
     caseFile: {
       threshold: 3,
       intro: 'From the chart and the LCD:',
@@ -108,8 +112,8 @@ export const ENCOUNTERS: Record<string, Encounter> = {
   },
   co_97: {
     id: 'co_97',
-    title: 'The Bundle',
-    description: 'Two procedures were billed separately, but the payer says one includes the other.',
+    title: 'Bundling Beast',
+    description: 'Two services on the same day fused into one. The E&M was significant and separate, but the modifier is missing.',
     surfaceSymptom: 'Payer bundled the services together',
     rootCause: 'provider',
     hp: 55,
@@ -119,6 +123,12 @@ export const ENCOUNTERS: Record<string, Encounter> = {
     watchpoint: 'Modifier 25 / 59 logic is a coding-team responsibility.',
     correctTools: ['claim_scrubber', 'cdi_query'],
     level: 5,
+    archetype: 'Bundling Beast',
+    wing: 'coding',
+    caseId: 'case_bundle_kim',
+    highlightedBoxes: ['24D-1'],
+    payerNote:
+      'CPT 99214 bundled into 11102 per NCCI edit. Append modifier -25 to the E&M to indicate a significant, separately identifiable service.',
   },
   co_109: {
     id: 'co_109',
@@ -213,6 +223,10 @@ export const ENCOUNTERS: Record<string, Encounter> = {
     mechanic: 'timed',
     cashRecovered: 1400,
     unlocksOnDefeat: ['submit_837i'],
+    caseId: 'case_reaper_park',
+    highlightedBoxes: ['24A-1'],
+    payerNote:
+      'Filing limit 180 days from DOS. Current claim filed 195 days post-service — denial per Aetna provider manual §6.4.',
   },
   boss_audit: {
     id: 'boss_audit',
