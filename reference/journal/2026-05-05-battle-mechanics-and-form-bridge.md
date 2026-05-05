@@ -15,8 +15,9 @@ foundation in `2026-05-04-waiting-room-combat-foundation.md`.
 | `blind` | `BlindController` | Eligibility Fog | Fog reduces accuracy by 30 every turn; `eligibility_270` clears it permanently |
 | `multiHead` | `MultiHeadController` | OA-23 Coordination Hydra | Three heads (Primary / Secondary / COB) cycled in sequence; super-effective only against the active head's rootCause |
 | `spawn` | `SpawnController` | CO-16 Documentation Sprite Swarm | Source HP pool spawns a sprite every 2 enemy turns (cap 3); `claim_scrubber` sweeps the swarm, `cdi_query` patches the chart upstream and stops further spawns |
+| `audit` | `AuditController` | The Quarterly Audit (L10 finale) | Boss HP / damage scale with run-long `auditRisk`; shadow tools heal the boss (the auditor pulls another receipt); documentation tools are super-effective |
 
-Mechanic catalog complete — all seven planned mechanics shipped.
+Eight mechanics shipped — original seven plus the L10 finale.
 
 ## ClaimSheet — pedagogy as the centerpiece
 

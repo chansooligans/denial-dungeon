@@ -84,6 +84,7 @@ export type BattleMechanic =
   | 'multiHead'     // multiple HP pools, each with own weakness (COB Hydra)
   | 'blind'         // tool accuracy degraded until cleared (Eligibility Fog)
   | 'spawn'         // adds reinforcements every N turns (Sprite swarm)
+  | 'audit'         // L10 boss — HP / damage scale with player's audit risk; shadow tools heal the boss
 
 // === Encounters (what you face in battle) ===
 
