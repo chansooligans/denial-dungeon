@@ -8,6 +8,7 @@ import { BattleScene } from './scenes/BattleScene'
 import { FormScene } from './scenes/FormScene'
 import { WaitingRoomScene } from './scenes/WaitingRoomScene'
 import { CodexScene } from './scenes/CodexScene'
+import { TouchOverlay } from './scenes/TouchOverlay'
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
@@ -23,7 +24,7 @@ const config: Phaser.Types.Core.GameConfig = {
       debug: false,
     },
   },
-  scene: [BootScene, IntroScene, TitleScene, HospitalScene, DialogueScene, BattleScene, FormScene, WaitingRoomScene, CodexScene],
+  scene: [BootScene, IntroScene, TitleScene, HospitalScene, DialogueScene, BattleScene, FormScene, WaitingRoomScene, CodexScene, TouchOverlay],
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,

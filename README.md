@@ -17,12 +17,19 @@ The game progressively teaches across 10 levels:
 
 ## How to Play
 
-- **Arrow keys / WASD** — Move around the hospital
-- **E / Space** — Talk to NPCs, interact with objects
-- **1-9** — Select tools during battle
-- **ESC** — Skip intro cutscene
+**Desktop**
+- **Arrow keys / WASD** — Move
+- **E / Space** — Talk to NPCs, interact with objects, advance dialogue
+- **1-9** — Select tools / actions during battle
+- **ESC** — Skip intro cutscene; flee battle
 
-Walk through the hospital lobby, talk to NPCs in offices, and find the glowing gap in the floor to enter The Waiting Room. Resolve claim denials in turn-based encounters using billing tools — effectiveness depends on matching the right tool to the denial's root cause.
+**Mobile / touch**
+- On-screen virtual D-pad (bottom-left) for movement
+- **E** button (bottom-right) to interact
+- **ESC** button (top-right) to skip intro / flee battle
+- Battle tools, dialogue choices, and obstacle markers all respond to taps
+
+Walk through the hospital lobby, talk to NPCs in offices, and find the glowing gap in the floor to descend into The Waiting Room. Engage the pulsing purple obstacle markers to fight claim denials in turn-based combat. The mechanic varies per archetype: some are HP fights, some are case-file investigations against a real CMS-1500, some are races against a timely-filing clock.
 
 ## Tech Stack
 
@@ -47,10 +54,16 @@ src/
 ├── main.ts           # Phaser config, scene registry
 ├── types.ts          # Game types
 ├── state.ts          # Save/load via localStorage
+├── battle/           # Battle engine (mechanic dispatch, ClaimSheet, screens, toolMenu)
 ├── content/          # Game data (maps, NPCs, dialogue, encounters, codex)
 └── scenes/           # Phaser scenes (Boot, Intro, Title, Hospital,
-                      #   Dialogue, Battle, Form, WaitingRoom, Codex)
+                      #   Dialogue, Battle, Form, WaitingRoom, Codex,
+                      #   TouchOverlay)
 ```
+
+## Deploy
+
+`.github/workflows/deploy.yml` builds and publishes `dist/` to GitHub Pages on every push to `main`. Requires the repo's Pages source to be set to **GitHub Actions** in repo Settings → Pages.
 
 ## License
 
