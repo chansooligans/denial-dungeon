@@ -14,7 +14,7 @@ const LAYOUT = [
   'W............................W',
   'W..CC..CC..CC..CC..CC..CC...W',
   'W............................W',
-  'W....O...............O.......W',
+  'W....O......O........O.......W',
   'W.........TTTTTT............W',
   'W.........T....T............W',
   'W.........T....T............W',
@@ -53,6 +53,8 @@ const OBSTACLES: ObstacleMarker[] = [
   { tileX: 24, tileY: 16, encounterId: 'co_197' },
   // (3, 15)  — south-west: Duplicate Claim Doppelgänger (Mirror)
   { tileX: 3,  tileY: 15, encounterId: 'co_18_doppelganger' },
+  // (12, 6)  — center-north: Eligibility Fog (Blind)
+  { tileX: 12, tileY: 6,  encounterId: 'eligibility_fog' },
 ]
 
 interface ObstacleSprite {

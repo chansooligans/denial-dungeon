@@ -196,6 +196,52 @@ export const CASES: Record<string, PatientCase> = {
     },
   },
 
+  // Linked to encounter `eligibility_fog` (Eligibility Fog).
+  case_fog_nguyen: {
+    id: 'case_fog_nguyen',
+    patientName: 'Linh Nguyen',
+    age: 29,
+    insurance: 'Anthem BCBS PPO',
+    diagnosis: 'Acute pharyngitis',
+    diagnosisCode: 'J02.9',
+    procedure: 'Office visit, new patient, low complexity',
+    procedureCode: '99203',
+    formType: 'cms1500',
+    level: 2,
+    // Pre-fix in the hospital: the subscriber id on file is from her
+    // old plan (before her job change). Running a 270 inquiry returns
+    // the new id; transcribing it pre-submission means the claim drops
+    // clean and the Fog never thickens.
+    errors: [
+      {
+        field: 'Subscriber ID',
+        currentValue: 'ANT883112',
+        correctValue: 'ANT772041',
+        explanation: 'Patient changed jobs; the card she handed over is from her former employer plan. The 270/271 returns the active subscriber id. Always trust the eligibility response over the card photocopy.',
+      },
+    ],
+    claim: {
+      type: 'cms1500',
+      claimId: 'CLM-2026-02-21-32018',
+      insuranceType: 'Group',
+      patient: { name: 'NGUYEN, LINH', dob: '1996-12-04', sex: 'F' },
+      insured: { id: 'ANT772041', name: 'NGUYEN, LINH', group: '0066114' },
+      diagnoses: [
+        { code: 'J02.9', label: 'Acute pharyngitis, unspecified' },
+      ],
+      serviceLines: [
+        {
+          dos: '2026-02-21',
+          pos: '11',
+          cpt: { code: '99203', label: 'Office E&M, new, low' },
+          dxPointer: 'A',
+          charges: '$190.00',
+        },
+      ],
+      provider: { name: 'Dr. K. Singh, MD', npi: '1340912783' },
+    },
+  },
+
   // Linked to encounter `co_18_doppelganger` (Duplicate Claim Doppelgänger).
   case_doppel_reyes: {
     id: 'case_doppel_reyes',

@@ -244,6 +244,38 @@ export const ENCOUNTERS: Record<string, Encounter> = {
     correctTools: ['claim_scrubber'],
     level: 6,
   },
+  eligibility_fog: {
+    id: 'eligibility_fog',
+    title: 'Eligibility Fog',
+    description:
+      'A swirling gray cloud that hides everything: which payer, which plan, which benefits. Every swing is half-blind until the 270 inquiry burns it off.',
+    surfaceSymptom: 'Coverage details unverifiable',
+    rootCause: 'system',
+    hp: 50,
+    attackDamage: 9,
+    // No CARC — this is a process obstacle, not a denial code.
+    watchpoint: '270/271 eligibility verification is cheap and prevents most "denials" from ever happening.',
+    correctTools: ['eligibility_270'],
+    level: 2,
+    archetype: 'Eligibility Fog',
+    wing: 'eligibility',
+    mechanic: 'blind',
+    cashRecovered: 190,
+    unlocksOnDefeat: ['cost_estimate'],
+    caseId: 'case_fog_nguyen',
+    highlightedBoxes: ['1a', '1'],
+    payerNote:
+      'Coverage cannot be confirmed for the subscriber on file. Run 270 inquiry to verify active member id and benefits before submission.',
+    toolEffects: {
+      eligibility_270: [
+        { box: '1a', kind: 'check' },
+        { box: '1a', kind: 'note', value: '270/271 verified' },
+      ],
+      cost_estimate:  [{ box: '1',  kind: 'note',  value: 'good-faith estimate' }],
+      submit_837p:    [{ box: '1a', kind: 'check' }],
+      claim_scrubber: [{ box: '1a', kind: 'note',  value: 'eligibility revalidated' }],
+    },
+  },
   co_18_doppelganger: {
     id: 'co_18_doppelganger',
     title: 'Duplicate Claim Doppelgänger',
