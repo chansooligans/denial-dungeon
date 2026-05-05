@@ -7,6 +7,18 @@ export class BootScene extends Phaser.Scene {
     super('Boot')
   }
 
+  preload() {
+    // Comic-page intro art. We use only three images:
+    //   - cover  : opening title splash
+    //   - page5  : "the gap" reveal (Beat 5)
+    //   - page6  : "the waiting room" reveal (Beat 7)
+    // Other pages are intentionally not loaded — beats 1-4 stay procedural
+    // so typed text stays clearly readable.
+    this.load.image('intro_cover', 'intro/cover.png')
+    this.load.image('intro_page5', 'intro/page5.png')
+    this.load.image('intro_page6', 'intro/page6.png')
+  }
+
   create() {
     this.generateSprites()
     this.scene.start('Intro')

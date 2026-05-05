@@ -22,7 +22,7 @@ The game progressively teaches across 10 levels:
 - **1-9** — Select tools during battle
 - **ESC** — Skip intro cutscene
 
-Walk through the hospital lobby, talk to NPCs in offices, and find the glowing crack in the floor to enter The Waiting Room. Resolve claim denials in turn-based encounters using billing tools — effectiveness depends on matching the right tool to the denial's root cause.
+Walk through the hospital lobby, talk to NPCs in offices, and find the glowing gap in the floor to enter The Waiting Room. Resolve claim denials in turn-based encounters using billing tools — effectiveness depends on matching the right tool to the denial's root cause.
 
 ## Tech Stack
 
