@@ -260,6 +260,8 @@ const state = {
   amendOpen: false,
   /** Current dx code on the claim (changes when player amends). */
   currentDxCode: 'I50.9',
+  /** Feedback message attached to a specific dx code in the amend modal. */
+  amendFeedback: null as { code: string; message: string } | null,
   selection: { payerId: null, chartId: null, lcdId: null } as SelectionState,
   resolvedIssues: new Set<string>(),
   citationCount: 0,
@@ -477,15 +479,22 @@ function renderClaim(): string {
           Box 21 · Diagnoses
           ${specificityResolved
             ? '<span class="claim-status amended">AMENDED</span>'
-            : '<span class="claim-status disputed">DISPUTED — click to amend</span>'}
+            : '<span class="claim-status disputed">DISPUTED</span>'}
         </div>
         <ul class="dx">
-          <li class="${specificityResolved ? 'amended' : 'hi clickable'}"
-              ${specificityResolved ? '' : 'data-action="open-amend"'}>
+          <li class="${specificityResolved ? 'amended' : 'hi'}">
             <b>A.</b> ${specificityResolved ? escape(dxDisplay) : term('I50.9', dxDisplay)}
-            ${!specificityResolved ? '<span class="amend-hint">✎ click to amend</span>' : ''}
           </li>
         </ul>
+        ${specificityResolved ? '' : `
+          <button class="amend-cta" data-action="open-amend">
+            <span class="amend-cta-icon">✎</span>
+            <span class="amend-cta-text">
+              <span class="amend-cta-main">Fix this diagnosis →</span>
+              <span class="amend-cta-sub">The chart supports a more specific code. Click to amend.</span>
+            </span>
+          </button>
+        `}
       </div>
       <div class="claim-section">
         <div class="claim-section-h">Box 24 · Service Lines</div>
@@ -521,16 +530,20 @@ function renderAmendModal(): string {
           <strong>The chart says:</strong> documented systolic dysfunction, long-standing CKD, fatigue + edema.
         </div>
         <ul class="amend-options">
-          ${dxOptions.map(opt => `
-            <li class="amend-option ${opt.support === 'current' ? 'current' : ''}"
-                ${opt.support === 'current' ? '' : `data-action="pick-dx" data-code="${opt.code}"`}>
-              <div class="amend-option-h">
-                <code>${escape(opt.code)}</code>
-                <span class="amend-option-label">${escape(opt.label)}</span>
-                ${opt.support === 'current' ? '<span class="amend-option-badge current">currently on claim</span>' : ''}
-              </div>
-            </li>
-          `).join('')}
+          ${dxOptions.map(opt => {
+            const fb = state.amendFeedback?.code === opt.code ? state.amendFeedback : null
+            return `
+              <li class="amend-option ${opt.support === 'current' ? 'current' : ''} ${fb ? 'rejected' : ''}"
+                  ${opt.support === 'current' ? '' : `data-action="pick-dx" data-code="${opt.code}"`}>
+                <div class="amend-option-h">
+                  <code>${escape(opt.code)}</code>
+                  <span class="amend-option-label">${escape(opt.label)}</span>
+                  ${opt.support === 'current' ? '<span class="amend-option-badge current">currently on claim</span>' : ''}
+                </div>
+                ${fb ? `<div class="amend-option-fb">${escape(fb.message)}</div>` : ''}
+              </li>
+            `
+          }).join('')}
         </ul>
         <p class="amend-hint-text">
           Picking a code that doesn't fit gives you feedback (and no penalty).
@@ -590,33 +603,36 @@ function renderWorkbench(): string {
 
 function phraseSpan(p: PayerPhrase): string {
   const sel = state.selection.payerId === p.id ? 'selected' : ''
-  return `<span class="phrase ${sel}" data-action="select-payer" data-id="${p.id}">${escape(p.text)}<span class="phrase-tip">(${escape(p.plain)})</span></span>`
+  return `<span class="phrase ${sel}" data-action="select-payer" data-id="${p.id}">${escape(p.text)}</span>`
 }
 
 function renderCitationBuilder(): string {
   const sel = state.selection
-  const payerLabel = sel.payerId ? payerPhrases.find(p => p.id === sel.payerId)?.text : null
-  const chartLabel = sel.chartId ? chartFacts.find(f => f.id === sel.chartId)?.text : null
-  const lcdLabel = sel.lcdId ? lcdClauses.find(c => c.id === sel.lcdId)?.text : null
+  const payer = sel.payerId ? payerPhrases.find(p => p.id === sel.payerId) : null
+  const chart = sel.chartId ? chartFacts.find(f => f.id === sel.chartId) : null
+  const lcd = sel.lcdId ? lcdClauses.find(c => c.id === sel.lcdId) : null
   const ready = !!(sel.payerId && sel.chartId && sel.lcdId)
   const fbClass = state.feedback ? `fb-${state.feedbackKind}` : ''
   return `
     <section class="builder">
       <div class="builder-h">Citation builder</div>
       <div class="builder-row">
-        <div class="slot ${sel.payerId ? 'filled' : ''}">
+        <div class="slot ${payer ? 'filled' : ''}">
           <div class="slot-label">PAYER ASSERTS</div>
-          <div class="slot-text">${payerLabel ? '"' + escape(payerLabel) + '"' : '<span class="placeholder">Click a payer phrase</span>'}</div>
+          <div class="slot-text">${payer ? '"' + escape(payer.text) + '"' : '<span class="placeholder">Click a payer phrase</span>'}</div>
+          ${payer ? `<div class="slot-plain">${escape(payer.plain)}</div>` : ''}
         </div>
         <div class="connector">cited by</div>
-        <div class="slot ${sel.chartId ? 'filled' : ''}">
+        <div class="slot ${chart ? 'filled' : ''}">
           <div class="slot-label">CHART FACT</div>
-          <div class="slot-text">${chartLabel ? escape(chartLabel) : '<span class="placeholder">Click a chart fact</span>'}</div>
+          <div class="slot-text">${chart ? escape(chart.text) : '<span class="placeholder">Click a chart fact</span>'}</div>
+          ${chart ? `<div class="slot-plain">${escape(chart.plain)}</div>` : ''}
         </div>
         <div class="connector">per</div>
-        <div class="slot ${sel.lcdId ? 'filled' : ''}">
+        <div class="slot ${lcd ? 'filled' : ''}">
           <div class="slot-label">LCD CLAUSE</div>
-          <div class="slot-text">${lcdLabel ? escape(lcdLabel) : '<span class="placeholder">Click an LCD clause</span>'}</div>
+          <div class="slot-text">${lcd ? escape(lcd.text) : '<span class="placeholder">Click an LCD clause</span>'}</div>
+          ${lcd ? `<div class="slot-plain">${escape(lcd.plain)}</div>` : ''}
         </div>
       </div>
       <div class="builder-actions">
@@ -866,23 +882,16 @@ function attemptAmend(code: string) {
   const opt = dxOptions.find(d => d.code === code)
   if (!opt) return
 
-  if (opt.support === 'wrong') {
+  if (opt.support === 'wrong' || opt.support === 'partial') {
     state.failedAttempts += 1
-    setFeedback(opt.feedback, 'bad')
-    state.lastRecap = ''
-    return
-  }
-
-  if (opt.support === 'partial') {
-    state.failedAttempts += 1
-    setFeedback(opt.feedback, 'bad')
-    state.lastRecap = ''
+    state.amendFeedback = { code: opt.code, message: opt.feedback }
     return
   }
 
   // 'correct' — apply the amendment
   state.currentDxCode = opt.code
   state.amendOpen = false
+  state.amendFeedback = null
   if (!state.resolvedIssues.has('specificity')) {
     state.resolvedIssues.add('specificity')
     const issue = issues.find(i => i.id === 'specificity')!
@@ -896,10 +905,12 @@ function attemptAmend(code: string) {
 
 function openAmend() {
   state.amendOpen = true
+  state.amendFeedback = null
 }
 
 function closeAmend() {
   state.amendOpen = false
+  state.amendFeedback = null
 }
 
 function attemptSubmit() {
@@ -1208,16 +1219,6 @@ const css = `
   .claim table.lines .term { color: #1c1c1c; }
   .claim table.lines .term-icon { background: #5a4d2b; color: var(--paper); }
   .claim .hi { background: var(--hi); box-shadow: inset 0 0 0 1px var(--hi-border); border-radius: 3px; }
-  .claim .clickable { cursor: pointer; transition: background 0.15s; padding: 4px 8px; }
-  .claim .clickable:hover { background: rgba(239, 91, 123, 0.4); }
-  .claim .amend-hint {
-    display: inline-block;
-    margin-left: 10px;
-    font-size: 10.5px;
-    color: var(--bad);
-    font-style: italic;
-    opacity: 0.85;
-  }
   .claim .amended {
     background: rgba(126, 226, 193, 0.15);
     box-shadow: inset 0 0 0 1px var(--accent);
@@ -1241,6 +1242,70 @@ const css = `
     background: rgba(126, 226, 193, 0.15);
     color: var(--accent);
     border: 1px solid var(--accent);
+  }
+
+  /* Amend call-to-action — make it impossible to miss. */
+  .amend-cta {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    margin-top: 12px;
+    padding: 14px 18px;
+    font: inherit;
+    text-align: left;
+    background: linear-gradient(180deg, rgba(239, 91, 123, 0.18), rgba(239, 91, 123, 0.08));
+    color: #1c1c1c;
+    border: 2px solid var(--bad);
+    border-radius: 6px;
+    cursor: pointer;
+    box-shadow: 0 0 0 0 rgba(239, 91, 123, 0.5);
+    animation: amend-pulse 2s ease-in-out infinite;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .amend-cta:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(239, 91, 123, 0.4);
+    animation: none;
+  }
+  @keyframes amend-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(239, 91, 123, 0.5); }
+    50% { box-shadow: 0 0 0 8px rgba(239, 91, 123, 0); }
+  }
+  .amend-cta-icon {
+    font-size: 22px;
+    color: var(--bad);
+    flex-shrink: 0;
+  }
+  .amend-cta-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+  }
+  .amend-cta-main {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--bad);
+    letter-spacing: 0.02em;
+  }
+  .amend-cta-sub {
+    font-size: 12px;
+    color: #5a4d2b;
+    font-style: italic;
+  }
+
+  .amend-option.rejected {
+    border-left-color: var(--bad);
+    background: rgba(239, 91, 123, 0.08);
+  }
+  .amend-option-fb {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed rgba(239, 91, 123, 0.3);
+    font-size: 12px;
+    color: #f3a4b6;
+    line-height: 1.45;
   }
 
   /* Amend modal */
@@ -1365,12 +1430,11 @@ const css = `
   .clause.selected { border-left-color: #a3c5ff; background: rgba(163, 197, 255, 0.08); }
   .fact-text, .clause-text { font-size: 13px; }
   .fact-plain, .clause-plain {
-    font-size: 12px;
-    color: var(--ink-dim);
-    margin-top: 4px;
-    padding-top: 4px;
-    border-top: 1px dashed rgba(138, 147, 163, 0.2);
-    line-height: 1.5;
+    font-size: 11px;
+    color: rgba(138, 147, 163, 0.7);
+    margin-top: 3px;
+    line-height: 1.45;
+    font-style: italic;
   }
 
   .builder { background: var(--panel); border: 1px solid #232a36; border-radius: 8px; padding: 16px 18px; margin-bottom: 22px; }
@@ -1381,6 +1445,15 @@ const css = `
   .slot.filled { border-style: solid; border-color: #3a4658; }
   .slot-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-dim); margin-bottom: 4px; }
   .slot-text { font-size: 13px; }
+  .slot-plain {
+    font-size: 11.5px;
+    color: var(--ink-dim);
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px dashed rgba(138, 147, 163, 0.2);
+    line-height: 1.45;
+    font-style: italic;
+  }
   .placeholder { color: var(--ink-dim); font-style: italic; }
   .connector { color: var(--ink-dim); font-size: 12px; align-self: center; padding: 0 6px; font-style: italic; }
   .builder-actions { margin-top: 12px; display: flex; gap: 10px; }
