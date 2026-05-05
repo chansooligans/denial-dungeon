@@ -1,5 +1,6 @@
 import Phaser from 'phaser'
 import { newGame } from '../state'
+import { addFullscreenButton } from './fullscreenButton'
 
 export class TitleScene extends Phaser.Scene {
   constructor() {
@@ -8,6 +9,7 @@ export class TitleScene extends Phaser.Scene {
 
   create() {
     const { width, height } = this.scale
+    addFullscreenButton(this)
 
     // Floating papers in background
     for (let i = 0; i < 12; i++) {
