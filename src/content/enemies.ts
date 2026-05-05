@@ -42,6 +42,7 @@ export const ENCOUNTERS: Record<string, Encounter> = {
     watchpoint: 'COB chain is set at the employer / member-services layer.',
     correctTools: ['cob_check', 'eligibility_270'],
     level: 2,
+    unlocksOnDefeat: ['cob_check'],
   },
   co_50: {
     id: 'co_50',
@@ -60,6 +61,7 @@ export const ENCOUNTERS: Record<string, Encounter> = {
     archetype: 'Medical Necessity Wraith',
     wing: 'appeals',
     mechanic: 'investigation',
+    unlocksOnDefeat: ['medical_policy'],
     caseFile: {
       threshold: 3,
       intro: 'From the chart and the LCD:',
@@ -131,6 +133,7 @@ export const ENCOUNTERS: Record<string, Encounter> = {
     watchpoint: 'Patient-portal eligibility beats re-keyed registration data.',
     correctTools: ['eligibility_270'],
     level: 2,
+    unlocksOnDefeat: ['cost_estimate'],
   },
   co_197: {
     id: 'co_197',
@@ -145,6 +148,7 @@ export const ENCOUNTERS: Record<string, Encounter> = {
     watchpoint: 'Only fixable upstream — get the 278 before the visit.',
     correctTools: ['prior_auth_278'],
     level: 3,
+    unlocksOnDefeat: ['prior_auth_278'],
   },
   oa_23: {
     id: 'oa_23',
@@ -173,6 +177,7 @@ export const ENCOUNTERS: Record<string, Encounter> = {
     watchpoint: 'Bill the patient correctly — appeals will not change a benefit exclusion.',
     correctTools: ['eligibility_270', 'cost_estimate'],
     level: 9,
+    unlocksOnDefeat: ['cost_estimate'],
   },
   reject_277ca: {
     id: 'reject_277ca',
@@ -207,6 +212,7 @@ export const ENCOUNTERS: Record<string, Encounter> = {
     wing: 'appeals',
     mechanic: 'timed',
     cashRecovered: 1400,
+    unlocksOnDefeat: ['submit_837i'],
   },
   boss_audit: {
     id: 'boss_audit',

@@ -1,7 +1,7 @@
 import Phaser from 'phaser'
 import { TOOLS } from '../content/abilities'
 import { ENCOUNTERS } from '../content/enemies'
-import { getState, updateResources, unlockCodex, saveGame } from '../state'
+import { getState, updateResources, unlockCodex, unlockTool, saveGame } from '../state'
 import type { Encounter, Tool } from '../types'
 import { FACTION_COLOR } from '../types'
 import { createMechanic } from '../battle'
@@ -575,8 +575,20 @@ export class BattleScene extends Phaser.Scene {
         fontSize: '11px', fontFamily: 'monospace', color: '#f4d06f',
       }).setOrigin(0.5)
 
+      // New tools earned (if first defeat). Surfaced so the player notices
+      // the kit growing — exitBattle() does the actual unlock.
+      const earned = enc.unlocksOnDefeat ?? []
+      const previouslyHad = new Set(getState().tools)
+      const newlyEarned = earned.filter(id => !previouslyHad.has(id))
+      if (newlyEarned.length > 0) {
+        const names = newlyEarned.map(id => TOOLS[id]?.name || id).join(', ')
+        this.add.text(width / 2, 285, `New tool unlocked: ${names}`, {
+          fontSize: '11px', fontFamily: 'monospace', color: '#7ee2c1', fontStyle: 'bold',
+        }).setOrigin(0.5)
+      }
+
       // Continue button
-      const btn = this.add.text(width / 2, 320, '[ CONTINUE ]', {
+      const btn = this.add.text(width / 2, 330, '[ CONTINUE ]', {
         fontSize: '14px', fontFamily: 'monospace', color: '#7ee2c1',
       }).setOrigin(0.5).setInteractive({ useHandCursor: true })
       btn.on('pointerover', () => btn.setColor('#ffffff'))
@@ -654,6 +666,10 @@ export class BattleScene extends Phaser.Scene {
       if (!state.defeatedObstacles.includes(this.state.encounter.id)) {
         state.defeatedObstacles.push(this.state.encounter.id)
       }
+      // Tools the encounter teaches on first defeat. Idempotent —
+      // unlockTool dedupes against state.tools.
+      const earned = this.state.encounter.unlocksOnDefeat ?? []
+      for (const toolId of earned) unlockTool(toolId)
       saveGame()
     }
     this.scene.start(this.state.returnScene)

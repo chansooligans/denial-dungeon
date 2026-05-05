@@ -14,7 +14,16 @@ const DEFAULT_STATE: GameState = {
     auditRisk: 0,
     stress: 0,
   },
-  tools: ['submit_837p', 'eligibility_270'],
+  // Day-one toolkit: the basics every analyst has on their first shift.
+  // Additional tools unlock from defeating obstacles (encounter
+  // unlocksOnDefeat) and dialogue choices (effect.addTool).
+  tools: [
+    'submit_837p',
+    'eligibility_270',
+    'claim_scrubber',
+    'cdi_query',
+    'appeal_letter',
+  ],
   codexUnlocked: [],
   decisions: [],
   inWaitingRoom: false,
