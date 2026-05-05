@@ -196,6 +196,53 @@ export const CASES: Record<string, PatientCase> = {
     },
   },
 
+  // Linked to encounter `co_18_doppelganger` (Duplicate Claim Doppelgänger).
+  case_doppel_reyes: {
+    id: 'case_doppel_reyes',
+    patientName: 'Fatima Reyes',
+    age: 41,
+    insurance: 'Humana Gold Plus',
+    diagnosis: 'Type 2 diabetes mellitus without complications',
+    diagnosisCode: 'E11.9',
+    procedure: 'Office visit, established patient, low complexity',
+    procedureCode: '99213',
+    formType: 'cms1500',
+    level: 6,
+    // The original claim was rejected for a wrong subscriber id, fixed,
+    // and resubmitted as a new 837P (frequency 1) instead of as a
+    // replacement (frequency 7). The payer's adjudication system
+    // flagged the resubmission as a duplicate. Catching the upstream
+    // resubmission code grants the form-bridge buff for the Doppelgänger.
+    errors: [
+      {
+        field: 'Subscriber ID',
+        currentValue: 'HUM712309',
+        correctValue: 'HUM712390',
+        explanation: 'Subscriber id digits transposed on the original claim — that\'s why we resubmitted at all. Fixing it before submission means we never need a frequency-7 replacement, so the duplicate flag never trips.',
+      },
+    ],
+    claim: {
+      type: 'cms1500',
+      claimId: 'CLM-2026-03-08-19842',
+      insuranceType: 'Group',
+      patient: { name: 'REYES, FATIMA', dob: '1984-09-30', sex: 'F' },
+      insured: { id: 'HUM712390', name: 'REYES, FATIMA', group: '0050211' },
+      diagnoses: [
+        { code: 'E11.9', label: 'Type 2 diabetes, uncomplicated' },
+      ],
+      serviceLines: [
+        {
+          dos: '2026-03-08',
+          pos: '11',
+          cpt: { code: '99213', label: 'Office E&M, established, low' },
+          dxPointer: 'A',
+          charges: '$145.00',
+        },
+      ],
+      provider: { name: 'Dr. L. Park, MD', npi: '1762048910' },
+    },
+  },
+
   // Linked to encounter `co_97` (The Bundle / Bundling Beast).
   case_bundle_kim: {
     id: 'case_bundle_kim',

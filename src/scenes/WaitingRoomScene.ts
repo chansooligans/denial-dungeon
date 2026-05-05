@@ -23,7 +23,7 @@ const LAYOUT = [
   'W..CC..CC..CC..CC..CC..CC...W',
   'W............................W',
   'W..CC..CC..CC..CC..CC..CC...W',
-  'W............................W',
+  'W..O.........................W',
   'W..............O........O....W',
   'W...........D................W',
   'W............................W',
@@ -51,6 +51,8 @@ const OBSTACLES: ObstacleMarker[] = [
   { tileX: 15, tileY: 16, encounterId: 'co_97' },
   // (24, 16) — south-east: Prior Auth Gatekeeper (Block)
   { tileX: 24, tileY: 16, encounterId: 'co_197' },
+  // (3, 15)  — south-west: Duplicate Claim Doppelgänger (Mirror)
+  { tileX: 3,  tileY: 15, encounterId: 'co_18_doppelganger' },
 ]
 
 interface ObstacleSprite {

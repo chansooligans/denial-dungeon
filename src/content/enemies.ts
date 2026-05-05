@@ -244,6 +244,38 @@ export const ENCOUNTERS: Record<string, Encounter> = {
     correctTools: ['claim_scrubber'],
     level: 6,
   },
+  co_18_doppelganger: {
+    id: 'co_18_doppelganger',
+    title: 'Duplicate Claim Doppelgänger',
+    description:
+      'A perfect copy of the claim already in the queue. Hit it with the same tool twice and the move bounces off you.',
+    surfaceSymptom: 'Payer flagged the resubmission as a duplicate',
+    rootCause: 'system',
+    hp: 60,
+    attackDamage: 10,
+    carcCode: 'CO-18',
+    carcName: 'Duplicate claim',
+    watchpoint: 'Same submission twice = the same denial twice. Vary the approach (837 frequency 7 instead of 1).',
+    correctTools: ['claim_scrubber', 'submit_837p'],
+    level: 6,
+    archetype: 'Duplicate Claim Doppelgänger',
+    wing: 'billing',
+    mechanic: 'mirror',
+    cashRecovered: 145,
+    unlocksOnDefeat: ['submit_837i'],
+    caseId: 'case_doppel_reyes',
+    highlightedBoxes: ['1a', '24A-1'],
+    payerNote:
+      'Claim CLM-2026-03-08-19842 is a duplicate of one already on file. Submit as 837 frequency code 7 (replacement) to resolve.',
+    toolEffects: {
+      // submit_837p resolves the duplicate when used (not repeated) by
+      // adding the frequency-7 stamp — the canonical replacement code.
+      submit_837p:    [{ box: '24A-1', kind: 'stamp', value: '+fcy 7' }],
+      claim_scrubber: [{ box: '1a',    kind: 'note',  value: 'dup check' }],
+      cdi_query:      [{ box: '21A',   kind: 'note',  value: 'note clarified' }],
+      eligibility_270:[{ box: '1a',    kind: 'check' }],
+    },
+  },
   co_29_reaper: {
     id: 'co_29_reaper',
     title: 'Timely Filing Reaper',
