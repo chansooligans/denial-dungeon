@@ -26,7 +26,7 @@ archetype names one specific failure pattern.
 
 Future archetypes work the same way — name the pattern of
 failure, give it a body. From the curriculum gaps in
-[`../curriculum.md`](../curriculum.md):
+[`../curriculum/README.md`](../curriculum/README.md):
 
 | Future archetype | Resonance of | Lives in |
 |---|---|---|
@@ -62,6 +62,6 @@ of the archetype follows from #1. The vibe follows from #2.
   follows from
 - [`tone.md`](tone.md) — how to make these manifestations
   funny rather than horror
-- [`../curriculum.md`](../curriculum.md) — content gaps that
+- [`../curriculum/README.md`](../curriculum/README.md) — content gaps that
   point to future archetype slots
 - `src/content/enemies.ts` — current encounter table

@@ -1,6 +1,6 @@
 # Narrative folder — orientation
 
-Lore, characters, tone, story arc. Downstream of `curriculum.md`,
+Lore, characters, tone, story arc. Downstream of `curriculum/README.md`,
 upstream of dialogue / scene authoring.
 
 Start at [`README.md`](README.md) for the index. This file is

@@ -75,5 +75,5 @@ write the player's notebook content.
 
 - [`README.md`](README.md) — folder map
 - [`endings.md`](endings.md) — endings (provisional)
-- [`../curriculum.md`](../curriculum.md) — what each level
+- [`../curriculum/README.md`](../curriculum/README.md) — what each level
   teaches (curriculum-side open questions live there)

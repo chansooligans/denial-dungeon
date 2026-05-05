@@ -3,7 +3,7 @@
 Lore, characters, tone, and story arc for *Denial Dungeon*.
 This folder is the *how the story frames the teaching* layer.
 Curriculum (what to teach) is one level up at
-[`../curriculum.md`](../curriculum.md).
+[`../curriculum/README.md`](../curriculum/README.md).
 
 Authored as small focused files so we can edit one piece at a
 time without rebuilding the whole picture.
@@ -59,7 +59,7 @@ narrative/
 
 ## See also
 
-- [`../curriculum.md`](../curriculum.md) — what each level teaches
+- [`../curriculum/README.md`](../curriculum/README.md) — what each level teaches
 - [`../journal/2026-05-03-v3-the-waiting-room.md`](../journal/2026-05-03-v3-the-waiting-room.md)
   — original game-design doc
 - `src/content/npcs.ts` — Dana's existing NPC data (will need
