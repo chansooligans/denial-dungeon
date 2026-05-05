@@ -18,6 +18,8 @@ interface BattleState {
   playerTools: string[]
   turn: 'player' | 'enemy' | 'animating' | 'done'
   turnCount: number
+  /** Which scene to return to after the battle ends. Defaults to Hospital. */
+  returnScene: string
 }
 
 const PORTRAIT_KEY: Record<string, string> = {
@@ -51,7 +53,14 @@ export class BattleScene extends Phaser.Scene {
     super('Battle')
   }
 
-  init(data: { encounterId?: string; playerHp?: number; playerMaxHp?: number; playerTools?: string[] }) {
+  init(data: {
+    encounterId?: string
+    playerHp?: number
+    playerMaxHp?: number
+    playerTools?: string[]
+    /** Scene to start when this battle ends. Defaults to 'Hospital'. */
+    returnScene?: string
+  }) {
     const encounterId = data.encounterId || 'co_109'
     const encounter = ENCOUNTERS[encounterId]
     if (!encounter) throw new Error(`Unknown encounter: ${encounterId}`)
@@ -69,6 +78,7 @@ export class BattleScene extends Phaser.Scene {
       playerTools: data.playerTools ?? gameState.tools,
       turn: 'player',
       turnCount: 0,
+      returnScene: data.returnScene ?? 'Hospital',
     }
     this.encounterHpRatio = 1
     this.playerHpRatio = 1
@@ -618,6 +628,7 @@ export class BattleScene extends Phaser.Scene {
           playerHp: this.state.playerMaxHp,
           playerMaxHp: this.state.playerMaxHp,
           playerTools: this.state.playerTools,
+          returnScene: this.state.returnScene,
         })
       })
 
@@ -631,12 +642,21 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private exitBattle(won: boolean) {
+    const state = getState()
     if (won) {
-      updateResources({ hp: this.state.playerHp - getState().resources.hp })
+      updateResources({ hp: this.state.playerHp - state.resources.hp })
       unlockCodex(this.state.encounter.id)
+      // Track defeated obstacles so Waiting Room markers can hide once
+      // their encounter is resolved. SimpleController encounters that win
+      // via dialogue + exitBattle still flow through here, so they get
+      // marked too — that's fine; the list is only consulted by the
+      // Waiting Room marker renderer for now.
+      if (!state.defeatedObstacles.includes(this.state.encounter.id)) {
+        state.defeatedObstacles.push(this.state.encounter.id)
+      }
       saveGame()
     }
-    this.scene.start('Hospital')
+    this.scene.start(this.state.returnScene)
   }
 
   private showMessage(text: string) {
