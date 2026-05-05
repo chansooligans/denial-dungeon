@@ -14,6 +14,10 @@ export default defineConfig({
         // lists every encounter + linked claim. Lives at /battles.html
         // on GitHub Pages.
         battles: resolve(__dirname, 'battles.html'),
+        // Wraith prototype: a single-encounter sketch demonstrating
+        // the no-HP / no-tools / no-multiple-choice redesign. Lives
+        // at /wraith-prototype.html on GitHub Pages.
+        wraith: resolve(__dirname, 'wraith-prototype.html'),
       },
       output: {
         // Pull Phaser into its own vendor chunk. The framework is the
