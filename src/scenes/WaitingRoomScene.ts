@@ -7,27 +7,32 @@ const TILE = 32
 const MAP_W = 30
 const MAP_H = 20
 
+// Layout reorganized into a north hub and four south wings —
+// Eligibility / Coding / Billing / Appeals — separated by light
+// dividers (still walkable on the original chair-row positions but
+// visually grouped). Obstacles are clustered by their `wing` field so
+// each fight feels like it belongs somewhere.
 const LAYOUT = [
-  'WWWWWWWWWWWWWWWWWWWWWWWWWWWWWW',
-  'W............................W',
-  'W..CC..CC..CC..CC..CC..CC...W',
-  'W............................W',
-  'W..CC..CC..CC..CC..CC..CC...W',
-  'W............................W',
-  'W....O......O........O.......W',
-  'W.........TTTTTT............W',
-  'W.........T....T............W',
-  'W.........T....T............W',
-  'W.........TTTTTT............W',
-  'W............................W',
-  'W..CC..CC..CC..CC..CC..CC...W',
-  'W............................W',
-  'W..CC..CC..CC..CC..CC..CC...W',
-  'W..O.....................O...W',
-  'W..............O........O....W',
-  'W...........D................W',
-  'W............................W',
-  'WWWWWWWWWWWWWWWWWWWWWWWWWWWWWW',
+  'WWWWWWWWWWWWWWWWWWWWWWWWWWWWWW',  // 0
+  'W............................W',  // 1
+  'W............................W',  // 2  (north margin)
+  'W..........TTTTTT............W',  // 3  (counter)
+  'W..........T....T............W',  // 4
+  'W..........T....T............W',  // 5
+  'W..........TTTTTT............W',  // 6
+  'W............................W',  // 7
+  'W..CC..CC..CC..CC..CC..CC...W',  // 8  (hub chairs)
+  'W............................W',  // 9
+  'W............................W',  // 10 (wing label band — text overlay drawn over here)
+  'W............................W',  // 11
+  'W..O........O........O.......W',  // 12 (front-row obstacles)
+  'W............................W',  // 13
+  'W..O............O............W',  // 14 (mid-row: elig#2, billing#1)
+  'W............................W',  // 15
+  'W............O.....O....O....W',  // 16 (back-row: coding-extras / appeals 2-3)
+  'W...........D................W',  // 17 (exit door)
+  'W............................W',  // 18
+  'WWWWWWWWWWWWWWWWWWWWWWWWWWWWWW',  // 19
 ]
 
 /**
@@ -42,21 +47,41 @@ interface ObstacleMarker {
   encounterId: string
 }
 
+/**
+ * Obstacles clustered by `wing`. Layout columns:
+ *   ELIGIBILITY: cols 1–6   (markers at x=3)
+ *   CODING:      cols 8–14  (markers at x=11/12)
+ *   BILLING:     cols 15–20 (markers at x=20)
+ *   APPEALS:     cols 22–28 (markers at x=23/27)
+ */
 const OBSTACLES: ObstacleMarker[] = [
-  // (4, 6)  — west of hub: Medical Necessity Wraith (Investigation)
-  { tileX: 4,  tileY: 6,  encounterId: 'co_50' },
-  // (21, 6) — east of hub: Timely Filing Reaper (Timed)
-  { tileX: 21, tileY: 6,  encounterId: 'co_29_reaper' },
-  // (15, 16) — south-center: Bundling Beast (Simple HP fight)
-  { tileX: 15, tileY: 16, encounterId: 'co_97' },
-  // (24, 16) — south-east: Prior Auth Gatekeeper (Block)
-  { tileX: 24, tileY: 16, encounterId: 'co_197' },
-  // (3, 15)  — south-west: Duplicate Claim Doppelgänger (Mirror)
-  { tileX: 3,  tileY: 15, encounterId: 'co_18_doppelganger' },
-  // (12, 6)  — center-north: Eligibility Fog (Blind)
-  { tileX: 12, tileY: 6,  encounterId: 'eligibility_fog' },
-  // (26, 15) — south-east: COB Hydra (MultiHead)
-  { tileX: 26, tileY: 15, encounterId: 'oa_23_hydra' },
+  // --- Eligibility wing (north-west) ---
+  { tileX: 3,  tileY: 12, encounterId: 'eligibility_fog' },
+  { tileX: 3,  tileY: 14, encounterId: 'oa_23_hydra' },
+  // --- Coding wing ---
+  { tileX: 12, tileY: 12, encounterId: 'co_97' },
+  // --- Billing wing ---
+  { tileX: 20, tileY: 12, encounterId: 'co_18_doppelganger' },
+  // --- Appeals wing (east) — three obstacles ---
+  { tileX: 23, tileY: 14, encounterId: 'co_50' },         // Wraith
+  { tileX: 27, tileY: 14, encounterId: 'co_29_reaper' },  // Reaper
+  { tileX: 25, tileY: 16, encounterId: 'co_197' },        // Gatekeeper
+]
+
+/** Per-wing label rendered as a floating text widget over the wing area. */
+interface WingLabel {
+  text: string
+  tileX: number  // center of label
+  tileY: number
+  /** Hex color for the label. */
+  color: string
+}
+
+const WING_LABELS: WingLabel[] = [
+  { text: 'ELIGIBILITY', tileX: 3,  tileY: 10, color: '#7ee2c1' },
+  { text: 'CODING',      tileX: 12, tileY: 10, color: '#f0a868' },
+  { text: 'BILLING',     tileX: 20, tileY: 10, color: '#ef5b7b' },
+  { text: 'APPEALS',     tileX: 25, tileY: 10, color: '#b18bd6' },
 ]
 
 interface ObstacleSprite {
@@ -94,6 +119,7 @@ export class WaitingRoomScene extends Phaser.Scene {
     this.buildMap()
     this.placePlayer()
     this.addAtmosphere()
+    this.placeWingLabels()
     this.placeObstacles()
     this.setupInput()
     this.buildHUD()
@@ -220,6 +246,26 @@ export class WaitingRoomScene extends Phaser.Scene {
       backgroundColor: '#0a0d12',
       padding: { x: 4, y: 2 },
     }).setOrigin(0.5).setDepth(20).setVisible(false)
+  }
+
+  /**
+   * Render the wing label band — text overlays in the gap between hub
+   * and obstacle clusters so the player can see which department they
+   * are about to walk into.
+   */
+  private placeWingLabels() {
+    for (const wing of WING_LABELS) {
+      const px = wing.tileX * TILE + TILE / 2
+      const py = wing.tileY * TILE + TILE / 2
+      this.add.text(px, py, wing.text, {
+        fontSize: '11px',
+        fontFamily: 'monospace',
+        color: wing.color,
+        fontStyle: 'bold',
+        backgroundColor: '#0a0d1280',
+        padding: { x: 6, y: 3 },
+      }).setOrigin(0.5).setDepth(3)
+    }
   }
 
   private placeObstacles() {
