@@ -301,8 +301,8 @@ function render(): string {
     ${renderHospitalIntro()}
     ${!state.briefingDone ? renderBriefingInline() : `
       ${renderClaim()}
-      ${renderWorkbench()}
       ${renderCitationBuilder()}
+      ${renderWorkbench()}
       ${renderChecklist()}
       ${renderWraith()}
     `}
@@ -555,29 +555,37 @@ function renderAmendModal(): string {
 }
 
 function renderWorkbench(): string {
+  // Payer phrases embedded into actual prose — phrases by id so the
+  // sentence reads coherently while keeping each phrase clickable.
+  const phraseById = (id: string) => {
+    const p = payerPhrases.find(pp => pp.id === id)
+    return p ? phraseSpan(p) : ''
+  }
   return `
     <section class="workbench">
       <div class="col col-payer">
         <div class="col-h">
           <span class="col-tag">PAYER NOTE</span>
-          <span class="col-sub">Click a phrase to select it. These are the insurance company's specific complaints.</span>
+          <span class="col-sub">The denial letter. Hover a red phrase to see what it means; click to select it.</span>
         </div>
         <p class="col-prose">
-          ${payerPhrases.map(p => phraseSpan(p)).join(' ')}
-          The claim is denied per ${term('LCD L33526')}.
+          The submitted diagnosis ${phraseById('unspec-dx')} does not support
+          medical necessity for CPT 93306. Claim adjudicated
+          ${phraseById('lvef')} per ${term('LCD L33526')}, and is
+          ${phraseById('no-evidence')} of qualifying clinical findings.
         </p>
       </div>
       <div class="col col-chart">
         <div class="col-h">
           <span class="col-tag">CHART (Walker, A.)</span>
-          <span class="col-sub">Click a fact to cite it. These are things the doctor wrote.</span>
+          <span class="col-sub">Notes from the patient's record. Hover for a plain-English explanation; click to cite.</span>
         </div>
         <ul class="facts">
           ${chartFacts.map(f => `
             <li class="fact ${state.selection.chartId === f.id ? 'selected' : ''}"
                 data-action="select-chart" data-id="${f.id}">
               <div class="fact-text">${escape(f.text)}</div>
-              <div class="fact-plain">${escape(f.plain)}</div>
+              <div class="hover-tip">${escape(f.plain)}</div>
             </li>
           `).join('')}
         </ul>
@@ -585,14 +593,14 @@ function renderWorkbench(): string {
       <div class="col col-lcd">
         <div class="col-h">
           <span class="col-tag">LCD L33526</span>
-          <span class="col-sub">Click a clause to back the citation. This is the insurance company's own policy.</span>
+          <span class="col-sub">The insurance company's policy. Hover for a plain-English explanation; click to back a citation.</span>
         </div>
         <ul class="clauses">
           ${lcdClauses.map(c => `
             <li class="clause ${state.selection.lcdId === c.id ? 'selected' : ''}"
                 data-action="select-lcd" data-id="${c.id}">
               <div class="clause-text">${escape(c.text)}</div>
-              <div class="clause-plain">${escape(c.plain)}</div>
+              <div class="hover-tip">${escape(c.plain)}</div>
             </li>
           `).join('')}
         </ul>
@@ -603,7 +611,7 @@ function renderWorkbench(): string {
 
 function phraseSpan(p: PayerPhrase): string {
   const sel = state.selection.payerId === p.id ? 'selected' : ''
-  return `<span class="phrase ${sel}" data-action="select-payer" data-id="${p.id}">${escape(p.text)}</span>`
+  return `<span class="phrase ${sel}" data-action="select-payer" data-id="${p.id}">${escape(p.text)}<span class="hover-tip phrase-tip">${escape(p.plain)}</span></span>`
 }
 
 function renderCitationBuilder(): string {
@@ -620,19 +628,16 @@ function renderCitationBuilder(): string {
         <div class="slot ${payer ? 'filled' : ''}">
           <div class="slot-label">PAYER ASSERTS</div>
           <div class="slot-text">${payer ? '"' + escape(payer.text) + '"' : '<span class="placeholder">Click a payer phrase</span>'}</div>
-          ${payer ? `<div class="slot-plain">${escape(payer.plain)}</div>` : ''}
         </div>
         <div class="connector">cited by</div>
         <div class="slot ${chart ? 'filled' : ''}">
           <div class="slot-label">CHART FACT</div>
           <div class="slot-text">${chart ? escape(chart.text) : '<span class="placeholder">Click a chart fact</span>'}</div>
-          ${chart ? `<div class="slot-plain">${escape(chart.plain)}</div>` : ''}
         </div>
         <div class="connector">per</div>
         <div class="slot ${lcd ? 'filled' : ''}">
           <div class="slot-label">LCD CLAUSE</div>
           <div class="slot-text">${lcd ? escape(lcd.text) : '<span class="placeholder">Click an LCD clause</span>'}</div>
-          ${lcd ? `<div class="slot-plain">${escape(lcd.plain)}</div>` : ''}
         </div>
       </div>
       <div class="builder-actions">
@@ -1254,23 +1259,23 @@ const css = `
     padding: 14px 18px;
     font: inherit;
     text-align: left;
-    background: linear-gradient(180deg, rgba(239, 91, 123, 0.18), rgba(239, 91, 123, 0.08));
+    background: linear-gradient(180deg, rgba(239, 91, 123, 0.16), rgba(239, 91, 123, 0.06));
     color: #1c1c1c;
     border: 2px solid var(--bad);
     border-radius: 6px;
     cursor: pointer;
-    box-shadow: 0 0 0 0 rgba(239, 91, 123, 0.5);
-    animation: amend-pulse 2s ease-in-out infinite;
+    box-shadow: 0 0 0 0 rgba(239, 91, 123, 0.18);
+    animation: amend-pulse 4.5s ease-in-out infinite;
     transition: transform 0.15s, box-shadow 0.15s;
   }
   .amend-cta:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 16px rgba(239, 91, 123, 0.4);
+    box-shadow: 0 4px 16px rgba(239, 91, 123, 0.35);
     animation: none;
   }
   @keyframes amend-pulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(239, 91, 123, 0.5); }
-    50% { box-shadow: 0 0 0 8px rgba(239, 91, 123, 0); }
+    0%, 100% { box-shadow: 0 0 0 0 rgba(239, 91, 123, 0.18); }
+    50% { box-shadow: 0 0 0 6px rgba(239, 91, 123, 0); }
   }
   .amend-cta-icon {
     font-size: 22px;
@@ -1397,23 +1402,71 @@ const css = `
 
   .phrase {
     cursor: pointer;
-    background: rgba(239, 91, 123, 0.12);
+    background: rgba(239, 91, 123, 0.15);
     border-bottom: 1px dashed var(--bad);
-    padding: 1px 4px;
-    border-radius: 2px;
-    transition: background 0.15s;
+    padding: 2px 5px;
+    border-radius: 3px;
+    transition: background 0.15s, transform 0.1s;
+    position: relative;
+    display: inline;
   }
-  .phrase:hover { background: rgba(239, 91, 123, 0.25); }
-  .phrase.selected { background: rgba(239, 91, 123, 0.45); border-bottom-style: solid; color: #fff; }
-  .phrase-tip {
-    display: block;
-    font-size: 11.5px;
-    color: var(--ink-dim);
+  .phrase:hover { background: rgba(239, 91, 123, 0.32); }
+  .phrase.selected {
+    background: rgba(239, 91, 123, 0.5);
+    border-bottom-style: solid;
+    color: #fff;
+    box-shadow: inset 0 0 0 1px var(--bad);
+  }
+
+  /* Hover tooltip pattern — used for chart facts, LCD clauses, and
+     payer phrases. CSS-only; appears on :hover or :focus-within. */
+  .hover-tip {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 0;
+    z-index: 50;
+    min-width: 200px;
+    max-width: 320px;
+    padding: 10px 14px;
+    background: var(--panel);
+    color: var(--ink);
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+    font-size: 12.5px;
+    line-height: 1.5;
     font-style: italic;
-    padding: 2px 0 4px;
-    border-bottom: none;
-    background: transparent;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: normal;
+    white-space: normal;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.18s, transform 0.18s;
   }
+  .hover-tip::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 18px;
+    border: 7px solid transparent;
+    border-top-color: var(--accent);
+  }
+  .fact:hover .hover-tip,
+  .clause:hover .hover-tip,
+  .phrase:hover .hover-tip {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .phrase-tip {
+    /* Phrase tooltips need extra contrast since payer column is dense. */
+    border-color: var(--bad);
+    color: var(--ink);
+    font-weight: 400;
+    font-style: normal;
+  }
+  .phrase-tip::after { border-top-color: var(--bad); }
 
   .facts, .clauses { list-style: none; padding-left: 0; margin: 0; }
   .fact, .clause {
@@ -1424,18 +1477,12 @@ const css = `
     border-left: 3px solid transparent;
     cursor: pointer;
     transition: all 0.15s;
+    position: relative;
   }
   .fact:hover, .clause:hover { background: #232b3a; }
   .fact.selected { border-left-color: var(--accent); background: rgba(126, 226, 193, 0.1); }
   .clause.selected { border-left-color: #a3c5ff; background: rgba(163, 197, 255, 0.08); }
   .fact-text, .clause-text { font-size: 13px; }
-  .fact-plain, .clause-plain {
-    font-size: 11px;
-    color: rgba(138, 147, 163, 0.7);
-    margin-top: 3px;
-    line-height: 1.45;
-    font-style: italic;
-  }
 
   .builder { background: var(--panel); border: 1px solid #232a36; border-radius: 8px; padding: 16px 18px; margin-bottom: 22px; }
   .builder-h { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-dim); margin-bottom: 10px; }
@@ -1445,15 +1492,6 @@ const css = `
   .slot.filled { border-style: solid; border-color: #3a4658; }
   .slot-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-dim); margin-bottom: 4px; }
   .slot-text { font-size: 13px; }
-  .slot-plain {
-    font-size: 11.5px;
-    color: var(--ink-dim);
-    margin-top: 6px;
-    padding-top: 6px;
-    border-top: 1px dashed rgba(138, 147, 163, 0.2);
-    line-height: 1.45;
-    font-style: italic;
-  }
   .placeholder { color: var(--ink-dim); font-style: italic; }
   .connector { color: var(--ink-dim); font-size: 12px; align-self: center; padding: 0 6px; font-style: italic; }
   .builder-actions { margin-top: 12px; display: flex; gap: 10px; }
