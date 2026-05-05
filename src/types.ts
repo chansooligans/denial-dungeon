@@ -185,6 +185,12 @@ export interface CaseFact {
   relevance: 'relevant' | 'distractor'
   /** When true, this fact reveals as "weakly supported" — needs Document. */
   weakOnReveal?: boolean
+  /**
+   * Optional ClaimSheet annotation that lands on the form when this
+   * fact is first revealed by Investigate. Lets revealed evidence be
+   * visible in-form, not just in messageText.
+   */
+  onReveal?: ToolEffect
 }
 
 export interface CaseFile {

@@ -20,6 +20,13 @@ export interface PlayerTurnResult {
   message?: string
   /** True if this turn ends the battle as a win. */
   ends?: boolean
+  /**
+   * Mutations to apply to the ClaimSheet driven by the *result* of this
+   * specific turn (e.g. an Investigation reveal landing an annotation on
+   * the form). Distinct from `encounter.toolEffects` which is fixed per
+   * encounter+action; these are computed from runtime state.
+   */
+  formEffects?: import('../types').ToolEffect[]
 }
 
 /** Outcome of the enemy's response turn. */

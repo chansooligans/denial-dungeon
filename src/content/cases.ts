@@ -72,6 +72,17 @@ export const CASES: Record<string, PatientCase> = {
     procedureCode: '93306',
     formType: 'cms1500',
     level: 4,
+    // Pre-fix in the hospital: bump the diagnosis to a more specific
+    // ICD-10 (the LCD requires evidence of systolic dysfunction).
+    // Catching it grants the form-bridge buff for the Wraith.
+    errors: [
+      {
+        field: 'Diagnosis Code',
+        currentValue: 'I50.9',
+        correctValue: 'I50.42',
+        explanation: 'I50.9 (heart failure, unspecified) is too vague for medical necessity on a TTE. I50.42 (chronic combined systolic-diastolic) names the dysfunction the LCD asks for and is what the chart actually supports.',
+      },
+    ],
     claim: {
       type: 'cms1500',
       claimId: 'CLM-2026-01-15-04401',
@@ -102,10 +113,22 @@ export const CASES: Record<string, PatientCase> = {
     insurance: 'Aetna PPO',
     diagnosis: 'Unilateral primary osteoarthritis, right knee',
     diagnosisCode: 'M17.11',
-    procedure: 'Arthroplasty, knee, condyle and plateau (total knee replacement)',
+    procedure: 'Arthroplasty, knee, condyle and prosthesis (total knee replacement)',
     procedureCode: '27447',
     formType: 'cms1500',
     level: 7,
+    // The claim was rejected at the clearinghouse the first time it
+    // dropped (subscriber id transposed). That's why it's now bumping
+    // up against the timely-filing window. Catching it lets us refile
+    // before the deadline closes.
+    errors: [
+      {
+        field: 'Subscriber ID',
+        currentValue: 'AET882441293',
+        correctValue: 'AET882441923',
+        explanation: 'Last four digits transposed. The 277CA bounced this back the first three submissions — fixing it lets us refile inside the contractual filing window.',
+      },
+    ],
     claim: {
       type: 'cms1500',
       claimId: 'CLM-2025-08-15-22087',
@@ -140,6 +163,17 @@ export const CASES: Record<string, PatientCase> = {
     procedureCode: '72148',
     formType: 'cms1500',
     level: 3,
+    // The PA was actually approved, but the auth number was never
+    // transcribed onto the claim. Adding it to box 23 before the claim
+    // drops is the canonical upstream fix.
+    errors: [
+      {
+        field: 'Modifier',
+        currentValue: '—',
+        correctValue: 'PA-78294-A',
+        explanation: 'Box 23 prior-auth-number was approved by UHC on 2026-02-04 but never transcribed onto the claim. Adding it before submission keeps the gate open from the start.',
+      },
+    ],
     claim: {
       type: 'cms1500',
       claimId: 'CLM-2026-02-09-15208',
