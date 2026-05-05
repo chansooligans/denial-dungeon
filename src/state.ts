@@ -60,6 +60,12 @@ function migrateState(loaded: Partial<GameState> & Record<string, unknown>): Gam
   merged.defeatedObstacles ??= []
   merged.obstaclesSeen ??= []
   merged.wingsUnlocked ??= base.wingsUnlocked
+  merged.tools ??= []
+  // Top up the tool list with any missing default tools. Players don't
+  // lose the new day-one kit just because their save predates it.
+  for (const toolId of base.tools) {
+    if (!merged.tools.includes(toolId)) merged.tools.push(toolId)
+  }
   return merged
 }
 
