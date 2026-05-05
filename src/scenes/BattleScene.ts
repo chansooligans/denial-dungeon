@@ -3,10 +3,15 @@ import { TOOLS } from '../content/abilities'
 import { ENCOUNTERS } from '../content/enemies'
 import { getState, updateResources, unlockCodex, saveGame } from '../state'
 import type { Encounter, Tool } from '../types'
-import { EFFECTIVENESS_BONUS, FACTION_COLOR } from '../types'
+import { FACTION_COLOR } from '../types'
+import { createMechanic } from '../battle'
+import type { MechanicController } from '../battle'
 
 interface BattleState {
   encounter: Encounter
+  // Cached snapshot of the mechanic's HP for the on-screen text widget.
+  // The mechanic controller owns the source of truth; this is just for
+  // tween animations that need a previous-value to interpolate from.
   encounterHp: number
   playerHp: number
   playerMaxHp: number
@@ -26,6 +31,7 @@ const PORTRAIT_KEY: Record<string, string> = {
 
 export class BattleScene extends Phaser.Scene {
   private state!: BattleState
+  private mechanic!: MechanicController
   private encounterNameText!: Phaser.GameObjects.Text
   private encounterHpBar!: Phaser.GameObjects.Graphics
   private encounterHpText!: Phaser.GameObjects.Text
@@ -35,6 +41,7 @@ export class BattleScene extends Phaser.Scene {
   private toolButtons: Phaser.GameObjects.Container[] = []
   private portrait!: Phaser.GameObjects.Image
   private turnIndicator!: Phaser.GameObjects.Text
+  private statusText?: Phaser.GameObjects.Text
   private encounterHpRatio = 1
   private playerHpRatio = 1
 
@@ -49,9 +56,12 @@ export class BattleScene extends Phaser.Scene {
 
     const gameState = getState()
 
+    this.mechanic = createMechanic(encounter)
+    const initialHp = this.mechanic.hpDisplay()
+
     this.state = {
       encounter,
-      encounterHp: encounter.hp,
+      encounterHp: initialHp.current,
       playerHp: data.playerHp ?? gameState.resources.hp,
       playerMaxHp: data.playerMaxHp ?? gameState.resources.maxHp,
       playerTools: data.playerTools ?? gameState.tools,
@@ -78,6 +88,7 @@ export class BattleScene extends Phaser.Scene {
 
     this.showMessage(this.state.encounter.surfaceSymptom)
     this.setTurnIndicator()
+    this.refreshStatus()
   }
 
   private buildEncounterPanel(width: number) {
@@ -228,22 +239,20 @@ export class BattleScene extends Phaser.Scene {
     this.state.turn = 'animating'
     this.setToolButtonsVisible(false)
 
-    const roll = Phaser.Math.Between(1, 100)
-    if (roll > tool.accuracy) {
-      this.showMessage(`${tool.name} missed!`)
+    const result = this.mechanic.applyPlayerTurn(tool.id)
+
+    if (result.missed) {
+      this.showMessage(result.message ?? `${tool.name} missed!`)
       this.time.delayedCall(1000, () => this.enemyTurn())
       return
     }
 
-    let damage = tool.damage
-    const isEffective = tool.effectiveFactions.includes(this.state.encounter.rootCause)
-    if (isEffective) {
-      damage = Math.round(damage * EFFECTIVENESS_BONUS)
-    }
-
-    this.state.encounterHp = Math.max(0, this.state.encounterHp - damage)
+    // Sync local snapshot from the controller (source of truth).
+    const { current, max } = this.mechanic.hpDisplay()
+    this.state.encounterHp = current
     this.animateEncounterHp()
-    this.encounterHpText.setText(`${this.state.encounterHp} / ${this.state.encounter.hp}`)
+    this.encounterHpText.setText(`${current} / ${max}`)
+    this.refreshStatus()
 
     // Portrait hit flash
     this.tweens.add({
@@ -254,18 +263,15 @@ export class BattleScene extends Phaser.Scene {
       repeat: 2,
     })
 
-    // Floating damage number
-    this.spawnDamageNumber(this.portrait.x, this.portrait.y - 40, damage, isEffective)
+    if (result.damage > 0) {
+      this.spawnDamageNumber(this.portrait.x, this.portrait.y - 40, result.damage, !!result.super)
+      const intensity = Math.min(result.damage / max, 0.3)
+      this.cameras.main.flash(80, 255, 255, 255, false, undefined, intensity)
+    }
 
-    // Screen flash scaled to damage
-    const intensity = Math.min(damage / this.state.encounter.hp, 0.3)
-    this.cameras.main.flash(80, 255, 255, 255, false, undefined, intensity)
+    this.showMessage(result.message ?? `${tool.name} deals ${result.damage} damage!`)
 
-    let msg = `${tool.name} deals ${damage} damage!`
-    if (isEffective) msg += '\nSuper effective!'
-    this.showMessage(msg)
-
-    if (this.state.encounterHp <= 0) {
+    if (result.ends || this.mechanic.isWon()) {
       this.time.delayedCall(1200, () => this.victory())
       return
     }
@@ -275,21 +281,21 @@ export class BattleScene extends Phaser.Scene {
 
   private enemyTurn() {
     this.state.turn = 'animating'
-    const enc = this.state.encounter
-    const damage = enc.attackDamage + Phaser.Math.Between(-2, 2)
+    const result = this.mechanic.applyEnemyTurn()
+    const damage = result.damage
 
     this.state.playerHp = Math.max(0, this.state.playerHp - damage)
     this.animatePlayerHp()
     this.playerHpText.setText(`${this.state.playerHp} / ${this.state.playerMaxHp}`)
+    this.refreshStatus()
 
-    this.showMessage(`The claim fights back! -${damage} HP`)
+    this.showMessage(result.message ?? `Hit for ${damage}!`)
 
-    // Damage number on player side
-    this.spawnDamageNumber(90, this.scale.height - 160, damage, false, 0xef5b7b)
-
-    // Shake scaled to damage
-    const shakeIntensity = 0.003 + (damage / this.state.playerMaxHp) * 0.01
-    this.cameras.main.shake(250, shakeIntensity)
+    if (damage > 0) {
+      this.spawnDamageNumber(90, this.scale.height - 160, damage, false, 0xef5b7b)
+      const shakeIntensity = 0.003 + (damage / this.state.playerMaxHp) * 0.01
+      this.cameras.main.shake(250, shakeIntensity)
+    }
 
     if (this.state.playerHp <= 0) {
       this.time.delayedCall(1200, () => this.defeat())
@@ -303,6 +309,24 @@ export class BattleScene extends Phaser.Scene {
       this.setTurnIndicator()
       this.showMessage('Choose your action.')
     })
+  }
+
+  /** Show / refresh the optional status line for mechanics that have one. */
+  private refreshStatus() {
+    const line = this.mechanic.statusLine()
+    if (!line) {
+      this.statusText?.setVisible(false)
+      return
+    }
+    if (!this.statusText) {
+      const { width } = this.scale
+      this.statusText = this.add.text(width / 2, 10, line, {
+        fontSize: '11px', fontFamily: 'monospace', color: '#b18bd6',
+        backgroundColor: '#0e1116cc', padding: { x: 6, y: 3 },
+      }).setOrigin(0.5, 0).setDepth(40)
+    } else {
+      this.statusText.setText(line).setVisible(true)
+    }
   }
 
   private spawnDamageNumber(x: number, y: number, damage: number, isSuper: boolean, color?: number) {
@@ -356,14 +380,24 @@ export class BattleScene extends Phaser.Scene {
       }).setOrigin(0.5).setAlpha(0)
       this.tweens.add({ targets: resolved, alpha: 1, duration: 300 })
 
-      // CARC code reveal
-      this.add.text(width / 2, 110, `CARC: ${enc.carcCode}`, {
-        fontSize: '16px', fontFamily: 'monospace', color: '#ef5b7b',
-      }).setOrigin(0.5)
+      // CARC code reveal — only shown for obstacles wrapping a real
+      // denial code. Non-CARC obstacles (e.g. eligibility, charge capture,
+      // AR aging) display their archetype name instead.
+      if (enc.carcCode) {
+        this.add.text(width / 2, 110, `CARC: ${enc.carcCode}`, {
+          fontSize: '16px', fontFamily: 'monospace', color: '#ef5b7b',
+        }).setOrigin(0.5)
 
-      this.add.text(width / 2, 135, enc.carcName, {
-        fontSize: '12px', fontFamily: 'monospace', color: '#ffffff',
-      }).setOrigin(0.5)
+        if (enc.carcName) {
+          this.add.text(width / 2, 135, enc.carcName, {
+            fontSize: '12px', fontFamily: 'monospace', color: '#ffffff',
+          }).setOrigin(0.5)
+        }
+      } else if (enc.archetype) {
+        this.add.text(width / 2, 110, enc.archetype, {
+          fontSize: '16px', fontFamily: 'monospace', color: '#b18bd6',
+        }).setOrigin(0.5)
+      }
 
       // Watchpoint
       this.add.text(width / 2, 180, `"${enc.watchpoint}"`, {
