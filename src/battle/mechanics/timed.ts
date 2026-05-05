@@ -14,11 +14,20 @@ import Phaser from 'phaser'
 import type { Encounter } from '../../types'
 import { EFFECTIVENESS_BONUS } from '../../types'
 import { TOOLS } from '../../content/abilities'
+import { getState } from '../../state'
 import type {
   MechanicController,
   PlayerTurnResult,
   EnemyTurnResult,
 } from '../types'
+
+/** Same accuracy penalty as SimpleController. Kept local to avoid coupling. */
+function stressAccuracyPenalty(): number {
+  const stress = getState().resources.stress
+  if (stress >= 75) return 20
+  if (stress >= 50) return 10
+  return 0
+}
 
 const DEFAULT_DAYS = 7
 /** Each lost day adds this much to the enemy's base attack damage. */
@@ -82,10 +91,12 @@ export class TimedController implements MechanicController {
       return { damage: 0, missed: true, message: 'Unknown tool.' }
     }
 
+    const accuracy = Math.max(10, tool.accuracy - stressAccuracyPenalty())
     const roll = Phaser.Math.Between(1, 100)
-    if (roll > tool.accuracy) {
+    if (roll > accuracy) {
       this.daysRemaining = Math.max(0, this.daysRemaining - 1)
-      return { damage: 0, missed: true, message: `${tool.name} missed!` }
+      const reason = stressAccuracyPenalty() > 0 ? ' (stressed)' : ''
+      return { damage: 0, missed: true, message: `${tool.name} missed${reason}!` }
     }
 
     const isSuper = tool.effectiveFactions.includes(this.encounter.rootCause)

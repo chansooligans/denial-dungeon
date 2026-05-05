@@ -103,6 +103,7 @@ export class BattleScene extends Phaser.Scene {
     this.refreshStatus()
     this.refreshPanel()
     this.refreshActionButtons()
+    this.styleToolButtons()
   }
 
   private buildEncounterPanel(width: number) {
@@ -153,7 +154,13 @@ export class BattleScene extends Phaser.Scene {
     // don't have access to). Hidden when a mechanic owns the panel.
     if (!this.mechanic.panelText()) {
       const ownedTools = new Set(this.state.playerTools)
-      const ownedHints = enc.correctTools.filter(id => ownedTools.has(id))
+      const ownedHints = enc.correctTools.filter(id => {
+        if (!ownedTools.has(id)) return false
+        const tool = TOOLS[id]
+        // Hide gated (stress-locked) tools from the hint — don't tease
+        // suggestions the player can't act on right now.
+        return tool && !this.toolGateReason(tool)
+      })
       if (ownedHints.length > 0) {
         const names = ownedHints.map(id => TOOLS[id]?.name || id).join(', ')
         this.add.text(width / 2, barY + 80, `Likely effective: ${names}`, {
@@ -254,10 +261,29 @@ export class BattleScene extends Phaser.Scene {
       }).setOrigin(0.5)
 
       container.add([bg, numLabel, label, sub])
+      container.setData('tool', tool)
+      container.setData('label', label)
+      container.setData('sub', sub)
+      container.setData('bg', bg)
 
-      bg.on('pointerover', () => { bg.setTexture('ui_action_btn_hover'); label.setColor('#ffffff') })
-      bg.on('pointerout', () => { bg.setTexture('ui_action_btn'); label.setColor('#7ee2c1') })
-      bg.on('pointerdown', () => this.useToolAction(tool))
+      bg.on('pointerover', () => {
+        if (this.toolGateReason(tool)) return
+        bg.setTexture('ui_action_btn_hover')
+        label.setColor('#ffffff')
+      })
+      bg.on('pointerout', () => {
+        if (this.toolGateReason(tool)) return
+        bg.setTexture('ui_action_btn')
+        label.setColor('#7ee2c1')
+      })
+      bg.on('pointerdown', () => {
+        const reason = this.toolGateReason(tool)
+        if (reason) {
+          this.showMessage(reason)
+          return
+        }
+        this.useToolAction(tool)
+      })
 
       this.toolButtons.push(container)
     })
@@ -265,9 +291,55 @@ export class BattleScene extends Phaser.Scene {
     const keys = this.input.keyboard!
     tools.forEach((tool, i) => {
       keys.on(`keydown-${i + 1}`, () => {
-        if (this.state.turn === 'player') this.useToolAction(tool)
+        if (this.state.turn !== 'player') return
+        const reason = this.toolGateReason(tool)
+        if (reason) {
+          this.showMessage(reason)
+          return
+        }
+        this.useToolAction(tool)
       })
     })
+  }
+
+  /**
+   * If a tool is currently unusable, return a short user-facing reason.
+   * Drives both the click handler and the per-button visual state.
+   *
+   * Today's only gate: stress ≥ 75 disables tools with turnCost ≥ 2.
+   * The thematic read is "you don't have the time to file a 2-hour
+   * appeal when you're this stressed" — appeals fold first.
+   */
+  private toolGateReason(tool: Tool): string | null {
+    const stress = getState().resources.stress
+    if (stress >= 75 && tool.turnCost >= 2) {
+      return `Too stressed for ${tool.name}. No time for slow tools.`
+    }
+    return null
+  }
+
+  /** Apply the gated/disabled styling to default tool buttons. */
+  private styleToolButtons() {
+    for (const container of this.toolButtons) {
+      const tool = container.getData('tool') as Tool | undefined
+      if (!tool) continue
+      const label = container.getData('label') as Phaser.GameObjects.Text | undefined
+      const sub = container.getData('sub') as Phaser.GameObjects.Text | undefined
+      const bg = container.getData('bg') as Phaser.GameObjects.Image | undefined
+      const reason = this.toolGateReason(tool)
+      if (reason) {
+        container.setAlpha(0.55)
+        label?.setColor('#ef5b7b')
+        sub?.setText('STRESSED — unavailable')
+        sub?.setColor('#ef5b7b')
+        bg?.setTexture('ui_action_btn')
+      } else {
+        container.setAlpha(1)
+        label?.setColor('#7ee2c1')
+        sub?.setText(`DMG:${tool.damage} ACC:${tool.accuracy}%`)
+        sub?.setColor('#5a6a7a')
+      }
+    }
   }
 
   private buildCustomActionMenu(
@@ -465,6 +537,7 @@ export class BattleScene extends Phaser.Scene {
       this.setToolButtonsVisible(true)
       this.setTurnIndicator()
       this.refreshActionButtons()
+      this.styleToolButtons()
       this.showMessage('Choose your action.')
     })
   }
