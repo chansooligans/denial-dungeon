@@ -14,6 +14,7 @@ import { BlockController } from './mechanics/block'
 import { MirrorController } from './mechanics/mirror'
 import { BlindController } from './mechanics/blind'
 import { MultiHeadController } from './mechanics/multiHead'
+import { SpawnController } from './mechanics/spawn'
 
 export function createMechanic(encounter: Encounter): MechanicController {
   switch (encounter.mechanic) {
@@ -29,7 +30,8 @@ export function createMechanic(encounter: Encounter): MechanicController {
       return new BlindController(encounter)
     case 'multiHead':
       return new MultiHeadController(encounter)
-    // 'spawn' lands in a follow-up PR.
+    case 'spawn':
+      return new SpawnController(encounter)
     case 'simple':
     case 'none':
     default:

@@ -14,8 +14,9 @@ foundation in `2026-05-04-waiting-room-combat-foundation.md`.
 | `mirror` | `MirrorController` | CO-18 Duplicate Claim Doppelgänger | Same tool used twice in a row → 0 damage, +heal to enemy, kickback to player |
 | `blind` | `BlindController` | Eligibility Fog | Fog reduces accuracy by 30 every turn; `eligibility_270` clears it permanently |
 | `multiHead` | `MultiHeadController` | OA-23 Coordination Hydra | Three heads (Primary / Secondary / COB) cycled in sequence; super-effective only against the active head's rootCause |
+| `spawn` | `SpawnController` | CO-16 Documentation Sprite Swarm | Source HP pool spawns a sprite every 2 enemy turns (cap 3); `claim_scrubber` sweeps the swarm, `cdi_query` patches the chart upstream and stops further spawns |
 
-`spawn` is the last unbuilt mechanic.
+Mechanic catalog complete — all seven planned mechanics shipped.
 
 ## ClaimSheet — pedagogy as the centerpiece
 
@@ -54,6 +55,7 @@ the hospital→Waiting-Room loop closes for the entire bestiary:
 | `case_doppel_reyes` | Subscriber ID transposed (resubmit avoids dup) | Duplicate Doppelgänger |
 | `case_fog_nguyen` | Member ID typo (270 returns clean elig) | Eligibility Fog |
 | `case_hydra_okwu` | Add COB segment / order of benefits | Coordination Hydra |
+| `case_swarm_yamada` | Specific dx + provider taxonomy populated | Documentation Sprite Swarm |
 | `case_level1_ub` | First UB-04 puzzle (revenue codes + DRG) | (didactic) |
 
 ## Multi-wing Waiting Room
@@ -110,7 +112,7 @@ publishes to Pages on each push to `main`.
 
 - `src/battle/index.ts` — mechanic factory
 - `src/battle/types.ts` — `MechanicController` interface, `PlayerTurnResult.formEffects`
-- `src/battle/mechanics/{simple,investigation,timed,block,mirror,blind,multiHead}.ts`
+- `src/battle/mechanics/{simple,investigation,timed,block,mirror,blind,multiHead,spawn}.ts`
 - `src/battle/ClaimSheet.ts` — CMS-1500 + UB-04 renderer + `applyEffect()`
 - `src/battle/screens.ts` — victory + defeat overlays (depth 200+)
 - `src/battle/toolMenu.ts` — default ribbon + custom action ribbon + flee + gating
