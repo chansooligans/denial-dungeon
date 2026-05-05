@@ -7,7 +7,20 @@ import Phaser from 'phaser'
 import type { Encounter } from '../../types'
 import { EFFECTIVENESS_BONUS } from '../../types'
 import { TOOLS } from '../../content/abilities'
+import { getState } from '../../state'
 import type { MechanicController, PlayerTurnResult, EnemyTurnResult } from '../types'
+
+/**
+ * Stress reduces tool accuracy: at 50+ you're rushing and miss more,
+ * at 75+ much more. Persistent across the run, so a stressful early
+ * level makes later fights harder.
+ */
+function stressAccuracyPenalty(): number {
+  const stress = getState().resources.stress
+  if (stress >= 75) return 20
+  if (stress >= 50) return 10
+  return 0
+}
 
 export class SimpleController implements MechanicController {
   readonly encounter: Encounter
@@ -49,9 +62,11 @@ export class SimpleController implements MechanicController {
       return { damage: 0, missed: true, message: 'Unknown tool.' }
     }
 
+    const accuracy = Math.max(10, tool.accuracy - stressAccuracyPenalty())
     const roll = Phaser.Math.Between(1, 100)
-    if (roll > tool.accuracy) {
-      return { damage: 0, missed: true, message: `${tool.name} missed!` }
+    if (roll > accuracy) {
+      const reason = stressAccuracyPenalty() > 0 ? ' (stressed)' : ''
+      return { damage: 0, missed: true, message: `${tool.name} missed${reason}!` }
     }
 
     const isSuper = tool.effectiveFactions.includes(this.encounter.rootCause)
