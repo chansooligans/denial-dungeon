@@ -1,94 +1,124 @@
 # Denial Dungeon
 
+## What This Is
 A turn-based hospital RPG that teaches the US healthcare revenue cycle.
-Phaser 3 + TypeScript + Vite. Deployable on GitHub Pages.
+Built with Phaser 3 + TypeScript + Vite. Deployable on GitHub Pages.
 
-## Design
+## The Game
+You're a revenue cycle analyst at Mercy General Hospital. A routine claim
+vanishes from the system. You discover "The Waiting Room" — a surreal
+bureaucratic underworld beneath the hospital where every claim ever filed
+still exists, waiting. You chase your missing claim through 10 levels,
+learning how billing actually works.
 
-You're a revenue cycle analyst at Mercy General Hospital. A claim
-vanishes; you discover **The Waiting Room** — a surreal bureaucratic
-underworld where every claim ever filed still exists. Two layers:
+**Dual reality**: Normal hospital (Animal Crossing cozy) + The Waiting Room
+(surreal, Terry Gilliam meets Spirited Away). Turn-based encounters with
+real people (not monsters), form puzzles (CMS-1500, UB-04), and a growing
+codex of billing knowledge.
 
-- **Hospital** (Animal-Crossing-cozy): NPC dialogue, form puzzles, codex.
-  No combat here.
-- **Waiting Room** (Terry-Gilliam-meets-Spirited-Away): turn-based
-  battles against surreal procedural obstacles (Medical Necessity
-  Wraith, Timely Filing Reaper, Bundling Beast, …) that personify
-  parts of the revenue cycle.
+## Current State
+**Phases 1-6 complete + map overhaul** — Core engine, battle system,
+data-driven hospital overworld with multi-room layouts, dialogue, form
+puzzles, game state, Waiting Room, Codex system, and Level 1 vertical slice.
 
-### Pillars
-- Face people in the hospital, codes/forms in the Waiting Room.
-- Battles render realistic CMS-1500/UB-04 forms with real ICD-10/CPT
-  codes and real payer denial language. Pedagogy is the point.
-- Decisions compound — `state.resources.stress` and `auditRisk`
-  persist for the whole run. Shortcuts in early levels bite later.
-- Codex is useful as a standalone reference outside the game.
+### What's Done
+- [x] Project scaffold (Phaser 3, Vite, TypeScript)
+- [x] Game design finalized (V3: "The Waiting Room")
+- [x] types.ts for turn-based RPG
+- [x] BootScene (procedural sprites for NPCs, hospital, Waiting Room, UI, documents)
+- [x] IntroScene (cutscene — the $215 hook, 8 beats, skip/advance support)
+- [x] TitleScene (menu with floating papers)
+- [x] BattleScene (turn-based combat, effectiveness system, CARC reveal on victory)
+- [x] HospitalScene (data-driven tile map, NPC placement, camera follow, HUD)
+- [x] Room-based fog of war (flood-fill room detection, current room lit, visited rooms dim, unvisited hidden)
+- [x] Mini-map overlay (top-right corner, walls/doors/gap/player, reflects fog state)
+- [x] DialogueScene (branching dialogue, effects, triggers battle/form)
+- [x] FormScene (CMS-1500 / UB-04 puzzles — find and correct errors)
+- [x] WaitingRoomScene (surreal overworld layer)
+- [x] CodexScene (collection screen with 4 categories, locked/unlocked entries)
+- [x] Game state manager (save/load via localStorage, auto-loads on init)
+- [x] Data-driven map system (MapDef interface, 5 level layouts 60×45 to 75×52)
+- [x] Multi-room hospital layouts with corridors and linear south→north flow
+- [x] 10 level definitions with titles, concepts, NPCs
+- [x] 7 NPCs with dialogue trees
+- [x] 22 codex entries across 4 categories
+- [x] 11 encounters with real CARC codes
+- [x] 12 player tools with faction effectiveness
+- [x] 2 patient cases with real billing errors
+
+### What's NOT Done
+- [ ] Art overhaul (improve procedural sprites beyond basic rectangles)
+- [ ] Battle system polish (visual feedback, encounter portraits, flee option)
+- [ ] Levels 2-10 content (encounters, cases, dialogues per level)
+- [ ] Level progression (complete level → advance)
+- [ ] Sound design
+- [ ] Polish (transitions, particles, screen shake refinement)
+
+## Key Design Docs
+- `reference/journal/2026-05-03-v3-the-waiting-room.md` — Full game design
+- `reference/journal/2026-05-04-build-plan.md` — Step-by-step build plan
+- `reference/aesthetic-inspirations.md` — Mood board (Brazil, Spirited Away, Twin Peaks)
 
 ## Architecture
-
 ```
 src/
-├── main.ts                Phaser config, scene registry
-├── types.ts               All shared types
-├── state.ts               Game state + save/load + migration
-├── battle/
-│   ├── index.ts           createMechanic(encounter) factory
-│   ├── types.ts           MechanicController interface, action shapes
-│   ├── ClaimSheet.ts      Realistic CMS-1500 panel renderer
-│   └── mechanics/
-│       ├── simple.ts      HP attrition + faction effectiveness
-│       ├── investigation.ts  Case-file fact-finding (no HP)
-│       └── timed.ts       HP + days-remaining countdown
+├── main.ts              # Phaser config, scene registry
+├── types.ts             # All game types
+├── state.ts             # Game state manager (save/load)
 ├── content/
-│   ├── abilities.ts       Player tools (TOOLS)
-│   ├── enemies.ts         Encounters (ENCOUNTERS) — CARC + archetype
-│   ├── cases.ts           PatientCases (form puzzle data + claim data)
-│   ├── npcs.ts, dialogue.ts, codex.ts, levels.ts
-│   ├── mapBuilder.ts      Structured map types + buildMapLayout()
-│   ├── maps.ts            Aggregator re-exporting per-level maps
-│   └── maps/level{1..5}.ts  Per-level hospital layouts
-└── scenes/
-    ├── BootScene, IntroScene, TitleScene
-    ├── HospitalScene      Tile-map overworld + fog + mini-map
-    ├── DialogueScene      Branching NPC dialogue
-    ├── BattleScene        Combat orchestration; delegates to mechanic
-    ├── FormScene          CMS-1500 / UB-04 puzzles
-    ├── WaitingRoomScene   Multi-obstacle marker layer (engage with E)
-    └── CodexScene         Knowledge collection
+│   ├── abilities.ts     # 12 player tools (TOOLS)
+│   ├── enemies.ts       # 11 encounters (ENCOUNTERS)
+│   ├── npcs.ts          # 7 NPCs
+│   ├── dialogue.ts      # Branching dialogue trees
+│   ├── cases.ts         # Patient cases for form puzzles
+│   ├── codex.ts         # 22 codex entries across 4 categories
+│   ├── levels.ts        # 10 level definitions
+│   └── maps.ts          # 5 hospital layouts (MapDef + normalize helper)
+├── scenes/
+│   ├── BootScene.ts     # Procedural sprite generation
+│   ├── IntroScene.ts    # Opening cutscene
+│   ├── TitleScene.ts    # Main menu
+│   ├── HospitalScene.ts # Data-driven tile map overworld
+│   ├── DialogueScene.ts # NPC dialogue overlay
+│   ├── BattleScene.ts   # Turn-based combat
+│   ├── FormScene.ts     # Claim form puzzles
+│   ├── WaitingRoomScene.ts # Surreal underworld
+│   └── CodexScene.ts    # Knowledge collection screen
 ```
 
-## Battle architecture
+## Map System
+Maps are defined as ASCII layouts in `content/maps.ts`. Each level has a
+distinct hospital floor plan with rooms connected by corridors. Player
+starts at the south (lobby), walks north through corridors to reach the
+gap (portal to Waiting Room) at the north end.
 
-`BattleScene` is the orchestrator. The encounter's `mechanic` field
-selects a `MechanicController` (`simple`, `investigation`, `timed`,
-…) via `createMechanic()`. The controller owns turn logic; the scene
-owns rendering. When an encounter has `caseId`, `ClaimSheet` renders
-the linked `PatientCase.claim` data as the panel area, with
-`highlightedBoxes` + `payerNote` as battle-time overlays.
+Tile legend: W=wall, D=door, .=floor, ~=floor2, _=carpet, c=desk, h=chair,
+E=equipment, P=plant, w=water, F=cabinet, B=whiteboard, R=counter,
+V=vending, b=bulletin, H=bed, X=fax
 
-Tools come from `state.tools` (default 5; expanded by
-`Encounter.unlocksOnDefeat` and `DialogueEffect.addTool`). Stress
-≥ 50 reduces accuracy; ≥ 75 disables `turnCost ≥ 2` tools.
-
-## Dev
-
+## Dev Commands
 ```bash
-npm run dev          # vite dev server on :5173
-npm run build        # production
-npx tsc --noEmit     # type-check only
+npm run dev              # Start dev server (port 5173)
+npm run build            # Production build
+npx tsc --noEmit         # Type-check only
 ```
 
-## Reference
+## Game Flow
+Title → Hospital (walk around, talk to NPCs) → Dialogue (branching choices)
+→ Battle (turn-based, use tools, effectiveness matters) → Victory (CARC reveal)
+→ back to Hospital. Form puzzles triggered via dialogue choices. The Gap in
+the hospital floor leads to The Waiting Room.
 
-- `reference/journal/2026-05-03-v3-the-waiting-room.md` — full game design
-- `reference/journal/2026-05-04-waiting-room-combat-foundation.md` — combat refactor decisions
-- `reference/aesthetic-inspirations.md` — mood board
+## Content Pillars
+The game teaches: CMS-1500 / UB-04 claim forms, ICD-10-CM/PCS codes,
+CPT codes, HCPCS, revenue codes, modifiers (25/59/76), APR-DRG / EAPG
+grouping, patient cost share waterfall, 835/ERA remittance reading,
+CARC/RARC codes, X12 transactions (270/271, 278, 837, 835, 277CA).
 
-## House rules
-
-- No company branding.
-- Battle pedagogy uses real codes (ICD-10, CPT, POS, modifiers). New
-  encounters should populate `caseId` + `highlightedBoxes` + `payerNote`
-  so the form is the experience.
-- New `MechanicController` per archetype when needed; don't bolt
-  variations onto `simple`.
+## Design Principles
+- No company branding
+- Human-centered: face people, not codes. Codes are the consequence.
+- Warm + surreal, not grimdark
+- Progressive disclosure: simple → complex across 10 levels
+- Decisions compound: shortcuts early have consequences in Level 10
+- Codex should be useful as a standalone reference outside the game

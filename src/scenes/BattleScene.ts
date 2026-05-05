@@ -8,7 +8,6 @@ import { FACTION_COLOR } from '../types'
 import { createMechanic } from '../battle'
 import type { MechanicController } from '../battle'
 import { ClaimSheet } from '../battle/ClaimSheet'
-import { showVictoryScreen, showDefeatScreen } from '../battle/screens'
 
 interface BattleState {
   encounter: Encounter
@@ -651,14 +650,93 @@ export class BattleScene extends Phaser.Scene {
 
   private victory() {
     this.state.turn = 'done'
-    showVictoryScreen(this, {
-      encounter: this.state.encounter,
-      toolButtons: this.toolButtons,
-      messageText: this.messageText,
-      turnIndicator: this.turnIndicator,
-      portrait: this.portrait,
-      turnCount: this.state.turnCount,
-      onContinue: () => this.exitBattle(true),
+    const enc = this.state.encounter
+
+    this.toolButtons.forEach(c => c.setVisible(false))
+    this.messageText.setVisible(false)
+    this.turnIndicator.setVisible(false)
+
+    const { width, height } = this.scale
+
+    // Overlay
+    const overlay = this.add.rectangle(width / 2, height / 2, width, height, 0x0e1116, 0)
+    this.tweens.add({ targets: overlay, fillAlpha: 0.85, duration: 400 })
+
+    // Portrait scales up
+    this.tweens.add({
+      targets: this.portrait,
+      scaleX: 1.5,
+      scaleY: 1.5,
+      alpha: 0.3,
+      duration: 600,
+      ease: 'Power2',
+    })
+
+    this.time.delayedCall(400, () => {
+      const resolved = this.add.text(width / 2, 60, 'RESOLVED', {
+        fontSize: '28px', fontFamily: 'monospace', color: '#7ee2c1', fontStyle: 'bold',
+      }).setOrigin(0.5).setAlpha(0)
+      this.tweens.add({ targets: resolved, alpha: 1, duration: 300 })
+
+      // CARC code reveal — only shown for obstacles wrapping a real
+      // denial code. Non-CARC obstacles (e.g. eligibility, charge capture,
+      // AR aging) display their archetype name instead.
+      if (enc.carcCode) {
+        this.add.text(width / 2, 110, `CARC: ${enc.carcCode}`, {
+          fontSize: '16px', fontFamily: 'monospace', color: '#ef5b7b',
+        }).setOrigin(0.5)
+
+        if (enc.carcName) {
+          this.add.text(width / 2, 135, enc.carcName, {
+            fontSize: '12px', fontFamily: 'monospace', color: '#ffffff',
+          }).setOrigin(0.5)
+        }
+      } else if (enc.archetype) {
+        this.add.text(width / 2, 110, enc.archetype, {
+          fontSize: '16px', fontFamily: 'monospace', color: '#b18bd6',
+        }).setOrigin(0.5)
+      }
+
+      // Watchpoint
+      this.add.text(width / 2, 180, `"${enc.watchpoint}"`, {
+        fontSize: '12px', fontFamily: 'monospace', color: '#f4d06f',
+        fontStyle: 'italic', wordWrap: { width: 500 }, align: 'center',
+      }).setOrigin(0.5)
+
+      // Best tools
+      const correctNames = enc.correctTools.map(id => TOOLS[id]?.name || id).join(', ')
+      this.add.text(width / 2, 230, `Best tools: ${correctNames}`, {
+        fontSize: '11px', fontFamily: 'monospace', color: '#8b95a5',
+      }).setOrigin(0.5)
+
+      // Turn count + rating
+      const turns = this.state.turnCount + 1
+      const stars = turns <= 2 ? 3 : turns <= 4 ? 2 : 1
+      this.add.text(width / 2, 260, `Resolved in ${turns} turns  ${'★'.repeat(stars)}${'☆'.repeat(3 - stars)}`, {
+        fontSize: '11px', fontFamily: 'monospace', color: '#f4d06f',
+      }).setOrigin(0.5)
+
+      // New tools earned (if first defeat). Surfaced so the player notices
+      // the kit growing — exitBattle() does the actual unlock.
+      const earned = enc.unlocksOnDefeat ?? []
+      const previouslyHad = new Set(getState().tools)
+      const newlyEarned = earned.filter(id => !previouslyHad.has(id))
+      if (newlyEarned.length > 0) {
+        const names = newlyEarned.map(id => TOOLS[id]?.name || id).join(', ')
+        this.add.text(width / 2, 285, `New tool unlocked: ${names}`, {
+          fontSize: '11px', fontFamily: 'monospace', color: '#7ee2c1', fontStyle: 'bold',
+        }).setOrigin(0.5)
+      }
+
+      // Continue button
+      const btn = this.add.text(width / 2, 330, '[ CONTINUE ]', {
+        fontSize: '14px', fontFamily: 'monospace', color: '#7ee2c1',
+      }).setOrigin(0.5).setInteractive({ useHandCursor: true })
+      btn.on('pointerover', () => btn.setColor('#ffffff'))
+      btn.on('pointerout', () => btn.setColor('#7ee2c1'))
+      btn.on('pointerdown', () => this.exitBattle(true))
+
+      this.input.keyboard!.on('keydown-SPACE', () => this.exitBattle(true))
     })
   }
 
@@ -668,12 +746,40 @@ export class BattleScene extends Phaser.Scene {
     updateResources({ stress: +10 })
     saveGame()
 
-    showDefeatScreen(this, {
-      toolButtons: this.toolButtons,
-      messageText: this.messageText,
-      turnIndicator: this.turnIndicator,
-      portrait: this.portrait,
-      onRetry: () => {
+    this.toolButtons.forEach(c => c.setVisible(false))
+    this.messageText.setVisible(false)
+    this.turnIndicator.setVisible(false)
+
+    const { width, height } = this.scale
+
+    const overlay = this.add.rectangle(width / 2, height / 2, width, height, 0x0e1116, 0)
+    this.tweens.add({ targets: overlay, fillAlpha: 0.85, duration: 400 })
+
+    this.tweens.add({
+      targets: this.portrait,
+      scaleX: 2.5,
+      scaleY: 2.5,
+      alpha: 0.15,
+      duration: 800,
+      ease: 'Power2',
+    })
+
+    this.time.delayedCall(400, () => {
+      this.add.text(width / 2, height / 2 - 60, 'CLAIM LOST', {
+        fontSize: '28px', fontFamily: 'monospace', color: '#ef5b7b', fontStyle: 'bold',
+      }).setOrigin(0.5)
+
+      this.add.text(width / 2, height / 2 - 20, 'The denial stands. The patient gets a surprise bill.', {
+        fontSize: '12px', fontFamily: 'monospace', color: '#8b95a5',
+        wordWrap: { width: 400 }, align: 'center',
+      }).setOrigin(0.5)
+
+      const retryBtn = this.add.text(width / 2, height / 2 + 40, '[ RETRY ]', {
+        fontSize: '14px', fontFamily: 'monospace', color: '#f4d06f',
+      }).setOrigin(0.5).setInteractive({ useHandCursor: true })
+      retryBtn.on('pointerover', () => retryBtn.setColor('#ffffff'))
+      retryBtn.on('pointerout', () => retryBtn.setColor('#f4d06f'))
+      retryBtn.on('pointerdown', () => {
         this.scene.restart({
           encounterId: this.state.encounter.id,
           playerHp: this.state.playerMaxHp,
@@ -681,8 +787,14 @@ export class BattleScene extends Phaser.Scene {
           playerTools: this.state.playerTools,
           returnScene: this.state.returnScene,
         })
-      },
-      onExitToTitle: () => this.scene.start('Title'),
+      })
+
+      const exitBtn = this.add.text(width / 2, height / 2 + 80, '[ BACK TO TITLE ]', {
+        fontSize: '12px', fontFamily: 'monospace', color: '#5a6a7a',
+      }).setOrigin(0.5).setInteractive({ useHandCursor: true })
+      exitBtn.on('pointerover', () => exitBtn.setColor('#ffffff'))
+      exitBtn.on('pointerout', () => exitBtn.setColor('#5a6a7a'))
+      exitBtn.on('pointerdown', () => this.scene.start('Title'))
     })
   }
 
