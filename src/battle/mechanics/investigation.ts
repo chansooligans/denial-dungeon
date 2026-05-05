@@ -144,11 +144,15 @@ export class InvestigationController implements MechanicController {
     // Weakly-supported facts come in needing a Document pass.
     pick.supported = !pick.fact.weakOnReveal
     const isRelevant = pick.fact.relevance === 'relevant'
+    // Surface the revealed fact as a ClaimSheet annotation if one is
+    // authored — keeps evidence visible on the form, not just in the log.
+    const formEffects = pick.fact.onReveal ? [pick.fact.onReveal] : undefined
     return {
       damage: 0,
       super: isRelevant && pick.supported,
       message: `Revealed: ${pick.fact.label}` +
         (pick.fact.weakOnReveal ? '\n(weakly supported — needs Documentation.)' : ''),
+      formEffects,
     }
   }
 

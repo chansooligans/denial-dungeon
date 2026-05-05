@@ -81,23 +81,27 @@ export const ENCOUNTERS: Record<string, Encounter> = {
           id: 'ckd_history',
           label: 'Patient has chronic kidney disease, stage 3',
           relevance: 'relevant',
+          onReveal: { box: '21A', kind: 'note', value: 'CKD III' },
         },
         {
           id: 'lcd_creatinine',
           label: 'LCD requires creatinine > 2.5 mg/dL for coverage',
           relevance: 'relevant',
+          onReveal: { box: '24D-1', kind: 'note', value: 'LCD: creat > 2.5' },
         },
         {
           id: 'labs_recent',
           label: 'Labs from 3 months ago show creatinine 2.8',
           relevance: 'relevant',
           weakOnReveal: true,
+          onReveal: { box: '21A', kind: 'note', value: 'creat 2.8 (3mo old)' },
         },
         {
           id: 'symptoms_doc',
           label: 'Documented fatigue, edema, declining GFR',
           relevance: 'relevant',
           weakOnReveal: true,
+          onReveal: { box: '21A', kind: 'note', value: 'sx: fatigue, edema' },
         },
         {
           id: 'wrong_tuesday',
@@ -139,10 +143,13 @@ export const ENCOUNTERS: Record<string, Encounter> = {
     toolEffects: {
       // CDI Query is the canonical fix here — mod-25 stamped onto the
       // E&M line. Claim Scrubber catches the missing modifier; Resubmit
-      // takes the fixed claim out the door.
+      // takes the fixed claim out the door. Appeal escalates if the
+      // first pass didn't go.
       cdi_query:     [{ box: '24D-1', kind: 'stamp', value: '+25 mod' }],
       claim_scrubber:[{ box: '24D-1', kind: 'note',  value: 'NCCI checked' }],
       submit_837p:   [{ box: '24D-1', kind: 'check' }],
+      appeal_letter: [{ box: '24D-1', kind: 'stamp', value: 'APPEAL' }],
+      medical_policy:[{ box: '24D-1', kind: 'note',  value: 'NCCI policy ref' }],
     },
   },
   co_109: {
@@ -190,6 +197,8 @@ export const ENCOUNTERS: Record<string, Encounter> = {
       // Other tools land checks if used after the gate falls.
       submit_837p:    [{ box: '24D-1', kind: 'check' }],
       claim_scrubber: [{ box: '24D-1', kind: 'note', value: 'rescrubbed' }],
+      cdi_query:      [{ box: '21A',   kind: 'note', value: 'supporting docs' }],
+      appeal_letter:  [{ box: '24D-1', kind: 'stamp', value: 'APPEAL' }],
     },
   },
   oa_23: {
@@ -260,8 +269,10 @@ export const ENCOUNTERS: Record<string, Encounter> = {
     payerNote:
       'Filing limit 180 days from DOS. Current claim filed 195 days post-service — denial per Aetna provider manual §6.4.',
     toolEffects: {
-      submit_837p:  [{ box: '24A-1', kind: 'check' }],
-      appeal_letter:[{ box: '24A-1', kind: 'stamp', value: '+30d ext' }],
+      submit_837p:    [{ box: '24A-1', kind: 'check' }],
+      appeal_letter:  [{ box: '24A-1', kind: 'stamp', value: '+30d ext' }],
+      claim_scrubber: [{ box: '24A-1', kind: 'note',  value: 'expedited' }],
+      cdi_query:      [{ box: '21A',   kind: 'note',  value: 'amended note' }],
     },
   },
   boss_audit: {

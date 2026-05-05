@@ -392,9 +392,12 @@ export class BattleScene extends Phaser.Scene {
     // Tool effects: visible mutations on the ClaimSheet (e.g. CDI Query
     // stamping "+25 mod" into box 24D). Authored on the encounter so
     // each fight's actions are pedagogical, not generic.
-    const effects = this.state.encounter.toolEffects?.[actionKey]
-    if (effects && this.claimSheet) {
-      for (const eff of effects) {
+    if (this.claimSheet) {
+      const fixedEffects = this.state.encounter.toolEffects?.[actionKey] ?? []
+      // Plus runtime effects from the controller (e.g. Investigation
+      // reveals an evidence fact that has its own onReveal annotation).
+      const runtimeEffects = result.formEffects ?? []
+      for (const eff of [...fixedEffects, ...runtimeEffects]) {
         this.claimSheet.applyEffect(eff)
       }
     }
