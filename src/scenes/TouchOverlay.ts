@@ -1,113 +1,163 @@
-// TouchOverlay — virtual D-pad + interact button for mobile (and
-// keyboard-impaired desktop) play.
+// TouchOverlay — virtual D-pad + interact button for mobile play.
 //
-// Runs as a parallel scene. Each button dispatches synthetic
-// KeyboardEvent("keydown" / "keyup") to window so the underlying
-// scene's `cursors.left.isDown`-style checks behave exactly as if a
-// real key were held. No gameplay code in HospitalScene /
-// WaitingRoomScene needs to know touch exists.
+// Implementation: native DOM <button> elements, NOT Phaser GameObjects.
+// Why: Phaser queues pointer events to the next update tick, which on
+// mobile causes laggy / dropped touches and breaks transient activation
+// for things like fullscreen requests. Native DOM listeners run inside
+// the real touch event, so taps and holds register reliably.
 //
-// Always visible: harmless on desktop, essential on mobile.
+// Each button dispatches synthetic KeyboardEvent("keydown" / "keyup")
+// to window so the underlying scene's `cursors.left.isDown`-style
+// checks behave exactly as if a real key were held.
 
 import Phaser from 'phaser'
 import { addFullscreenButton } from './fullscreenButton'
 
-interface Btn {
-  /** Container holding the button graphics (for hover/press effects). */
-  container: Phaser.GameObjects.Container
-  /** Currently held? (so we don't fire repeated keydowns). */
-  held: boolean
-  /** KeyboardEvent .key value to dispatch. */
+const ROOT_ID = 'touch-overlay-root'
+
+interface BtnSpec {
+  label: string
   key: string
-  /** KeyboardEvent .code value (useful for arrow keys). */
   code: string
+  className: string
+  hold: boolean
+}
+
+const BUTTONS: BtnSpec[] = [
+  { label: '▲', key: 'ArrowUp',    code: 'ArrowUp',    className: 'tc-up',    hold: true  },
+  { label: '▼', key: 'ArrowDown',  code: 'ArrowDown',  className: 'tc-down',  hold: true  },
+  { label: '◀', key: 'ArrowLeft',  code: 'ArrowLeft',  className: 'tc-left',  hold: true  },
+  { label: '▶', key: 'ArrowRight', code: 'ArrowRight', className: 'tc-right', hold: true  },
+  { label: 'E', key: 'e',          code: 'KeyE',       className: 'tc-e',     hold: false },
+  { label: 'ESC', key: 'Escape',   code: 'Escape',     className: 'tc-esc',   hold: false },
+]
+
+// Tracks live keys per button so we can synthesize keyup if the button
+// is removed mid-press (e.g. on scene shutdown).
+const heldKeys = new Map<string, BtnSpec>()
+
+function fireKey(type: 'keydown' | 'keyup', spec: BtnSpec) {
+  window.dispatchEvent(new KeyboardEvent(type, {
+    key: spec.key, code: spec.code, bubbles: true,
+  }))
+}
+
+function ensureStyles() {
+  if (document.getElementById('touch-overlay-styles')) return
+  const style = document.createElement('style')
+  style.id = 'touch-overlay-styles'
+  style.textContent = `
+    #${ROOT_ID} {
+      position: fixed; inset: 0; pointer-events: none; z-index: 9000;
+      font-family: monospace;
+    }
+    #${ROOT_ID} button {
+      position: fixed; pointer-events: auto;
+      background: rgba(14,17,22,0.55);
+      color: #7ee2c1; border: 1px solid rgba(58,74,93,0.9);
+      font: bold 18px monospace; line-height: 1;
+      cursor: pointer; user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    #${ROOT_ID} button:active { background: rgba(31,42,54,0.85); }
+    #${ROOT_ID} .tc-dpad-btn {
+      width: 56px; height: 56px; border-radius: 50%;
+    }
+    #${ROOT_ID} .tc-up    { left: 62px;  bottom: 146px; }
+    #${ROOT_ID} .tc-down  { left: 62px;  bottom: 34px;  }
+    #${ROOT_ID} .tc-left  { left: 6px;   bottom: 90px;  }
+    #${ROOT_ID} .tc-right { left: 118px; bottom: 90px;  }
+    #${ROOT_ID} .tc-e {
+      right: 16px; bottom: 64px;
+      width: 108px; height: 108px; border-radius: 50%;
+      font-size: 32px;
+    }
+    #${ROOT_ID} .tc-esc {
+      right: 16px; top: 12px;
+      padding: 6px 10px; font-size: 14px;
+      color: #3a4a5d; border-radius: 4px;
+      background: rgba(14,17,22,0.8);
+    }
+  `
+  document.head.appendChild(style)
+}
+
+function mountRoot(): HTMLDivElement {
+  let root = document.getElementById(ROOT_ID) as HTMLDivElement | null
+  if (root) return root
+  ensureStyles()
+  root = document.createElement('div')
+  root.id = ROOT_ID
+  document.body.appendChild(root)
+  return root
+}
+
+function makeButton(spec: BtnSpec): HTMLButtonElement {
+  const btn = document.createElement('button')
+  btn.type = 'button'
+  btn.textContent = spec.label
+  btn.setAttribute('aria-label', spec.label)
+  btn.className = spec.className + (spec.hold ? ' tc-dpad-btn' : '')
+
+  if (spec.hold) {
+    const press = (e: Event) => {
+      e.preventDefault()
+      if (heldKeys.has(spec.code)) return
+      heldKeys.set(spec.code, spec)
+      fireKey('keydown', spec)
+    }
+    const release = (e: Event) => {
+      e.preventDefault()
+      if (!heldKeys.has(spec.code)) return
+      heldKeys.delete(spec.code)
+      fireKey('keyup', spec)
+    }
+    btn.addEventListener('pointerdown', press)
+    btn.addEventListener('pointerup', release)
+    btn.addEventListener('pointercancel', release)
+    btn.addEventListener('pointerleave', release)
+  } else {
+    // Tap-style: fire a synthetic keydown immediately followed by keyup
+    // on a real click, so SpaceBar-/Escape-/E-style listeners that check
+    // `keydown-X` events fire once.
+    btn.addEventListener('click', (e) => {
+      e.preventDefault()
+      fireKey('keydown', spec)
+      fireKey('keyup', spec)
+    })
+  }
+
+  return btn
 }
 
 export class TouchOverlay extends Phaser.Scene {
-  private buttons: Btn[] = []
+  private buttons: HTMLButtonElement[] = []
 
   constructor() {
     super('TouchOverlay')
   }
 
   create() {
-    this.buttons = []
-    const { width, height } = this.scale
+    const root = mountRoot()
+    this.buttons = BUTTONS.map(spec => {
+      const btn = makeButton(spec)
+      root.appendChild(btn)
+      return btn
+    })
 
-    // Bottom-left D-pad cluster
-    const padCx = 90
-    const padCy = height - 90
-    const r = 28
-    this.makeButton(padCx,        padCy - r * 2, '▲', 'ArrowUp',    'ArrowUp')
-    this.makeButton(padCx,        padCy + r * 2, '▼', 'ArrowDown',  'ArrowDown')
-    this.makeButton(padCx - r * 2, padCy,        '◀', 'ArrowLeft',  'ArrowLeft')
-    this.makeButton(padCx + r * 2, padCy,        '▶', 'ArrowRight', 'ArrowRight')
-
-    // Bottom-right primary action: interact / advance / engage (= 'E')
-    this.makeButton(width - 70, height - 90, 'E',   'e',      'KeyE',     54)
-
-    // Top-right secondary action: ESC (skip intro / flee / back to menu)
-    this.makeButton(width - 40, 40, 'ESC', 'Escape', 'Escape', 28, '#3a4a5d')
-
-    // Top-left: fullscreen toggle
     addFullscreenButton(this)
 
-    // Release any held buttons if focus is lost (avoids stuck movement).
-    this.scale.on('resize', () => this.releaseAll())
-    this.input.on('gameout', () => this.releaseAll())
+    this.events.once('shutdown', () => this.teardown())
+    this.events.once('destroy', () => this.teardown())
   }
 
-  private makeButton(
-    x: number, y: number, label: string,
-    key: string, code: string,
-    radius = 28, color: string = '#7ee2c1',
-  ) {
-    const container = this.add.container(x, y)
-
-    const bg = this.add.circle(0, 0, radius, 0x0e1116, 0.55)
-      .setStrokeStyle(1, 0x3a4a5d, 0.9)
-      .setInteractive({ useHandCursor: true })
-    const text = this.add.text(0, 0, label, {
-      fontSize: radius >= 28 ? '16px' : '11px',
-      fontFamily: 'monospace',
-      color,
-      fontStyle: 'bold',
-    }).setOrigin(0.5)
-
-    container.add([bg, text])
-    container.setScrollFactor(0).setDepth(1000)
-
-    const btn: Btn = { container, held: false, key, code }
-
-    const press = () => {
-      if (btn.held) return
-      btn.held = true
-      bg.setFillStyle(0x1f2a36, 0.85)
-      window.dispatchEvent(new KeyboardEvent('keydown', { key, code, bubbles: true }))
-    }
-    const release = () => {
-      if (!btn.held) return
-      btn.held = false
-      bg.setFillStyle(0x0e1116, 0.55)
-      window.dispatchEvent(new KeyboardEvent('keyup', { key, code, bubbles: true }))
-    }
-
-    bg.on('pointerdown', press)
-    bg.on('pointerup', release)
-    bg.on('pointerout', release)
-    bg.on('pointerupoutside', release)
-
-    this.buttons.push(btn)
-  }
-
-  /** Force-release every button. Used on focus loss / resize. */
-  private releaseAll() {
-    for (const btn of this.buttons) {
-      if (!btn.held) continue
-      btn.held = false
-      window.dispatchEvent(
-        new KeyboardEvent('keyup', { key: btn.key, code: btn.code, bubbles: true }),
-      )
-    }
+  private teardown() {
+    // Synthesize keyup for any keys still held so the underlying scene
+    // doesn't get a stuck-direction bug.
+    for (const spec of heldKeys.values()) fireKey('keyup', spec)
+    heldKeys.clear()
+    for (const btn of this.buttons) btn.remove()
+    this.buttons = []
   }
 }
