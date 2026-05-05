@@ -109,7 +109,7 @@ export const LEVELS: LevelDef[] = [
     waitingRoomDescription: 'A room of mirrors. Every shortcut reflects back at you.',
     concepts: ['audit', 'compliance', 'upcoding', 'documentation'],
     encounters: ['boss_audit'],
-    cases: [],
+    cases: ['case_audit_finale'],
     npcsActive: ['dana', 'martinez', 'pat', 'sam'],
     bossEncounter: 'boss_audit',
   },

@@ -409,9 +409,27 @@ export const ENCOUNTERS: Record<string, Encounter> = {
     attackDamage: 20,
     carcCode: 'AUDIT',
     carcName: 'Quarterly Payer Audit',
-    watchpoint: 'Audit risk is not abstract; it is a real expense.',
+    watchpoint: 'Audit risk is not abstract; it is a real expense. Every shortcut taken in earlier levels comes due here.',
     correctTools: ['cdi_query', 'claim_scrubber', 'medical_policy'],
     level: 10,
+    archetype: 'The Quarterly Audit',
+    wing: 'miracles',
+    mechanic: 'audit',
+    cashRecovered: 8400,
+    caseId: 'case_audit_finale',
+    highlightedBoxes: ['67', '80'],
+    payerNote:
+      'Pre-payment audit per UHC commercial CMP.AUD.402. Documentation required for all inpatient stays > $5K within review window. Append rendering provider attestation, complete H&P, and discharge summary; verify principal dx supports DRG assignment.',
+    toolEffects: {
+      cdi_query:      [{ box: '67', kind: 'note',  value: 'attestation on file' }],
+      medical_policy: [{ box: '80', kind: 'note',  value: 'CMP.AUD.402 reviewed' }],
+      claim_scrubber: [{ box: '80', kind: 'check' }],
+      submit_837i:    [{ box: '80', kind: 'check' }],
+      appeal_letter:  [{ box: '80', kind: 'stamp', value: 'APPEAL' }],
+      // Shadow tools land a "RECEIPT" stamp — visual reminder of the heal.
+      upcode:                 [{ box: '67', kind: 'stamp', value: 'RECEIPT' }],
+      aggressive_collections: [{ box: '67', kind: 'stamp', value: 'RECEIPT' }],
+    },
   },
 }
 

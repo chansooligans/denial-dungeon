@@ -328,6 +328,89 @@ export const CASES: Record<string, PatientCase> = {
     },
   },
 
+  // Linked to encounter `boss_audit` (The Quarterly Audit, L10 finale).
+  case_audit_finale: {
+    id: 'case_audit_finale',
+    patientName: 'Margaret Holloway',
+    age: 74,
+    insurance: 'United Healthcare Medicare Advantage',
+    diagnosis: 'Sepsis due to MSSA, with severe sepsis',
+    diagnosisCode: 'A41.01',
+    procedure: 'Inpatient stay, 5 days, ICU step-down',
+    procedureCode: '99232',
+    revenueCode: '0200',
+    formType: 'ub04',
+    level: 10,
+    // The flagged file: principal dx originally posted as A41.9 (sepsis,
+    // unspecified) which underspecifies the organism, weakens the DRG
+    // assignment, and leaves the file vulnerable on review. CDI clarified
+    // the organism as MSSA (A41.01) and added severity coding (R65.20)
+    // — a more defensible DRG and a cleaner audit. The DRG box was also
+    // mis-stated as 871 (no MCC) when the documented severity supports
+    // 870 (with MCC).
+    errors: [
+      {
+        field: 'Principal Diagnosis',
+        currentValue: 'A41.9',
+        correctValue: 'A41.01',
+        explanation: 'A41.9 is sepsis, unspecified — too vague for a defensible audit. Cultures grew MSSA on day 1; A41.01 (sepsis due to methicillin-susceptible Staph aureus) is the documented and defensible code. Specific dx survives review.',
+      },
+      {
+        field: 'DRG',
+        currentValue: '871 (Septicemia w/o MCC)',
+        correctValue: '870 (Septicemia w/ MCC)',
+        explanation: 'Documented hypotension, lactate > 4, and ICU step-down support severity coding R65.20 (severe sepsis), which lifts the DRG from 871 to 870. Auditor will compare clinical evidence against assigned DRG — match them.',
+      },
+    ],
+    claim: {
+      type: 'ub04',
+      claimId: 'CLM-2026-04-30-99102',
+      typeOfBill: '111',
+      patient: { name: 'HOLLOWAY, MARGARET', dob: '1951-08-14', sex: 'F' },
+      insured: { id: 'UHC-MA-7740921', name: 'HOLLOWAY, MARGARET', group: 'AARP-MA-001' },
+      statementPeriod: { from: '2026-04-25', through: '2026-04-30' },
+      admissionType: 'EMG',
+      diagnoses: [
+        { code: 'A41.01', label: 'Sepsis due to MSSA' },
+        { code: 'R65.20', label: 'Severe sepsis without septic shock' },
+        { code: 'J18.9',  label: 'Pneumonia, unspecified' },
+        { code: 'I10',    label: 'Essential hypertension' },
+      ],
+      serviceLines: [
+        {
+          revCode: '0200',
+          description: 'ICU step-down',
+          serviceDate: '2026-04-25',
+          units: '2',
+          totalCharges: '$18,200.00',
+        },
+        {
+          revCode: '0110',
+          description: 'Med/Surg, room & board',
+          serviceDate: '2026-04-27',
+          units: '3',
+          totalCharges: '$11,700.00',
+        },
+        {
+          revCode: '0250',
+          description: 'Pharmacy — IV antibiotics',
+          serviceDate: '2026-04-25',
+          units: '20',
+          totalCharges: '$3,940.00',
+        },
+        {
+          revCode: '0301',
+          description: 'Lab — chemistry / cultures',
+          serviceDate: '2026-04-25',
+          units: '14',
+          totalCharges: '$2,180.00',
+        },
+      ],
+      attendingProvider: { name: 'Dr. R. Okafor, MD', npi: '1495802377' },
+      drg: '870 (Septicemia w/ MCC)',
+    },
+  },
+
   // Linked to encounter `co_16_swarm` (Documentation Sprite Swarm).
   case_swarm_yamada: {
     id: 'case_swarm_yamada',
