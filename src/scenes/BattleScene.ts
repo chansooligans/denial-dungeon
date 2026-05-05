@@ -250,10 +250,15 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private buildMessageArea(width: number, height: number) {
+    // Depth 50 puts this above the ClaimSheet (40) so Investigation
+    // result strings ("Revealed: …", "Documented: …") are visible
+    // overlaying the form. Battle end-screens (depth 200+) still cover it.
     this.messageText = this.add.text(width / 2, height / 2 - 10, '', {
       fontSize: '13px', fontFamily: 'monospace', color: '#d0d8e0',
+      backgroundColor: '#0e1116cc',
+      padding: { x: 8, y: 4 },
       wordWrap: { width: 600 }, align: 'center',
-    }).setOrigin(0.5)
+    }).setOrigin(0.5).setDepth(50)
   }
 
   /**
@@ -298,7 +303,7 @@ export class BattleScene extends Phaser.Scene {
     this.setToolButtonsVisible(false)
 
     const result = this.mechanic.applyPlayerTurn(actionId)
-    this.applyTurnResult(result, actionId)
+    this.applyTurnResult(result, actionId, actionId)
   }
 
   private useToolAction(tool: Tool) {
@@ -315,14 +320,21 @@ export class BattleScene extends Phaser.Scene {
     }
 
     const result = this.mechanic.applyPlayerTurn(tool.id)
-    this.applyTurnResult(result, tool.name)
+    this.applyTurnResult(result, tool.name, tool.id)
   }
 
   /**
    * Common post-turn handling for both tool and custom-action paths.
    * Updates HP, plays effects, checks win/lose, schedules enemy turn.
+   *
+   * `actionKey` is the lookup id used to resolve `encounter.toolEffects`
+   * (tool id or mechanic action id, depending on which path called us).
    */
-  private applyTurnResult(result: import('../battle/types').PlayerTurnResult, actionLabel: string) {
+  private applyTurnResult(
+    result: import('../battle/types').PlayerTurnResult,
+    actionLabel: string,
+    actionKey: string,
+  ) {
     if (result.missed) {
       this.showMessage(result.message ?? `${actionLabel} missed!`)
       this.time.delayedCall(1000, () => this.enemyTurn())
@@ -351,6 +363,16 @@ export class BattleScene extends Phaser.Scene {
     }
 
     this.showMessage(result.message ?? `${actionLabel}.`)
+
+    // Tool effects: visible mutations on the ClaimSheet (e.g. CDI Query
+    // stamping "+25 mod" into box 24D). Authored on the encounter so
+    // each fight's actions are pedagogical, not generic.
+    const effects = this.state.encounter.toolEffects?.[actionKey]
+    if (effects && this.claimSheet) {
+      for (const eff of effects) {
+        this.claimSheet.applyEffect(eff)
+      }
+    }
 
     // Mechanic-driven loss (Investigation: bad Decide / out-of-time)
     // takes precedence over a normal victory or enemy turn.

@@ -19,7 +19,7 @@
 //  └──────────────────────────────────────────────────────────────────┘
 
 import Phaser from 'phaser'
-import type { ClaimSheetData, ServiceLine } from '../types'
+import type { ClaimSheetData, ServiceLine, ToolEffect } from '../types'
 
 export interface ClaimSheetOptions {
   /** Box ids (e.g. '21A', '24D-1', '24A-2') that should render disputed. */
@@ -43,9 +43,20 @@ const PALETTE = {
   payerNote: '#f4d06f',
 }
 
+/** Position+size of a single rendered box, used by applyEffect. */
+interface BoxBounds {
+  /** Local-space rectangle inside this Container. */
+  x: number
+  y: number
+  w: number
+  h: number
+}
+
 export class ClaimSheet extends Phaser.GameObjects.Container {
   private opts: Required<ClaimSheetOptions>
   private highlighted: Set<string>
+  /** Per-box bounds keyed by box id ('21A', '24D-1', …). Populated during draw(). */
+  private boxBounds = new Map<string, BoxBounds>()
 
   constructor(
     scene: Phaser.Scene,
@@ -169,6 +180,7 @@ export class ClaimSheet extends Phaser.GameObjects.Container {
         fontSize: '11px', fontFamily: 'monospace',
         color: isHot ? '#ffd2da' : PALETTE.value,
       }).setOrigin(0, 0))
+      this.boxBounds.set(cell.box, { x: xCursor, y, w: cw, h: rowH })
       xCursor += innerW * cell.w + 2
     }
     return y + rowH + 2
@@ -230,8 +242,82 @@ export class ClaimSheet extends Phaser.GameObjects.Container {
         fontSize: '10px', fontFamily: 'monospace',
         color: isHot ? '#ffd2da' : PALETTE.value,
       }).setOrigin(0, 0))
+      // Last cell wins for box-id collisions (e.g. CPT and Mod both
+      // map to 24D-{n}); that's fine — applyEffect on 24D-1 lands on
+      // the modifier cell, which is what most effects target.
+      this.boxBounds.set(c.box, { x: xCursor, y, w: cw, h: rowH })
       xCursor += cw
     }
     return y + rowH + 1
+  }
+
+  // ---------------------------------------------------------------------
+  // Public mutation: apply a tool/action effect to a specific box. Called
+  // from BattleScene after a successful turn so the player sees the form
+  // change in response. Animates the new annotation in over ~250ms.
+  // ---------------------------------------------------------------------
+  applyEffect(effect: ToolEffect) {
+    const bounds = this.boxBounds.get(effect.box)
+    if (!bounds) {
+      // Unknown box id — author-time mistake; render-side no-op.
+      return
+    }
+    switch (effect.kind) {
+      case 'stamp':
+        this.spawnStamp(bounds, effect.value ?? '✓')
+        break
+      case 'check':
+        this.spawnCheck(bounds)
+        break
+      case 'note':
+        this.spawnNote(bounds, effect.value ?? '')
+        break
+    }
+  }
+
+  /** Diagonal red text overlapping the box (e.g. "+25 mod"). */
+  private spawnStamp(b: BoxBounds, value: string) {
+    const cx = b.x + b.w * 0.55
+    const cy = b.y + b.h / 2
+    const stamp = this.scene.add.text(cx, cy, value, {
+      fontSize: '13px', fontFamily: 'monospace',
+      color: '#ef5b7b', fontStyle: 'bold',
+    }).setOrigin(0.5).setAngle(-12).setAlpha(0).setScale(1.4)
+    this.add(stamp)
+    this.scene.tweens.add({
+      targets: stamp,
+      alpha: 1, scale: 1,
+      duration: 280, ease: 'Back.easeOut',
+    })
+  }
+
+  /** Green ✓ at the right edge of the box. */
+  private spawnCheck(b: BoxBounds) {
+    const cx = b.x + b.w - 10
+    const cy = b.y + b.h / 2
+    const check = this.scene.add.text(cx, cy, '✓', {
+      fontSize: '14px', fontFamily: 'monospace',
+      color: '#6cd49a', fontStyle: 'bold',
+    }).setOrigin(0.5).setAlpha(0).setScale(0.5)
+    this.add(check)
+    this.scene.tweens.add({
+      targets: check,
+      alpha: 1, scale: 1,
+      duration: 240, ease: 'Back.easeOut',
+    })
+  }
+
+  /** Yellow annotation under the box (e.g. "LCD reviewed"). */
+  private spawnNote(b: BoxBounds, value: string) {
+    const note = this.scene.add.text(b.x + 4, b.y + b.h + 1, value, {
+      fontSize: '8px', fontFamily: 'monospace',
+      color: '#f4d06f', fontStyle: 'italic',
+    }).setOrigin(0, 0).setAlpha(0)
+    this.add(note)
+    this.scene.tweens.add({
+      targets: note,
+      alpha: 1,
+      duration: 240, ease: 'Sine.easeOut',
+    })
   }
 }

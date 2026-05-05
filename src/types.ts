@@ -148,6 +148,33 @@ export interface Encounter {
    * letter. Rendered beneath the claim form during the fight.
    */
   payerNote?: string
+  /**
+   * Per-tool / per-action visual effects on the ClaimSheet. Keys are
+   * tool ids (Simple/Timed) or mechanic action ids (Investigation:
+   * 'investigate' | 'lookup' | 'document' | 'decide').
+   *
+   * Example:
+   *   toolEffects: { cdi_query: [{ box: '24D-1', kind: 'stamp', value: '+25 mod' }] }
+   *
+   * BattleScene calls ClaimSheet.applyEffect(effect) after a successful
+   * action, so the player sees the form change in response to what they
+   * did.
+   */
+  toolEffects?: Record<string, ToolEffect[]>
+}
+
+/** A visible mutation applied to a CMS-1500 field during battle. */
+export interface ToolEffect {
+  /** Box id matching ClaimSheet conventions, e.g. '24D-1'. */
+  box: string
+  /**
+   * 'stamp' — adds short red text overlapping the field (e.g. '+25 mod').
+   * 'check' — adds a green ✓ near the field.
+   * 'note'  — adds a small yellow annotation under the field (e.g. 'LCD reviewed').
+   */
+  kind: 'stamp' | 'check' | 'note'
+  /** Value text for stamp / note. Ignored for check. */
+  value?: string
 }
 
 export interface CaseFact {
