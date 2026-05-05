@@ -66,6 +66,13 @@ export const ENCOUNTERS: Record<string, Encounter> = {
     highlightedBoxes: ['21A', '24D-1'],
     payerNote:
       'TTE 93306 not medically necessary for I50.9 (heart failure, unspecified) without supporting evidence of LVEF<35% per LCD L33526.',
+    toolEffects: {
+      // Investigation actions visibly annotate the form as the player
+      // assembles evidence. Mirrors the case-file fact-finding loop.
+      lookup:   [{ box: '24D-1', kind: 'note', value: 'LCD L33526 reviewed' }],
+      document: [{ box: '21A',   kind: 'check' }],
+      decide:   [{ box: '24D-1', kind: 'stamp', value: 'APPEAL' }],
+    },
     caseFile: {
       threshold: 3,
       intro: 'From the chart and the LCD:',
@@ -129,6 +136,14 @@ export const ENCOUNTERS: Record<string, Encounter> = {
     highlightedBoxes: ['24D-1'],
     payerNote:
       'CPT 99214 bundled into 11102 per NCCI edit. Append modifier -25 to the E&M to indicate a significant, separately identifiable service.',
+    toolEffects: {
+      // CDI Query is the canonical fix here — mod-25 stamped onto the
+      // E&M line. Claim Scrubber catches the missing modifier; Resubmit
+      // takes the fixed claim out the door.
+      cdi_query:     [{ box: '24D-1', kind: 'stamp', value: '+25 mod' }],
+      claim_scrubber:[{ box: '24D-1', kind: 'note',  value: 'NCCI checked' }],
+      submit_837p:   [{ box: '24D-1', kind: 'check' }],
+    },
   },
   co_109: {
     id: 'co_109',
@@ -227,6 +242,10 @@ export const ENCOUNTERS: Record<string, Encounter> = {
     highlightedBoxes: ['24A-1'],
     payerNote:
       'Filing limit 180 days from DOS. Current claim filed 195 days post-service — denial per Aetna provider manual §6.4.',
+    toolEffects: {
+      submit_837p:  [{ box: '24A-1', kind: 'check' }],
+      appeal_letter:[{ box: '24A-1', kind: 'stamp', value: '+30d ext' }],
+    },
   },
   boss_audit: {
     id: 'boss_audit',
