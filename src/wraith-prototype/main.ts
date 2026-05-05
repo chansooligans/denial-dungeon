@@ -205,6 +205,8 @@ interface SelectionState {
 
 const state = {
   briefingDone: false,
+  /** Modal open state for re-reading the briefing after dismissal. */
+  briefingOpen: false,
   selection: { payerId: null, chartId: null, lcdId: null } as SelectionState,
   resolvedIssues: new Set<string>(),
   citationCount: 0,
@@ -236,11 +238,13 @@ function term(termId: string, displayText?: string): string {
 }
 
 function render(): string {
-  if (state.packetSubmitted) return renderVictory() + renderTermPopover()
+  if (state.packetSubmitted) {
+    return renderVictory() + renderTermPopover() + renderBriefingPopover()
+  }
   return `
     ${renderHeader()}
     ${renderHospitalIntro()}
-    ${!state.briefingDone ? renderBriefing() : `
+    ${!state.briefingDone ? renderBriefingInline() : `
       ${renderClaim()}
       ${renderWorkbench()}
       ${renderCitationBuilder()}
@@ -249,15 +253,22 @@ function render(): string {
     `}
     ${renderDesignNotes()}
     ${renderTermPopover()}
+    ${renderBriefingPopover()}
   `
 }
 
 function renderHeader(): string {
+  const recallBtn = state.briefingDone
+    ? `<button class="recall-btn" data-action="show-briefing">📜 Dana's note</button>`
+    : ''
   return `
     <header class="page-h">
       <div class="title-row">
         <h1>Wraith <span class="muted">@ L4 — first-sketch prototype</span></h1>
-        <a class="back-link" href="./">← back to game</a>
+        <div class="header-actions">
+          ${recallBtn}
+          <a class="back-link" href="./">← back to game</a>
+        </div>
       </div>
       <p class="lede">
         A redesign sketch of the Medical Necessity Wraith encounter
@@ -298,60 +309,79 @@ function renderHospitalIntro(): string {
   `
 }
 
-function renderBriefing(): string {
+function briefingContent(): string {
+  return `
+    <div class="briefing-h">
+      <span class="briefing-tag">DANA, IN YOUR EAR</span>
+      <span class="briefing-sub">${state.briefingDone ? 'Re-reading her note.' : 'First time, so listen up.'}</span>
+    </div>
+    <div class="briefing-body">
+      <p>
+        "Walker's claim got denied. Insurance said it wasn't
+        medically necessary. Your job is to <strong>argue
+        back</strong> — make the case that they should pay
+        anyway."
+      </p>
+      <p>"There are three places you can argue from:"</p>
+      <ul>
+        <li>
+          <strong>The denial letter.</strong> What the insurance
+          company specifically said when they refused.
+        </li>
+        <li>
+          <strong>The patient's chart.</strong> What the doctor
+          actually wrote — symptoms, lab results, history.
+        </li>
+        <li>
+          <strong>The insurance company's own policy</strong>
+          (called an ${term('LCD')}). Their public rules for
+          when they cover this kind of test.
+        </li>
+      </ul>
+      <p>
+        "Pick one piece from each. Connect them so the chart
+        fact + the policy clause answer the insurance company's
+        specific complaint. That's <strong>one citation</strong>.
+        You need three valid citations to build a complete
+        defense packet."
+      </p>
+      <p>
+        "Some chart facts won't help. They'll be true but not
+        relevant. The builder will tell you why. There's no
+        penalty for trying — it's how you learn the shape of
+        the policy."
+      </p>
+      <p>
+        "Click any underlined term for a plain-English
+        explanation. There's a lot of jargon in this work; I
+        got tired of pretending it's intuitive."
+      </p>
+      <p class="briefing-sign">"Don't be most people. — D."</p>
+    </div>
+  `
+}
+
+function renderBriefingInline(): string {
   return `
     <section class="briefing">
-      <div class="briefing-h">
-        <span class="briefing-tag">DANA, IN YOUR EAR</span>
-        <span class="briefing-sub">First time, so listen up.</span>
-      </div>
-      <div class="briefing-body">
-        <p>
-          "Walker's claim got denied. Insurance said it wasn't
-          medically necessary. Your job is to <strong>argue
-          back</strong> — make the case that they should pay
-          anyway."
-        </p>
-        <p>"There are three places you can argue from:"</p>
-        <ul>
-          <li>
-            <strong>The denial letter.</strong> What the insurance
-            company specifically said when they refused.
-          </li>
-          <li>
-            <strong>The patient's chart.</strong> What the doctor
-            actually wrote — symptoms, lab results, history.
-          </li>
-          <li>
-            <strong>The insurance company's own policy</strong>
-            (called an ${term('LCD')}). Their public rules for
-            when they cover this kind of test.
-          </li>
-        </ul>
-        <p>
-          "Pick one piece from each. Connect them so the chart
-          fact + the policy clause answer the insurance company's
-          specific complaint. That's <strong>one citation</strong>.
-          You need three valid citations to build a complete
-          defense packet."
-        </p>
-        <p>
-          "Some chart facts won't help. They'll be true but not
-          relevant. The builder will tell you why. There's no
-          penalty for trying — it's how you learn the shape of
-          the policy."
-        </p>
-        <p>
-          "Click any underlined term for a plain-English
-          explanation. There's a lot of jargon in this work; I
-          got tired of pretending it's intuitive."
-        </p>
-        <p class="briefing-sign">"Don't be most people. — D."</p>
-      </div>
+      ${briefingContent()}
       <button class="btn primary" data-action="dismiss-briefing">
         Got it — start the encounter
       </button>
     </section>
+  `
+}
+
+function renderBriefingPopover(): string {
+  if (!state.briefingOpen) return ''
+  return `
+    <div class="briefing-popover-backdrop" data-action="close-briefing">
+      <div class="briefing-popover" onclick="event.stopPropagation()">
+        <button class="briefing-popover-close" data-action="close-briefing" aria-label="Close">×</button>
+        ${briefingContent()}
+        <button class="btn ghost" data-action="close-briefing">Back to the encounter</button>
+      </div>
+    </div>
   `
 }
 
@@ -724,6 +754,15 @@ function reset() {
 
 function dismissBriefing() {
   state.briefingDone = true
+  state.briefingOpen = false
+}
+
+function showBriefing() {
+  state.briefingOpen = true
+}
+
+function closeBriefing() {
+  state.briefingOpen = false
 }
 
 function openTerm(termId: string) {
@@ -770,6 +809,12 @@ function handleClick(e: MouseEvent) {
       break
     case 'dismiss-briefing':
       dismissBriefing()
+      break
+    case 'show-briefing':
+      showBriefing()
+      break
+    case 'close-briefing':
+      closeBriefing()
       break
     case 'open-term':
       if (el.dataset.term) openTerm(el.dataset.term)
@@ -839,10 +884,21 @@ const css = `
   em { font-style: italic; }
 
   .page-h { margin-bottom: 22px; }
-  .title-row { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+  .title-row { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .header-actions { display: flex; align-items: baseline; gap: 14px; }
   .lede { color: var(--ink-dim); margin: 6px 0 0; max-width: 800px; }
   .muted { color: var(--ink-dim); font-weight: 400; font-size: 16px; }
   .back-link { font-size: 13px; }
+  .recall-btn {
+    font: inherit; font-size: 12px;
+    background: rgba(240, 168, 104, 0.1);
+    color: var(--accent-2);
+    border: 1px solid #4a3a2a;
+    padding: 5px 12px; border-radius: 14px;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+  }
+  .recall-btn:hover { background: rgba(240, 168, 104, 0.2); border-color: var(--accent-2); }
 
   .hospital-intro { background: var(--panel); border: 1px solid #232a36; border-radius: 8px; padding: 18px 22px; margin-bottom: 22px; }
   .hospital-intro p { margin: 8px 0; }
@@ -868,6 +924,34 @@ const css = `
   .briefing-body ul { margin: 10px 0; padding-left: 22px; }
   .briefing-body li { margin: 6px 0; }
   .briefing-sign { color: var(--ink-dim); font-style: italic; margin-top: 14px; }
+
+  /* Briefing popover (re-readable after dismissal) */
+  .briefing-popover-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(10, 13, 18, 0.7);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100;
+    padding: 20px;
+    overflow-y: auto;
+  }
+  .briefing-popover {
+    background: var(--panel);
+    border: 1px solid #4a3a2a; border-left-width: 4px;
+    border-radius: 8px;
+    padding: 24px 28px 20px; max-width: 640px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    position: relative;
+    background-image: linear-gradient(180deg, rgba(240, 168, 104, 0.06), transparent);
+    margin: auto;
+  }
+  .briefing-popover-close {
+    position: absolute; top: 8px; right: 12px;
+    background: transparent; border: none; color: var(--ink-dim);
+    font-size: 28px; cursor: pointer; line-height: 1;
+    padding: 4px 10px;
+  }
+  .briefing-popover-close:hover { color: var(--ink); }
+  .briefing-popover .btn.ghost { margin-top: 14px; }
 
   .term {
     color: var(--accent);
@@ -1067,9 +1151,11 @@ function mount() {
   rerender()
   document.body.addEventListener('click', handleClick)
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && state.openTermId) {
-      closeTerm()
-      rerender()
+    if (e.key === 'Escape') {
+      let changed = false
+      if (state.openTermId) { closeTerm(); changed = true }
+      if (state.briefingOpen) { closeBriefing(); changed = true }
+      if (changed) rerender()
     }
   })
 }
