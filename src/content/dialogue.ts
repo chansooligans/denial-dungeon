@@ -219,6 +219,15 @@ export const DIALOGUES: Record<string, DialogueNode> = {
     choices: [
       { text: "Can we win on appeal?", next: 'sam_appeal' },
       { text: "Can we prevent these upstream?", next: 'sam_prevent' },
+      { text: "What about timely filing?", next: 'sam_timely' },
+    ],
+  },
+  sam_timely: {
+    id: 'sam_timely',
+    speaker: 'Sam',
+    text: "Worst feeling in this job. The claim is meritorious, the documentation is perfect, and you missed the contractual deadline by three days. There is no appeal. Watch the clock — that's the whole game.",
+    choices: [
+      { text: "Show me one running short.", effect: { triggerBattle: 'co_29_reaper', unlockCodex: 'co_29_reaper' } },
     ],
   },
   sam_appeal: {

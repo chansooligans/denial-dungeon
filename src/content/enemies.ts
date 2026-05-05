@@ -188,6 +188,26 @@ export const ENCOUNTERS: Record<string, Encounter> = {
     correctTools: ['claim_scrubber'],
     level: 6,
   },
+  co_29_reaper: {
+    id: 'co_29_reaper',
+    title: 'Timely Filing Reaper',
+    description:
+      'A robed bureaucrat with an hourglass-blade. Each turn it sharpens. Time is the weapon, not the claim.',
+    surfaceSymptom: 'Claim approaches the timely filing deadline.',
+    rootCause: 'payer',
+    hp: 70,
+    attackDamage: 8, // base; escalates by +4 per day lost
+    carcCode: 'CO-29',
+    carcName: 'Timely filing limit expired',
+    watchpoint:
+      'Timely filing is contractual. Once the deadline passes, no appeal will recover the claim.',
+    correctTools: ['claim_scrubber', 'submit_837p'],
+    level: 7,
+    archetype: 'Timely Filing Reaper',
+    wing: 'appeals',
+    mechanic: 'timed',
+    cashRecovered: 1400,
+  },
   boss_audit: {
     id: 'boss_audit',
     title: 'The Quarterly Audit',
