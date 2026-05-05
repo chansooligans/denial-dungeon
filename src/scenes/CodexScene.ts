@@ -3,11 +3,17 @@ import { CODEX_ENTRIES, CODEX_LIST } from '../content/codex'
 import { getState } from '../state'
 import type { CodexEntry, CodexCategory } from '../types'
 
-const CATEGORIES: { key: CodexCategory; label: string; color: string }[] = [
-  { key: 'codes', label: 'CODES', color: '#ef5b7b' },
-  { key: 'forms', label: 'FORMS', color: '#6da9e3' },
-  { key: 'transactions', label: 'TRANSACTIONS', color: '#6cd49a' },
-  { key: 'concepts', label: 'CONCEPTS', color: '#f4d06f' },
+// All declared CodexCategory values get a tab. The runtime filters
+// out empty categories (no codex entries authored yet) so the UI only
+// shows tabs that have content. Adding a new category here is enough
+// to surface it as soon as any entry adopts it.
+const CATEGORIES_ALL: { key: CodexCategory; label: string; color: string }[] = [
+  { key: 'codes',        label: 'CODES',        color: '#ef5b7b' },
+  { key: 'forms',        label: 'FORMS',        color: '#6da9e3' },
+  { key: 'transactions', label: 'TRANS',        color: '#6cd49a' },
+  { key: 'concepts',     label: 'CONCEPTS',     color: '#f4d06f' },
+  { key: 'obstacles',    label: 'OBSTACLES',    color: '#b18bd6' },
+  { key: 'stats',        label: 'STATS',        color: '#a3aab5' },
 ]
 
 export class CodexScene extends Phaser.Scene {
@@ -21,6 +27,7 @@ export class CodexScene extends Phaser.Scene {
   private detailBody!: Phaser.GameObjects.Text
   private detailLock!: Phaser.GameObjects.Text
   private categoryTabs: Phaser.GameObjects.Text[] = []
+  private categories: typeof CATEGORIES_ALL = []
   private counterText!: Phaser.GameObjects.Text
 
   constructor() {
@@ -48,9 +55,22 @@ export class CodexScene extends Phaser.Scene {
       fontSize: '10px', fontFamily: 'monospace', color: '#5a6a7a',
     }).setOrigin(1, 0.5)
 
-    // Category tabs
-    CATEGORIES.forEach((cat, i) => {
-      const x = 80 + i * 130
+    // Category tabs — show only categories that have at least one
+    // entry. Keeps the strip from advertising empty sections (e.g.
+    // 'stats' before any stat entries land).
+    this.categories = CATEGORIES_ALL.filter(cat =>
+      CODEX_LIST.some(e => e.category === cat.key)
+    )
+    // If our default activeCategory was filtered out (empty), pick the
+    // first available one.
+    if (!this.categories.some(c => c.key === this.activeCategory)) {
+      this.activeCategory = this.categories[0]?.key ?? 'codes'
+    }
+    // Tab spacing scales with count so 6 tabs still fit in the header.
+    const TAB_SPACING = this.categories.length <= 4 ? 130 : 110
+    const TAB_X0 = 80
+    this.categories.forEach((cat, i) => {
+      const x = TAB_X0 + i * TAB_SPACING
       const tab = this.add.text(x, 72, cat.label, {
         fontSize: '11px', fontFamily: 'monospace',
         color: cat.key === this.activeCategory ? cat.color : '#3a4a5d',
@@ -111,9 +131,9 @@ export class CodexScene extends Phaser.Scene {
     this.activeCategory = cat
     this.selectedIndex = 0
 
-    CATEGORIES.forEach((c, i) => {
+    this.categories.forEach((c, i) => {
       const color = c.key === cat
-        ? CATEGORIES.find(cc => cc.key === cat)!.color
+        ? this.categories.find(cc => cc.key === cat)!.color
         : '#3a4a5d'
       this.categoryTabs[i].setColor(color)
     })
