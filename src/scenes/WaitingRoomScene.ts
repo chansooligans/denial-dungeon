@@ -1,6 +1,7 @@
 import Phaser from 'phaser'
 import { getState, saveGame } from '../state'
 import { LEVELS } from '../content/levels'
+import { ENCOUNTERS } from '../content/enemies'
 
 const TILE = 32
 const MAP_W = 30
@@ -13,7 +14,7 @@ const LAYOUT = [
   'W............................W',
   'W..CC..CC..CC..CC..CC..CC...W',
   'W............................W',
-  'W............................W',
+  'W....O...............O.......W',
   'W.........TTTTTT............W',
   'W.........T....T............W',
   'W.........T....T............W',
@@ -23,11 +24,38 @@ const LAYOUT = [
   'W............................W',
   'W..CC..CC..CC..CC..CC..CC...W',
   'W............................W',
-  'W............................W',
+  'W..............O.............W',
   'W...........D................W',
   'W............................W',
   'WWWWWWWWWWWWWWWWWWWWWWWWWWWWWW',
 ]
+
+/**
+ * Obstacle markers placed in the Waiting Room. Walking near one and
+ * pressing E starts the matching battle, returning to the Waiting Room
+ * on completion. Defeated obstacles (state.defeatedObstacles) are
+ * hidden so each can only be fought once per save.
+ */
+interface ObstacleMarker {
+  tileX: number
+  tileY: number
+  encounterId: string
+}
+
+const OBSTACLES: ObstacleMarker[] = [
+  // (4, 6) — west of hub: Medical Necessity Wraith (Investigation)
+  { tileX: 4, tileY: 6, encounterId: 'co_50' },
+  // (21, 6) — east of hub: Timely Filing Reaper (Timed)
+  { tileX: 21, tileY: 6, encounterId: 'co_29_reaper' },
+  // (15, 16) — south of hub: a SimpleController obstacle for variety
+  { tileX: 15, tileY: 16, encounterId: 'co_97' },
+]
+
+interface ObstacleSprite {
+  marker: ObstacleMarker
+  graphics: Phaser.GameObjects.Graphics
+  label: Phaser.GameObjects.Text
+}
 
 export class WaitingRoomScene extends Phaser.Scene {
   private player!: Phaser.GameObjects.Image
@@ -40,6 +68,9 @@ export class WaitingRoomScene extends Phaser.Scene {
   private ticketText!: Phaser.GameObjects.Text
   private hudLevel!: Phaser.GameObjects.Text
   private exitPrompt!: Phaser.GameObjects.Text
+  private obstacleSprites: ObstacleSprite[] = []
+  private engagePrompt!: Phaser.GameObjects.Text
+  private nearbyObstacle: ObstacleSprite | null = null
 
   constructor() {
     super('WaitingRoom')
@@ -49,17 +80,25 @@ export class WaitingRoomScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor(0x0a0d12)
     this.canMove = true
     this.floatingPapers = []
+    this.obstacleSprites = []
+    this.nearbyObstacle = null
 
     this.buildMap()
     this.placePlayer()
     this.addAtmosphere()
+    this.placeObstacles()
     this.setupInput()
     this.buildHUD()
 
     this.cameras.main.startFollow(this.player, true, 0.08, 0.08)
     this.cameras.main.setZoom(1.5)
 
-    this.events.on('resume', () => { this.canMove = true })
+    // When a battle returns control, refresh obstacle visibility (defeated
+    // obstacles disappear) and re-enable movement.
+    this.events.on('resume', () => {
+      this.canMove = true
+      this.refreshObstacleVisibility()
+    })
   }
 
   private buildMap() {
@@ -80,6 +119,7 @@ export class WaitingRoomScene extends Phaser.Scene {
         } else if (ch === 'D') {
           this.add.image(px, py, 'h_door').setScale(2).setTint(0x6a4a8a)
         }
+        // 'O' tiles: walkable, marker drawn separately by placeObstacles().
       }
     }
 
@@ -153,6 +193,62 @@ export class WaitingRoomScene extends Phaser.Scene {
       backgroundColor: '#0a0d12',
       padding: { x: 4, y: 2 },
     }).setOrigin(0.5).setDepth(20).setVisible(false)
+
+    // Engage prompt (shown when standing next to an obstacle marker)
+    this.engagePrompt = this.add.text(0, 0, '', {
+      fontSize: '9px', fontFamily: 'monospace', color: '#b18bd6',
+      backgroundColor: '#0a0d12',
+      padding: { x: 4, y: 2 },
+    }).setOrigin(0.5).setDepth(20).setVisible(false)
+  }
+
+  private placeObstacles() {
+    const state = getState()
+    for (const marker of OBSTACLES) {
+      const enc = ENCOUNTERS[marker.encounterId]
+      if (!enc) continue
+      const px = marker.tileX * TILE + TILE / 2
+      const py = marker.tileY * TILE + TILE / 2
+
+      // Procedural marker — purple swirling glyph, similar to the gap.
+      const g = this.add.graphics().setDepth(4)
+      g.lineStyle(2, 0xb18bd6, 0.7)
+      g.strokeCircle(px, py, 14)
+      g.lineStyle(1, 0xb18bd6, 0.5)
+      g.strokeCircle(px, py, 9)
+      g.fillStyle(0xb18bd6, 0.25)
+      g.fillCircle(px, py, 6)
+
+      // Pulse the marker so it reads as "interactable" in the dim room.
+      this.tweens.add({
+        targets: g, alpha: 0.55,
+        duration: 1200, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+      })
+
+      const labelText = enc.archetype ?? enc.title
+      const label = this.add.text(px, py - 26, labelText, {
+        fontSize: '9px', fontFamily: 'monospace', color: '#d0bce0',
+        backgroundColor: '#0a0d12cc', padding: { x: 4, y: 2 },
+      }).setOrigin(0.5).setDepth(5)
+
+      this.obstacleSprites.push({ marker, graphics: g, label })
+    }
+    this.refreshObstacleVisibility()
+  }
+
+  private refreshObstacleVisibility() {
+    const state = getState()
+    for (const os of this.obstacleSprites) {
+      const defeated = state.defeatedObstacles.includes(os.marker.encounterId)
+      os.graphics.setVisible(!defeated)
+      os.label.setVisible(!defeated)
+    }
+    // If the player just defeated the obstacle they were near, clear the prompt.
+    if (this.nearbyObstacle &&
+        getState().defeatedObstacles.includes(this.nearbyObstacle.marker.encounterId)) {
+      this.nearbyObstacle = null
+      this.engagePrompt.setVisible(false)
+    }
   }
 
   private setupInput() {
@@ -163,8 +259,31 @@ export class WaitingRoomScene extends Phaser.Scene {
       S: this.input.keyboard!.addKey('S'),
       D: this.input.keyboard!.addKey('D'),
     }
-    this.input.keyboard!.on('keydown-E', () => this.tryExit())
-    this.input.keyboard!.on('keydown-SPACE', () => this.tryExit())
+    this.input.keyboard!.on('keydown-E', () => this.tryInteract())
+    this.input.keyboard!.on('keydown-SPACE', () => this.tryInteract())
+  }
+
+  /** E / SPACE: engage a nearby obstacle if any, else try to exit. */
+  private tryInteract() {
+    if (this.nearbyObstacle) {
+      this.tryEngageObstacle(this.nearbyObstacle)
+    } else {
+      this.tryExit()
+    }
+  }
+
+  private tryEngageObstacle(os: ObstacleSprite) {
+    const state = getState()
+    if (state.defeatedObstacles.includes(os.marker.encounterId)) return
+    if (!ENCOUNTERS[os.marker.encounterId]) return
+
+    this.canMove = false
+    this.engagePrompt.setVisible(false)
+    saveGame()
+    this.scene.start('Battle', {
+      encounterId: os.marker.encounterId,
+      returnScene: 'WaitingRoom',
+    })
   }
 
   private buildHUD() {
@@ -201,6 +320,38 @@ export class WaitingRoomScene extends Phaser.Scene {
     }
 
     this.checkExitProximity()
+    this.checkObstacleProximity()
+  }
+
+  private checkObstacleProximity() {
+    const state = getState()
+    let closest: ObstacleSprite | null = null
+    let closestDist = Infinity
+
+    for (const os of this.obstacleSprites) {
+      if (state.defeatedObstacles.includes(os.marker.encounterId)) continue
+      const ox = os.marker.tileX * TILE + TILE / 2
+      const oy = os.marker.tileY * TILE + TILE / 2
+      const d = Phaser.Math.Distance.Between(this.player.x, this.player.y, ox, oy)
+      if (d < TILE * 1.6 && d < closestDist) {
+        closest = os
+        closestDist = d
+      }
+    }
+
+    if (closest) {
+      const enc = ENCOUNTERS[closest.marker.encounterId]
+      const name = enc?.archetype ?? enc?.title ?? 'obstacle'
+      const ox = closest.marker.tileX * TILE + TILE / 2
+      const oy = closest.marker.tileY * TILE + TILE / 2
+      this.engagePrompt.setText(`[E] Engage ${name}`)
+      this.engagePrompt.setPosition(ox, oy - 44)
+      this.engagePrompt.setVisible(true)
+      this.nearbyObstacle = closest
+    } else {
+      this.engagePrompt.setVisible(false)
+      this.nearbyObstacle = null
+    }
   }
 
   private tryMove(dx: number, dy: number) {
