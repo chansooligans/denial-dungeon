@@ -24,7 +24,7 @@ const LAYOUT = [
   'W............................W',
   'W..CC..CC..CC..CC..CC..CC...W',
   'W............................W',
-  'W..............O.............W',
+  'W..............O........O....W',
   'W...........D................W',
   'W............................W',
   'WWWWWWWWWWWWWWWWWWWWWWWWWWWWWW',
@@ -43,12 +43,14 @@ interface ObstacleMarker {
 }
 
 const OBSTACLES: ObstacleMarker[] = [
-  // (4, 6) — west of hub: Medical Necessity Wraith (Investigation)
-  { tileX: 4, tileY: 6, encounterId: 'co_50' },
+  // (4, 6)  — west of hub: Medical Necessity Wraith (Investigation)
+  { tileX: 4,  tileY: 6,  encounterId: 'co_50' },
   // (21, 6) — east of hub: Timely Filing Reaper (Timed)
-  { tileX: 21, tileY: 6, encounterId: 'co_29_reaper' },
-  // (15, 16) — south of hub: a SimpleController obstacle for variety
+  { tileX: 21, tileY: 6,  encounterId: 'co_29_reaper' },
+  // (15, 16) — south-center: Bundling Beast (Simple HP fight)
   { tileX: 15, tileY: 16, encounterId: 'co_97' },
+  // (24, 16) — south-east: Prior Auth Gatekeeper (Block)
+  { tileX: 24, tileY: 16, encounterId: 'co_197' },
 ]
 
 interface ObstacleSprite {

@@ -162,18 +162,35 @@ export const ENCOUNTERS: Record<string, Encounter> = {
   },
   co_197: {
     id: 'co_197',
-    title: 'The Missing Auth',
-    description: 'A specialty procedure was performed without prior authorization. The payer won\'t pay.',
+    title: 'Prior Auth Gatekeeper',
+    description:
+      'A bureaucratic gate stands between the claim and adjudication. Every other move just bounces off the closed gate. File the 278 to bring it down.',
     surfaceSymptom: 'No prior auth on file',
-    rootCause: 'provider',
+    rootCause: 'payer',
     hp: 60,
-    attackDamage: 18,
+    attackDamage: 14,
     carcCode: 'CO-197',
     carcName: 'Precertification absent',
     watchpoint: 'Only fixable upstream — get the 278 before the visit.',
     correctTools: ['prior_auth_278'],
     level: 3,
+    archetype: 'Prior Auth Gatekeeper',
+    wing: 'appeals',
+    mechanic: 'block',
     unlocksOnDefeat: ['prior_auth_278'],
+    caseId: 'case_gatekeeper_okafor',
+    highlightedBoxes: ['24D-1'],
+    payerNote:
+      'CPT 72148 (MRI lumbar) requires prior authorization on file before adjudication. No 278 received — claim denied per UHC commercial policy CMP.PHARM.213.',
+    toolEffects: {
+      prior_auth_278: [
+        { box: '24D-1', kind: 'check' },
+        { box: '24D-1', kind: 'note', value: '278 on file — gate down' },
+      ],
+      // Other tools land checks if used after the gate falls.
+      submit_837p:    [{ box: '24D-1', kind: 'check' }],
+      claim_scrubber: [{ box: '24D-1', kind: 'note', value: 'rescrubbed' }],
+    },
   },
   oa_23: {
     id: 'oa_23',

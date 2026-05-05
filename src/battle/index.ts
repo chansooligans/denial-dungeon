@@ -10,6 +10,7 @@ import type { MechanicController } from './types'
 import { SimpleController } from './mechanics/simple'
 import { InvestigationController } from './mechanics/investigation'
 import { TimedController } from './mechanics/timed'
+import { BlockController } from './mechanics/block'
 
 export function createMechanic(encounter: Encounter): MechanicController {
   switch (encounter.mechanic) {
@@ -17,7 +18,9 @@ export function createMechanic(encounter: Encounter): MechanicController {
       return new InvestigationController(encounter)
     case 'timed':
       return new TimedController(encounter)
-    // 'multiHead', 'mirror', 'block', 'blind', 'spawn' land in follow-up PRs.
+    case 'block':
+      return new BlockController(encounter)
+    // 'multiHead', 'mirror', 'blind', 'spawn' land in follow-up PRs.
     case 'simple':
     case 'none':
     default:
