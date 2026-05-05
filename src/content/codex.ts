@@ -162,6 +162,72 @@ export const CODEX_ENTRIES: Record<string, CodexEntry> = {
     description: 'Two-digit codes appended to CPT codes to provide additional information.',
     detail: 'Key modifiers: 25 (significant, separately identifiable E/M), 59 (distinct procedural service — unbundles), 76 (repeat procedure by same physician), 26 (professional component only), TC (technical component only). Wrong modifier = wrong payment or denial.',
   },
+
+  // === Obstacles (archetype encounters in the Waiting Room) ===
+  // Codex ids match encounter ids so unlockCodex(encounter.id) auto-fills.
+  co_50: {
+    id: 'co_50',
+    name: 'Medical Necessity Wraith',
+    category: 'obstacles',
+    description: 'A semi-transparent figure of half-finished documentation. CO-50 denials.',
+    detail: 'The Wraith uses the investigation mechanic — turn budget instead of HP. You assemble facts from the chart and LCD; weak facts must be Documented to count toward the win threshold. Distractor facts feed it. Real-world parallel: medical necessity denials are won upstream, in CDI, before the claim drops. Appeals work, but the time cost is the real story.',
+  },
+  co_197: {
+    id: 'co_197',
+    name: 'Prior Auth Gatekeeper',
+    category: 'obstacles',
+    description: 'A bureaucratic gate. CO-197 denials.',
+    detail: 'The Gatekeeper runs on the block mechanic — every odd turn the gate is shut and your tool does 0 damage. Filing the 278 (prior_auth_278) opens the gate permanently for the rest of the fight. Real-world parallel: precertification is enforced contractually. Once the gate is closed, every other tool just bounces.',
+  },
+  co_29_reaper: {
+    id: 'co_29_reaper',
+    name: 'Timely Filing Reaper',
+    category: 'obstacles',
+    description: 'A robed bureaucrat with an hourglass-blade. CO-29 denials.',
+    detail: 'The Reaper uses the timed mechanic — HP plus a Days Remaining countdown. Each turn the days tick down and the Reaper\'s damage escalates. Hit zero days and the fight is auto-loss regardless of HP. Real-world parallel: timely filing is contractual; once the deadline passes, no appeal will recover the claim.',
+  },
+  co_18_doppelganger: {
+    id: 'co_18_doppelganger',
+    name: 'Duplicate Claim Doppelgänger',
+    category: 'obstacles',
+    description: 'A perfect copy of the claim already in the queue. CO-18 denials.',
+    detail: 'The Doppelgänger uses the mirror mechanic — the same tool used twice in a row does 0 damage and kicks back. Vary your approach. The canonical fix is submit_837p with frequency code 7 (replacement). Real-world parallel: same submission twice = the same denial twice; never resubmit, replace.',
+  },
+  co_97: {
+    id: 'co_97',
+    name: 'Bundling Beast',
+    category: 'obstacles',
+    description: 'Two services on the same day fused into one. CO-97 denials.',
+    detail: 'The Bundle is a straight HP fight with a teaching emphasis on modifier 25 / 59. CDI Query stamps the +25 modifier onto the E&M line. Real-world parallel: most bundling denials are not really bundled — they\'re a missing modifier that signals significant, separately identifiable service.',
+  },
+  oa_23_hydra: {
+    id: 'oa_23_hydra',
+    name: 'Coordination of Benefits Hydra',
+    category: 'obstacles',
+    description: 'Three heads, three payers. OA-23 cascading.',
+    detail: 'The Hydra runs on the multiHead mechanic — Primary, Secondary, Tertiary heads each with their own HP and rootCause. You attack the lowest-index live head; super-effective is computed against THAT head\'s rootCause, not the encounter\'s. Real-world parallel: COB sequence is contractual; adjudicating out of order causes retractions.',
+  },
+  eligibility_fog: {
+    id: 'eligibility_fog',
+    name: 'Eligibility Fog',
+    category: 'obstacles',
+    description: 'A swirling gray cloud hiding coverage details.',
+    detail: 'The Fog uses the blind mechanic — every tool\'s accuracy is reduced by 30 while the fog is up. Running eligibility_270 burns it off permanently. Real-world parallel: 270/271 verification is cheap and prevents most "denials" from ever happening; flying blind is expensive.',
+  },
+  co_16_swarm: {
+    id: 'co_16_swarm',
+    name: 'Documentation Sprite Swarm',
+    category: 'obstacles',
+    description: 'A leaking chart spawning missing-info gremlins. CO-16 / 277CA rejects.',
+    detail: 'The Swarm uses the spawn mechanic — the Source has an HP pool but spawns a sprite every 2 enemy turns (cap 3). claim_scrubber sweeps the active swarm but doesn\'t patch the source; cdi_query patches the chart upstream and stops further spawns. The mechanic is the lesson: fight the rejects all you want, but until you patch the chart, more keep coming.',
+  },
+  boss_audit: {
+    id: 'boss_audit',
+    name: 'The Quarterly Audit',
+    category: 'obstacles',
+    description: 'Pre-payment review. Every shortcut surfaces.',
+    detail: 'The audit mechanic reads your run-long state.resources.auditRisk and inflates the boss\'s starting HP and base damage. Shadow tools (upcode, aggressive_collections) HEAL the boss during the fight — the auditor pulls another receipt. Documentation tools (cdi_query, medical_policy, claim_scrubber) are super-effective. Real-world parallel: pre-payment audits are not random; they\'re triggered by your billing patterns. The shortcut taken six months ago is the audit cost today.',
+  },
 }
 
 export const CODEX_LIST = Object.values(CODEX_ENTRIES)
