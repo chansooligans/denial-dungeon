@@ -20,8 +20,8 @@ export const LEVELS: LevelDef[] = [
     hospitalDescription: 'The registration desk. Stacks of insurance cards and a line out the door.',
     waitingRoomDescription: 'The chairs have started to face different directions. The clock ticks backwards.',
     concepts: ['cms1500', 'x12_837', 'icd10_cm', 'cpt'],
-    encounters: ['co_109', 'co_16', 'reject_277ca'],
-    cases: ['case_level1_cms'],
+    encounters: ['co_109', 'co_16', 'reject_277ca', 'eligibility_fog'],
+    cases: ['case_level1_cms', 'case_fog_nguyen'],
     npcsActive: ['dana', 'kim', 'alex'],
   },
   {
@@ -32,7 +32,7 @@ export const LEVELS: LevelDef[] = [
     waitingRoomDescription: 'A gate with no gatekeeper. Forms flutter through the bars.',
     concepts: ['prior_auth', 'x12_278', 'medical_necessity'],
     encounters: ['co_197', 'co_50'],
-    cases: [],
+    cases: ['case_gatekeeper_okafor', 'case_wraith_walker'],
     npcsActive: ['dana', 'martinez', 'sam'],
   },
   {
@@ -43,7 +43,7 @@ export const LEVELS: LevelDef[] = [
     waitingRoomDescription: 'Carbon copies of documents, each slightly different from the last.',
     concepts: ['cdi', 'icd10_cm', 'icd10_pcs', 'modifiers'],
     encounters: ['co_11', 'co_97'],
-    cases: ['case_level1_ub'],
+    cases: ['case_level1_ub', 'case_bundle_kim'],
     npcsActive: ['martinez', 'pat'],
   },
   {
@@ -54,7 +54,7 @@ export const LEVELS: LevelDef[] = [
     waitingRoomDescription: 'Infinite shelves of policy manuals. The pages rearrange when you look away.',
     concepts: ['medical_policy', 'fee_schedule', 'contract_terms'],
     encounters: ['co_50', 'co_11'],
-    cases: [],
+    cases: ['case_wraith_walker'],
     npcsActive: ['dana', 'sam'],
   },
   {
@@ -64,8 +64,8 @@ export const LEVELS: LevelDef[] = [
     hospitalDescription: 'The billing office. Claims queued and dropping.',
     waitingRoomDescription: 'A conveyor belt carrying forms into darkness. Some fall off.',
     concepts: ['x12_837', 'x12_277ca', 'clearinghouse', 'adjudication'],
-    encounters: ['co_16', 'reject_277ca'],
-    cases: [],
+    encounters: ['co_16', 'co_16_swarm', 'reject_277ca', 'co_18_doppelganger'],
+    cases: ['case_swarm_yamada', 'case_doppel_reyes'],
     npcsActive: ['alex', 'pat'],
   },
   {
@@ -75,8 +75,8 @@ export const LEVELS: LevelDef[] = [
     hospitalDescription: 'The payment posting area. ERAs streaming in.',
     waitingRoomDescription: 'A courtroom where the judge is a rubber stamp.',
     concepts: ['x12_835', 'carc_rarc', 'remittance', 'adjustment'],
-    encounters: ['co_50', 'co_97', 'oa_23'],
-    cases: [],
+    encounters: ['co_50', 'co_97', 'oa_23', 'co_29_reaper'],
+    cases: ['case_reaper_park'],
     npcsActive: ['sam', 'jordan'],
   },
   {
@@ -97,8 +97,8 @@ export const LEVELS: LevelDef[] = [
     hospitalDescription: 'The COB desk. Spreadsheets tracking primary, secondary, tertiary.',
     waitingRoomDescription: 'Hallways that split and merge. Every turn leads to another payer.',
     concepts: ['cob', 'primary_secondary', 'x12_270_271'],
-    encounters: ['co_22', 'oa_23'],
-    cases: [],
+    encounters: ['co_22', 'oa_23', 'oa_23_hydra'],
+    cases: ['case_hydra_okwu'],
     npcsActive: ['kim', 'alex'],
   },
   {
