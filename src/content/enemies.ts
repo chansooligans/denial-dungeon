@@ -215,6 +215,36 @@ export const ENCOUNTERS: Record<string, Encounter> = {
     correctTools: ['cob_check'],
     level: 7,
   },
+  oa_23_hydra: {
+    id: 'oa_23_hydra',
+    title: 'COB Hydra',
+    description:
+      'Three heads. Three payers. Adjudicate them in order — Primary, then Secondary, then Tertiary — or you grow more heads.',
+    surfaceSymptom: 'Multi-payer claim stuck in coordination',
+    rootCause: 'payer', // first head is payer-rooted; others vary
+    hp: 90,
+    attackDamage: 12,
+    carcCode: 'OA-23',
+    carcName: 'Adjustment / coordination by primary payer',
+    watchpoint: 'COB sequence is contractual. The heads adjudicate in order — adjudicating out of order causes retractions.',
+    correctTools: ['cob_check', 'medical_policy', 'submit_837p'],
+    level: 9,
+    archetype: 'COB Hydra',
+    wing: 'eligibility',
+    mechanic: 'multiHead',
+    cashRecovered: 1250,
+    unlocksOnDefeat: ['cob_check'],
+    caseId: 'case_hydra_okwu',
+    highlightedBoxes: ['1', '4'],
+    payerNote:
+      'Secondary payer cannot adjudicate until primary remit is on file. Verify COB chain (BCBS / Medicare / Medicaid) and resequence per Medicare Secondary Payer rules.',
+    toolEffects: {
+      cob_check:      [{ box: '1', kind: 'note',  value: 'COB resequenced' }],
+      medical_policy: [{ box: '1', kind: 'note',  value: 'MSP rule applied' }],
+      submit_837p:    [{ box: '4', kind: 'check' }],
+      eligibility_270:[{ box: '1', kind: 'check' }],
+    },
+  },
   pr_204: {
     id: 'pr_204',
     title: 'The Benefit Exclusion',
