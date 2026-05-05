@@ -86,14 +86,14 @@ const issues: Issue[] = [
   },
   {
     id: 'criterion',
-    label: "Argue an alternative path in the insurance company's policy applies.",
-    recap: "You just argued: even though we don't have the heart-pumping measurement, the patient's kidney readings AND documented symptoms qualify them under an *alternative path* in the insurance company's own policy.",
+    label: "Use the policy's kidney-function alternative path.",
+    recap: "You just argued: even without the heart-pumping measurement, the patient's poor kidney function (per the chart) qualifies them under an *alternative path* the policy itself spells out.",
     verb: 'cite',
   },
   {
     id: 'symptomatology',
-    label: "Argue the patient's documented symptoms support coverage.",
-    recap: "You just argued: the chart documents specific symptoms (fatigue, swelling, declining kidneys). The policy explicitly accepts this kind of evidence in place of the heart-pumping measurement.",
+    label: "Show the chart documents qualifying symptoms.",
+    recap: "You just argued: the chart documents specific symptoms (fatigue, swelling, declining kidneys). The policy explicitly accepts documented symptoms in place of the heart-pumping measurement.",
     verb: 'cite',
   },
 ]
@@ -867,11 +867,50 @@ function attemptCite() {
   }
 
   state.failedAttempts += 1
-  setFeedback(
-    "Those three pieces don't address the same issue. The chart fact and the LCD clause should answer the *specific* payer assertion you picked, not three different ones.",
-    'bad'
-  )
+  setFeedback(buildMismatchFeedback(payer, chart, lcd), 'bad')
   state.lastRecap = ''
+}
+
+/**
+ * Pedagogical mismatch feedback — names which issue each picked
+ * piece actually addresses so the player learns the structure.
+ * Doesn't give away which fact maps to which issue in the
+ * abstract; just decodes what they picked.
+ */
+function buildMismatchFeedback(
+  payer: PayerPhrase,
+  chart: ChartFact,
+  lcd: LcdClause,
+): string {
+  const lines: string[] = []
+  lines.push("Those three don't fit together yet. Here's where each one points:")
+  lines.push('')
+  lines.push(`• Payer phrase: addresses "${issueDescription(payer.issueId)}".`)
+  if (chart.issueId === null) {
+    lines.push(`• Chart fact: distractor — true but not relevant. ${chart.distractorReason ?? ''}`)
+  } else {
+    const issue = issues.find(i => i.id === chart.issueId)!
+    if (issue.verb === 'amend') {
+      lines.push(`• Chart fact: this fact is the evidence for *amending the diagnosis*, not for a citation. Use the "Fix this diagnosis" button on the claim above.`)
+    } else {
+      lines.push(`• Chart fact: addresses "${issueDescription(chart.issueId)}".`)
+    }
+  }
+  const lcdIssue = issues.find(i => i.id === lcd.issueId)!
+  if (lcdIssue.verb === 'amend') {
+    lines.push(`• Policy clause: this clause is about *amending the diagnosis*, not a citation argument.`)
+  } else {
+    lines.push(`• Policy clause: addresses "${issueDescription(lcd.issueId)}".`)
+  }
+  lines.push('')
+  lines.push('A citation works when all three address the same issue. Pick a payer complaint, then find the chart fact and policy clause that both answer it.')
+  return lines.join('\n')
+}
+
+function issueDescription(issueId: string): string {
+  const issue = issues.find(i => i.id === issueId)
+  if (!issue) return '(unknown)'
+  return issue.label
 }
 
 function attemptAmend(code: string) {
@@ -1524,7 +1563,14 @@ const css = `
   .btn.submit { background: var(--accent-2); color: #0a0d12; font-weight: 700; padding: 12px 24px; margin-top: 14px; }
   .btn.submit:hover:not(.disabled) { background: #f7c08a; }
   .btn.disabled { opacity: 0.4; cursor: not-allowed; }
-  .feedback { margin-top: 10px; padding: 8px 12px; border-radius: 4px; font-size: 13px; }
+  .feedback {
+    margin-top: 10px;
+    padding: 10px 14px;
+    border-radius: 4px;
+    font-size: 13px;
+    white-space: pre-line;
+    line-height: 1.55;
+  }
   .fb-good { background: rgba(126, 226, 193, 0.1); border-left: 3px solid var(--good); color: var(--good); }
   .fb-bad { background: rgba(239, 91, 123, 0.08); border-left: 3px solid var(--bad); color: #f3a4b6; }
   .fb-neutral { background: var(--panel-2); border-left: 3px solid var(--ink-dim); color: var(--ink); }
