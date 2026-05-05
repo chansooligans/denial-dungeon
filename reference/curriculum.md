@@ -24,6 +24,13 @@ Heavy in hospital → light surrealism in the matching Waiting Room
 location. The two registers are how we teach hard content without
 being grim.
 
+The narrative through-line that braids these registers together —
+why the Waiting Room exists, what the two layers mean, who Dana is
+and why her notebook matters — lives in
+[`narrative.md`](narrative.md). This doc focuses on *what* each
+level teaches; the narrative doc focuses on *how the story frames
+it*.
+
 ## Three axes
 
 Most healthcare-finance curricula pick one. The game wants all three
@@ -413,6 +420,8 @@ The v1 questions are answered. New ones for the room-level pass:
 
 ## See also
 
+- [`narrative.md`](narrative.md) — cosmology, philosophy, Dana
+  and the notebook, L10 reveal, tone guidelines
 - `reference/journal/2026-05-03-v3-the-waiting-room.md` — original
   game design
 - `reference/journal/2026-05-04-build-plan.md` — engineering plan
