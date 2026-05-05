@@ -58,6 +58,7 @@ export class BattleScene extends Phaser.Scene {
   private panelTextWidget?: Phaser.GameObjects.Text
   private encounterHpRatio = 1
   private playerHpRatio = 1
+  private formBridged = false
 
   constructor() {
     super('Battle')
@@ -80,16 +81,25 @@ export class BattleScene extends Phaser.Scene {
     this.mechanic = createMechanic(encounter)
     const initialHp = this.mechanic.hpDisplay()
 
+    // Form-bridge: if the encounter's PatientCase has been perfected in
+    // FormScene, the player enters this battle at full HP regardless of
+    // their current resources.hp. Reward for prepping the claim upstream.
+    const formBridged = !!encounter.caseId &&
+      gameState.formsPerfected.includes(encounter.caseId)
+    const playerMaxHp = data.playerMaxHp ?? gameState.resources.maxHp
+    const playerHp = data.playerHp ?? (formBridged ? playerMaxHp : gameState.resources.hp)
+
     this.state = {
       encounter,
       encounterHp: initialHp.current,
-      playerHp: data.playerHp ?? gameState.resources.hp,
-      playerMaxHp: data.playerMaxHp ?? gameState.resources.maxHp,
+      playerHp,
+      playerMaxHp,
       playerTools: data.playerTools ?? gameState.tools,
       turn: 'player',
       turnCount: 0,
       returnScene: data.returnScene ?? 'Hospital',
     }
+    this.formBridged = formBridged
     this.encounterHpRatio = 1
     this.playerHpRatio = 1
     // Clear lazy-created widgets — Phaser destroys them on scene
@@ -134,6 +144,21 @@ export class BattleScene extends Phaser.Scene {
     this.refreshStatus()
     this.refreshPanel()
     this.toolMenu.refreshGates(this.mechanic.getActions())
+
+    // Form-bridge banner — fades in/out so it doesn't linger.
+    if (this.formBridged) {
+      const banner = this.add.text(width / 2, 4, 'Form prepped — full HP', {
+        fontSize: '11px', fontFamily: 'monospace', color: '#7ee2c1',
+        backgroundColor: '#0e1116cc', padding: { x: 8, y: 3 }, fontStyle: 'bold',
+      }).setOrigin(0.5, 0).setDepth(60).setAlpha(0)
+      this.tweens.add({ targets: banner, alpha: 1, duration: 300 })
+      this.time.delayedCall(2800, () => {
+        this.tweens.add({
+          targets: banner, alpha: 0, duration: 500,
+          onComplete: () => banner.destroy(),
+        })
+      })
+    }
   }
 
   private buildEncounterPanel(width: number) {
@@ -589,7 +614,7 @@ export class BattleScene extends Phaser.Scene {
       duration: 400,
       ease: 'Power2',
       onUpdate: (tween) => {
-        this.encounterHpRatio = tween.getValue() / 100
+        this.encounterHpRatio = (tween.getValue() ?? 0) / 100
         this.drawEncounterHp()
       },
     })
@@ -603,7 +628,7 @@ export class BattleScene extends Phaser.Scene {
       duration: 400,
       ease: 'Power2',
       onUpdate: (tween) => {
-        this.playerHpRatio = tween.getValue() / 100
+        this.playerHpRatio = (tween.getValue() ?? 0) / 100
         this.drawPlayerHp()
       },
     })

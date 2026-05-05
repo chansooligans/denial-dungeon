@@ -410,6 +410,12 @@ export interface GameState {
   wingsUnlocked: Wing[]
   /** Encounter ids the player has seen (for codex auto-unlock on sight). */
   obstaclesSeen: string[]
+  /**
+   * PatientCase ids the player has solved with every error caught.
+   * Drives the form-bridge buff: any obstacle whose `caseId` is in this
+   * list starts the matching battle at full HP.
+   */
+  formsPerfected: string[]
 }
 
 export interface Decision {

@@ -174,6 +174,17 @@ export const CASES: Record<string, PatientCase> = {
     procedureCode: '99214 + 11102',
     formType: 'cms1500',
     level: 5,
+    // Errors authored so this case is also playable as a hospital form
+    // puzzle. Perfect-completion grants the form-bridge buff: the
+    // matching Bundling Beast obstacle starts at full HP.
+    errors: [
+      {
+        field: 'Modifier',
+        currentValue: '—',
+        correctValue: '25',
+        explanation: 'Modifier 25 marks a significant, separately identifiable E&M service performed on the same day as a procedure. Without it, the 99214 bundles into 11102 (NCCI edit).',
+      },
+    ],
     claim: {
       type: 'cms1500',
       claimId: 'CLM-2026-04-12-09931',

@@ -61,7 +61,7 @@ export const DIALOGUES: Record<string, DialogueNode> = {
     speaker: 'Kim',
     text: "Claim goes to the wrong payer. Denied. CO-109. Patient gets a surprise bill. Everybody loses.",
     choices: [
-      { text: "That sounds like a common problem.", effect: { triggerBattle: 'co_109', unlockCodex: 'co_109' } },
+      { text: "I'll go check the system. The Waiting Room queue is full of these.", effect: { unlockCodex: 'co_109' } },
     ],
   },
   kim_verify: {
@@ -69,7 +69,7 @@ export const DIALOGUES: Record<string, DialogueNode> = {
     speaker: 'Kim',
     text: "A 270 eligibility check. Takes seconds. But the system was down last Tuesday so we keyed it manually. That's when errors happen.",
     choices: [
-      { text: "Let me look at a recent denial.", effect: { triggerBattle: 'co_109', unlockCodex: 'x12_270_271' } },
+      { text: "I'll look at the queue downstairs.", effect: { unlockCodex: 'x12_270_271' } },
     ],
   },
 
@@ -94,7 +94,7 @@ export const DIALOGUES: Record<string, DialogueNode> = {
     speaker: 'Dr. Martinez',
     text: "Then the payer is wrong! ... Fine. What do they need?",
     choices: [
-      { text: "A CDI query can bridge the gap.", effect: { triggerBattle: 'co_11', unlockCodex: 'cdi' } },
+      { text: "A CDI query can bridge the gap. I'll work it.", effect: { unlockCodex: 'cdi' } },
     ],
   },
   martinez_codes: {
@@ -102,7 +102,7 @@ export const DIALOGUES: Record<string, DialogueNode> = {
     speaker: 'Dr. Martinez',
     text: "I'm a doctor, not a coder. But... I see your point. The note should support the code, and the code should support the claim.",
     choices: [
-      { text: "Exactly. Let me show you the denial.", effect: { triggerBattle: 'co_11', unlockCodex: 'icd10_cm' } },
+      { text: "Exactly. I'll go take a look at the queue.", effect: { unlockCodex: 'icd10_cm' } },
     ],
   },
 
@@ -127,7 +127,7 @@ export const DIALOGUES: Record<string, DialogueNode> = {
     speaker: 'Jordan',
     text: "A cost estimate before the visit. Run the 270, check the benefits, and tell the patient what they'll owe BEFORE the procedure.",
     choices: [
-      { text: "Let me look at this denial.", effect: { triggerBattle: 'pr_204', unlockCodex: 'cost_share' } },
+      { text: "I'll see what I can do downstairs.", effect: { unlockCodex: 'cost_share' } },
     ],
   },
   jordan_patient: {
@@ -135,7 +135,7 @@ export const DIALOGUES: Record<string, DialogueNode> = {
     speaker: 'Jordan',
     text: "The truth. That their plan doesn't cover it. And that we should have told them before the visit, not after.",
     choices: [
-      { text: "How do we prevent this?", effect: { triggerBattle: 'pr_204', unlockCodex: 'cost_share' } },
+      { text: "Got it. Cost estimates upstream — noted.", effect: { unlockCodex: 'cost_share' } },
     ],
   },
 
@@ -160,7 +160,7 @@ export const DIALOGUES: Record<string, DialogueNode> = {
     speaker: 'Pat',
     text: "Absolutely. CCI edits are public. A good scrubber flags this before the claim ever drops.",
     choices: [
-      { text: "Let's look at the denial.", effect: { triggerBattle: 'co_97', unlockCodex: 'modifiers' } },
+      { text: "Let me prep the claim before you fight it.", effect: { triggerForm: 'case_bundle_kim', unlockCodex: 'modifiers' } },
     ],
   },
   pat_bundle: {
@@ -168,7 +168,7 @@ export const DIALOGUES: Record<string, DialogueNode> = {
     speaker: 'Pat',
     text: "Sometimes yes. The CCI edits say which codes are bundled. But when they're truly separate, we need to document and modify.",
     choices: [
-      { text: "Show me.", effect: { triggerBattle: 'co_97', unlockCodex: 'modifiers' } },
+      { text: "Walk me through fixing the claim form first.", effect: { triggerForm: 'case_bundle_kim', unlockCodex: 'modifiers' } },
     ],
   },
 
@@ -193,7 +193,7 @@ export const DIALOGUES: Record<string, DialogueNode> = {
     speaker: 'Alex',
     text: "Could be either. The PM system generates the 837. But the clearinghouse validates it. Either way, it's our revenue stuck in limbo.",
     choices: [
-      { text: "Let me see one.", effect: { triggerBattle: 'reject_277ca', unlockCodex: 'x12_837' } },
+      { text: "I'll go work the queue.", effect: { unlockCodex: 'x12_837' } },
     ],
   },
   alex_fix: {
@@ -201,7 +201,7 @@ export const DIALOGUES: Record<string, DialogueNode> = {
     speaker: 'Alex',
     text: "Fix the mapping, run them through the scrubber again, and resubmit. The good news? Front-end rejects are fast to fix. The bad news? They shouldn't happen at all.",
     choices: [
-      { text: "Walk me through one.", effect: { triggerBattle: 'co_16', unlockCodex: 'x12_277ca' } },
+      { text: "Got it. I'll head down to clear them.", effect: { unlockCodex: 'x12_277ca' } },
     ],
   },
 
@@ -227,7 +227,7 @@ export const DIALOGUES: Record<string, DialogueNode> = {
     speaker: 'Sam',
     text: "Worst feeling in this job. The claim is meritorious, the documentation is perfect, and you missed the contractual deadline by three days. There is no appeal. Watch the clock — that's the whole game.",
     choices: [
-      { text: "Show me one running short.", effect: { triggerBattle: 'co_29_reaper', unlockCodex: 'co_29_reaper' } },
+      { text: "I'll watch for one in the queue.", effect: { unlockCodex: 'co_29_reaper' } },
     ],
   },
   sam_appeal: {
@@ -235,7 +235,7 @@ export const DIALOGUES: Record<string, DialogueNode> = {
     speaker: 'Sam',
     text: "Sometimes. But an appeal costs time and money. The real win is CDI before the claim drops — fix the documentation while the patient is still in the building.",
     choices: [
-      { text: "Show me a med-nec denial.", effect: { triggerBattle: 'co_50', unlockCodex: 'medical_necessity' } },
+      { text: "I'll go find one in the queue.", effect: { unlockCodex: 'medical_necessity' } },
     ],
   },
   sam_prevent: {
@@ -243,7 +243,7 @@ export const DIALOGUES: Record<string, DialogueNode> = {
     speaker: 'Sam',
     text: "Now you're thinking like an analyst. CDI queries, payer policy lookups, prior auth checks — all upstream. That's where you win.",
     choices: [
-      { text: "Let me try resolving one.", effect: { triggerBattle: 'co_50', unlockCodex: 'medical_necessity' } },
+      { text: "I'll head down and try one.", effect: { unlockCodex: 'medical_necessity' } },
     ],
   },
 }
