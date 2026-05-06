@@ -127,12 +127,6 @@ const dxOptions: DxOption[] = [
 
 const payerPhrases: PayerPhrase[] = [
   {
-    id: 'unspec-dx',
-    text: 'I50.9 (heart failure, unspecified)',
-    plain: 'The diagnosis on the claim was vague — just "heart failure," no specifics.',
-    issueId: 'specificity',
-  },
-  {
     id: 'lvef',
     text: 'without supporting evidence of LVEF<35%',
     plain: 'No proof of how poorly the heart was pumping (LVEF is a measurement of heart function).',
@@ -147,12 +141,6 @@ const payerPhrases: PayerPhrase[] = [
 ]
 
 const chartFacts: ChartFact[] = [
-  {
-    id: 'systolic',
-    plain: "The patient's heart isn't pumping well. Imaging confirms it.",
-    technical: 'Echo report on file: documented systolic dysfunction',
-    issueId: 'specificity',
-  },
   {
     id: 'creat',
     plain: "Kidney function is poor. (High creatinine reading from a few months ago.)",
@@ -181,12 +169,6 @@ const chartFacts: ChartFact[] = [
 ]
 
 const lcdClauses: LcdClause[] = [
-  {
-    id: 'specificity-rule',
-    plain: "The insurance only pays if the doctor wrote a specific type of heart failure — not just 'heart failure.'",
-    technical: 'Coverage requires a specific cardiac dx (I50.x with severity), not unspecified heart failure.',
-    issueId: 'specificity',
-  },
   {
     id: 'creat-alt',
     plain: "Alternate path: poor kidney function plus documented symptoms also qualifies — even without the heart-pumping measurement.",
@@ -559,11 +541,13 @@ function renderWorkbench(): string {
           <span class="col-sub">The insurance company's denial letter. Hover a red phrase to see what it means; click to select it.</span>
         </div>
         <p class="col-prose">
-          The insurance company denied this claim. They said:
-          the diagnosis ${phraseById('unspec-dx')} is too vague,
-          there's no proof of ${phraseById('lvef')}, and the
-          chart is ${phraseById('no-evidence')} of why this test
-          was needed. They cited ${term('LCD L33457')}.
+          The insurance company denied this claim. They flagged
+          the diagnosis on file (I50.9, "heart failure,
+          unspecified") as too vague — fix that on the claim form
+          above. On top of that: there's no proof of
+          ${phraseById('lvef')}, and the chart is
+          ${phraseById('no-evidence')} of why this test was
+          needed. They cited ${term('LCD L33457')}.
         </p>
       </div>
       <div class="col col-chart">
