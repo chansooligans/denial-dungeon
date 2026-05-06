@@ -22,6 +22,10 @@ export default defineConfig({
         // verb-space (modifier 25 on Box 24, vs. Wraith's CITE-
         // dominant). Lives at /bundle-prototype.html.
         bundle: resolve(__dirname, 'bundle-prototype.html'),
+        // Reaper prototype: third sibling adding TIME PRESSURE —
+        // a literal day countdown on a CO-29 timely-filing
+        // waiver appeal. Lives at /reaper-prototype.html.
+        reaper: resolve(__dirname, 'reaper-prototype.html'),
       },
       output: {
         // Pull Phaser into its own vendor chunk. The framework is the
