@@ -167,6 +167,11 @@ export class HospitalScene extends Phaser.Scene {
     this.enterRoomAt(this.playerTileX, this.playerTileY)
 
     this.events.on('resume', () => {
+      // Always re-enable movement first — interact() set canMove=false
+      // when it launched the dialogue, and descendThroughGap below
+      // expects canMove to be true (it early-returns otherwise).
+      this.canMove = true
+      this.refreshHUD()
       // A dialogue handoff may have flagged a descent. Save the
       // player's current position so we can return them here, then
       // play the descent animation into the WR.
@@ -177,10 +182,7 @@ export class HospitalScene extends Phaser.Scene {
         s.pendingHospitalSpawn = { x: this.playerTileX, y: this.playerTileY }
         saveGame()
         this.descendThroughGap(descent.encounterId)
-        return
       }
-      this.canMove = true
-      this.refreshHUD()
     })
 
     // Level-1 atmosphere: occasionally a sheet of paper scuttles across
