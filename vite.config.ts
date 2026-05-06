@@ -31,6 +31,12 @@ export default defineConfig({
         // response, transcribe the auth number onto Box 23.
         // Lives at /gatekeeper-prototype.html.
         gatekeeper: resolve(__dirname, 'gatekeeper-prototype.html'),
+        // Fog prototype: fifth sibling introducing the REVEAL
+        // verb — pre-submission claim with fogged fields; run
+        // a 270 inquiry to surface what registration got wrong;
+        // amend against the 271 response. Lives at
+        // /fog-prototype.html.
+        fog: resolve(__dirname, 'fog-prototype.html'),
       },
       output: {
         // Pull Phaser into its own vendor chunk. The framework is the
