@@ -68,16 +68,20 @@ export function render(spec: PuzzleSpec, state: PuzzleState): string {
   if (state.packetSubmitted) {
     return renderVictory(spec)
   }
+  // Pre-dismissal: only Dana's briefing card. The hospital-intro prose
+  // is redundant with the in-game NPC dialogue + claim-preview that
+  // already played, so it's not rendered at all.
+  if (!state.briefingDone) {
+    return renderBriefingInline(spec)
+  }
   const hasWorkbench = (spec.payerPhrases?.length ?? 0) > 0
   return [
     renderHeader(spec),
-    renderHospitalIntro(spec),
-    state.briefingDone ? '' : renderBriefingInline(spec),
-    state.briefingDone && spec.claim ? renderClaim(spec, state) : '',
-    state.briefingDone && spec.amendSlots.length > 0 ? renderAmendCallouts(spec, state) : '',
-    state.briefingDone && hasWorkbench ? renderWorkbench(spec, state) : '',
-    state.briefingDone && hasWorkbench ? renderCitationBuilder(spec, state) : '',
-    state.briefingDone ? renderChecklist(spec, state) : '',
+    spec.claim ? renderClaim(spec, state) : '',
+    spec.amendSlots.length > 0 ? renderAmendCallouts(spec, state) : '',
+    hasWorkbench ? renderWorkbench(spec, state) : '',
+    hasWorkbench ? renderCitationBuilder(spec, state) : '',
+    renderChecklist(spec, state),
     renderAmendModal(spec, state),
   ].join('')
 }
