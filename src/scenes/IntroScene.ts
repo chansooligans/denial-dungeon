@@ -120,10 +120,6 @@ const BEATS: Beat[] = [
     'The Waiting Room.',
   ], color: '#f0a868' },
   { type: 'wait', duration: 2000 },
-  { type: 'text', lines: [
-    'Nobody comes here on purpose.',
-  ], color: '#8b95a5' },
-  { type: 'wait', duration: 2500 },
 
   // End reveal: full-bleed comic pages — the gap, then the waiting room.
   { type: 'cover', key: 'intro_page5', duration: 4200 },
@@ -341,8 +337,8 @@ export class IntroScene extends Phaser.Scene {
         onComplete: () => oldBackdrop.destroy(),
       })
     }
-    // Clear any narration text from the previous beat (e.g. "Nobody comes
-    // here on purpose.") so the cover image is alone on screen.
+    // Clear any narration text from the previous beat (e.g. "The Waiting
+    // Room.") so the cover image is alone on screen.
     for (const t of this.textObjects) t.destroy()
     this.textObjects = []
     this.typingTextData = []
