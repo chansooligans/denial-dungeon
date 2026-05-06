@@ -68,11 +68,19 @@ export function render(spec: PuzzleSpec, state: PuzzleState): string {
   if (state.packetSubmitted) {
     return renderVictory(spec)
   }
-  // Pre-dismissal: only Dana's briefing card. The hospital-intro prose
-  // is redundant with the in-game NPC dialogue + claim-preview that
-  // already played, so it's not rendered at all.
+  // Pre-dismissal: only Dana's briefing card, vertically centered.
+  // The hospital-intro prose is redundant with the in-game NPC
+  // dialogue + claim-preview that already played, so it's not
+  // rendered at all. min-height accounts for the overlay's
+  // 28px+80px vertical padding.
   if (!state.briefingDone) {
-    return renderBriefingInline(spec)
+    return `
+      <div style="min-height: calc(100vh - 108px); display: flex; align-items: center; justify-content: center;">
+        <div style="max-width: 720px; width: 100%;">
+          ${renderBriefingInline(spec)}
+        </div>
+      </div>
+    `
   }
   const hasWorkbench = (spec.payerPhrases?.length ?? 0) > 0
   return [
