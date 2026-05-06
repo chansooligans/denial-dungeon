@@ -3,7 +3,7 @@ import { NPCS } from '../content/npcs'
 import { LEVELS } from '../content/levels'
 import { getMapForLevel } from '../content/maps'
 import type { MapDef } from '../content/maps'
-import { getState, saveGame } from '../state'
+import { getState, saveGame, consumePendingLevelBanner } from '../state'
 import type { NPC } from '../types'
 
 const TILE = 32
@@ -135,6 +135,18 @@ export class HospitalScene extends Phaser.Scene {
     this.cameras.main.startFollow(this.player, true, 0.1, 0.1)
     this.cameras.main.setZoom(1.5)
     this.cameras.main.setBounds(0, 0, this.mapDef.width * TILE, this.mapDef.height * TILE)
+    // Fade in from black on scene start. Returns from the WR or
+    // a battle land here too, so this single call covers all
+    // entries into the Hospital.
+    this.cameras.main.fadeIn(450, 0, 0, 0)
+
+    // Level-advance banner — if the player just crossed a defeat
+    // threshold during the prior battle, surface it now. Banner
+    // is screen-space (UI camera) and self-cleans after ~3s.
+    const advancedLevel = consumePendingLevelBanner()
+    if (advancedLevel !== null) {
+      this.showLevelAdvanceBanner(advancedLevel)
+    }
 
     // Dedicated UI camera (zoom 1, no scroll) so HUD/mini-map aren't affected
     // by the main camera's zoom or follow.
@@ -235,6 +247,48 @@ export class HospitalScene extends Phaser.Scene {
         nextId++
       }
     }
+  }
+
+  /**
+   * "LEVEL N — <Title>" banner shown after the player advances out
+   * of a level by clearing the defeat threshold. Centered, fades in
+   * from above + holds for ~2s + fades out. Sits on the UI camera
+   * so it's not affected by the main camera's pulse.
+   */
+  private showLevelAdvanceBanner(newLevel: number) {
+    const level = LEVELS[newLevel - 1]
+    if (!level) return
+    const { width: vw } = this.scale
+
+    const titleText = `LEVEL ${newLevel}`
+    const subtitleText = level.title
+
+    const title = this.add.text(vw / 2, 80, titleText, {
+      fontSize: '22px', fontFamily: 'monospace', color: '#f0d090',
+      backgroundColor: '#1a060880',
+      padding: { x: 14, y: 6 },
+      stroke: '#05070a', strokeThickness: 3,
+      fontStyle: 'bold',
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(200).setAlpha(0)
+
+    const subtitle = this.add.text(vw / 2, 116, subtitleText, {
+      fontSize: '13px', fontFamily: 'monospace', color: '#c8a040',
+      backgroundColor: '#1a060880',
+      padding: { x: 10, y: 4 },
+      stroke: '#05070a', strokeThickness: 2,
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(200).setAlpha(0)
+
+    // Fade in (slightly delayed so it lands on a fresh hospital), hold,
+    // then fade out + destroy.
+    this.tweens.add({
+      targets: [title, subtitle], alpha: 1, duration: 400, delay: 600,
+      ease: 'Sine.easeOut',
+    })
+    this.tweens.add({
+      targets: [title, subtitle], alpha: 0, duration: 500, delay: 3000,
+      ease: 'Sine.easeIn',
+      onComplete: () => { title.destroy(); subtitle.destroy() },
+    })
   }
 
   /**
@@ -642,11 +696,40 @@ export class HospitalScene extends Phaser.Scene {
       this.player.x, this.player.y, gapPx, gapPy
     )
     if (gapDist < TILE * 2) {
+      this.descendThroughGap()
+    }
+  }
+
+  /**
+   * Hospital → Waiting Room transition. Echoes the intro's "you fell
+   * through the gap" beat: the player sprite drops + fades while the
+   * camera fades to black, then starts WaitingRoomScene which fades
+   * back in. The whole thing runs ~700ms so it reads as a deliberate
+   * descent, not an instant cut.
+   */
+  private descendThroughGap() {
+    if (!this.canMove) return
+    this.canMove = false
+
+    // Player sprite drops + fades. ScaleY shrinks slightly as if
+    // pulled downward into the floor.
+    this.tweens.add({
+      targets: this.player,
+      y: this.player.y + TILE * 4,
+      alpha: 0,
+      scaleY: 1.4, // base scale 2 → ~30% squash
+      duration: 600,
+      ease: 'Sine.easeIn',
+    })
+
+    // Camera fade-to-black + start WR on completion.
+    this.cameras.main.fadeOut(700, 0, 0, 0)
+    this.cameras.main.once('camerafadeoutcomplete', () => {
       const state = getState()
       state.inWaitingRoom = true
       saveGame()
       this.scene.start('WaitingRoom')
-    }
+    })
   }
 
   /**

@@ -167,6 +167,20 @@ export class WaitingRoomScene extends Phaser.Scene {
     this.cameras.main.startFollow(this.player, true, 0.08, 0.08)
     this.cameras.main.setZoom(1.5)
     this.cameras.main.setBounds(0, 0, this.mapDef.width * TILE, this.mapDef.height * TILE)
+    // Fade in from black — the player just fell through the gap,
+    // and the WR resolves out of the dark. Slightly slower than
+    // the Hospital fade-in so the arrival has weight.
+    this.cameras.main.fadeIn(700, 0, 0, 0)
+    // Tiny "settling" beat on the player sprite — they squashed
+    // down on landing; ease back to scale 2 over 350ms.
+    this.player.setScale(2, 1.5)
+    this.tweens.add({
+      targets: this.player,
+      scaleY: 2,
+      duration: 350,
+      ease: 'Sine.easeOut',
+      delay: 200,
+    })
 
     // When a battle returns control, refresh obstacle visibility (defeated
     // obstacles disappear) and re-enable movement.
@@ -597,10 +611,35 @@ export class WaitingRoomScene extends Phaser.Scene {
     const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, gapX, gapY)
 
     if (dist < TILE * 2) {
+      this.ascendThroughGap()
+    }
+  }
+
+  /**
+   * Waiting Room → Hospital transition. Player rises (the inverse
+   * of the descent: y up + alpha fade) while the camera fades to
+   * black, then HospitalScene starts and fades back in.
+   */
+  private ascendThroughGap() {
+    if (!this.canMove) return
+    this.canMove = false
+
+    // Player rises out of frame — opposite direction of the descent.
+    this.tweens.add({
+      targets: this.player,
+      y: this.player.y - TILE * 4,
+      alpha: 0,
+      scaleY: 2.4, // slight stretch — they're being pulled up
+      duration: 600,
+      ease: 'Sine.easeOut',
+    })
+
+    this.cameras.main.fadeOut(700, 0, 0, 0)
+    this.cameras.main.once('camerafadeoutcomplete', () => {
       const state = getState()
       state.inWaitingRoom = false
       saveGame()
       this.scene.start('Hospital')
-    }
+    })
   }
 }
