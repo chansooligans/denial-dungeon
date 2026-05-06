@@ -58,6 +58,13 @@ export default defineConfig({
         // successful payment, not a denial. Lives at
         // /specter-prototype.html.
         specter: resolve(__dirname, 'specter-prototype.html'),
+        // Doppelgänger prototype: ninth sibling introducing
+        // the REPLACE verb — resolve a CO-18 duplicate flag
+        // by filing the resubmission as a frequency-7
+        // replacement of the original ICN. First version-
+        // control encounter. Lives at
+        // /doppelganger-prototype.html.
+        doppelganger: resolve(__dirname, 'doppelganger-prototype.html'),
       },
       output: {
         // Pull Phaser into its own vendor chunk. The framework is the
