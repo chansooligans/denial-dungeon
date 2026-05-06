@@ -786,7 +786,7 @@ const css = `
   :root {
     --bg: #0a0d12; --panel: #161b24; --panel-2: #1d2330;
     --ink: #d8dee9; --ink-dim: #8a93a3;
-    --accent: #ef9bb0; --accent-2: #f0a868;
+    --accent: #ef5b7b; --accent-2: #f0a868;
     --bad: #ef5b7b; --good: #7ee2c1;
     --hi: rgba(239, 91, 123, 0.22); --hi-border: #ef5b7b;
     --paper: #f5f1e6;
@@ -837,13 +837,13 @@ const css = `
   .hospital-intro p { margin: 8px 0; }
   .register { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; padding: 2px 10px; border-radius: 3px; display: inline-block; }
   .register.hospital { background: rgba(240, 168, 104, 0.12); color: var(--accent-2); border: 1px solid #4a3a2a; }
-  .register.waiting-room { background: rgba(239, 155, 176, 0.12); color: #f3b9c8; border: 1px solid #4a323a; }
+  .register.waiting-room { background: rgba(177, 139, 214, 0.12); color: #c8b6e0; border: 1px solid #3a324a; }
   .register-flip {
     margin: 16px 0; padding: 12px 16px;
-    border-left: 3px solid #f3b9c8; background: rgba(239, 155, 176, 0.05);
+    border-left: 3px solid #c8b6e0; background: rgba(177, 139, 214, 0.05);
     font-size: 13.5px; overflow: hidden;
   }
-  .ripple { width: 100%; height: 2px; margin-bottom: 8px; background: linear-gradient(90deg, transparent, #f3b9c8, transparent); animation: ripple 4s infinite ease-in-out; }
+  .ripple { width: 100%; height: 2px; margin-bottom: 8px; background: linear-gradient(90deg, transparent, #c8b6e0, transparent); animation: ripple 4s infinite ease-in-out; }
   @keyframes ripple {
     0%, 100% { transform: translateX(-100%); opacity: 0; }
     50% { transform: translateX(0); opacity: 0.6; }
@@ -880,7 +880,7 @@ const css = `
   .briefing-popover .btn.ghost { margin-top: 14px; }
 
   .term { color: var(--accent); text-decoration: underline dotted; cursor: help; position: relative; }
-  .term:hover { color: #f3b9c8; }
+  .term:hover { color: #f57a92; }
   .term-icon { display: inline-block; vertical-align: super; font-size: 9px; margin-left: 2px; background: var(--accent); color: #0a0d12; width: 12px; height: 12px; border-radius: 50%; text-align: center; line-height: 12px; font-weight: 700; }
 
   .term-popover-backdrop { position: fixed; inset: 0; background: rgba(10, 13, 18, 0.7); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
@@ -987,7 +987,7 @@ const css = `
 
   .btn { font: inherit; padding: 8px 18px; border-radius: 4px; cursor: pointer; border: 1px solid transparent; font-size: 13px; }
   .btn.primary { background: var(--accent); color: #0a0d12; font-weight: 600; }
-  .btn.primary:hover:not(.disabled):not(:disabled) { background: #f3b9c8; }
+  .btn.primary:hover:not(.disabled):not(:disabled) { background: #f57a92; }
   .btn.ghost { background: transparent; color: var(--ink-dim); border-color: #2a3142; }
   .btn.ghost:hover { color: var(--ink); border-color: var(--ink-dim); }
   .btn.submit { background: var(--accent-2); color: #0a0d12; font-weight: 700; padding: 12px 24px; margin-top: 14px; }
