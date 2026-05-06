@@ -253,9 +253,10 @@ export class PuzzleBattleScene extends Phaser.Scene {
     const spec = this.spec
     if (!s.selectedPayerId || !s.selectedChartId || !s.selectedPolicyId) return
 
-    const payer = spec.payerPhrases.find(p => p.id === s.selectedPayerId)!
-    const chart = spec.chartFacts.find(f => f.id === s.selectedChartId)!
-    const policy = spec.policyClauses.find(c => c.id === s.selectedPolicyId)!
+    const payer = (spec.payerPhrases ?? []).find(p => p.id === s.selectedPayerId)
+    const chart = (spec.chartFacts ?? []).find(f => f.id === s.selectedChartId)
+    const policy = (spec.policyClauses ?? []).find(c => c.id === s.selectedPolicyId)
+    if (!payer || !chart || !policy) return
 
     if (chart.issueId === null) {
       s.failedAttempts += 1
@@ -278,10 +279,10 @@ export class PuzzleBattleScene extends Phaser.Scene {
 
     if (payer.issueId === chart.issueId && chart.issueId === policy.issueId) {
       const issue = spec.issues.find(i => i.id === chart.issueId)!
-      if (issue.verb === 'amend') {
+      if (issue.verb !== 'cite') {
         s.failedAttempts += 1
         this.setFeedback(
-          'These pieces line up — but this issue is solved by *amending* the claim, not arguing. Open the amend callout above.',
+          'These pieces line up — but this issue is solved by amending the claim, not arguing. Open the amend callout above.',
           'bad'
         )
         s.lastRecap = ''

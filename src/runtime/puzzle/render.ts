@@ -51,7 +51,7 @@ export function makeInitialState(spec: PuzzleSpec): PuzzleState {
     amendedFields: Object.fromEntries(
       spec.amendSlots.map(slot => {
         const current = slot.options.find(o => o.support === 'current')
-        return [slot.issueId, current?.id ?? '—']
+        return [slot.issueId, current?.id ?? '']
       })
     ),
     amendOpen: null,
@@ -68,14 +68,15 @@ export function render(spec: PuzzleSpec, state: PuzzleState): string {
   if (state.packetSubmitted) {
     return renderVictory(spec)
   }
+  const hasWorkbench = (spec.payerPhrases?.length ?? 0) > 0
   return [
     renderHeader(spec),
     renderHospitalIntro(spec),
     state.briefingDone ? '' : renderBriefingInline(spec),
-    state.briefingDone ? renderClaim(spec, state) : '',
+    state.briefingDone && spec.claim ? renderClaim(spec, state) : '',
     state.briefingDone && spec.amendSlots.length > 0 ? renderAmendCallouts(spec, state) : '',
-    state.briefingDone ? renderWorkbench(spec, state) : '',
-    state.briefingDone ? renderCitationBuilder(spec, state) : '',
+    state.briefingDone && hasWorkbench ? renderWorkbench(spec, state) : '',
+    state.briefingDone && hasWorkbench ? renderCitationBuilder(spec, state) : '',
     state.briefingDone ? renderChecklist(spec, state) : '',
     renderAmendModal(spec, state),
   ].join('')
@@ -127,6 +128,7 @@ function renderBriefingInline(spec: PuzzleSpec): string {
 
 function renderClaim(spec: PuzzleSpec, state: PuzzleState): string {
   const claim = spec.claim
+  if (!claim) return ''
 
   // Slot lookups by claim target. Each slot's status flips Box X DISPUTED→AMENDED
   // and may swap in the amended value at the target cell.
@@ -278,7 +280,7 @@ function renderWorkbench(spec: PuzzleSpec, state: PuzzleState): string {
           <span class="col-sub">What the doctor wrote. Click a fact to cite it.</span>
         </div>
         <ul class="facts">
-          ${spec.chartFacts.map(f => `
+          ${(spec.chartFacts ?? []).map(f => `
             <li class="fact ${state.selectedChartId === f.id ? 'selected' : ''}"
                 data-action="select-chart" data-id="${escape(f.id)}">
               <div class="fact-plain">${escape(f.plain)}</div>
@@ -293,7 +295,7 @@ function renderWorkbench(spec: PuzzleSpec, state: PuzzleState): string {
           <span class="col-sub">Coding rules. Click a clause to back a citation.</span>
         </div>
         <ul class="clauses">
-          ${spec.policyClauses.map(c => `
+          ${(spec.policyClauses ?? []).map(c => `
             <li class="clause ${state.selectedPolicyId === c.id ? 'selected' : ''}"
                 data-action="select-policy" data-id="${escape(c.id)}">
               <div class="clause-plain">${escape(c.plain)}</div>
@@ -308,8 +310,8 @@ function renderWorkbench(spec: PuzzleSpec, state: PuzzleState): string {
 
 function renderPayerProse(spec: PuzzleSpec, state: PuzzleState): string {
   // Substitute {{phrase:id}} placeholders with clickable spans.
-  return spec.payerProse.replace(/\{\{phrase:([^}]+)\}\}/g, (_m, id) => {
-    const phrase = spec.payerPhrases.find(p => p.id === id)
+  return (spec.payerProse ?? '').replace(/\{\{phrase:([^}]+)\}\}/g, (_m, id) => {
+    const phrase = (spec.payerPhrases ?? []).find(p => p.id === id)
     if (!phrase) return ''
     return phraseSpan(phrase, state)
   })
@@ -322,9 +324,9 @@ function phraseSpan(p: PuzzlePayerPhrase, state: PuzzleState): string {
 }
 
 function renderCitationBuilder(spec: PuzzleSpec, state: PuzzleState): string {
-  const payer = state.selectedPayerId ? spec.payerPhrases.find(p => p.id === state.selectedPayerId) : null
-  const chart = state.selectedChartId ? spec.chartFacts.find(f => f.id === state.selectedChartId) : null
-  const policy = state.selectedPolicyId ? spec.policyClauses.find(c => c.id === state.selectedPolicyId) : null
+  const payer = state.selectedPayerId ? (spec.payerPhrases ?? []).find(p => p.id === state.selectedPayerId) : null
+  const chart = state.selectedChartId ? (spec.chartFacts ?? []).find(f => f.id === state.selectedChartId) : null
+  const policy = state.selectedPolicyId ? (spec.policyClauses ?? []).find(c => c.id === state.selectedPolicyId) : null
   const ready = !!(payer && chart && policy)
   const fbClass = state.feedback ? `fb-${state.feedbackKind}` : ''
   return `
