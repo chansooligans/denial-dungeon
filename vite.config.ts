@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 import { resolve } from 'path'
 
-const base = process.env.VITE_BASE ?? (process.env.NODE_ENV === 'production' ? '/denial-dungeon/' : '/')
+const base = process.env.VITE_BASE ?? (process.env.NODE_ENV === 'production' ? '/the-waiting-room/' : '/')
 
 export default defineConfig({
   base,

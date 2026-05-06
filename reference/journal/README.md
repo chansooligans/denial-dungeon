@@ -1,6 +1,6 @@
 # Design Journal
 
-Chronological log of design decisions, pivots, and plans for Denial Dungeon.
+Chronological log of design decisions, pivots, and plans for The Waiting Room.
 
 ## Entries
 - [2026-05-03 Initial Design](2026-05-03-initial-design.md) — V1: Deck-builder roguelike (Slay the Spire style)

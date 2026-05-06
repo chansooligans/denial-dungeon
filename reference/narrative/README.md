@@ -1,6 +1,6 @@
 # Narrative
 
-Lore, characters, tone, and story arc for *Denial Dungeon*.
+Lore, characters, tone, and story arc for *The Waiting Room*.
 This folder is the *how the story frames the teaching* layer.
 Curriculum (what to teach) is one level up at
 [`../curriculum/README.md`](../curriculum/README.md).
