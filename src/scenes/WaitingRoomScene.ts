@@ -498,10 +498,14 @@ export class WaitingRoomScene extends Phaser.Scene {
 
     let dx = 0
     let dy = 0
-    if (Phaser.Input.Keyboard.JustDown(this.cursors.left)  || Phaser.Input.Keyboard.JustDown(this.wasdKeys.A)) dx = -1
-    else if (Phaser.Input.Keyboard.JustDown(this.cursors.right) || Phaser.Input.Keyboard.JustDown(this.wasdKeys.D)) dx = 1
-    else if (Phaser.Input.Keyboard.JustDown(this.cursors.up)    || Phaser.Input.Keyboard.JustDown(this.wasdKeys.W)) dy = -1
-    else if (Phaser.Input.Keyboard.JustDown(this.cursors.down)  || Phaser.Input.Keyboard.JustDown(this.wasdKeys.S)) dy = 1
+    // Hold-to-move: poll `isDown` each frame and gate via `canMove`
+    // (set false during the tween, true on completion). Mirrors the
+    // Hospital's input pattern; the older WR code used `JustDown` and
+    // forced tap-to-move.
+    if (this.cursors.left.isDown  || this.wasdKeys.A.isDown) dx = -1
+    else if (this.cursors.right.isDown || this.wasdKeys.D.isDown) dx = 1
+    else if (this.cursors.up.isDown    || this.wasdKeys.W.isDown) dy = -1
+    else if (this.cursors.down.isDown  || this.wasdKeys.S.isDown) dy = 1
 
     if (dx !== 0 || dy !== 0) this.tryMove(dx, dy)
 
