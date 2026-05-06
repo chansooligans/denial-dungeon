@@ -5,7 +5,7 @@ export const DIALOGUES: Record<string, DialogueNode> = {
   dana_intro: {
     id: 'dana_intro',
     speaker: 'Dana',
-    text: "You're the new analyst? Good. We're short-staffed and the denial rate just hit 12%.",
+    text: "Oh — you're the part-time intern? Sorry, I'm slammed. Stick around the lobby; if anything weird comes up, flag me.",
     next: 'dana_intro_2',
   },
   dana_intro_2: {
@@ -248,33 +248,42 @@ export const DIALOGUES: Record<string, DialogueNode> = {
   },
 
   // === Anjali — Level 1 intro patient. The wrong-card case. ===
+  // The intern is part-time, undertrained, not supposed to help patients
+  // directly. She does anyway — the patient looks like she's been
+  // waiting forever.
   anjali_intro: {
     id: 'anjali_intro',
     speaker: 'Anjali',
-    text: "Hi — I had strep last week. They told me my insurance was accepted at check-in. Now there's a bill for $387 saying I'm not on the plan?",
+    text: "Sorry to bother you. They told me someone here could check whether I was approved.",
     next: 'anjali_intro_2',
   },
   anjali_intro_2: {
     id: 'anjali_intro_2',
     speaker: 'Anjali',
+    text: "I had strep last week. They said my insurance was accepted at check-in. Now there's a bill for $387 saying I'm not on the plan.",
+    next: 'anjali_intro_3',
+  },
+  anjali_intro_3: {
+    id: 'anjali_intro_3',
+    speaker: 'Anjali',
     text: "I have the same Aetna PPO as my husband. I've had it for years. I really don't think this is right.",
     choices: [
+      { text: "(I'm not supposed to do this.)", next: 'anjali_hesitate' },
       { text: "Let me pull up your file.", next: 'anjali_pull_file' },
-      { text: "Did you bring your card to the desk?", next: 'anjali_card_question' },
     ],
   },
-  anjali_card_question: {
-    id: 'anjali_card_question',
-    speaker: 'Anjali',
-    text: "I — yes? I grabbed it from the kitchen on my way out the door. It was in the basket where we keep the cards.",
+  anjali_hesitate: {
+    id: 'anjali_hesitate',
+    speaker: 'Intern',
+    text: "Part-time interns don't help patients directly. You're supposed to flag this to a supervisor — but it's late, and there's no supervisor here. And she looks like she's been waiting forever.",
     choices: [
-      { text: "Mind if I take a look at the file?", next: 'anjali_pull_file' },
+      { text: "Let me pull up your file.", next: 'anjali_pull_file' },
     ],
   },
   anjali_pull_file: {
     id: 'anjali_pull_file',
     speaker: 'Anjali',
-    text: "Please. I — I just want to figure this out.",
+    text: "Thank you. I — I just want to figure this out.",
     choices: [
       {
         text: "(Sit down at your desk and open the claim.)",
