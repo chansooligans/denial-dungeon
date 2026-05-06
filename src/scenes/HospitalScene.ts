@@ -8,25 +8,50 @@ import type { NPC } from '../types'
 
 const TILE = 32
 
-const TILE_TEXTURES: Record<string, { floor: string; obj?: string; solid?: boolean }> = {
-  'W': { floor: 'h_wall', solid: true },
-  'D': { floor: 'h_door' },
-  'L': { floor: 'h_door', solid: true },  // locked door — visible but impassable (foreshadow)
-  '.': { floor: 'h_floor' },
-  '~': { floor: 'h_floor2' },
-  '_': { floor: 'h_carpet' },
-  'c': { floor: 'h_floor', obj: 'h_desk' },
-  'h': { floor: 'h_floor', obj: 'h_chair' },
-  'E': { floor: 'h_floor', obj: 'h_equipment' },
-  'P': { floor: 'h_floor', obj: 'h_plant' },
-  'w': { floor: 'h_floor', obj: 'h_water', solid: true },
-  'F': { floor: 'h_floor', obj: 'h_cabinet', solid: true },
-  'B': { floor: 'h_floor', obj: 'h_whiteboard', solid: true },
-  'R': { floor: 'h_floor', obj: 'h_counter', solid: true },
-  'V': { floor: 'h_floor', obj: 'h_vending', solid: true },
-  'b': { floor: 'h_floor', obj: 'h_bulletin', solid: true },
-  'H': { floor: 'h_floor', obj: 'h_bed', solid: true },
-  'X': { floor: 'h_floor', obj: 'h_fax' },
+// 70s + David Lynch palette — applied as tints on top of existing
+// sprites. Reads warm but uncanny: cream-tan floors, walnut walls,
+// burnt-orange chairs, mustard counters, avocado plants. Cooler
+// fluorescent tiles get replaced with a warm incandescent register.
+const TINT = {
+  floor:    0xc8b090, // cream-tan, scuffed
+  floorAlt: 0xb89870, // slightly darker tan for ~ tiles (worn carpet patches)
+  carpet:   0x8a4a30, // burgundy-cream carpet (entry rugs etc.)
+  wall:     0x4a3220, // walnut wood paneling
+  door:     0x9a6a3a, // brass door
+  doorLock: 0x6a4828, // dim brass (locked)
+  desk:     0x5a3820, // dark walnut
+  chair:    0x9a4a28, // burnt orange
+  equip:    0x6a5a4a, // dim taupe
+  plant:    0x5a7028, // avocado green
+  water:    0xc8a040, // mustard yellow (doubles as a "lamp" highlight)
+  cabinet:  0x6a4828, // walnut cabinet
+  whiteboard: 0xa89878, // off-cream board
+  counter:  0xb08c30, // mustard counter laminate
+  vending:  0x8a4a28, // burnt orange machine
+  bulletin: 0x8a6840, // cork tan
+  bed:      0xb09870, // tan
+  fax:      0x6a5a4a, // dim taupe
+} as const
+
+const TILE_TEXTURES: Record<string, { floor: string; obj?: string; solid?: boolean; floorTint?: number; objTint?: number }> = {
+  'W': { floor: 'h_wall',  solid: true, floorTint: TINT.wall },
+  'D': { floor: 'h_door',  floorTint: TINT.door },
+  'L': { floor: 'h_door',  solid: true, floorTint: TINT.doorLock },
+  '.': { floor: 'h_floor', floorTint: TINT.floor },
+  '~': { floor: 'h_floor2', floorTint: TINT.floorAlt },
+  '_': { floor: 'h_carpet', floorTint: TINT.carpet },
+  'c': { floor: 'h_floor', obj: 'h_desk',       floorTint: TINT.floor, objTint: TINT.desk },
+  'h': { floor: 'h_floor', obj: 'h_chair',      floorTint: TINT.floor, objTint: TINT.chair },
+  'E': { floor: 'h_floor', obj: 'h_equipment',  floorTint: TINT.floor, objTint: TINT.equip },
+  'P': { floor: 'h_floor', obj: 'h_plant',      floorTint: TINT.floor, objTint: TINT.plant },
+  'w': { floor: 'h_floor', obj: 'h_water',      solid: true, floorTint: TINT.floor, objTint: TINT.water },
+  'F': { floor: 'h_floor', obj: 'h_cabinet',    solid: true, floorTint: TINT.floor, objTint: TINT.cabinet },
+  'B': { floor: 'h_floor', obj: 'h_whiteboard', solid: true, floorTint: TINT.floor, objTint: TINT.whiteboard },
+  'R': { floor: 'h_floor', obj: 'h_counter',    solid: true, floorTint: TINT.floor, objTint: TINT.counter },
+  'V': { floor: 'h_floor', obj: 'h_vending',    solid: true, floorTint: TINT.floor, objTint: TINT.vending },
+  'b': { floor: 'h_floor', obj: 'h_bulletin',   solid: true, floorTint: TINT.floor, objTint: TINT.bulletin },
+  'H': { floor: 'h_floor', obj: 'h_bed',        solid: true, floorTint: TINT.floor, objTint: TINT.bed },
+  'X': { floor: 'h_floor', obj: 'h_fax',        floorTint: TINT.floor, objTint: TINT.fax },
 }
 
 // Tiles that act as room boundaries for flood-fill: walls and doors.
@@ -93,9 +118,13 @@ export class HospitalScene extends Phaser.Scene {
     this.npcSprites = []
     this.currentRoomId = -1
 
-    this.cameras.main.setBackgroundColor(0x05070a)
+    // 70s-Lynch warm darkness — incandescent-bulb register, not
+    // fluorescent. Deeper than #1a1208 because the camera shows a
+    // lot of bg through the fog-of-war alpha-0.28 visited tiles.
+    this.cameras.main.setBackgroundColor(0x140a05)
 
     this.buildMap()
+    this.applyAmbientPulse()
     this.placeGap()
     this.placePlayer()
     this.placeNPCs()
@@ -160,10 +189,12 @@ export class HospitalScene extends Phaser.Scene {
         const tileDef = TILE_TEXTURES[ch] || TILE_TEXTURES['.']
 
         const floor = this.add.image(px, py, tileDef.floor).setScale(2).setAlpha(0)
+        if (tileDef.floorTint !== undefined) floor.setTint(tileDef.floorTint)
         this.tileFloorSprites[y][x] = floor
 
         if (tileDef.obj) {
           const obj = this.add.image(px, py, tileDef.obj).setScale(2).setDepth(2).setAlpha(0)
+          if (tileDef.objTint !== undefined) obj.setTint(tileDef.objTint)
           this.tileObjSprites[y][x] = obj
         }
       }
@@ -206,6 +237,35 @@ export class HospitalScene extends Phaser.Scene {
     }
   }
 
+  /**
+   * Lynch-warm incandescent ambient pulse on the camera. Slow
+   * 6-second breath plus an occasional sharp dim — like a stage
+   * bulb that doesn't quite hold. Same idea as the Waiting Room's
+   * ambient flicker but warmer and slower; the Hospital is supposed
+   * to feel almost-but-not-quite-stable.
+   */
+  private applyAmbientPulse() {
+    this.tweens.add({
+      targets: this.cameras.main,
+      alpha: 0.94,
+      duration: 6000,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    })
+    // One sharp stutter every ~9 seconds. Brief — 90ms — so the
+    // overall feel stays still, with the occasional reminder that
+    // the room is theatrical rather than real.
+    this.time.addEvent({
+      delay: 9000,
+      loop: true,
+      callback: () => {
+        this.cameras.main.setAlpha(0.74)
+        this.time.delayedCall(90, () => this.cameras.main.setAlpha(0.94))
+      },
+    })
+  }
+
   private placeGap() {
     const ct = this.mapDef.gapTile
     const px = ct.x * TILE + TILE / 2
@@ -229,7 +289,7 @@ export class HospitalScene extends Phaser.Scene {
 
     this.gapPrompt = this.add.text(px, py - 24, '[E] Enter the gap', {
       fontSize: '9px', fontFamily: 'monospace', color: '#b18bd6',
-      backgroundColor: '#0e1116',
+      backgroundColor: '#1f1208',
       padding: { x: 4, y: 2 },
     }).setOrigin(0.5).setDepth(20).setVisible(false)
   }
@@ -280,7 +340,7 @@ export class HospitalScene extends Phaser.Scene {
   private buildUI() {
     this.interactPrompt = this.add.text(0, 0, '[E] Talk', {
       fontSize: '9px', fontFamily: 'monospace', color: '#f4d06f',
-      backgroundColor: '#0e1116',
+      backgroundColor: '#1f1208',
       padding: { x: 4, y: 2 },
     }).setOrigin(0.5).setDepth(20).setVisible(false)
   }
@@ -291,13 +351,13 @@ export class HospitalScene extends Phaser.Scene {
 
     this.hudLevel = this.add.text(10, 10, `Level ${state.currentLevel}: ${level?.title ?? ''}`, {
       fontSize: '10px', fontFamily: 'monospace', color: '#7ee2c1',
-      backgroundColor: '#0e111680',
+      backgroundColor: '#1f120880',
       padding: { x: 4, y: 2 },
     }).setScrollFactor(0).setDepth(100)
 
     this.hudHp = this.add.text(10, 28, '', {
       fontSize: '9px', fontFamily: 'monospace', color: '#ef5b7b',
-      backgroundColor: '#0e111680',
+      backgroundColor: '#1f120880',
       padding: { x: 4, y: 2 },
     }).setScrollFactor(0).setDepth(100)
 
@@ -318,9 +378,9 @@ export class HospitalScene extends Phaser.Scene {
     this.miniMapY = 8
 
     this.miniMapBg = this.add.graphics().setDepth(99)
-    this.miniMapBg.fillStyle(0x0e1116, 0.85)
+    this.miniMapBg.fillStyle(0x140a05, 0.88) // matches camera bg (warm dark)
     this.miniMapBg.fillRect(this.miniMapX, this.miniMapY, totalW, totalH)
-    this.miniMapBg.lineStyle(1, 0x7ee2c1, 0.6)
+    this.miniMapBg.lineStyle(1, 0xc8a040, 0.6) // mustard frame, fits 70s palette
     this.miniMapBg.strokeRect(this.miniMapX + 0.5, this.miniMapY + 0.5, totalW - 1, totalH - 1)
 
     this.miniMapTiles = this.add.graphics().setDepth(100)
@@ -383,13 +443,27 @@ export class HospitalScene extends Phaser.Scene {
     this.playerTileY = newY
 
     this.canMove = false
+    const targetX = newX * TILE + TILE / 2
+    const targetY = newY * TILE + TILE / 2
+    // Position tween — moves the player to the new tile.
     this.tweens.add({
       targets: this.player,
-      x: newX * TILE + TILE / 2,
-      y: newY * TILE + TILE / 2,
+      x: targetX,
+      y: targetY,
       duration: 120,
       ease: 'Linear',
       onComplete: () => { this.canMove = true },
+    })
+    // Walking bob — scaleY squashes 1.0 → 0.92 → 1.0 over the
+    // duration of the move so the character has a hint of weight
+    // landing each step. Tiny effect (8% squash); reads as life
+    // without becoming cartoony.
+    this.tweens.add({
+      targets: this.player,
+      scaleY: 1.84, // base scale is 2; 1.84 = 8% squash
+      duration: 60,
+      yoyo: true,
+      ease: 'Sine.easeInOut',
     })
 
     this.enterRoomAt(newX, newY)
@@ -479,9 +553,9 @@ export class HospitalScene extends Phaser.Scene {
 
         const ch = layout[y]?.[x] || '.'
         let color: number
-        if (ch === 'W') color = 0x3a3f4d
-        else if (ch === 'D' || ch === 'L') color = 0xf4d06f
-        else color = 0xa89377
+        if (ch === 'W') color = 0x4a3220       // walnut, matches wall tint
+        else if (ch === 'D' || ch === 'L') color = 0xc8a040 // mustard for doors
+        else color = 0xc8b090                  // cream-tan for floors
 
         const alpha = state === VIS_CURRENT ? 1 : 0.45
         g.fillStyle(color, alpha)

@@ -27,11 +27,16 @@ const PRIOR_AUTH   = { x: 37, y: 3,  w: 14, h: 10 } // shares east wall of Main 
 const PATIENT_SVC  = { x: 2,  y: 17, w: 12, h: 8  }
 const REGISTRATION = { x: 15, y: 17, w: 22, h: 8  }
 const ELIGIBILITY  = { x: 24, y: 24, w: 10, h: 6  } // hangs off Registration's south wall
-const LOBBY        = { x: 4,  y: 30, w: 52, h: 14 }
+// Lobby: cozier than the original 52×14 cavern. Per user feedback the
+// starting room read as too big — it's the player's first impression
+// and should feel like a room you stand IN, not a corridor you cross.
+// The corridor still lands at x=14, so the door offset of 10 keeps
+// the geometry connected.
+const LOBBY        = { x: 4,  y: 32, w: 26, h: 10 }
 
 // Door world-coords (used to plan corridor endpoints).
 const HUB_SOUTH_DOOR    = { x: MAIN_HUB.x + 10,    y: MAIN_HUB.y + MAIN_HUB.h - 1 } // (30, 12)
-const LOBBY_NORTH_DOOR  = { x: LOBBY.x + 10,        y: LOBBY.y }                    // (14, 30)
+const LOBBY_NORTH_DOOR  = { x: LOBBY.x + 10,        y: LOBBY.y }                    // (14, 32)
 const CORRIDOR_BEND     = { x: LOBBY_NORTH_DOOR.x,  y: HUB_SOUTH_DOOR.y + 1 }       // (14, 13)
 
 const layout = buildMapLayout({
@@ -110,21 +115,33 @@ const layout = buildMapLayout({
       id: 'lobby',
       ...LOBBY,
       doors: [{ side: 'N', offset: 10 }],
+      // 70s-Lynch lobby — packed warmer + denser than the old cavern.
+      // Reuses existing prop chars (lamps stand-in: water-cooler 'w';
+      // side tables: 'c'; framed art: 'b'). The HospitalScene tints
+      // give the room its register; the props give it its density.
       items: [
-        // counter at top
+        // Counter spans three columns west of the door
         { dx: 1, dy: 1, ch: 'R' }, { dx: 2, dy: 1, ch: 'R' }, { dx: 3, dy: 1, ch: 'R' },
-        { dx: 4, dy: 1, ch: 'R' }, { dx: 5, dy: 1, ch: 'R' },
-        // bulletin + plant decorations
-        { dx: 12, dy: 1, ch: 'b' },
-        { dx: 25, dy: 1, ch: 'P' }, { dx: 40, dy: 1, ch: 'P' },
-        // chairs in two rows facing forward
-        { dx: 5,  dy: 6, ch: 'h' }, { dx: 8,  dy: 6, ch: 'h' }, { dx: 11, dy: 6, ch: 'h' }, { dx: 14, dy: 6, ch: 'h' },
-        { dx: 5,  dy: 8, ch: 'h' }, { dx: 8,  dy: 8, ch: 'h' }, { dx: 11, dy: 8, ch: 'h' }, { dx: 14, dy: 8, ch: 'h' },
-        { dx: 28, dy: 6, ch: 'h' }, { dx: 31, dy: 6, ch: 'h' }, { dx: 34, dy: 6, ch: 'h' }, { dx: 37, dy: 6, ch: 'h' },
-        { dx: 28, dy: 8, ch: 'h' }, { dx: 31, dy: 8, ch: 'h' }, { dx: 34, dy: 8, ch: 'h' }, { dx: 37, dy: 8, ch: 'h' },
-        // amenities at south
-        { dx: 2,  dy: 11, ch: 'V' }, // vending
-        { dx: 47, dy: 11, ch: 'w' }, // water cooler
+        // Bulletin board + a small framed print north wall
+        { dx: 5,  dy: 1, ch: 'b' },
+        { dx: 18, dy: 1, ch: 'b' }, // second bulletin (like a print)
+        // Plants flanking — north corners + by the door
+        { dx: 7,  dy: 1, ch: 'P' },
+        { dx: 12, dy: 1, ch: 'P' }, // by door
+        { dx: 22, dy: 1, ch: 'P' },
+        // Side tables (with magazines / ashtrays — implied)
+        { dx: 5,  dy: 4, ch: 'c' },
+        { dx: 19, dy: 4, ch: 'c' },
+        // Two rows of chairs, denser than before; centered on the room
+        { dx: 7,  dy: 4, ch: 'h' }, { dx: 9,  dy: 4, ch: 'h' }, { dx: 11, dy: 4, ch: 'h' },
+        { dx: 14, dy: 4, ch: 'h' }, { dx: 16, dy: 4, ch: 'h' },
+        { dx: 7,  dy: 6, ch: 'h' }, { dx: 9,  dy: 6, ch: 'h' }, { dx: 11, dy: 6, ch: 'h' },
+        { dx: 14, dy: 6, ch: 'h' }, { dx: 16, dy: 6, ch: 'h' },
+        // South wall amenities — vending, water cooler ("lamp"), bulletin
+        { dx: 2,  dy: 7, ch: 'V' },
+        { dx: 22, dy: 7, ch: 'w' }, // doubles as a tall lamp visually with the warm tint
+        { dx: 24, dy: 7, ch: 'P' }, // corner plant
+        { dx: 13, dy: 8, ch: 'b' }, // framed print over a chair row
       ],
     },
   ],
