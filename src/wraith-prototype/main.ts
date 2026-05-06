@@ -1139,7 +1139,14 @@ const css = `
   .register { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; padding: 2px 10px; border-radius: 3px; display: inline-block; }
   .register.hospital { background: rgba(240, 168, 104, 0.12); color: var(--accent-2); border: 1px solid #4a3a2a; }
   .register.waiting-room { background: rgba(177, 139, 214, 0.12); color: #c8b6e0; border: 1px solid #3a324a; }
-  .register-flip { margin: 16px 0; padding: 12px 16px; border-left: 3px solid #c8b6e0; background: rgba(177, 139, 214, 0.05); font-size: 13.5px; }
+  .register-flip {
+    margin: 16px 0;
+    padding: 12px 16px;
+    border-left: 3px solid #c8b6e0;
+    background: rgba(177, 139, 214, 0.05);
+    font-size: 13.5px;
+    overflow: hidden;
+  }
   .ripple { width: 100%; height: 2px; margin-bottom: 8px; background: linear-gradient(90deg, transparent, #c8b6e0, transparent); animation: ripple 4s infinite ease-in-out; }
   @keyframes ripple {
     0%, 100% { transform: translateX(-100%); opacity: 0; }
