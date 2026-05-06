@@ -1076,7 +1076,7 @@ const css = `
     --panel-2: #1d2330;
     --ink: #d8dee9;
     --ink-dim: #8a93a3;
-    --accent: #7ee2c1;
+    --accent: #f0a868;
     --accent-2: #f0a868;
     --bad: #ef5b7b;
     --good: #7ee2c1;
@@ -1205,7 +1205,7 @@ const css = `
     cursor: help;
     position: relative;
   }
-  .term:hover { color: #a8efd4; }
+  .term:hover { color: #f5c190; }
   .term-icon {
     display: inline-block; vertical-align: super;
     font-size: 9px; margin-left: 2px;
@@ -1613,7 +1613,7 @@ const css = `
     letter-spacing: 0.04em;
   }
   .btn.primary { background: var(--accent); color: #0a0d12; font-weight: 600; }
-  .btn.primary:hover:not(.disabled) { background: #a8efd4; }
+  .btn.primary:hover:not(.disabled) { background: #f5c190; }
   .btn.ghost { background: transparent; color: var(--ink-dim); border-color: #2a3142; }
   .btn.ghost:hover { color: var(--ink); border-color: var(--ink-dim); }
   .btn.submit { background: var(--accent-2); color: #0a0d12; font-weight: 700; padding: 12px 24px; margin-top: 14px; }
