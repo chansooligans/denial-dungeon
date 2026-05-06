@@ -65,6 +65,13 @@ export default defineConfig({
         // control encounter. Lives at
         // /doppelganger-prototype.html.
         doppelganger: resolve(__dirname, 'doppelganger-prototype.html'),
+        // Lighthouse prototype: tenth sibling — the patient-
+        // facing release-valve. First encounter that isn't
+        // a fight: charity-care screening for a patient who
+        // can't pay an $87,420 bill. Verbs are LISTEN /
+        // SCREEN / RELEASE; sits outside the four-district
+        // verb-space. Lives at /lighthouse-prototype.html.
+        lighthouse: resolve(__dirname, 'lighthouse-prototype.html'),
       },
       output: {
         // Pull Phaser into its own vendor chunk. The framework is the
