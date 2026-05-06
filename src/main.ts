@@ -10,6 +10,7 @@ import { FormScene } from './scenes/FormScene'
 import { WaitingRoomScene } from './scenes/WaitingRoomScene'
 import { CodexScene } from './scenes/CodexScene'
 import { TouchOverlay } from './scenes/TouchOverlay'
+import { installDevPanel } from './dev/devPanel'
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
@@ -34,3 +35,5 @@ const config: Phaser.Types.Core.GameConfig = {
 
 const game = new Phaser.Game(config)
 ;(window as any).__PHASER_GAME__ = game
+
+installDevPanel()
