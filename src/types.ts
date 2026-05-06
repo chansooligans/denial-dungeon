@@ -77,11 +77,6 @@ export const WING_LABEL: Record<Wing, string> = {
  * pointer to the runtime puzzle that the player solves: `puzzleSpecId`.
  * Encounters without a `puzzleSpecId` exist as codex/lore data only —
  * they are not engageable.
- *
- * Several legacy fields (hp, attackDamage, correctTools, caseFile,
- * toolEffects, puzzleDraft) come from the older HP-based BattleScene
- * which has been retired. They remain on the type as optional so the
- * existing data still type-checks; nothing reads them at runtime.
  */
 export interface Encounter {
   id: string
@@ -112,105 +107,6 @@ export interface Encounter {
   payerNote?: string
   /** Required for engagement. Key into `src/runtime/puzzle/specs/index.ts`. */
   puzzleSpecId?: string
-
-  // --- Legacy HP-era fields, retained for backward compatibility on
-  //     existing encounter data. Nothing reads these at runtime. ---
-  /** @deprecated HP-era; runtime puzzles don't track HP. */
-  hp?: number
-  /** @deprecated HP-era. */
-  attackDamage?: number
-  /** @deprecated HP-era. */
-  correctTools?: string[]
-  /** @deprecated Investigation-mechanic only. */
-  caseFile?: CaseFile
-  /** @deprecated Per-tool ClaimSheet mutations from the old battle. */
-  toolEffects?: Record<string, ToolEffect[]>
-  /** @deprecated Design-time draft used by the public battle catalog. */
-  puzzleDraft?: PuzzleDraft
-}
-
-/**
- * A draft puzzle reframe for an Encounter. Author once in
- * `enemies.ts`; the catalog renders it. None of these fields run in
- * the live game.
- */
-export interface PuzzleDraft {
-  /** One-line summary of what the puzzle is about. */
-  premise: string
-  /**
-   * Ordered list of issues the player must resolve to win. Hidden
-   * issues (revealed via investigation) get `hidden: true`. Each
-   * issue suggests the canonical resolving tool/action.
-   */
-  issues: PuzzleIssue[]
-  /**
-   * Win condition prose — when does the claim adjudicate clean?
-   * Usually "all issues resolved + Submit pressed".
-   */
-  winCondition: string
-  /**
-   * Failure / penalty modes — what wrong moves cost. Filing-window
-   * burn, goodwill loss, audit risk, etc. Replaces "HP damage" in
-   * the puzzle frame.
-   */
-  costs: string[]
-  /**
-   * Sample payer replies (string keys = tool id or action label,
-   * values = the response shown to the player). Optional — used to
-   * sketch the dialogue feel without committing to one wording.
-   */
-  payerReplies?: Record<string, string>
-  /** Free-form design notes / open questions / risks. */
-  notes?: string
-}
-
-export interface PuzzleIssue {
-  /** Short label (≤ ~70 chars). */
-  label: string
-  /** Hidden until investigation reveals it. */
-  hidden?: boolean
-  /** Canonical tool / action that resolves this issue. */
-  resolvedBy?: string
-  /** Why this is the issue — the teaching beat. */
-  teaching?: string
-}
-
-/** A visible mutation applied to a CMS-1500 field during battle. */
-export interface ToolEffect {
-  /** Box id matching ClaimSheet conventions, e.g. '24D-1'. */
-  box: string
-  /**
-   * 'stamp' — adds short red text overlapping the field (e.g. '+25 mod').
-   * 'check' — adds a green ✓ near the field.
-   * 'note'  — adds a small yellow annotation under the field (e.g. 'LCD reviewed').
-   */
-  kind: 'stamp' | 'check' | 'note'
-  /** Value text for stamp / note. Ignored for check. */
-  value?: string
-}
-
-export interface CaseFact {
-  id: string
-  /** Short text shown in the case file panel (≤ ~70 chars). */
-  label: string
-  /** Whether this fact actually matters to the resolution. */
-  relevance: 'relevant' | 'distractor'
-  /** When true, this fact reveals as "weakly supported" — needs Document. */
-  weakOnReveal?: boolean
-  /**
-   * Optional ClaimSheet annotation that lands on the form when this
-   * fact is first revealed by Investigate. Lets revealed evidence be
-   * visible in-form, not just in messageText.
-   */
-  onReveal?: ToolEffect
-}
-
-export interface CaseFile {
-  /** Number of relevant + supported facts needed to win Decide. */
-  threshold: number
-  facts: CaseFact[]
-  /** Optional flavor shown above the panel ("From the chart:" etc.). */
-  intro?: string
 }
 
 // === Tickets ===
