@@ -474,11 +474,22 @@ export class WaitingRoomScene extends Phaser.Scene {
   private tryEngageObstacle(os: ObstacleSprite) {
     const state = getState()
     if (state.defeatedObstacles.includes(os.marker.encounterId)) return
-    if (!ENCOUNTERS[os.marker.encounterId]) return
+    const enc = ENCOUNTERS[os.marker.encounterId]
+    if (!enc) return
 
     this.canMove = false
     this.engagePrompt.setVisible(false)
     saveGame()
+
+    if (enc.puzzleSpecId) {
+      this.scene.start('PuzzleBattle', {
+        encounterId: enc.id,
+        puzzleSpecId: enc.puzzleSpecId,
+        returnScene: 'WaitingRoom',
+      })
+      return
+    }
+
     this.scene.start('Battle', {
       encounterId: os.marker.encounterId,
       returnScene: 'WaitingRoom',

@@ -174,6 +174,13 @@ export interface Encounter {
    * MechanicController in src/battle/mechanics/.
    */
   puzzleDraft?: PuzzleDraft
+  /**
+   * Opt this encounter into the new prototype-shape battle. When set,
+   * WaitingRoomScene routes engagement to PuzzleBattleScene instead of
+   * the legacy HP-based BattleScene. The value is a key into
+   * `src/runtime/puzzle/specs/index.ts`.
+   */
+  puzzleSpecId?: string
 }
 
 /**
