@@ -4,6 +4,7 @@ import { LEVELS } from '../content/levels'
 import { HOSPITAL_MAP } from '../content/maps'
 import type { MapDef } from '../content/maps'
 import { getState, saveGame, consumePendingLevelBanner } from '../state'
+import { showNarration } from './narration'
 import type { NPC } from '../types'
 
 const TILE = 32
@@ -115,6 +116,7 @@ export class HospitalScene extends Phaser.Scene {
     // If we're returning from a puzzle round-trip (NPC handed us a case
     // → descended → solved → coming back), respawn at the saved tile
     // so the player wakes up next to whoever they were talking to.
+    const wasReturnFromWr = state.pendingHospitalSpawn != null
     if (state.pendingHospitalSpawn) {
       this.playerTileX = state.pendingHospitalSpawn.x
       this.playerTileY = state.pendingHospitalSpawn.y
@@ -197,6 +199,23 @@ export class HospitalScene extends Phaser.Scene {
     // save (gated by state.introOpeningPlayed).
     if (!state.introOpeningPlayed && state.currentLevel === 1) {
       this.runOpeningSequence()
+    } else if (wasReturnFromWr && !state.firstWrReturnNarrationPlayed) {
+      // First return from the WR — the "did that just happen?" beat.
+      // Movement disabled until the narration finishes.
+      this.canMove = false
+      this.time.delayedCall(800, () => {
+        showNarration(this, [
+          'You blink. Anjali is still standing there.',
+          'The fluorescent overhead is buzzing the way it always buzzes.',
+          'It’s like you never left.',
+          'But the claim — the claim is fixed.',
+        ], () => {
+          const s = getState()
+          s.firstWrReturnNarrationPlayed = true
+          saveGame()
+          this.canMove = true
+        })
+      })
     }
 
     // Mobile / accessibility: parallel scene with virtual D-pad + E + ESC.
@@ -476,54 +495,6 @@ export class HospitalScene extends Phaser.Scene {
         },
       })
     })
-  }
-
-  /**
-   * Show a sequence of narration lines centered at the bottom of the
-   * screen. Each line fades in, holds, fades out, and the next plays.
-   * UI-camera friendly (scrollFactor 0).
-   */
-  private showNarration(lines: string[], onComplete: () => void) {
-    const { width, height } = this.scale
-    const box = this.add.rectangle(width / 2, height / 2 + 100, width - 80, 70, 0x0e1116, 0.85)
-      .setStrokeStyle(1, 0x2a323d).setScrollFactor(0).setDepth(110).setAlpha(0)
-    const text = this.add.text(width / 2, height / 2 + 100, '', {
-      fontSize: '13px',
-      fontFamily: 'monospace',
-      color: '#e6edf3',
-      align: 'center',
-      wordWrap: { width: width - 120 },
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(111).setAlpha(0)
-
-    this.tweens.add({ targets: box, alpha: 0.85, duration: 280 })
-
-    let i = 0
-    const showNext = () => {
-      if (i >= lines.length) {
-        this.tweens.add({
-          targets: [box, text],
-          alpha: 0,
-          duration: 260,
-          onComplete: () => {
-            box.destroy()
-            text.destroy()
-            onComplete()
-          },
-        })
-        return
-      }
-      text.setText(lines[i])
-      i += 1
-      this.tweens.add({
-        targets: text,
-        alpha: 1,
-        duration: 280,
-        hold: 1500,
-        yoyo: true,
-        onComplete: () => this.time.delayedCall(180, showNext),
-      })
-    }
-    showNext()
   }
 
   private setupInput() {

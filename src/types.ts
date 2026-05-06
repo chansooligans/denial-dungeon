@@ -430,6 +430,12 @@ export interface GameState {
    * IntroScene (which is replayable from the title screen).
    */
   introOpeningPlayed?: boolean
+  /** First time the player ever lands in the WR — show the surreal-
+   *  reveal narration ("You are somewhere else…") on arrival. */
+  firstWrArrivalNarrationPlayed?: boolean
+  /** First time the player returns to the Hospital after a puzzle —
+   *  show the "did that just happen?" narration. */
+  firstWrReturnNarrationPlayed?: boolean
 }
 
 export interface Decision {

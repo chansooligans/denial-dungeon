@@ -3,6 +3,7 @@ import { getState, saveGame } from '../state'
 import { LEVELS } from '../content/levels'
 import { ENCOUNTERS } from '../content/enemies'
 import { HOSPITAL_MAP } from '../content/maps'
+import { showNarration } from './narration'
 import type { MapDef } from '../content/maps'
 
 const TILE = 32
@@ -243,7 +244,23 @@ export class WaitingRoomScene extends Phaser.Scene {
         ease: 'Cubic.easeOut',
         onComplete: () => ring.destroy(),
       })
-      this.canMove = true
+
+      // First time the player ever lands in the WR: surreal-reveal
+      // narration. Movement stays disabled until it finishes.
+      const s = getState()
+      if (!s.firstWrArrivalNarrationPlayed) {
+        showNarration(this, [
+          'You are somewhere else.',
+          "The same room, but it isn't.",
+        ], () => {
+          const after = getState()
+          after.firstWrArrivalNarrationPlayed = true
+          saveGame()
+          this.canMove = true
+        })
+      } else {
+        this.canMove = true
+      }
     })
 
     // When a battle returns control, refresh obstacle visibility (defeated
