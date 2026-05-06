@@ -18,6 +18,10 @@ export default defineConfig({
         // the no-HP / no-tools / no-multiple-choice redesign. Lives
         // at /wraith-prototype.html on GitHub Pages.
         wraith: resolve(__dirname, 'wraith-prototype.html'),
+        // Bundle prototype: sibling demonstrating AMEND-dominant
+        // verb-space (modifier 25 on Box 24, vs. Wraith's CITE-
+        // dominant). Lives at /bundle-prototype.html.
+        bundle: resolve(__dirname, 'bundle-prototype.html'),
       },
       output: {
         // Pull Phaser into its own vendor chunk. The framework is the
