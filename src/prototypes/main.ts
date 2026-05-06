@@ -58,13 +58,14 @@ const prototypes: Prototype[] = [
   {
     id: 'reaper',
     title: 'Timely Filing Reaper',
-    subtitle: '@ L7 — planned',
+    subtitle: '@ L7 — third-sibling prototype',
     archetype: 'Reaper',
     carc: 'CO-29',
     level: 7,
-    status: 'planned',
-    verbs: 'TIME PRESSURE + CITE/REQUEST',
-    testing: 'Adds a real countdown — filing window. Decisions cost time. First encounter where the game-feel pivots; tests whether pressure mechanics hold without becoming punishing.',
+    status: 'shipped',
+    verbs: 'TIME PRESSURE + CITE + AMEND',
+    testing: 'A real countdown. The appeal window is 14 days; every action burns 1–4 of them; running out closes the file. Tests whether pressure reads as urgency rather than punishment when costs are visible up front.',
+    href: './reaper-prototype.html',
     accent: '#b18bd6',
   },
   {
