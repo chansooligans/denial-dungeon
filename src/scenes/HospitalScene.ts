@@ -4,8 +4,15 @@ import { LEVELS } from '../content/levels'
 import { HOSPITAL_MAP } from '../content/maps'
 import type { MapDef } from '../content/maps'
 import { getState, saveGame, consumePendingLevelBanner } from '../state'
-import { showNarration } from './narration'
+import { ENCOUNTERS } from '../content/enemies'
+import { PUZZLE_SPECS } from '../runtime/puzzle/specs'
 import type { NPC } from '../types'
+
+function esc(s: string): string {
+  return String(s).replace(/[&<>"']/g, ch => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[ch] ?? ch))
+}
 
 const TILE = 32
 
@@ -175,15 +182,25 @@ export class HospitalScene extends Phaser.Scene {
       this.canMove = true
       this.refreshHUD()
       // A dialogue handoff may have flagged a descent. Save the
-      // player's current position so we can return them here, then
-      // play the descent animation into the WR.
+      // player's current position so we can return them here. Show
+      // the claim preview first (player gets to see what's broken
+      // before falling), then descend.
       const s = getState()
       if (s.pendingDescent) {
         const descent = s.pendingDescent
         s.pendingDescent = null
         s.pendingHospitalSpawn = { x: this.playerTileX, y: this.playerTileY }
         saveGame()
-        this.descendThroughGap(descent.encounterId)
+        this.canMove = false
+        this.showClaimPreview(descent.encounterId, () => {
+          this.descendThroughGap(descent.encounterId)
+        })
+      }
+      // After the thanks dialogue closes, walk Anjali out.
+      if (s.pendingAnjaliLeave) {
+        s.pendingAnjaliLeave = false
+        saveGame()
+        this.runAnjaliLeave()
       }
     })
 
@@ -199,23 +216,12 @@ export class HospitalScene extends Phaser.Scene {
     // save (gated by state.introOpeningPlayed).
     if (!state.introOpeningPlayed && state.currentLevel === 1) {
       this.runOpeningSequence()
-    } else if (wasReturnFromWr && !state.firstWrReturnNarrationPlayed) {
-      // First return from the WR — the "did that just happen?" beat.
-      // Movement disabled until the narration finishes.
-      this.canMove = false
-      this.time.delayedCall(800, () => {
-        showNarration(this, [
-          'You blink. Anjali is still standing there.',
-          'The fluorescent overhead is buzzing the way it always buzzes.',
-          'It’s like you never left.',
-          'But the claim — the claim is fixed.',
-        ], () => {
-          const s = getState()
-          s.firstWrReturnNarrationPlayed = true
-          saveGame()
-          this.canMove = true
-        })
-      })
+    } else if (wasReturnFromWr) {
+      // Returning from a puzzle round-trip. If the case Anjali handed
+      // over has been solved and she hasn't said her piece yet, auto-
+      // launch the thank-you dialogue so the moment doesn't depend on
+      // the player walking back to her.
+      this.maybeRunAnjaliThanks()
     }
 
     // Mobile / accessibility: parallel scene with virtual D-pad + E + ESC.
@@ -494,6 +500,146 @@ export class HospitalScene extends Phaser.Scene {
           })
         },
       })
+    })
+  }
+
+  /**
+   * Auto-launch Anjali's thank-you dialogue if she's still here, the
+   * intro case is solved, and we haven't done it yet. Fires on the
+   * Hospital scene's create() right after a return-from-WR.
+   */
+  private maybeRunAnjaliThanks() {
+    const state = getState()
+    if (state.anjaliThanked) return
+    if (!state.defeatedObstacles.includes('intro_wrong_card')) return
+    const anjali = this.npcSprites.find(n => n.npc.id === 'anjali')
+    if (!anjali) return
+
+    this.canMove = false
+    this.time.delayedCall(700, () => {
+      this.scene.pause()
+      this.scene.launch('Dialogue', {
+        dialogueKey: 'anjali_thanks',
+        callingScene: 'Hospital',
+        onComplete: () => {
+          // Mark thanked + flag the leave; the resume handler will
+          // pick up pendingAnjaliLeave and run the walk-out.
+          const s = getState()
+          s.anjaliThanked = true
+          s.pendingAnjaliLeave = true
+          saveGame()
+        },
+      })
+    })
+  }
+
+  /** Walk Anjali back out the lobby's north door, fading as she goes,
+   *  then drop her sprite + label so she stops being engageable. */
+  private runAnjaliLeave() {
+    const anjali = this.npcSprites.find(n => n.npc.id === 'anjali')
+    if (!anjali) return
+    this.canMove = false
+    const exitX = this.mapDef.playerStart.x * TILE + TILE / 2
+    const exitY = (32 - 1) * TILE + TILE / 2
+    this.tweens.add({
+      targets: anjali.sprite,
+      x: exitX,
+      y: exitY,
+      alpha: 0,
+      duration: 1500,
+      ease: 'Sine.easeIn',
+      onComplete: () => {
+        anjali.sprite.destroy()
+        anjali.label.destroy()
+        this.npcSprites = this.npcSprites.filter(n => n.npc.id !== 'anjali')
+        this.canMove = true
+      },
+    })
+    this.tweens.add({
+      targets: anjali.label,
+      x: exitX,
+      y: exitY - 22,
+      alpha: 0,
+      duration: 1500,
+      ease: 'Sine.easeIn',
+    })
+  }
+
+  /**
+   * Brief read-only claim preview before the descent fires. The player
+   * sees what's broken on the bill, the panel CSS-blurs out, then the
+   * descent animation kicks in. Total ~2.2s.
+   */
+  private showClaimPreview(encounterId: string, onComplete: () => void) {
+    const enc = ENCOUNTERS[encounterId]
+    const spec = enc?.puzzleSpecId ? PUZZLE_SPECS[enc.puzzleSpecId] : undefined
+    if (!spec || !spec.claim) {
+      onComplete()
+      return
+    }
+    const c = spec.claim
+    const carc = enc.carcCode ? `${enc.carcCode} — ${enc.carcName ?? ''}`.trim() : 'CLAIM REJECTED'
+    const dxLines = c.diagnoses.map(d => `<div>Dx: ${esc(d.code)}${d.label ? ' — ' + esc(d.label) : ''}</div>`).join('')
+    const lineRows = c.serviceLines.map(line => {
+      const cpt = `${esc(line.cptCode)}${line.cptLabel ? ' — ' + esc(line.cptLabel) : ''}`
+      return `<div>${esc(line.dos)} · POS ${esc(line.pos)} · ${cpt} · ${esc(line.charges)}</div>`
+    }).join('')
+    const html = `
+      <div class="panel">
+        <div class="h">CMS-1500 · ${esc(c.claimId)}</div>
+        <div>Patient: ${esc(c.patientName)} · ${esc(c.patientDob)}</div>
+        <div>Insurer: ${esc(c.insurer)} · ${esc(c.insuredId)}</div>
+        ${dxLines}
+        ${lineRows}
+        <div class="denied">DENIED · ${esc(carc)}</div>
+      </div>
+    `
+
+    const STYLE_ID = '__claim_preview_style__'
+    const OVERLAY_ID = '__claim_preview__'
+    let style = document.getElementById(STYLE_ID) as HTMLStyleElement | null
+    if (!style) {
+      style = document.createElement('style')
+      style.id = STYLE_ID
+      style.textContent = `
+        #${OVERLAY_ID} {
+          position: fixed; inset: 0; z-index: 800;
+          display: flex; align-items: center; justify-content: center;
+          background: rgba(10, 12, 18, 0.78);
+          animation: claim-preview-blur 2200ms forwards;
+        }
+        #${OVERLAY_ID} .panel {
+          background: #f5e6c8; color: #1a1208;
+          border: 1px solid #2a1a0e; border-radius: 6px;
+          padding: 22px 28px; max-width: 480px;
+          font: 13px/1.55 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+          box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+        }
+        #${OVERLAY_ID} .h {
+          font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+          border-bottom: 1px dashed #2a1a0e; padding-bottom: 6px; margin-bottom: 8px;
+        }
+        #${OVERLAY_ID} .denied {
+          color: #b13050; font-weight: 700; margin-top: 10px;
+          letter-spacing: 0.04em;
+        }
+        @keyframes claim-preview-blur {
+          0%   { filter: blur(0); opacity: 1; }
+          55%  { filter: blur(0); opacity: 1; }
+          100% { filter: blur(14px); opacity: 0; }
+        }
+      `
+      document.head.appendChild(style)
+    }
+    const overlay = document.createElement('div')
+    overlay.id = OVERLAY_ID
+    overlay.innerHTML = html
+    document.body.appendChild(overlay)
+
+    this.time.delayedCall(2200, () => {
+      overlay.remove()
+      style?.remove()
+      onComplete()
     })
   }
 

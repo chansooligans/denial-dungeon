@@ -291,4 +291,30 @@ export const DIALOGUES: Record<string, DialogueNode> = {
       },
     ],
   },
+
+  // === Anjali — after the intro case is solved. Auto-launched on
+  //     return to Hospital. ===
+  anjali_thanks: {
+    id: 'anjali_thanks',
+    speaker: 'Anjali',
+    text: "Wait — that's it? It's fixed?",
+    next: 'anjali_thanks_2',
+  },
+  anjali_thanks_2: {
+    id: 'anjali_thanks_2',
+    speaker: 'Anjali',
+    text: "I had my husband's card on me by accident. Of course I did. Thank you. Really.",
+    choices: [
+      { text: "(You're not entirely sure what just happened either.)", next: 'anjali_thanks_3' },
+      { text: "Glad I could help.", next: 'anjali_thanks_3' },
+    ],
+  },
+  anjali_thanks_3: {
+    id: 'anjali_thanks_3',
+    speaker: 'Anjali',
+    text: "I'm going to go home and sleep for a week. Thanks again.",
+    choices: [
+      { text: "Take care.", effect: { unlockCodex: 'co_31' } },
+    ],
+  },
 }

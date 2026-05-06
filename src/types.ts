@@ -433,9 +433,12 @@ export interface GameState {
   /** First time the player ever lands in the WR — show the surreal-
    *  reveal narration ("You are somewhere else…") on arrival. */
   firstWrArrivalNarrationPlayed?: boolean
-  /** First time the player returns to the Hospital after a puzzle —
-   *  show the "did that just happen?" narration. */
-  firstWrReturnNarrationPlayed?: boolean
+  /** Has Anjali said her thanks after the intro case was solved?
+   *  One-shot — once true, she's left the lobby. */
+  anjaliThanked?: boolean
+  /** Set when the thanks dialogue closes; the next Hospital `resume`
+   *  picks it up and animates Anjali walking out. */
+  pendingAnjaliLeave?: boolean
 }
 
 export interface Decision {
