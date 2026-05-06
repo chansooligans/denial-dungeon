@@ -43,6 +43,13 @@ export default defineConfig({
         // it forward through three adjudications with running
         // balance. Lives at /hydra-prototype.html.
         hydra: resolve(__dirname, 'hydra-prototype.html'),
+        // Swarm prototype: seventh sibling introducing the
+        // BATCH verb — 18 weekend CO-16 rejections, 14 sharing
+        // one root cause; fix the cluster as a group, sweep
+        // the outliers, patch upstream so it stops happening.
+        // First prototype that operates on a queue, not a
+        // single claim. Lives at /swarm-prototype.html.
+        swarm: resolve(__dirname, 'swarm-prototype.html'),
       },
       output: {
         // Pull Phaser into its own vendor chunk. The framework is the
