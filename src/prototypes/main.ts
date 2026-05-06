@@ -26,11 +26,13 @@ interface Prototype {
   href?: string
   /**
    * Curriculum district — matches the four district markers in
-   * `src/scenes/WaitingRoomScene.ts`. The accent below should
+   * `src/scenes/WaitingRoomScene.ts`. 'release-valve' is the
+   * special fifth category for restorative, non-combat
+   * encounters (the Lighthouse). The accent below should
    * be the district's canonical color.
    */
-  district: 'eligibility' | 'coding' | 'billing' | 'appeals'
-  /** District accent — pinned to one of four canonical colors. */
+  district: 'eligibility' | 'coding' | 'billing' | 'appeals' | 'release-valve'
+  /** District accent — pinned to one of five canonical colors. */
   accent: string
 }
 
@@ -120,6 +122,20 @@ const prototypes: Prototype[] = [
     accent: '#ef5b7b',
   },
   {
+    id: 'lighthouse',
+    title: 'Charity Lighthouse',
+    subtitle: '@ L8 — tenth-sibling prototype',
+    archetype: 'Lighthouse',
+    carc: 'patient-facing',
+    level: 8,
+    status: 'shipped',
+    verbs: 'LISTEN + SCREEN + RELEASE',
+    testing: 'First prototype that isn\'t a fight. Patient-facing, not payer-facing. A patient with a $87,420 bill she can\'t pay; verbs are LISTEN (pick the right follow-up question, not paternalism), SCREEN (FPL math + tier), RELEASE (file as charity care, not bad debt). Sits outside the four-district verb-space — the Lighthouse is restorative; it doesn\'t disappear when the encounter resolves.',
+    href: './lighthouse-prototype.html',
+    district: 'release-valve',
+    accent: '#e8c074',
+  },
+  {
     id: 'doppelganger',
     title: 'Duplicate Claim Doppelgänger',
     subtitle: '@ L6 — ninth-sibling prototype',
@@ -197,17 +213,18 @@ function renderHeader(): string {
 }
 
 function renderDistrictKey(): string {
-  const districts: Array<{ key: 'eligibility' | 'coding' | 'billing' | 'appeals'; color: string; gloss: string }> = [
-    { key: 'eligibility', color: '#7ee2c1', gloss: 'who is covered, by what, with what number' },
-    { key: 'coding',      color: '#f0a868', gloss: 'what was done, in what document, with what code' },
-    { key: 'billing',     color: '#ef5b7b', gloss: 'how it adjudicates and how it gets paid' },
-    { key: 'appeals',     color: '#b18bd6', gloss: 'how denials get unwound' },
+  const districts: Array<{ key: Prototype['district']; label: string; color: string; gloss: string }> = [
+    { key: 'eligibility',   label: 'Eligibility',   color: '#7ee2c1', gloss: 'who is covered, by what, with what number' },
+    { key: 'coding',        label: 'Coding',        color: '#f0a868', gloss: 'what was done, in what document, with what code' },
+    { key: 'billing',       label: 'Billing',       color: '#ef5b7b', gloss: 'how it adjudicates and how it gets paid' },
+    { key: 'appeals',       label: 'Appeals',       color: '#b18bd6', gloss: 'how denials get unwound' },
+    { key: 'release-valve', label: 'Release valve', color: '#e8c074', gloss: 'patient-facing kindness — restorative, not combative' },
   ]
   return `
     <section class="district-key">
       <div class="dk-h">
         <span class="dk-tag">DISTRICT KEY</span>
-        <span class="dk-sub">Each prototype is pinned to one of the four Waiting Room districts. Stripe color + label match the district markers in the actual scene.</span>
+        <span class="dk-sub">Four Waiting Room districts plus a special fifth category for restorative, non-combat encounters.</span>
       </div>
       <div class="dk-row">
         ${districts.map(d => {
@@ -216,7 +233,7 @@ function renderDistrictKey(): string {
             <div class="dk-item" style="--dk-color: ${d.color};">
               <span class="dk-swatch"></span>
               <div class="dk-text">
-                <span class="dk-name">${d.key.toUpperCase()}</span>
+                <span class="dk-name">${escape(d.label.toUpperCase())}</span>
                 <span class="dk-gloss">${escape(d.gloss)}</span>
                 <span class="dk-count">${count} prototype${count === 1 ? '' : 's'}</span>
               </div>
@@ -234,7 +251,7 @@ function renderCard(p: Prototype): string {
     <article class="card ${isShipped ? 'shipped' : 'planned'}" style="--card-accent: ${p.accent};">
       <div class="card-accent"></div>
       <div class="card-body">
-        <div class="card-district">${p.district.toUpperCase()} · DISTRICT</div>
+        <div class="card-district">${p.district === 'release-valve' ? 'RELEASE VALVE' : p.district.toUpperCase() + ' · DISTRICT'}</div>
         <div class="card-pills">
           <span class="pill carc">${escape(p.carc)}</span>
           <span class="pill level">L${p.level}</span>
@@ -383,7 +400,7 @@ const css = `
     color: var(--ink-dim);
   }
   .dk-sub { font-size: 12.5px; color: var(--ink-dim); font-style: italic; line-height: 1.5; }
-  .dk-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .dk-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
   @media (max-width: 880px) { .dk-row { grid-template-columns: repeat(2, 1fr); } }
   .dk-item {
     display: flex; align-items: flex-start; gap: 10px;
