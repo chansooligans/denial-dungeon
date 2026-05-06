@@ -54,7 +54,7 @@ reference/
 |---|---|
 | `curriculum/` | Spine + per-level breakdown + worked example locked. Open questions per level + cross-cutting questions in `curriculum/open-questions.md`. See `curriculum/CLAUDE.md` for detail. |
 | `narrative/` | Cosmology + philosophy + Dana's voice + reveal pacing + 12 notebook page drafts **locked**. Endings + Dana's specific child case + trapped-soul slate **provisional** (user revisiting). See `narrative/CLAUDE.md` for detail. |
-| `puzzles/` | Drafts only. Bundle / Wraith / Gatekeeper have structured `puzzleDraft` data in code; rest are gaps. Nothing in `puzzles/` is implemented in the game engine yet. |
+| `puzzles/` | Drafts here are now ahead of where they started — most have shipped as standalone HTML prototypes in `src/<encounter>-prototype/`. See root [`../CLAUDE.md`](../CLAUDE.md) "Prototype catalog" section. The runtime battle engine in `src/battle/` still uses the old HP-based mechanics; the prototypes are the design target it'll eventually move to. |
 | `research/` | External research papers. PDF on US administrative healthcare costs lives here. Add new sources here. |
 | `journal/` | Append-only. Each entry is a snapshot at its date. Don't edit old entries; add new ones. |
 
@@ -86,21 +86,50 @@ reference/
   `src/content/enemies.ts`. Don't link to source from design
   docs — too easy to break.
 
-## Current design-mode session context
+## Current state — past design mode
 
-We're in **design mode**, not build mode. The user explicitly
-asked to slow down on mechanics and organize curriculum +
-narrative first. Don't start authoring encounters, NPCs, scenes,
-or hospital floor maps based on these docs without checking in.
-The docs are upstream of code; code follows once docs settle.
+The "design mode" framing this file used to carry is stale.
+The curriculum + narrative spine is locked, and the puzzle
+drafts that lived in `puzzles/` have largely shipped as
+standalone single-encounter HTML prototypes in
+`src/<encounter>-prototype/`. Twelve of them now span L2 →
+L10; see root [`../CLAUDE.md`](../CLAUDE.md) "Prototype
+catalog" for the full table.
 
-The ongoing PR is `curriculum-spine` (PR #39). Work happens
-there until the user either merges it or rebases it. New
-narrative or curriculum changes go on that branch.
+The runtime battle engine in `src/battle/` still uses the
+older HP / tools-as-damage / multiple-choice model and is
+largely frozen while the prototypes settle. Once a prototype
+shape stops moving, the runtime adopts it.
+
+What stays in this folder: the long-form design docs.
+Curriculum-level breakdowns, narrative cosmology + Dana's
+voice + notebook pages, archetype mapping, journal entries.
+Code follows; docs lead. Editing patterns:
+
+- **Adding a new prototype**: create `src/<name>-prototype/main.ts`,
+  consume the shared `BASE_CSS + districtVars` from
+  `src/shared/prototype-base.ts`, register the static
+  `<name>-prototype.html` page in `vite.config.ts`, add an
+  entry to `src/prototypes/main.ts` for the catalog.
+- **Updating a level's encounter slate**: edit `curriculum/levels/LN.md`.
+  Mark new gaps with `*(gap)*` and existing items with `✅`.
+- **Changing what a battle teaches**: usually means a new prototype
+  before any runtime change.
+
+## Provisional sections still in flux
+
+- **Endings** (`narrative/endings.md`) — L10 reveal +
+  branches still PROVISIONAL.
+- **Dana's specific child case** — deferred; current notebook
+  pages are deliberately generic.
+- **Trapped-soul slate** — four candidates drafted; not all
+  will ship. User revisiting.
 
 ## See also
 
 - Root [`CLAUDE.md`](../CLAUDE.md) — game-level context
-  (Phaser, build commands, what's done vs. not in code)
+  (Phaser, build commands, what's done vs. not in code,
+  prototype catalog)
 - `narrative/CLAUDE.md` — narrative-specific authoring rules,
   voice, what's locked vs. provisional
+- `curriculum/CLAUDE.md` — curriculum-spine authoring rules

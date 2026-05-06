@@ -44,10 +44,10 @@ prototypes settle. Detailed history in `git log`.
 - [ ] Sound design + art polish
 
 ## Key Design Docs
-- `reference/journal/2026-05-03-v3-the-waiting-room.md` — full game design
-- `reference/journal/2026-05-04-build-plan.md` — step-by-step build plan
-- `reference/journal/2026-05-04-waiting-room-combat-foundation.md` — combat refactor decisions
-- `reference/aesthetic-inspirations.md` — mood board
+- `reference/CLAUDE.md` — design-docs orientation (curriculum + narrative + prototypes)
+- `reference/journal/2026-05-03-v3-the-waiting-room.md` — original full game design
+- `reference/aesthetic-inspirations.md` — mood board (Twin Peaks Red Room, Brazil, Spirited Away)
+- `reference/curriculum/levels/L1.md` … `L10.md` — what each level teaches
 
 ## Architecture
 ```
@@ -78,15 +78,13 @@ src/
 public/intro/                      Hand-drawn comic pages
 ```
 
-## Battle Architecture
-`BattleScene` orchestrates; the encounter's `mechanic` field selects a
-`MechanicController` (`simple`, `investigation`, `timed`, …) via
-`createMechanic()`. Controller owns turn logic; scene owns rendering.
-When an encounter has `caseId`, `ClaimSheet` renders the linked
-`PatientCase.claim` data with `highlightedBoxes` + `payerNote` as
-battle-time overlays. Tools come from `state.tools` (default 5;
-`Encounter.unlocksOnDefeat` and `DialogueEffect.addTool` add more).
-Victory + defeat screens live in `src/battle/screens.ts`.
+## Battle Architecture (legacy runtime)
+`BattleScene` selects a `MechanicController` (`simple`, `investigation`,
+`timed`) via `createMechanic()`; controller owns turn logic, scene owns
+rendering. `ClaimSheet` renders `PatientCase.claim` with
+`highlightedBoxes` + `payerNote` overlays. Largely frozen while the
+prototypes settle on the next mechanics shape — when that happens, the
+runtime adopts it.
 
 ## Prototype catalog
 Twelve encounter-redesign prototypes live in `src/<encounter>-prototype/`,
