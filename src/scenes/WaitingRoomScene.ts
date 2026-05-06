@@ -33,6 +33,14 @@ interface ObstacleMarker {
   tileX: number
   tileY: number
   encounterId: string
+  /**
+   * When this marker is the active one for an NPC-triggered descent,
+   * confine the player to this rectangle (in tile units). Prevents the
+   * player from wandering to other obstacles' rooms during a focused
+   * case. Optional — when absent or in free-roam mode, no extra
+   * confinement beyond the map's solid tiles.
+   */
+  bounds?: { x: number; y: number; w: number; h: number }
 }
 
 /**
@@ -46,10 +54,15 @@ interface ObstacleMarker {
  *   Lobby          — no fights (the safe entry space)
  *   Prior Auth     — locked (post-L1)
  */
+// Main Hub room bounds (matches MAIN_HUB in level1.ts: x:20, y:3, w:18, h:10).
+// The intro session pins the player here; the obstacle sits a few tiles
+// from the gap landing so the player can see it as they arrive.
+const MAIN_HUB_BOUNDS = { x: 20, y: 3, w: 18, h: 10 }
+
 const OBSTACLES: ObstacleMarker[] = [
-  // Intro — sits right under the gap landing, first thing the
-  // player meets after descending. Single-amend "Wrong Card."
-  { tileX: 28, tileY: 13, encounterId: 'intro_wrong_card' },
+  // Intro — same room as the gap landing (Main Hub). Bounded so the
+  // player can't drift into other rooms during a focused case.
+  { tileX: 32, tileY: 9, encounterId: 'intro_wrong_card', bounds: MAIN_HUB_BOUNDS },
   // Patient Services
   { tileX: 8,  tileY: 21, encounterId: 'co_50' },          // Wraith
   // Registration (two beats — Fog at the west end, Swarm at the east)
@@ -134,6 +147,9 @@ export class WaitingRoomScene extends Phaser.Scene {
    *  was opened by a dialogue handoff and the player is here to handle
    *  exactly this one case. Null = legacy free-roam mode. */
   private activeEncounterId: string | null = null
+  /** When set, tryMove rejects any tile outside this rectangle —
+   *  confines the player to the active obstacle's room. */
+  private sessionBounds: { x: number; y: number; w: number; h: number } | null = null
 
   private floatingMotes: Phaser.GameObjects.Graphics[] = []
   private ticketText!: Phaser.GameObjects.Text
@@ -149,6 +165,10 @@ export class WaitingRoomScene extends Phaser.Scene {
 
   init(data: { activeEncounterId?: string }) {
     this.activeEncounterId = data?.activeEncounterId ?? null
+    const activeMarker = this.activeEncounterId
+      ? OBSTACLES.find(m => m.encounterId === this.activeEncounterId)
+      : null
+    this.sessionBounds = activeMarker?.bounds ?? null
   }
 
   create() {
@@ -572,6 +592,15 @@ export class WaitingRoomScene extends Phaser.Scene {
     const newY = this.playerTileY + dy
 
     if (this.isSolid(newX, newY)) return
+
+    // NPC-triggered sessions confine the player to the active obstacle's
+    // room. Other doors / corridors are visually present but unreachable.
+    if (this.sessionBounds) {
+      const b = this.sessionBounds
+      if (newX < b.x || newX >= b.x + b.w || newY < b.y || newY >= b.y + b.h) {
+        return
+      }
+    }
 
     this.playerTileX = newX
     this.playerTileY = newY
