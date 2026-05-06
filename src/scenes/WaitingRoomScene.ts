@@ -16,14 +16,16 @@ const TILE = 32
  *   "Below the hospital you know, there is another place… every
  *    claim that was ever filed still exists, waiting."
  *
- * Mechanically: the Waiting Room reads the same `HOSPITAL_MAP` and
- * renders the layout with WR-aesthetic tiles + cyberpunk overlays
- * (neon door glows, CRT scanlines, dramatic flicker, glitchy data
- * motes). Encounter markers get placed at thematic Hospital-room
- * positions (e.g. the eligibility kiosk hosts the Gatekeeper; main
- * hub hosts the Reaper + Hydra). Entry + exit both use the gap tile —
- * the player falls through the gap into the same room they were in,
- * just transformed.
+ * Mechanically: the WR is summoned by NPC dialogue. The conversation
+ * pulls the player downstairs with one specific case (`activeEncounterId`
+ * passed via init). Only that obstacle is rendered; the others stay
+ * dark until their own NPC calls. Player walks to the lit obstacle,
+ * presses E, the puzzle launches, and on completion the scene returns
+ * directly to the Hospital — the player wakes up next to whoever
+ * handed them the case.
+ *
+ * Free-roam mode (no activeEncounterId) is retained as a fallback: it
+ * renders every obstacle and exits via the gap. The dev panel uses it.
  */
 
 interface ObstacleMarker {
@@ -128,6 +130,10 @@ export class WaitingRoomScene extends Phaser.Scene {
   private playerTileX = 0
   private playerTileY = 0
   private mapDef!: MapDef
+  /** When set, only this obstacle is rendered + engageable. The session
+   *  was opened by a dialogue handoff and the player is here to handle
+   *  exactly this one case. Null = legacy free-roam mode. */
+  private activeEncounterId: string | null = null
 
   private floatingMotes: Phaser.GameObjects.Graphics[] = []
   private ticketText!: Phaser.GameObjects.Text
@@ -139,6 +145,10 @@ export class WaitingRoomScene extends Phaser.Scene {
 
   constructor() {
     super('WaitingRoom')
+  }
+
+  init(data: { activeEncounterId?: string }) {
+    this.activeEncounterId = data?.activeEncounterId ?? null
   }
 
   create() {
@@ -404,7 +414,13 @@ export class WaitingRoomScene extends Phaser.Scene {
   }
 
   private placeObstacles() {
-    for (const marker of OBSTACLES) {
+    // When the WR was opened to handle one specific case (NPC handoff),
+    // only the matching obstacle gets rendered. The others stay dark
+    // until their own NPC summons them.
+    const markers = this.activeEncounterId
+      ? OBSTACLES.filter(m => m.encounterId === this.activeEncounterId)
+      : OBSTACLES
+    for (const marker of markers) {
       const enc = ENCOUNTERS[marker.encounterId]
       if (!enc) continue
       const px = marker.tileX * TILE + TILE / 2
@@ -489,10 +505,16 @@ export class WaitingRoomScene extends Phaser.Scene {
     this.engagePrompt.setVisible(false)
     saveGame()
 
+    // NPC-triggered sessions return to the Hospital after the puzzle
+    // (the player wakes up next to whoever handed them the case).
+    // Free-roam sessions return to the WR so the player can wander
+    // to another obstacle.
+    const returnScene = this.activeEncounterId ? 'Hospital' : 'WaitingRoom'
+
     this.scene.start('PuzzleBattle', {
       encounterId: enc.id,
       puzzleSpecId: enc.puzzleSpecId,
-      returnScene: 'WaitingRoom',
+      returnScene,
     })
   }
 

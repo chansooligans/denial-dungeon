@@ -1,6 +1,6 @@
 import Phaser from 'phaser'
 import { DIALOGUES } from '../content/dialogue'
-import { unlockCodex, unlockTool, updateResources, saveGame } from '../state'
+import { unlockCodex, unlockTool, updateResources, saveGame, getState } from '../state'
 import type { DialogueNode, DialogueChoice, DialogueEffect } from '../types'
 
 export class DialogueScene extends Phaser.Scene {
@@ -119,13 +119,19 @@ export class DialogueScene extends Phaser.Scene {
       this.onComplete(this.collectedEffects)
     }
 
-    const battleEffect = this.collectedEffects.find(e => e.triggerBattle)
+    const descentEffect = this.collectedEffects.find(e => e.triggerDescent)
     const formEffect = this.collectedEffects.find(e => e.triggerForm)
 
-    if (battleEffect) {
+    if (descentEffect && descentEffect.triggerDescent) {
+      // Stash the descent signal; the calling scene (Hospital) picks it
+      // up on `resume` and plays the descent animation. Doing it that
+      // way keeps all the animation + camera plumbing in HospitalScene
+      // instead of duplicating it here.
+      const state = getState()
+      state.pendingDescent = descentEffect.triggerDescent
+      saveGame()
       this.scene.stop()
-      this.scene.stop(this.callingScene)
-      this.scene.start('Battle', { encounterId: battleEffect.triggerBattle })
+      this.scene.resume(this.callingScene)
     } else if (formEffect) {
       this.scene.stop()
       this.scene.stop(this.callingScene)

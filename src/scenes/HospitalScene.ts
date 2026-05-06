@@ -112,8 +112,17 @@ export class HospitalScene extends Phaser.Scene {
     const state = getState()
     this.mapDef = HOSPITAL_MAP
 
-    this.playerTileX = this.mapDef.playerStart.x
-    this.playerTileY = this.mapDef.playerStart.y
+    // If we're returning from a puzzle round-trip (NPC handed us a case
+    // → descended → solved → coming back), respawn at the saved tile
+    // so the player wakes up next to whoever they were talking to.
+    if (state.pendingHospitalSpawn) {
+      this.playerTileX = state.pendingHospitalSpawn.x
+      this.playerTileY = state.pendingHospitalSpawn.y
+      state.pendingHospitalSpawn = null
+    } else {
+      this.playerTileX = this.mapDef.playerStart.x
+      this.playerTileY = this.mapDef.playerStart.y
+    }
     this.canMove = true
     this.npcSprites = []
     this.currentRoomId = -1
@@ -158,6 +167,18 @@ export class HospitalScene extends Phaser.Scene {
     this.enterRoomAt(this.playerTileX, this.playerTileY)
 
     this.events.on('resume', () => {
+      // A dialogue handoff may have flagged a descent. Save the
+      // player's current position so we can return them here, then
+      // play the descent animation into the WR.
+      const s = getState()
+      if (s.pendingDescent) {
+        const descent = s.pendingDescent
+        s.pendingDescent = null
+        s.pendingHospitalSpawn = { x: this.playerTileX, y: this.playerTileY }
+        saveGame()
+        this.descendThroughGap(descent.encounterId)
+        return
+      }
       this.canMove = true
       this.refreshHUD()
     })
@@ -658,22 +679,11 @@ export class HospitalScene extends Phaser.Scene {
     }
 
     this.nearbyNpc = closest
+    this.interactPrompt.setVisible(!!closest)
     if (closest) {
       this.interactPrompt.setPosition(closest.sprite.x, closest.sprite.y - 36)
-      this.interactPrompt.setVisible(true)
-      this.gapPrompt.setVisible(false)
-    } else {
-      this.interactPrompt.setVisible(false)
-
-      const ct = this.mapDef.gapTile
-      const gapVis = this.tileVisState[ct.y]?.[ct.x] ?? VIS_HIDDEN
-      const gapPx = ct.x * TILE + TILE / 2
-      const gapPy = ct.y * TILE + TILE / 2
-      const gapDist = Phaser.Math.Distance.Between(
-        this.player.x, this.player.y, gapPx, gapPy
-      )
-      this.gapPrompt.setVisible(gapVis === VIS_CURRENT && gapDist < TILE * 2)
     }
+    // gapPrompt is intentionally never shown — descent is dialogue-driven.
   }
 
   private interact() {
@@ -688,26 +698,19 @@ export class HospitalScene extends Phaser.Scene {
       })
       return
     }
-
-    const ct = this.mapDef.gapTile
-    const gapPx = ct.x * TILE + TILE / 2
-    const gapPy = ct.y * TILE + TILE / 2
-    const gapDist = Phaser.Math.Distance.Between(
-      this.player.x, this.player.y, gapPx, gapPy
-    )
-    if (gapDist < TILE * 2) {
-      this.descendThroughGap()
-    }
+    // The gap tile is no longer player-engageable — descent is
+    // triggered exclusively by NPC dialogue (DialogueEffect.triggerDescent).
+    // The visual remains as ambience.
   }
 
   /**
-   * Hospital → Waiting Room transition. Echoes the intro's "you fell
-   * through the gap" beat: the player sprite drops + fades while the
-   * camera fades to black, then starts WaitingRoomScene which fades
-   * back in. The whole thing runs ~700ms so it reads as a deliberate
-   * descent, not an instant cut.
+   * Hospital → Waiting Room transition. Triggered from a dialogue
+   * handoff (the player isn't supposed to *want* to descend; cases
+   * pull them in). The player sprite drops + fades while the camera
+   * fades to black, then starts WaitingRoomScene with the active
+   * encounter id so only that one obstacle is lit on arrival.
    */
-  private descendThroughGap() {
+  private descendThroughGap(activeEncounterId: string) {
     if (!this.canMove) return
     this.canMove = false
 
@@ -728,7 +731,7 @@ export class HospitalScene extends Phaser.Scene {
       const state = getState()
       state.inWaitingRoom = true
       saveGame()
-      this.scene.start('WaitingRoom')
+      this.scene.start('WaitingRoom', { activeEncounterId })
     })
   }
 

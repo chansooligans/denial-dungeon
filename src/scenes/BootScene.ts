@@ -94,6 +94,9 @@ export class BootScene extends Phaser.Scene {
       { key: 'npc_carl', shirt: 0x6a6a6a, hair: 0x5a5a5a, skin: 0xf5deb3 },
       { key: 'npc_chen', shirt: 0x4a4a7a, hair: 0x1a1a1a, skin: 0xf0c8a0 },
       { key: 'npc_rivera', shirt: 0x2a4a6a, hair: 0x3a3a3a, skin: 0xc68642 },
+      // Patient (Anjali) — softer palette than staff so the visitor reads
+      // as a visitor, not as another desk.
+      { key: 'npc_anjali', shirt: 0xb8d4e8, hair: 0x2a1a0e, skin: 0xc8a070 },
     ]
 
     for (const npc of npcs) {

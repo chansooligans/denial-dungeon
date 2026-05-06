@@ -132,7 +132,7 @@ export function newGame() {
  * after 2 defeats, out of level 2 after 4 cumulative defeats, etc.
  */
 export const LEVEL_DEFEAT_THRESHOLD: number[] = [
-  2,  // L1 → 2 defeats to advance
+  1,  // L1 → 1 defeat to advance (intro is dialogue-driven; only one case for now)
   4,  // L2 → 4 cumulative
   6,  // L3 → 6
   8,  // L4 → 8

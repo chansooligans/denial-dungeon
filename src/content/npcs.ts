@@ -57,4 +57,12 @@ export const NPCS: Record<string, NPC> = {
     dialogueKey: 'sam_intro',
     description: 'Works the appeal queue. Tired but determined.',
   },
+  anjali: {
+    id: 'anjali',
+    name: 'Anjali Patel',
+    department: 'Patient',
+    spriteKey: 'npc_anjali',
+    dialogueKey: 'anjali_intro',
+    description: 'Came in for strep. Now holding a $387 ER bill that says she isn\'t on the plan.',
+  },
 }

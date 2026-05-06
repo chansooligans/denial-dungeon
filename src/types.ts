@@ -156,8 +156,15 @@ export interface DialogueEffect {
   cashDelta?: number
   addTool?: string
   unlockCodex?: string
-  triggerBattle?: string
   triggerForm?: string
+  /**
+   * Drop the player into the Waiting Room with one specific obstacle
+   * active. Used for NPC-handed cases — the conversation summons the
+   * descent, the player walks the WR to the lit obstacle, engages it,
+   * and the puzzle launches from there. The obstacle's spec is looked
+   * up via ENCOUNTERS[encounterId].puzzleSpecId.
+   */
+  triggerDescent?: { encounterId: string }
 }
 
 export interface DialogueNode {
@@ -403,6 +410,19 @@ export interface GameState {
    * announcement on next entry.
    */
   pendingLevelBanner?: number | null
+  /**
+   * One-shot signal from a dialogue handoff. When set, HospitalScene
+   * picks it up on the next `resume` and plays the descent animation
+   * into WaitingRoomScene with this encounter as the active one.
+   * Cleared after consumption.
+   */
+  pendingDescent?: { encounterId: string } | null
+  /**
+   * Player tile to spawn at on the next Hospital `create()`. Set
+   * before descending so the player returns to where they were
+   * standing, not to the level's `playerStart`. Cleared after use.
+   */
+  pendingHospitalSpawn?: { x: number; y: number } | null
 }
 
 export interface Decision {

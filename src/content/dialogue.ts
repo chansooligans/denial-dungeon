@@ -246,4 +246,40 @@ export const DIALOGUES: Record<string, DialogueNode> = {
       { text: "I'll head down and try one.", effect: { unlockCodex: 'medical_necessity' } },
     ],
   },
+
+  // === Anjali — Level 1 intro patient. The wrong-card case. ===
+  anjali_intro: {
+    id: 'anjali_intro',
+    speaker: 'Anjali',
+    text: "Hi — I had strep last week. They told me my insurance was accepted at check-in. Now there's a bill for $387 saying I'm not on the plan?",
+    next: 'anjali_intro_2',
+  },
+  anjali_intro_2: {
+    id: 'anjali_intro_2',
+    speaker: 'Anjali',
+    text: "I have the same Aetna PPO as my husband. I've had it for years. I really don't think this is right.",
+    choices: [
+      { text: "Let me pull up your file.", next: 'anjali_pull_file' },
+      { text: "Did you bring your card to the desk?", next: 'anjali_card_question' },
+    ],
+  },
+  anjali_card_question: {
+    id: 'anjali_card_question',
+    speaker: 'Anjali',
+    text: "I — yes? I grabbed it from the kitchen on my way out the door. It was in the basket where we keep the cards.",
+    choices: [
+      { text: "Mind if I take a look at the file?", next: 'anjali_pull_file' },
+    ],
+  },
+  anjali_pull_file: {
+    id: 'anjali_pull_file',
+    speaker: 'Anjali',
+    text: "Please. I — I just want to figure this out.",
+    choices: [
+      {
+        text: "(Sit down at your desk and open the claim.)",
+        effect: { triggerDescent: { encounterId: 'intro_wrong_card' } },
+      },
+    ],
+  },
 }
