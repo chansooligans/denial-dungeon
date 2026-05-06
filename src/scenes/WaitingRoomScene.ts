@@ -151,6 +151,9 @@ export class WaitingRoomScene extends Phaser.Scene {
   /** When set, tryMove rejects any tile outside this rectangle —
    *  confines the player to the active obstacle's room. */
   private sessionBounds: { x: number; y: number; w: number; h: number } | null = null
+  /** Re-entrancy guard so spamming E on the gap doesn't stack the
+   *  locked-exit narration overlays on top of each other. */
+  private lockedExitNarrationOpen = false
 
   private floatingMotes: Phaser.GameObjects.Graphics[] = []
   private ticketText!: Phaser.GameObjects.Text
@@ -736,7 +739,7 @@ export class WaitingRoomScene extends Phaser.Scene {
     if (this.activeEncounterId) {
       const state = getState()
       if (!state.defeatedObstacles.includes(this.activeEncounterId)) {
-        this.flashHint('You can’t leave until the case is resolved.')
+        this.explainLockedExit()
         return
       }
     }
@@ -749,28 +752,21 @@ export class WaitingRoomScene extends Phaser.Scene {
     }
   }
 
-  /** Brief screen-space hint message that fades out. */
-  private flashHint(text: string) {
-    const { width, height } = this.scale
-    const t = this.add
-      .text(width / 2, height - 80, text, {
-        fontSize: '12px',
-        fontFamily: 'monospace',
-        color: '#ff8090',
-        backgroundColor: '#1a060899',
-        padding: { x: 8, y: 4 },
-      })
-      .setOrigin(0.5)
-      .setScrollFactor(0)
-      .setDepth(120)
-      .setAlpha(0)
-    this.tweens.add({
-      targets: t,
-      alpha: 1,
-      duration: 220,
-      hold: 1400,
-      yoyo: true,
-      onComplete: () => t.destroy(),
+  /**
+   * The player tried to leave the WR with the case unresolved. Surface
+   * a short narration that explains why — once at a time. If a
+   * narration is already on screen, additional presses are swallowed
+   * so the messages don't stack.
+   */
+  private explainLockedExit() {
+    if (this.lockedExitNarrationOpen) return
+    this.lockedExitNarrationOpen = true
+    showNarration(this, [
+      'The gap doesn’t open.',
+      'Anjali is still upstairs, waiting for an answer.',
+      'You finish the case, or you stay down here.',
+    ], () => {
+      this.lockedExitNarrationOpen = false
     })
   }
 
