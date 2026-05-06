@@ -476,22 +476,19 @@ export class WaitingRoomScene extends Phaser.Scene {
     if (state.defeatedObstacles.includes(os.marker.encounterId)) return
     const enc = ENCOUNTERS[os.marker.encounterId]
     if (!enc) return
+    if (!enc.puzzleSpecId) {
+      // Engagement requires a puzzle spec. Encounters without one
+      // exist as codex/lore data only (or are still being authored).
+      return
+    }
 
     this.canMove = false
     this.engagePrompt.setVisible(false)
     saveGame()
 
-    if (enc.puzzleSpecId) {
-      this.scene.start('PuzzleBattle', {
-        encounterId: enc.id,
-        puzzleSpecId: enc.puzzleSpecId,
-        returnScene: 'WaitingRoom',
-      })
-      return
-    }
-
-    this.scene.start('Battle', {
-      encounterId: os.marker.encounterId,
+    this.scene.start('PuzzleBattle', {
+      encounterId: enc.id,
+      puzzleSpecId: enc.puzzleSpecId,
       returnScene: 'WaitingRoom',
     })
   }
