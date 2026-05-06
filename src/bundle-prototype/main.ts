@@ -541,7 +541,8 @@ function renderWorkbench(): string {
 
 function phraseSpan(p: PayerPhrase): string {
   const sel = state.selection.payerId === p.id ? 'selected' : ''
-  return `<span class="phrase ${sel}" data-action="select-payer" data-id="${p.id}">${escape(p.text)}<span class="hover-tip phrase-tip">${escape(p.plain)}</span></span>`
+  const resolved = state.resolvedIssues.has(p.issueId) ? 'resolved' : ''
+  return `<span class="phrase ${sel} ${resolved}" data-action="select-payer" data-id="${p.id}">${escape(p.text)}<span class="hover-tip phrase-tip">${escape(p.plain)}</span></span>`
 }
 
 function renderCitationBuilder(): string {
@@ -1096,6 +1097,21 @@ const css = `
   .phrase { cursor: pointer; background: rgba(239, 91, 123, 0.15); border-bottom: 1px dashed var(--bad); padding: 2px 5px; border-radius: 3px; transition: background 0.15s; position: relative; display: inline; }
   .phrase:hover { background: rgba(239, 91, 123, 0.32); }
   .phrase.selected { background: rgba(239, 91, 123, 0.5); border-bottom-style: solid; color: #fff; box-shadow: inset 0 0 0 1px var(--bad); }
+  .phrase.resolved {
+    text-decoration: line-through;
+    text-decoration-color: rgba(126, 226, 193, 0.7);
+    text-decoration-thickness: 2px;
+    color: rgba(216, 222, 233, 0.55);
+    background: rgba(126, 226, 193, 0.08);
+    border-bottom: 1px solid rgba(126, 226, 193, 0.4);
+    opacity: 0.85;
+  }
+  .phrase.resolved:hover { background: rgba(126, 226, 193, 0.14); }
+  .phrase.resolved.selected {
+    background: rgba(126, 226, 193, 0.18);
+    color: rgba(216, 222, 233, 0.7);
+    box-shadow: inset 0 0 0 1px rgba(126, 226, 193, 0.5);
+  }
 
   .facts, .clauses { list-style: none; padding-left: 0; margin: 0; }
   .fact, .clause { padding: 10px 12px; margin: 6px 0; background: var(--panel-2); border-radius: 5px; border-left: 3px solid transparent; cursor: pointer; transition: all 0.15s; position: relative; }
