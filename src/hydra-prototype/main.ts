@@ -243,12 +243,12 @@ function renderHospitalIntro(): string {
     <section class="hospital-intro">
       <div class="register hospital">HOSPITAL · this morning</div>
       <p>
-        The COB analyst — her name's Bola — drops a chart on
+        The ${term('COB')} analyst — her name's Bola — drops a chart on
         your desk. "Mrs. Okwu's dialysis claim. $1,250.
         Bouncing for two months. Three insurance cards on
         file: BCBS Federal through her job, Medicare since she
         turned 65, Medicaid because of the kidney disease.
-        Whoever set up the COB at registration listed Medicare
+        Whoever set up the ${term('COB')} at registration listed Medicare
         primary. Now everybody's pointing at everybody else."
       </p>
       <p>

@@ -72,6 +72,19 @@ export default defineConfig({
         // SCREEN / RELEASE; sits outside the four-district
         // verb-space. Lives at /lighthouse-prototype.html.
         lighthouse: resolve(__dirname, 'lighthouse-prototype.html'),
+        // Surprise Bill Specter: eleventh sibling — the L8
+        // patient-facing fight (companion to Lighthouse's
+        // kindness). NSA dispute against an OON surprise
+        // bill. Verbs: CLASSIFY / CALCULATE / DISPUTE.
+        // Lives at /surprise-bill-prototype.html.
+        surpriseBill: resolve(__dirname, 'surprise-bill-prototype.html'),
+        // Audit Boss: twelfth sibling — the finale. The
+        // Quarterly Audit. Defense, not offense: three
+        // findings on Margaret Holloway's UB-04, each
+        // resolvable as RECEIPT (defend with chart evidence)
+        // or AMEND (concede + recoupment). Lives at
+        // /audit-boss-prototype.html.
+        auditBoss: resolve(__dirname, 'audit-boss-prototype.html'),
       },
       output: {
         // Pull Phaser into its own vendor chunk. The framework is the
