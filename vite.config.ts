@@ -37,6 +37,12 @@ export default defineConfig({
         // amend against the 271 response. Lives at
         // /fog-prototype.html.
         fog: resolve(__dirname, 'fog-prototype.html'),
+        // Hydra prototype: sixth sibling introducing the
+        // SEQUENCE verb — three payers (BCBS / Medicare /
+        // Medicaid), one claim. Fix the COB chain, then walk
+        // it forward through three adjudications with running
+        // balance. Lives at /hydra-prototype.html.
+        hydra: resolve(__dirname, 'hydra-prototype.html'),
       },
       output: {
         // Pull Phaser into its own vendor chunk. The framework is the
