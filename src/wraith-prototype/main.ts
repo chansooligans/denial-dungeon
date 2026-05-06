@@ -437,54 +437,59 @@ function renderClaim(): string {
     : `${escape(claim.diagnoses[0].code)}${claim.diagnoses[0].label ? ' — ' + escape(claim.diagnoses[0].label) : ''}`
   const specificityResolved = state.resolvedIssues.has('specificity')
   return `
-    <section class="claim">
-      <div class="claim-h">
-        ${term('CMS-1500')} · ${escape(claim.claimId)}
-        <span class="claim-explainer">(this is the bill the doctor's office sent to insurance)</span>
-      </div>
-      <div class="claim-grid">
-        <div><b>Patient:</b> ${escape(claim.patient.name)} · ${escape(claim.patient.dob)}</div>
-        <div><b>Insurer:</b> ${term('BCBS', escape(claim.insured.name ?? ''))} · ${escape(claim.insured.id)}</div>
-      </div>
-      <div class="claim-section">
-        <div class="claim-section-h">
-          Box 21 · Diagnoses
-          ${specificityResolved
-            ? '<span class="claim-status amended">AMENDED</span>'
-            : '<span class="claim-status disputed">DISPUTED</span>'}
+    <div class="claim-with-annotations">
+      <section class="claim">
+        <div class="claim-h">
+          ${term('CMS-1500')} · ${escape(claim.claimId)}
+          <span class="claim-explainer">(this is the bill the doctor's office sent to insurance)</span>
         </div>
-        <ul class="dx">
-          <li class="${specificityResolved ? 'amended' : 'hi'}">
-            <b>A.</b> ${specificityResolved ? escape(dxDisplay) : term('I50.9', dxDisplay)}
-          </li>
-        </ul>
-        ${specificityResolved ? '' : `
-          <button class="amend-cta" data-action="open-amend">
-            <span class="amend-cta-icon">✎</span>
-            <span class="amend-cta-text">
-              <span class="amend-cta-main">Fix this diagnosis →</span>
-              <span class="amend-cta-sub">The chart supports a more specific code. Click to amend.</span>
+        <div class="claim-grid">
+          <div><b>Patient:</b> ${escape(claim.patient.name)} · ${escape(claim.patient.dob)}</div>
+          <div><b>Insurer:</b> ${term('BCBS', escape(claim.insured.name ?? ''))} · ${escape(claim.insured.id)}</div>
+        </div>
+        <div class="claim-section dx-section">
+          <div class="claim-section-h">
+            Box 21 · Diagnoses
+            ${specificityResolved
+              ? '<span class="claim-status amended">AMENDED</span>'
+              : '<span class="claim-status disputed">DISPUTED</span>'}
+          </div>
+          <ul class="dx">
+            <li class="${specificityResolved ? 'amended' : 'hi'}">
+              <b>A.</b> ${specificityResolved ? escape(dxDisplay) : term('I50.9', dxDisplay)}
+              ${specificityResolved ? '' : '<span class="dx-arrow" aria-hidden="true">⟶</span>'}
+            </li>
+          </ul>
+        </div>
+        <div class="claim-section">
+          <div class="claim-section-h">Box 24 · Service Lines</div>
+          <table class="lines">
+            <thead><tr><th>DOS</th><th>POS</th><th>CPT</th><th>Charges</th></tr></thead>
+            <tbody>
+              ${claim.serviceLines.map(sl => `
+                <tr class="hi">
+                  <td>${escape(sl.dos)}</td>
+                  <td>${escape(sl.pos)}</td>
+                  <td>${term('93306', escape(sl.cpt.code) + (sl.cpt.label ? ' — ' + escape(sl.cpt.label) : ''))}</td>
+                  <td>${escape(sl.charges)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </section>
+      ${specificityResolved ? '' : `
+        <aside class="claim-annotations">
+          <button class="amend-callout" data-action="open-amend">
+            <span class="amend-callout-arrow" aria-hidden="true">⟵</span>
+            <span class="amend-callout-body">
+              <span class="amend-callout-main">✎ Fix this diagnosis</span>
+              <span class="amend-callout-sub">The diagnosis on the claim is too vague. Click to amend Box 21.</span>
             </span>
           </button>
-        `}
-      </div>
-      <div class="claim-section">
-        <div class="claim-section-h">Box 24 · Service Lines</div>
-        <table class="lines">
-          <thead><tr><th>DOS</th><th>POS</th><th>CPT</th><th>Charges</th></tr></thead>
-          <tbody>
-            ${claim.serviceLines.map(sl => `
-              <tr class="hi">
-                <td>${escape(sl.dos)}</td>
-                <td>${escape(sl.pos)}</td>
-                <td>${term('93306', escape(sl.cpt.code) + (sl.cpt.label ? ' — ' + escape(sl.cpt.label) : ''))}</td>
-                <td>${escape(sl.charges)}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-    </section>
+        </aside>
+      `}
+    </div>
   `
 }
 
@@ -1263,27 +1268,60 @@ const css = `
     border: 1px solid var(--accent);
   }
 
-  /* Amend call-to-action — make it impossible to miss. */
-  .amend-cta {
+  /* Claim with margin-note style annotations. */
+  .claim-with-annotations {
     display: flex;
-    align-items: center;
-    gap: 14px;
+    gap: 20px;
+    align-items: flex-start;
+    margin-bottom: 22px;
+  }
+  .claim-with-annotations .claim {
+    flex: 1;
+    margin-bottom: 0;
+    min-width: 0;
+  }
+  .claim-annotations {
+    width: 220px;
+    flex-shrink: 0;
+    /* Approximate offset to align the callout with the dx section. */
+    padding-top: 100px;
+  }
+  @media (max-width: 880px) {
+    .claim-with-annotations { flex-direction: column; gap: 12px; }
+    .claim-annotations { width: 100%; padding-top: 0; }
+  }
+
+  /* Annotation arrow at the end of the disputed dx row, pointing
+     toward the margin callout. */
+  .dx-arrow {
+    color: var(--bad);
+    font-weight: 700;
+    margin-left: 8px;
+    font-size: 16px;
+    opacity: 0.7;
+  }
+
+  /* Margin callout — sits in the right margin pointing at the
+     disputed row. Replaces the in-form button. */
+  .amend-callout {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
     width: 100%;
-    margin-top: 12px;
-    padding: 14px 18px;
+    padding: 12px 14px;
     font: inherit;
     text-align: left;
-    background: linear-gradient(180deg, rgba(239, 91, 123, 0.16), rgba(239, 91, 123, 0.06));
-    color: #1c1c1c;
+    background: linear-gradient(180deg, rgba(239, 91, 123, 0.12), rgba(239, 91, 123, 0.04));
     border: 2px solid var(--bad);
-    border-radius: 6px;
+    border-radius: 8px;
     cursor: pointer;
+    color: var(--ink);
     box-shadow: 0 0 0 0 rgba(239, 91, 123, 0.18);
     animation: amend-pulse 4.5s ease-in-out infinite;
     transition: transform 0.15s, box-shadow 0.15s;
   }
-  .amend-cta:hover {
-    transform: translateY(-1px);
+  .amend-callout:hover {
+    transform: translateX(-3px);
     box-shadow: 0 4px 16px rgba(239, 91, 123, 0.35);
     animation: none;
   }
@@ -1291,27 +1329,31 @@ const css = `
     0%, 100% { box-shadow: 0 0 0 0 rgba(239, 91, 123, 0.18); }
     50% { box-shadow: 0 0 0 6px rgba(239, 91, 123, 0); }
   }
-  .amend-cta-icon {
+  .amend-callout-arrow {
     font-size: 22px;
     color: var(--bad);
+    font-weight: 700;
+    line-height: 1;
     flex-shrink: 0;
+    margin-top: 2px;
   }
-  .amend-cta-text {
+  .amend-callout-body {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 4px;
     flex: 1;
   }
-  .amend-cta-main {
-    font-size: 14px;
+  .amend-callout-main {
+    font-size: 13px;
     font-weight: 700;
     color: var(--bad);
     letter-spacing: 0.02em;
   }
-  .amend-cta-sub {
-    font-size: 12px;
-    color: #5a4d2b;
+  .amend-callout-sub {
+    font-size: 11.5px;
+    color: var(--ink-dim);
     font-style: italic;
+    line-height: 1.4;
   }
 
   .amend-option.rejected {
