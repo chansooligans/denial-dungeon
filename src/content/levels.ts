@@ -8,7 +8,7 @@ export const LEVELS: LevelDef[] = [
     hospitalDescription: 'The revenue cycle office. Desks, monitors, and the hum of fluorescent lights.',
     waitingRoomDescription: 'An endless waiting room. Rows of chairs. A ticket counter that never moves.',
     concepts: ['denial_rate', 'co_109', 'x12_270_271', 'eligibility'],
-    encounters: [],
+    encounters: ['intro_wrong_card'],
     cases: ['case_level1_cms'],
     npcsActive: ['dana', 'kim', 'jordan'],
     bossEncounter: undefined,

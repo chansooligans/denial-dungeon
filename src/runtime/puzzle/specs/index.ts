@@ -2,6 +2,7 @@
 // new prototype-shape battle set `puzzleSpecId` to one of these keys.
 
 import type { PuzzleSpec } from '../types'
+import { INTRO_PUZZLE } from './intro'
 import { BUNDLE_PUZZLE } from './bundle'
 import { WRAITH_PUZZLE } from './wraith'
 import { REAPER_PUZZLE } from './reaper'
@@ -16,6 +17,7 @@ import { LIGHTHOUSE_PUZZLE } from './lighthouse'
 import { SURPRISE_BILL_PUZZLE } from './surpriseBill'
 
 export const PUZZLE_SPECS: Record<string, PuzzleSpec> = {
+  intro: INTRO_PUZZLE,
   bundle: BUNDLE_PUZZLE,
   wraith: WRAITH_PUZZLE,
   reaper: REAPER_PUZZLE,

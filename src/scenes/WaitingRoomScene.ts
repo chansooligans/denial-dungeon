@@ -45,6 +45,9 @@ interface ObstacleMarker {
  *   Prior Auth     — locked (post-L1)
  */
 const OBSTACLES: ObstacleMarker[] = [
+  // Intro — sits right under the gap landing, first thing the
+  // player meets after descending. Single-amend "Wrong Card."
+  { tileX: 28, tileY: 13, encounterId: 'intro_wrong_card' },
   // Patient Services
   { tileX: 8,  tileY: 21, encounterId: 'co_50' },          // Wraith
   // Registration (two beats — Fog at the west end, Swarm at the east)

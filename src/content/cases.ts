@@ -99,6 +99,53 @@ export const CASES: Record<string, PatientCase> = {
   // CMS-1500 data (ICD-10, CPT, POS, charges) that a battle can reference.
   // -------------------------------------------------------------------------
 
+  // Linked to encounter `intro_wrong_card` — the level-1 introductory puzzle.
+  // Mrs. Patel handed in her husband's insurance card at registration. The
+  // claim went out under his subscriber id (which doesn't match her name on
+  // the payer's roster) and bounced as CO-31. One amend on Box 1a fixes it.
+  case_intro_patel: {
+    id: 'case_intro_patel',
+    patientName: 'Anjali Patel',
+    age: 38,
+    insurance: 'Aetna PPO',
+    diagnosis: 'Acute pharyngitis',
+    diagnosisCode: 'J02.9',
+    procedure: 'ER visit, expanded problem-focused',
+    procedureCode: '99282',
+    formType: 'cms1500',
+    level: 1,
+    errors: [
+      {
+        field: 'Subscriber ID',
+        currentValue: 'AET447821903', // husband's id
+        correctValue: 'AET447821491',  // patient's actual id
+        explanation: "She handed over her husband's card at registration. Same plan, different subscriber id — the payer's roster lists him as the subscriber, her as a dependent under her own id.",
+      },
+    ],
+    claim: {
+      type: 'cms1500',
+      claimId: 'CLM-2026-05-02-00118',
+      insuranceType: 'Group',
+      patient: { name: 'PATEL, ANJALI', dob: '1988-02-14', sex: 'F' },
+      // Pre-fix state: card said this id (her husband's). Player swaps it
+      // to the correct one via the amend modal.
+      insured: { id: 'AET447821903', name: 'PATEL, RAVI', group: '0042811' },
+      diagnoses: [
+        { code: 'J02.9', label: 'Acute pharyngitis, unspecified' },
+      ],
+      serviceLines: [
+        {
+          dos: '2026-05-02',
+          pos: '23',
+          cpt: { code: '99282', label: 'ER visit, expanded' },
+          dxPointer: 'A',
+          charges: '$387.00',
+        },
+      ],
+      provider: { name: 'Dr. T. Greene, MD', npi: '1029384756' },
+    },
+  },
+
   // Linked to encounter `co_50` (Medical Necessity Wraith).
   case_wraith_walker: {
     id: 'case_wraith_walker',
