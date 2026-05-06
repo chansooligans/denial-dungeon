@@ -134,6 +134,33 @@ export class PuzzleBattleScene extends Phaser.Scene {
 
     // Inner scroll-container so the max-width column is centered.
     overlay.innerHTML = '<div id="__puzzle_root__" style="max-width:1180px;margin:0 auto;"></div>'
+
+    // DEV-only one-click solver, floating in the corner. Tree-shakes
+    // out of prod via import.meta.env.DEV.
+    if (import.meta.env.DEV) {
+      const solveBtn = document.createElement('button')
+      solveBtn.dataset.action = 'dev-solve'
+      solveBtn.textContent = '🐛 SOLVE'
+      solveBtn.title = 'DEV: auto-resolve every issue'
+      solveBtn.style.cssText = `
+        position: fixed;
+        bottom: 12px;
+        right: 12px;
+        z-index: 600;
+        background: rgba(14, 20, 32, 0.92);
+        color: #f0a868;
+        border: 1px solid #4a3a2a;
+        border-radius: 999px;
+        padding: 6px 12px;
+        font: 700 11px/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+        letter-spacing: 0.1em;
+        cursor: pointer;
+        opacity: 0.6;
+      `
+      solveBtn.addEventListener('mouseenter', () => (solveBtn.style.opacity = '1'))
+      solveBtn.addEventListener('mouseleave', () => (solveBtn.style.opacity = '0.6'))
+      overlay.appendChild(solveBtn)
+    }
   }
 
   private attachClickHandler() {
@@ -212,6 +239,9 @@ export class PuzzleBattleScene extends Phaser.Scene {
       case 'flee':
         this.finishToWaitingRoom(false)
         return
+      case 'dev-solve':
+        this.devSolveAll()
+        break
       default:
         return
     }
@@ -223,9 +253,10 @@ export class PuzzleBattleScene extends Phaser.Scene {
     const spec = this.spec
     if (!s.selectedPayerId || !s.selectedChartId || !s.selectedPolicyId) return
 
-    const payer = spec.payerPhrases.find(p => p.id === s.selectedPayerId)!
-    const chart = spec.chartFacts.find(f => f.id === s.selectedChartId)!
-    const policy = spec.policyClauses.find(c => c.id === s.selectedPolicyId)!
+    const payer = (spec.payerPhrases ?? []).find(p => p.id === s.selectedPayerId)
+    const chart = (spec.chartFacts ?? []).find(f => f.id === s.selectedChartId)
+    const policy = (spec.policyClauses ?? []).find(c => c.id === s.selectedPolicyId)
+    if (!payer || !chart || !policy) return
 
     if (chart.issueId === null) {
       s.failedAttempts += 1
@@ -248,10 +279,10 @@ export class PuzzleBattleScene extends Phaser.Scene {
 
     if (payer.issueId === chart.issueId && chart.issueId === policy.issueId) {
       const issue = spec.issues.find(i => i.id === chart.issueId)!
-      if (issue.verb === 'amend') {
+      if (issue.verb !== 'cite') {
         s.failedAttempts += 1
         this.setFeedback(
-          'These pieces line up — but this issue is solved by *amending* the claim, not arguing. Open the amend callout above.',
+          'These pieces line up — but this issue is solved by amending the claim, not arguing. Open the amend callout above.',
           'bad'
         )
         s.lastRecap = ''
@@ -315,6 +346,27 @@ export class PuzzleBattleScene extends Phaser.Scene {
   private setFeedback(text: string, kind: 'good' | 'bad' | 'neutral' = 'neutral') {
     this.puzzleState.feedback = text
     this.puzzleState.feedbackKind = kind
+  }
+
+  /** DEV-only — resolve every issue and set amend fields to their correct
+   *  option, so the player can SUBMIT immediately. Doesn't auto-submit so
+   *  the victory screen is still a one-click test. */
+  private devSolveAll() {
+    if (!import.meta.env.DEV) return
+    const s = this.puzzleState
+    s.briefingDone = true
+    for (const issue of this.spec.issues) {
+      s.resolvedIssues.add(issue.id)
+    }
+    for (const slot of this.spec.amendSlots) {
+      const correct = slot.options.find(o => o.support === 'correct')
+      if (correct) s.amendedFields[slot.issueId] = correct.id
+    }
+    s.amendOpen = null
+    s.amendFeedback = null
+    s.feedback = 'DEV: all issues auto-resolved.'
+    s.feedbackKind = 'good'
+    s.lastRecap = ''
   }
 
   private submitPacket() {

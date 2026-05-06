@@ -11,7 +11,41 @@
 
 import type { District } from '../../shared/prototype-base'
 
-export type PuzzleVerb = 'amend' | 'cite'
+/**
+ * Verb that resolves an issue. The runtime treats every verb other
+ * than 'cite' as an amend-style modal pick (the workbench citation
+ * builder is only invoked for 'cite'). New verbs let specs
+ * communicate intent to the player even when the resolution flow
+ * is the same picker UI:
+ *   - 'amend'   → pick a value to apply to a claim cell
+ *   - 'cite'    → workbench three-piece citation
+ *   - 'replace' → claim version-control replacement (Doppelgänger)
+ *   - 'confirm' → pre-flight confirmation pick (Doppelgänger)
+ *   - 'request' → file a 278 / external request (Gatekeeper)
+ *   - 'reveal'  → run a 270 inquiry to un-fog data (Fog)
+ *   - 'receipt' → defend a coding decision with chart evidence (Audit)
+ */
+export type PuzzleVerb =
+  | 'amend'
+  | 'cite'
+  | 'replace'
+  | 'confirm'
+  | 'request'
+  | 'reveal'
+  | 'receipt'
+  | 'sequence'
+  | 'submit'
+  | 'batch'
+  | 'sweep'
+  | 'patch'
+  | 'detect'
+  | 'appeal'
+  | 'listen'
+  | 'screen'
+  | 'release'
+  | 'classify'
+  | 'calculate'
+  | 'dispute'
 
 /** One issue on the encounter's checklist. Resolving all = win. */
 export interface PuzzleIssue {
@@ -73,6 +107,17 @@ export interface PuzzleAmendOption {
   feedback: string
 }
 
+/**
+ * Where on the rendered claim an amend visually lands. Drives the
+ * "DISPUTED" → "AMENDED" status flip and the swap-in of the amended
+ * value at the target cell. Optional — slots without a target still
+ * work, they just don't get inline-on-claim feedback.
+ */
+export type PuzzleClaimTarget =
+  | { kind: 'serviceLineModifier'; lineIndex: number }
+  | { kind: 'diagnosisCode'; diagnosisIndex: number }
+  | { kind: 'subscriberId' }
+
 /** Configuration for a single amend slot on an encounter. */
 export interface PuzzleAmendSlot {
   /** Which issue this amend resolves. */
@@ -83,6 +128,8 @@ export interface PuzzleAmendSlot {
   contextLine: string
   /** Available options — exactly one should have support: 'correct'. */
   options: PuzzleAmendOption[]
+  /** Where this amend lands on the claim render. Optional. */
+  claimTarget?: PuzzleClaimTarget
 }
 
 /** A single CMS-1500 service line for the rendered claim. */
@@ -125,18 +172,21 @@ export interface PuzzleSpec {
     bullets: string[]
     signoff: string
   }
-  /** The CMS-1500 to render. */
-  claim: PuzzleClaim
+  /** The CMS-1500 to render. Optional — encounters without a claim
+   *  panel (e.g. audit defense, eligibility reveal) can omit it. */
+  claim?: PuzzleClaim
   /** Issues to resolve. */
   issues: PuzzleIssue[]
-  /** The denial paragraph: prose with phrase-id placeholders like {{phrase:bundled}}. */
-  payerProse: string
-  /** Phrases referenced from payerProse. */
-  payerPhrases: PuzzlePayerPhrase[]
+  /** The denial paragraph: prose with phrase-id placeholders like
+   *  {{phrase:bundled}}. Optional — pre-submit and request-flow
+   *  encounters skip the workbench entirely. */
+  payerProse?: string
+  /** Phrases referenced from payerProse. Empty = workbench is hidden. */
+  payerPhrases?: PuzzlePayerPhrase[]
   /** Chart facts — middle column of the workbench. */
-  chartFacts: PuzzleChartFact[]
+  chartFacts?: PuzzleChartFact[]
   /** Policy clauses — right column of the workbench. */
-  policyClauses: PuzzlePolicyClause[]
+  policyClauses?: PuzzlePolicyClause[]
   /** Source label for the chart column header (e.g. "Chart (Kim, S.)"). */
   chartHeader?: string
   /** Source label for the policy column header (e.g. "NCCI Guidance"). */

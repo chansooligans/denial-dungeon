@@ -69,33 +69,14 @@ export const WING_LABEL: Record<Wing, string> = {
   miracles: 'Miracles',
 }
 
-/**
- * Optional mechanical hook that makes an obstacle play differently from
- * a vanilla HP-bar fight. BattleScene grows support for these
- * incrementally (Phase 4); 'none' is the default behavior.
- */
-export type BattleMechanic =
-  | 'simple'        // HP attrition + faction effectiveness (default)
-  | 'none'          // alias of 'simple'
-  | 'investigation' // case-file fact-finding, time budget instead of HP
-  | 'timed'         // HP + countdown; attacks escalate as time runs (Reaper)
-  | 'block'         // immune every other turn (Prior Auth Gatekeeper)
-  | 'mirror'        // same tool used twice in a row does no damage (Doppelgänger)
-  | 'multiHead'     // multiple HP pools, each with own weakness (COB Hydra)
-  | 'blind'         // tool accuracy degraded until cleared (Eligibility Fog)
-  | 'spawn'         // adds reinforcements every N turns (Sprite swarm)
-  | 'audit'         // L10 boss — HP / damage scale with player's audit risk; shadow tools heal the boss
-
 // === Encounters (what you face in battle) ===
 
 /**
- * An Encounter is what the player fights in The Waiting Room. Originally
- * keyed to a real CARC code; now also supports surreal procedural
- * obstacles that teach non-CARC parts of the revenue cycle (eligibility
- * verification, charge capture, AR aging, NSA, etc.).
- *
- * Backward-compat: `carcCode` / `carcName` remain optional so existing
- * 11 CARC encounters keep their data; new obstacles can omit them.
+ * An Encounter is the data behind a Waiting Room obstacle. It carries
+ * codex/lore fields (CARC code, archetype, watchpoint, etc.) plus a
+ * pointer to the runtime puzzle that the player solves: `puzzleSpecId`.
+ * Encounters without a `puzzleSpecId` exist as codex/lore data only —
+ * they are not engageable.
  */
 export interface Encounter {
   id: string
@@ -103,168 +84,29 @@ export interface Encounter {
   description: string
   surfaceSymptom: string
   rootCause: Faction
-  hp: number
-  attackDamage: number
   /** CARC code if this obstacle wraps a real denial code. Optional. */
   carcCode?: string
   carcName?: string
   watchpoint: string
-  correctTools: string[]
   level: number
-  // --- New fields, all optional for backward compatibility ---
-  /** Display name + flavor of the procedural obstacle (e.g. "Missing Modifier Gremlin"). */
+  /** Display name + flavor of the procedural obstacle. */
   archetype?: string
   /** Where in the Waiting Room this obstacle lives. */
   wing?: Wing
-  /** Mechanical hook that varies the battle behavior. */
-  mechanic?: BattleMechanic
   /** Tools that auto-unlock to the player on first defeat of this encounter. */
   unlocksOnDefeat?: string[]
   /** Codex entry id auto-unlocked the first time the player sees this encounter. */
   codexOnSight?: string
   /** Approximate dollar amount recovered on win (display + cash delta). */
   cashRecovered?: number
-  /**
-   * Case-file data for `mechanic: 'investigation'` encounters. Each fact
-   * is either relevant to the resolution or a distractor. Some facts are
-   * "weakly supported" on reveal — the player must use Document to make
-   * them count toward the win threshold.
-   */
-  caseFile?: CaseFile
-  /**
-   * References a PatientCase whose `claim` data is rendered as a
-   * realistic CMS-1500 / UB-04 in the battle UI. Lets battle and the
-   * form-puzzle scene share one source of truth per stuck claim.
-   */
+  /** References a PatientCase whose `claim` data backs this encounter's puzzle. */
   caseId?: string
-  /**
-   * Box ids on the linked claim that this fight is disputing. Rendered
-   * with a red highlight on the ClaimSheet so the player can see
-   * exactly where the problem is.
-   * Examples: '21A', '24D-1' (line 1 of box 24D), '24A-2'.
-   */
+  /** Box ids on the linked claim disputed by this encounter (codex display). */
   highlightedBoxes?: string[]
-  /**
-   * The payer's denial language as it would appear on the 835 ERA or
-   * letter. Rendered beneath the claim form during the fight.
-   */
+  /** The payer's denial language as it would appear on the 835 ERA or letter. */
   payerNote?: string
-  /**
-   * Per-tool / per-action visual effects on the ClaimSheet. Keys are
-   * tool ids (Simple/Timed) or mechanic action ids (Investigation:
-   * 'investigate' | 'lookup' | 'document' | 'decide').
-   *
-   * Example:
-   *   toolEffects: { cdi_query: [{ box: '24D-1', kind: 'stamp', value: '+25 mod' }] }
-   *
-   * BattleScene calls ClaimSheet.applyEffect(effect) after a successful
-   * action, so the player sees the form change in response to what they
-   * did.
-   */
-  toolEffects?: Record<string, ToolEffect[]>
-  /**
-   * Design-time draft for re-imagining this encounter as a puzzle
-   * rather than an HP fight. Rendered on the public battle catalog
-   * (battles.html) when present; ignored at runtime by the battle
-   * engine. Lets us iterate on a puzzle structure (issue checklist,
-   * payer replies, win condition) outside the live game.
-   *
-   * The shape is intentionally narrative — these are sketches, not
-   * runnable specs. Once a draft feels right, port it into a
-   * MechanicController in src/battle/mechanics/.
-   */
-  puzzleDraft?: PuzzleDraft
-  /**
-   * Opt this encounter into the new prototype-shape battle. When set,
-   * WaitingRoomScene routes engagement to PuzzleBattleScene instead of
-   * the legacy HP-based BattleScene. The value is a key into
-   * `src/runtime/puzzle/specs/index.ts`.
-   */
+  /** Required for engagement. Key into `src/runtime/puzzle/specs/index.ts`. */
   puzzleSpecId?: string
-}
-
-/**
- * A draft puzzle reframe for an Encounter. Author once in
- * `enemies.ts`; the catalog renders it. None of these fields run in
- * the live game.
- */
-export interface PuzzleDraft {
-  /** One-line summary of what the puzzle is about. */
-  premise: string
-  /**
-   * Ordered list of issues the player must resolve to win. Hidden
-   * issues (revealed via investigation) get `hidden: true`. Each
-   * issue suggests the canonical resolving tool/action.
-   */
-  issues: PuzzleIssue[]
-  /**
-   * Win condition prose — when does the claim adjudicate clean?
-   * Usually "all issues resolved + Submit pressed".
-   */
-  winCondition: string
-  /**
-   * Failure / penalty modes — what wrong moves cost. Filing-window
-   * burn, goodwill loss, audit risk, etc. Replaces "HP damage" in
-   * the puzzle frame.
-   */
-  costs: string[]
-  /**
-   * Sample payer replies (string keys = tool id or action label,
-   * values = the response shown to the player). Optional — used to
-   * sketch the dialogue feel without committing to one wording.
-   */
-  payerReplies?: Record<string, string>
-  /** Free-form design notes / open questions / risks. */
-  notes?: string
-}
-
-export interface PuzzleIssue {
-  /** Short label (≤ ~70 chars). */
-  label: string
-  /** Hidden until investigation reveals it. */
-  hidden?: boolean
-  /** Canonical tool / action that resolves this issue. */
-  resolvedBy?: string
-  /** Why this is the issue — the teaching beat. */
-  teaching?: string
-}
-
-/** A visible mutation applied to a CMS-1500 field during battle. */
-export interface ToolEffect {
-  /** Box id matching ClaimSheet conventions, e.g. '24D-1'. */
-  box: string
-  /**
-   * 'stamp' — adds short red text overlapping the field (e.g. '+25 mod').
-   * 'check' — adds a green ✓ near the field.
-   * 'note'  — adds a small yellow annotation under the field (e.g. 'LCD reviewed').
-   */
-  kind: 'stamp' | 'check' | 'note'
-  /** Value text for stamp / note. Ignored for check. */
-  value?: string
-}
-
-export interface CaseFact {
-  id: string
-  /** Short text shown in the case file panel (≤ ~70 chars). */
-  label: string
-  /** Whether this fact actually matters to the resolution. */
-  relevance: 'relevant' | 'distractor'
-  /** When true, this fact reveals as "weakly supported" — needs Document. */
-  weakOnReveal?: boolean
-  /**
-   * Optional ClaimSheet annotation that lands on the form when this
-   * fact is first revealed by Investigate. Lets revealed evidence be
-   * visible in-form, not just in messageText.
-   */
-  onReveal?: ToolEffect
-}
-
-export interface CaseFile {
-  /** Number of relevant + supported facts needed to win Decide. */
-  threshold: number
-  facts: CaseFact[]
-  /** Optional flavor shown above the panel ("From the chart:" etc.). */
-  intro?: string
 }
 
 // === Tickets ===

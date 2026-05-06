@@ -2,7 +2,7 @@ import Phaser from 'phaser'
 import { getState, saveGame } from '../state'
 import { LEVELS } from '../content/levels'
 import { ENCOUNTERS } from '../content/enemies'
-import { getMapForLevel } from '../content/maps'
+import { HOSPITAL_MAP } from '../content/maps'
 import type { MapDef } from '../content/maps'
 
 const TILE = 32
@@ -16,8 +16,8 @@ const TILE = 32
  *   "Below the hospital you know, there is another place… every
  *    claim that was ever filed still exists, waiting."
  *
- * Mechanically: the Waiting Room reads `getMapForLevel(state.currentLevel)`
- * and renders the layout with WR-aesthetic tiles + cyberpunk overlays
+ * Mechanically: the Waiting Room reads the same `HOSPITAL_MAP` and
+ * renders the layout with WR-aesthetic tiles + cyberpunk overlays
  * (neon door glows, CRT scanlines, dramatic flicker, glitchy data
  * motes). Encounter markers get placed at thematic Hospital-room
  * positions (e.g. the eligibility kiosk hosts the Gatekeeper; main
@@ -140,7 +140,7 @@ export class WaitingRoomScene extends Phaser.Scene {
 
   create() {
     const state = getState()
-    this.mapDef = getMapForLevel(state.currentLevel)
+    this.mapDef = HOSPITAL_MAP
 
     // Spawn at the gap tile — the player fell through, so they
     // arrive where the gap is in the Hospital. Walking back to the
@@ -476,22 +476,19 @@ export class WaitingRoomScene extends Phaser.Scene {
     if (state.defeatedObstacles.includes(os.marker.encounterId)) return
     const enc = ENCOUNTERS[os.marker.encounterId]
     if (!enc) return
+    if (!enc.puzzleSpecId) {
+      // Engagement requires a puzzle spec. Encounters without one
+      // exist as codex/lore data only (or are still being authored).
+      return
+    }
 
     this.canMove = false
     this.engagePrompt.setVisible(false)
     saveGame()
 
-    if (enc.puzzleSpecId) {
-      this.scene.start('PuzzleBattle', {
-        encounterId: enc.id,
-        puzzleSpecId: enc.puzzleSpecId,
-        returnScene: 'WaitingRoom',
-      })
-      return
-    }
-
-    this.scene.start('Battle', {
-      encounterId: os.marker.encounterId,
+    this.scene.start('PuzzleBattle', {
+      encounterId: enc.id,
+      puzzleSpecId: enc.puzzleSpecId,
       returnScene: 'WaitingRoom',
     })
   }

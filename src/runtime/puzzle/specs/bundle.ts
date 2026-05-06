@@ -157,6 +157,7 @@ export const BUNDLE_PUZZLE: PuzzleSpec = {
       issueId: 'modifier',
       fieldLabel: 'Box 24 · Modifier (line 1: 99214)',
       contextLine: 'The chart says: patient seen for HTN recheck (planned visit), lesion noted incidentally during exam, biopsy performed same encounter.',
+      claimTarget: { kind: 'serviceLineModifier', lineIndex: 0 },
       options: [
         {
           id: '—',
