@@ -50,6 +50,14 @@ export default defineConfig({
         // First prototype that operates on a queue, not a
         // single claim. Lives at /swarm-prototype.html.
         swarm: resolve(__dirname, 'swarm-prototype.html'),
+        // Specter prototype: eighth sibling introducing the
+        // VARIANCE verb — an 835 ERA arrived showing four
+        // claims paid; one hides an underpayment that the
+        // CO-45 adjustment quietly absorbed. Detect and
+        // appeal. First prototype where the input is a
+        // successful payment, not a denial. Lives at
+        // /specter-prototype.html.
+        specter: resolve(__dirname, 'specter-prototype.html'),
       },
       output: {
         // Pull Phaser into its own vendor chunk. The framework is the
