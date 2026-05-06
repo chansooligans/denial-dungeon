@@ -121,3 +121,64 @@ export function newGame() {
   currentState = structuredClone(DEFAULT_STATE)
   saveGame()
 }
+
+/**
+ * Level-progression thresholds. Defeating this many obstacles in
+ * total advances the player to the next level. Tuned so L1 caps at
+ * 2 (orientation), L2 at 4 (registration), L3 at 6 (auth), etc.
+ *
+ * Indexed by level — completing `LEVEL_DEFEAT_THRESHOLD[i]` defeats
+ * means level (i+1) is done. So the player advances out of level 1
+ * after 2 defeats, out of level 2 after 4 cumulative defeats, etc.
+ */
+export const LEVEL_DEFEAT_THRESHOLD: number[] = [
+  2,  // L1 → 2 defeats to advance
+  4,  // L2 → 4 cumulative
+  6,  // L3 → 6
+  8,  // L4 → 8
+  10, // L5 → 10
+  12, // L6 → 12
+  14, // L7 → 14
+  16, // L8 → 16
+  18, // L9 → 18
+  20, // L10 → 20 (audit boss completes the run)
+]
+
+/**
+ * Check whether the current cumulative defeat count crosses the
+ * threshold for the player's current level. If so, advance
+ * `currentLevel` (capped at 10) and mark the prior level complete.
+ *
+ * Returns the new level if advanced, else null. Callers can show a
+ * banner / play a sting based on the return value.
+ *
+ * Call this after pushing onto `defeatedObstacles` and saving.
+ */
+export function checkLevelProgression(): number | null {
+  const defeats = currentState.defeatedObstacles.length
+  const lvl = currentState.currentLevel
+  if (lvl >= 10) return null
+  const threshold = LEVEL_DEFEAT_THRESHOLD[lvl - 1]
+  if (defeats < threshold) return null
+  // Advance.
+  currentState.levelComplete[lvl - 1] = true
+  currentState.currentLevel = lvl + 1
+  // Drop a banner-pending marker — HospitalScene reads + clears
+  // this on entry to surface the "Level N — <Title>" banner.
+  currentState.pendingLevelBanner = currentState.currentLevel
+  saveGame()
+  return currentState.currentLevel
+}
+
+/**
+ * Read the pending level-advance banner (if any) and clear it. Returns
+ * the level number to announce, or null if no banner is pending.
+ */
+export function consumePendingLevelBanner(): number | null {
+  const lvl = currentState.pendingLevelBanner ?? null
+  if (lvl !== null) {
+    currentState.pendingLevelBanner = null
+    saveGame()
+  }
+  return lvl
+}

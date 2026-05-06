@@ -2,7 +2,7 @@ import Phaser from 'phaser'
 import { TOOLS } from '../content/abilities'
 import { ENCOUNTERS } from '../content/enemies'
 import { CASES } from '../content/cases'
-import { getState, updateResources, unlockCodex, unlockTool, saveGame } from '../state'
+import { getState, updateResources, unlockCodex, unlockTool, saveGame, checkLevelProgression } from '../state'
 import type { Encounter, Tool } from '../types'
 import { FACTION_COLOR } from '../types'
 import { createMechanic } from '../battle'
@@ -595,6 +595,13 @@ export class BattleScene extends Phaser.Scene {
       const earned = this.state.encounter.unlocksOnDefeat ?? []
       for (const toolId of earned) unlockTool(toolId)
       saveGame()
+      // Level progression: if this defeat crosses the threshold for
+      // the current level, advance currentLevel + mark prior level
+      // complete. Saves to localStorage; the next scene's create
+      // will see the new level. HospitalScene reads
+      // `state.levelComplete` on entry to decide whether to show
+      // the level-advance banner.
+      checkLevelProgression()
     } else {
       // Fled or otherwise didn't win — minor stress but no claim cost.
       updateResources({ stress: +2 })

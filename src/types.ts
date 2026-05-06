@@ -546,6 +546,14 @@ export interface GameState {
    * list starts the matching battle at full HP.
    */
   formsPerfected: string[]
+  /**
+   * One-shot level-advance banner trigger. Set by
+   * `checkLevelProgression()` when a defeat threshold is crossed,
+   * read + cleared by `consumePendingLevelBanner()` from
+   * HospitalScene's create() to surface the "Level N — <Title>"
+   * announcement on next entry.
+   */
+  pendingLevelBanner?: number | null
 }
 
 export interface Decision {
