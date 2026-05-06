@@ -73,6 +73,17 @@ export interface PuzzleAmendOption {
   feedback: string
 }
 
+/**
+ * Where on the rendered claim an amend visually lands. Drives the
+ * "DISPUTED" → "AMENDED" status flip and the swap-in of the amended
+ * value at the target cell. Optional — slots without a target still
+ * work, they just don't get inline-on-claim feedback.
+ */
+export type PuzzleClaimTarget =
+  | { kind: 'serviceLineModifier'; lineIndex: number }
+  | { kind: 'diagnosisCode'; diagnosisIndex: number }
+  | { kind: 'subscriberId' }
+
 /** Configuration for a single amend slot on an encounter. */
 export interface PuzzleAmendSlot {
   /** Which issue this amend resolves. */
@@ -83,6 +94,8 @@ export interface PuzzleAmendSlot {
   contextLine: string
   /** Available options — exactly one should have support: 'correct'. */
   options: PuzzleAmendOption[]
+  /** Where this amend lands on the claim render. Optional. */
+  claimTarget?: PuzzleClaimTarget
 }
 
 /** A single CMS-1500 service line for the rendered claim. */

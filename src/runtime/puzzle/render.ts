@@ -127,7 +127,37 @@ function renderBriefingInline(spec: PuzzleSpec): string {
 
 function renderClaim(spec: PuzzleSpec, state: PuzzleState): string {
   const claim = spec.claim
-  const modifierResolved = state.resolvedIssues.has('modifier')
+
+  // Slot lookups by claim target. Each slot's status flips Box X DISPUTED→AMENDED
+  // and may swap in the amended value at the target cell.
+  const slotForDx = (i: number) =>
+    spec.amendSlots.find(s =>
+      s.claimTarget?.kind === 'diagnosisCode' && s.claimTarget.diagnosisIndex === i,
+    )
+  const slotForLineMod = (i: number) =>
+    spec.amendSlots.find(s =>
+      s.claimTarget?.kind === 'serviceLineModifier' && s.claimTarget.lineIndex === i,
+    )
+  const subscriberSlot = spec.amendSlots.find(s => s.claimTarget?.kind === 'subscriberId')
+
+  const dxSlots = spec.amendSlots.filter(s => s.claimTarget?.kind === 'diagnosisCode')
+  const lineSlots = spec.amendSlots.filter(s => s.claimTarget?.kind === 'serviceLineModifier')
+  const dxSectionStatus = sectionStatus(dxSlots, state)
+  const lineSectionStatus = sectionStatus(lineSlots, state)
+
+  // Header (subscriber id can be a target).
+  const insuredId = subscriberSlot
+    ? state.amendedFields[subscriberSlot.issueId] ?? claim.insuredId
+    : claim.insuredId
+  const subscriberResolved = subscriberSlot
+    ? state.resolvedIssues.has(subscriberSlot.issueId)
+    : false
+  const insuredIdHtml = subscriberSlot
+    ? subscriberResolved
+      ? `<span class="mod-applied">${escape(insuredId)}</span>`
+      : `<span class="mod-missing">${escape(insuredId)}</span>`
+    : escape(insuredId)
+
   return `
     <section class="claim">
       <div class="claim-h">
@@ -136,31 +166,46 @@ function renderClaim(spec: PuzzleSpec, state: PuzzleState): string {
       </div>
       <div class="claim-grid">
         <div><b>Patient:</b> ${escape(claim.patientName)} · ${escape(claim.patientDob)}</div>
-        <div><b>Insurer:</b> ${escape(claim.insurer)} · ${escape(claim.insuredId)}</div>
+        <div><b>Insurer:</b> ${escape(claim.insurer)} · ${insuredIdHtml}</div>
       </div>
       <div class="claim-section">
-        <div class="claim-section-h">Box 21 · Diagnoses</div>
+        <div class="claim-section-h">
+          Box 21 · Diagnoses
+          ${renderSectionStatus(dxSectionStatus)}
+        </div>
         <ul class="dx">
           ${claim.diagnoses.map((d, i) => {
+            const slot = slotForDx(i)
             const letter = String.fromCharCode(65 + i)
-            return `<li><b>${letter}.</b> ${escape(d.code)}${d.label ? ' — ' + escape(d.label) : ''}</li>`
+            if (!slot) {
+              return `<li><b>${letter}.</b> ${escape(d.code)}${d.label ? ' — ' + escape(d.label) : ''}</li>`
+            }
+            const resolved = state.resolvedIssues.has(slot.issueId)
+            const currentId = state.amendedFields[slot.issueId] ?? d.code
+            const opt = slot.options.find(o => o.id === currentId)
+            const code = opt?.id ?? d.code
+            const label = opt?.label ?? d.label
+            const klass = resolved ? 'amended' : 'hi'
+            return `<li class="${klass}"><b>${letter}.</b> ${escape(code)}${label ? ' — ' + escape(label) : ''}</li>`
           }).join('')}
         </ul>
       </div>
       <div class="claim-section service-section">
         <div class="claim-section-h">
           Box 24 · Service Lines
-          ${modifierResolved
-            ? '<span class="claim-status amended">AMENDED</span>'
-            : '<span class="claim-status disputed">DISPUTED</span>'}
+          ${renderSectionStatus(lineSectionStatus)}
         </div>
         <table class="lines">
           <thead><tr><th>DOS</th><th>POS</th><th>CPT</th><th>Modifier</th><th>Charges</th></tr></thead>
           <tbody>
             ${claim.serviceLines.map((line, i) => {
-              const isDisputed = line.disputed && !modifierResolved
-              const isAmended = line.disputed && modifierResolved
-              const mod = i === 0 ? state.amendedFields['modifier'] ?? '—' : line.modifier ?? '—'
+              const slot = slotForLineMod(i)
+              const resolved = slot ? state.resolvedIssues.has(slot.issueId) : false
+              const isDisputed = !!line.disputed && !resolved
+              const isAmended = !!line.disputed && resolved
+              const mod = slot
+                ? state.amendedFields[slot.issueId] ?? '—'
+                : line.modifier ?? '—'
               return `
                 <tr class="${isAmended ? 'amended' : isDisputed ? 'hi' : ''}">
                   <td>${escape(line.dos)}</td>
@@ -182,6 +227,23 @@ function renderClaim(spec: PuzzleSpec, state: PuzzleState): string {
       </div>
     </section>
   `
+}
+
+/**
+ * Aggregate amend status for a section of the claim. 'none' = no slots
+ * target this section; 'disputed' = at least one unresolved; 'amended' =
+ * all targeting slots resolved.
+ */
+function sectionStatus(slots: PuzzleSpec['amendSlots'], state: PuzzleState): 'none' | 'disputed' | 'amended' {
+  if (slots.length === 0) return 'none'
+  const allResolved = slots.every(s => state.resolvedIssues.has(s.issueId))
+  return allResolved ? 'amended' : 'disputed'
+}
+
+function renderSectionStatus(status: 'none' | 'disputed' | 'amended'): string {
+  if (status === 'amended') return '<span class="claim-status amended">AMENDED</span>'
+  if (status === 'disputed') return '<span class="claim-status disputed">DISPUTED</span>'
+  return ''
 }
 
 function renderAmendCallouts(spec: PuzzleSpec, state: PuzzleState): string {
