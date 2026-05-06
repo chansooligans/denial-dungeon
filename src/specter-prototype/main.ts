@@ -18,6 +18,8 @@
 // teaching weight as form-fixing, and reads as RCM-real (AR
 // analysts spend half their time hunting these).
 
+import { BASE_CSS, districtVars, escape } from '../shared/prototype-base'
+
 interface FeeScheduleLine {
   cpt: string
   label: string
@@ -230,15 +232,6 @@ const state = {
 const TRUE_FLAGGED_ID = 'clm-C'
 
 // === Rendering ===
-
-function escape(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-}
 
 function term(termId: string, displayText?: string): string {
   const entry = glossary[termId]
@@ -871,99 +864,10 @@ function handleClick(e: MouseEvent) {
 
 // === Mount ===
 
-const css = `
-  :root {
-    --bg: #0a0d12; --panel: #161b24; --panel-2: #1d2330;
-    --ink: #d8dee9; --ink-dim: #8a93a3;
-    --accent: #ef5b7b; --accent-2: #f0a868;
-    --bad: #ef5b7b; --good: #7ee2c1;
-    --hi: rgba(239, 91, 123, 0.22); --hi-border: #ef5b7b;
-    --paper: #f5f1e6;
-  }
-  * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; }
-  body {
-    background: var(--bg); color: var(--ink);
-    font: 14.5px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
-    padding: 28px 20px 80px;
-    max-width: 1180px; margin: 0 auto;
-    position: relative;
-  }
-  body::before {
-    content: ""; position: fixed; inset: 0; pointer-events: none;
-    background:
-      radial-gradient(ellipse at 20% 20%, rgba(138, 217, 196, 0.04), transparent 50%),
-      radial-gradient(ellipse at 80% 80%, rgba(160, 175, 190, 0.04), transparent 50%);
-    z-index: 0;
-    animation: flicker 7s infinite;
-  }
-  @keyframes flicker {
-    0%, 95%, 100% { opacity: 1; }
-    96% { opacity: 0.85; } 97% { opacity: 1; }
-    98% { opacity: 0.7; }  99% { opacity: 1; }
-  }
-  #prototype-root { position: relative; z-index: 1; }
-  a { color: var(--accent); }
-  h1, h2, h3 { color: var(--ink); margin: 0 0 8px; }
-  h1 { font-size: 24px; }
-  code { background: #0a0d12; padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
-  ul, ol { margin: 0; padding-left: 22px; }
-
-  .page-h { margin-bottom: 22px; }
-  .title-row { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-  .header-actions { display: flex; align-items: baseline; gap: 14px; }
-  .lede { color: var(--ink-dim); margin: 6px 0 0; max-width: 800px; }
-  .muted { color: var(--ink-dim); font-weight: 400; font-size: 16px; }
-  .back-link { font-size: 13px; }
-  .recall-btn {
-    font: inherit; font-size: 12px;
-    background: rgba(240, 168, 104, 0.1); color: var(--accent-2);
-    border: 1px solid #4a3a2a; padding: 5px 12px; border-radius: 14px; cursor: pointer;
-  }
-
-  .hospital-intro { background: var(--panel); border: 1px solid #232a36; border-radius: 8px; padding: 18px 22px; margin-bottom: 22px; }
-  .hospital-intro p { margin: 8px 0; }
-  .register { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; padding: 2px 10px; border-radius: 3px; display: inline-block; }
-  .register.hospital { background: rgba(240, 168, 104, 0.12); color: var(--accent-2); border: 1px solid #4a3a2a; }
-  .register.waiting-room { background: rgba(177, 139, 214, 0.12); color: #c8b6e0; border: 1px solid #3a324a; }
-  .register-flip {
-    margin: 16px 0; padding: 12px 16px;
-    border-left: 3px solid #c8b6e0; background: rgba(177, 139, 214, 0.05);
-    font-size: 13.5px; overflow: hidden;
-  }
-  .ripple { width: 100%; height: 2px; margin-bottom: 8px; background: linear-gradient(90deg, transparent, #c8b6e0, transparent); animation: ripple 4s infinite ease-in-out; }
-  @keyframes ripple {
-    0%, 100% { transform: translateX(-100%); opacity: 0; }
-    50% { transform: translateX(0); opacity: 0.6; }
-  }
-
-  .briefing {
-    background: linear-gradient(180deg, rgba(240, 168, 104, 0.06), transparent);
-    border: 1px solid #4a3a2a; border-left-width: 4px;
-    border-radius: 8px; padding: 20px 24px; margin-bottom: 22px;
-  }
-  .briefing-h { display: flex; align-items: baseline; gap: 12px; margin-bottom: 10px; }
-  .briefing-tag { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent-2); }
-  .briefing-sub { font-size: 12px; color: var(--ink-dim); font-style: italic; }
-  .briefing-body p { margin: 10px 0; }
-  .briefing-body ul { margin: 10px 0; padding-left: 22px; }
-  .briefing-body li { margin: 6px 0; }
-  .briefing-sign { color: var(--ink-dim); font-style: italic; margin-top: 14px; }
-
-  .briefing-popover-backdrop { position: fixed; inset: 0; background: rgba(10, 13, 18, 0.7); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; overflow-y: auto; }
-  .briefing-popover { background: var(--panel); border: 1px solid #4a3a2a; border-left-width: 4px; border-radius: 8px; padding: 24px 28px 20px; max-width: 640px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5); background-image: linear-gradient(180deg, rgba(240, 168, 104, 0.06), transparent); margin: auto; position: relative; }
-  .briefing-popover-close { position: absolute; top: 8px; right: 12px; background: transparent; border: none; color: var(--ink-dim); font-size: 28px; cursor: pointer; padding: 4px 10px; }
-
-  .term { color: var(--accent); text-decoration: underline dotted; cursor: help; position: relative; }
-  .term:hover { color: #f57a92; }
-  .term-icon { display: inline-block; vertical-align: super; font-size: 9px; margin-left: 2px; background: var(--accent); color: #0a0d12; width: 12px; height: 12px; border-radius: 50%; text-align: center; line-height: 12px; font-weight: 700; }
-
-  .term-popover-backdrop { position: fixed; inset: 0; background: rgba(10, 13, 18, 0.7); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
-  .term-popover { background: var(--panel); border: 1px solid var(--accent); border-radius: 8px; padding: 20px 24px; max-width: 520px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5); }
-  .term-popover-h { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-  .term-popover-name { font-weight: 700; color: var(--accent); }
-  .term-popover-close { background: transparent; border: none; color: var(--ink-dim); font-size: 24px; cursor: pointer; padding: 0 8px; }
-
+// Specter-specific CSS — ERA panel + line table + verify badges, fee
+// schedule reference, appeal launcher, two-axis appeal modal.
+// Base styles via BASE_CSS.
+const css = districtVars('billing') + BASE_CSS + `
   /* ERA panel */
   .era-panel { background: var(--panel); border: 1px solid #232a36; border-left: 4px solid var(--accent); border-radius: 8px; padding: 16px 18px; margin-bottom: 22px; }
   .era-h { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
@@ -1026,70 +930,16 @@ const css = `
   .al-sub { font-size: 12px; color: var(--ink-dim); font-style: italic; }
   .al-body { margin-top: 6px; }
 
-  /* Amend modal (shared) */
-  .amend-modal-backdrop { position: fixed; inset: 0; background: rgba(10, 13, 18, 0.7); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; overflow-y: auto; }
-  .amend-modal { background: var(--panel); border: 1px solid var(--accent); border-left-width: 4px; border-radius: 8px; padding: 24px 28px 20px; max-width: 720px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5); position: relative; margin: auto; }
-  .amend-modal-close { position: absolute; top: 8px; right: 12px; background: transparent; border: none; color: var(--ink-dim); font-size: 28px; cursor: pointer; padding: 4px 10px; }
-  .amend-modal-h { display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px; }
-  .amend-tag { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
-  .amend-sub { font-size: 13px; color: var(--ink-dim); }
-  .amend-context { background: var(--panel-2); padding: 10px 14px; border-radius: 5px; font-size: 13px; margin-bottom: 14px; border-left: 3px solid var(--accent); line-height: 1.55; }
-  .amend-context strong { color: var(--accent); }
-  .amend-options { list-style: none; padding-left: 0; margin: 0; }
-  .amend-option { padding: 12px 14px; margin: 6px 0; background: var(--panel-2); border-radius: 5px; border-left: 3px solid transparent; cursor: pointer; transition: all 0.15s; }
-  .amend-option:hover { background: #232b3a; border-left-color: var(--accent); }
-  .amend-option.rejected { border-left-color: var(--bad); background: rgba(239, 91, 123, 0.08); }
+  /* Wider amend modal for two-axis appeal picks (shortfall × reason). */
+  .amend-modal { max-width: 720px; }
   .amend-option-h { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
   .appeal-shortfall { font-size: 14px; }
   .appeal-shortfall code { font-weight: 700; color: var(--ink); letter-spacing: 0.04em; }
   .appeal-reason { font-size: 12.5px; color: var(--ink); flex: 1; }
-  .amend-option-fb { margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(239, 91, 123, 0.3); font-size: 12px; color: #f3a4b6; line-height: 1.45; }
-  .amend-hint-text { font-size: 12px; color: var(--ink-dim); margin-top: 14px; font-style: italic; }
 
-  /* Checklist */
-  .checklist { background: var(--panel); border: 1px solid #232a36; border-radius: 8px; padding: 16px 18px; margin-bottom: 22px; }
-  .checklist-h { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-dim); margin-bottom: 10px; }
-  .checklist ul { list-style: none; padding-left: 0; margin: 0; }
-  .checklist li { display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px dashed #232a36; }
-  .checklist li:last-child { border-bottom: none; }
-  .checklist li.done { opacity: 0.55; }
-  .checklist li.done .issue-label { text-decoration: line-through; }
-  .check { font-size: 18px; color: var(--accent); width: 20px; flex-shrink: 0; }
-  .issue-body { flex: 1; }
-  .issue-label { font-size: 13.5px; }
-  .fail-counter { margin-top: 10px; font-size: 12px; color: var(--ink-dim); font-style: italic; }
-
-  .btn { font: inherit; padding: 8px 18px; border-radius: 4px; cursor: pointer; border: 1px solid transparent; font-size: 13px; }
-  .btn.primary { background: var(--accent); color: #0a0d12; font-weight: 600; }
-  .btn.primary:hover:not(.disabled):not(:disabled) { background: #f57a92; }
-  .btn.ghost { background: transparent; color: var(--ink-dim); border-color: #2a3142; }
-  .btn.submit { background: var(--accent-2); color: #0a0d12; font-weight: 700; padding: 12px 24px; margin-top: 14px; }
-  .btn.submit:hover:not(.disabled) { background: #f7c08a; }
-  .btn.disabled, .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-  .feedback { margin-top: 10px; padding: 10px 14px; border-radius: 4px; font-size: 13px; white-space: pre-line; line-height: 1.55; }
-  .fb-good { background: rgba(126, 226, 193, 0.1); border-left: 3px solid var(--good); color: var(--good); }
-  .fb-bad { background: rgba(239, 91, 123, 0.08); border-left: 3px solid var(--bad); color: #f3a4b6; }
-  .fb-neutral { background: var(--panel-2); border-left: 3px solid var(--ink-dim); color: var(--ink); }
-
-  .recap { margin-top: 12px; padding: 12px 14px; background: rgba(138, 217, 196, 0.06); border: 1px solid #2c5547; border-radius: 5px; }
-  .recap-h { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 4px; font-weight: 600; }
-  .recap p { margin: 0; font-size: 13.5px; line-height: 1.5; }
-
-  .design-notes { margin-top: 60px; padding: 24px; background: var(--panel); border: 1px solid #232a36; border-radius: 8px; }
-  .notes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 12px; }
-  @media (max-width: 880px) { .notes-grid { grid-template-columns: 1fr; } }
-  .notes-grid h3 { font-size: 14px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-dim); margin-bottom: 8px; }
-  .notes-grid ul { padding-left: 18px; }
-  .notes-grid li { font-size: 13px; margin: 6px 0; }
-  .notes-cta { margin-top: 18px; font-size: 13px; color: var(--ink-dim); }
-
-  .victory { background: var(--panel); border: 1px solid #232a36; border-radius: 8px; padding: 32px 28px; margin: 22px 0 60px; text-align: center; }
-  .victory h2 { font-size: 26px; margin-bottom: 16px; }
-  .victory p { max-width: 560px; margin: 12px auto; }
-  .victory .register { margin-top: 20px; }
-  .victory .btn.primary { margin-top: 24px; }
-  .victory .back-link.inline { display: block; margin-top: 16px; font-size: 12px; }
+  /* Recap uses Specter coral-mint instead of warm orange. */
+  .recap { background: rgba(138, 217, 196, 0.06); border-color: #2c5547; }
+  .recap-h { color: var(--accent); }
 `
 
 function rerender() {
