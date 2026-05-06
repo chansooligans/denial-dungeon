@@ -182,6 +182,7 @@ export const ENCOUNTERS: Record<string, Encounter> = {
     archetype: 'Bundling Beast',
     wing: 'coding',
     codexOnSight: 'obstacle_co_97',
+    puzzleSpecId: 'bundle',
     caseId: 'case_bundle_kim',
     highlightedBoxes: ['24D-1'],
     payerNote:
