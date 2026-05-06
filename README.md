@@ -2,7 +2,7 @@
 
 A turn-based RPG that teaches the US healthcare revenue cycle. Walk through a hospital, talk to billing staff, fight claim denials, and discover the surreal "Waiting Room" where lost claims go.
 
-**[Play it](https://chansooligans.github.io/denial-dungeon/)** (GitHub Pages) &middot; **[Battle catalog](https://chansooligans.github.io/denial-dungeon/battles.html)** (every encounter, mechanic, and linked claim form) &middot; **[Wraith prototype](https://chansooligans.github.io/denial-dungeon/wraith-prototype.html)** (CITE-dominant) &middot; **[Bundle prototype](https://chansooligans.github.io/denial-dungeon/bundle-prototype.html)** (AMEND-dominant)
+**[Play it](https://chansooligans.github.io/denial-dungeon/)** (GitHub Pages) &middot; **[Prototype catalog](https://chansooligans.github.io/denial-dungeon/prototypes.html)** (encounter-redesign sketches)
 
 ## What You'll Learn
 

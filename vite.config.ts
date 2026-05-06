@@ -10,10 +10,10 @@ export default defineConfig({
       input: {
         // Game: the existing entry point.
         main: resolve(__dirname, 'index.html'),
-        // Battle catalog: a static, framework-free design surface that
-        // lists every encounter + linked claim. Lives at /battles.html
-        // on GitHub Pages.
-        battles: resolve(__dirname, 'battles.html'),
+        // Prototype catalog: index page listing the encounter-
+        // redesign prototypes. Lives at /prototypes.html on
+        // GitHub Pages.
+        prototypes: resolve(__dirname, 'prototypes.html'),
         // Wraith prototype: a single-encounter sketch demonstrating
         // the no-HP / no-tools / no-multiple-choice redesign. Lives
         // at /wraith-prototype.html on GitHub Pages.
