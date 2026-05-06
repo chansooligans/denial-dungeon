@@ -1,8 +1,8 @@
-# Denial Dungeon
+# The Waiting Room
 
 A turn-based RPG that teaches the US healthcare revenue cycle. Walk through a hospital, talk to billing staff, fight claim denials, and discover the surreal "Waiting Room" where lost claims go.
 
-**[Play it](https://chansooligans.github.io/denial-dungeon/)** (GitHub Pages) &middot; **[Prototype catalog](https://chansooligans.github.io/denial-dungeon/prototypes.html)** (encounter-redesign sketches)
+**[Play it](https://chansooligans.github.io/the-waiting-room/)** (GitHub Pages) &middot; **[Prototype catalog](https://chansooligans.github.io/the-waiting-room/prototypes.html)** (encounter-redesign sketches)
 
 ## What You'll Learn
 

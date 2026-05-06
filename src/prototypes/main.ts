@@ -94,7 +94,7 @@ function renderHeader(): string {
   return `
     <header class="page-h">
       <div class="title-row">
-        <h1>Denial Dungeon · Prototype Catalog</h1>
+        <h1>The Waiting Room · Prototype Catalog</h1>
         <a class="back-link" href="./">← back to game</a>
       </div>
       <p class="lede">
@@ -196,9 +196,9 @@ function renderFooter(): string {
         <code>src/wraith-prototype/</code>,
         <code>src/bundle-prototype/</code>, etc.
         Design notes for each encounter live in
-        <a href="https://github.com/chansooligans/denial-dungeon/tree/main/reference/puzzles">reference/puzzles/</a>;
+        <a href="https://github.com/chansooligans/the-waiting-room/tree/main/reference/puzzles">reference/puzzles/</a>;
         the curriculum spine is in
-        <a href="https://github.com/chansooligans/denial-dungeon/tree/main/reference/curriculum">reference/curriculum/</a>.
+        <a href="https://github.com/chansooligans/the-waiting-room/tree/main/reference/curriculum">reference/curriculum/</a>.
       </p>
     </footer>
   `

@@ -1,4 +1,4 @@
-# Denial Dungeon
+# The Waiting Room
 
 ## What This Is
 A turn-based hospital RPG that teaches the US healthcare revenue cycle.

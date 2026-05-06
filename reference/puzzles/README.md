@@ -33,7 +33,7 @@ Design surface for the battle-as-puzzle reframe.
 - `reference/journal/2026-05-05-battle-mechanics-and-form-bridge.md`
   — current mechanic catalog
 - `battles.html` (deployed at
-  `https://chansooligans.github.io/denial-dungeon/battles.html`) —
+  `https://chansooligans.github.io/the-waiting-room/battles.html`) —
   live rendering of every encounter, including the structured puzzle
   drafts
 - `src/types.ts` — `PuzzleDraft` and `PuzzleIssue` interfaces

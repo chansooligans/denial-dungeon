@@ -1,7 +1,7 @@
 # 2026-05-04 — Build Plan
 
 ## Overview
-Rebuild Denial Dungeon from current Hades-style action prototype into the
+Rebuild The Waiting Room from current Hades-style action prototype into the
 V3 "Waiting Room" design: dual-reality turn-based hospital RPG. Phaser 3,
 TypeScript, Vite, deployable on GitHub Pages.
 
