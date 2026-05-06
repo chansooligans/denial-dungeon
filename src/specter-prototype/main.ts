@@ -180,6 +180,10 @@ const glossary: Record<string, GlossaryEntry> = {
     term: '835 (electronic remittance advice)',
     plain: "The X12 EDI transaction the payer sends back after adjudicating one or more claims. Carries the verdict for each claim: how much paid, how much adjusted (contractual write-off), how much patient responsibility, and which CARC/RARC codes apply per line. The 835 is the legal document of payment — read it line by line.",
   },
+  'ERA': {
+    term: 'ERA (electronic remittance advice)',
+    plain: "The provider-side shorthand for an 835. Same transaction, different name — the payer's EDI team calls it an 835 because that's the X12 transaction number; the provider's AR team calls it an ERA because that's what it is in plain English. When somebody says \"the ERA came in\" or \"check the ERA,\" they mean the 835 file the payer sent back. Used interchangeably in the wild.",
+  },
   'fee schedule': {
     term: 'Fee schedule',
     plain: "The contracted price list. For each CPT/HCPCS code, the contract specifies an allowed amount the payer agrees to pay (or use as the cap for cost-share calculation). When the payer's adjudication engine pays less than the fee schedule says, that's an underpayment — and yes, payers' fee tables get out of date all the time.",
@@ -311,14 +315,14 @@ function renderHospitalIntro(): string {
       <div class="register hospital">HOSPITAL · this morning</div>
       <p>
         The April ${term('835')} from BCBS posted overnight.
-        Four claims in one ERA — three small E&Ms and a chest
+        Four claims in one ${term('ERA')} — three small E&Ms and a chest
         x-ray. Bola, the ${term('AR analyst')}, drops the
         printout on your desk. "Looks fine. But the
         contract-vs-paid report flagged this batch. Something's
         underpaid; I can't tell which one."
       </p>
       <p>
-        You spread the ERA next to BCBS's 2026-A
+        You spread the ${term('ERA')} next to BCBS's 2026-A
         ${term('fee schedule')}. The total paid looks roughly
         right. The line-level numbers will tell you where the
         variance is.
@@ -362,7 +366,7 @@ function briefingContent(): string {
       </p>
       <p>
         "AR analysts call this a ${term('contract-vs-paid variance')}.
-        The contract says X, the ERA says Y, X minus Y is what
+        The contract says X, the ${term('ERA')} says Y, X minus Y is what
         you fight for. It's small per claim — $28 here. It
         adds up to millions across a hospital."
       </p>
