@@ -71,13 +71,14 @@ const prototypes: Prototype[] = [
   {
     id: 'gatekeeper',
     title: 'Prior Auth Gatekeeper',
-    subtitle: '@ L3 — planned',
+    subtitle: '@ L3 — fourth-sibling prototype',
     archetype: 'Gatekeeper',
     carc: 'CO-197',
     level: 3,
-    status: 'planned',
-    verbs: 'REQUEST-dominant',
-    testing: 'New verb: REQUEST. File a retroactive 278 transaction; wait for a response; resubmit with auth number on Box 23. Different shape from amend or cite — process, not argument.',
+    status: 'shipped',
+    verbs: 'REQUEST + AMEND',
+    testing: 'New verb: REQUEST. File a retroactive 278; wait for the response; transcribe the auth number to Box 23. The citation builder is gone — replaced by a real 278 form (locked CPT + dx, picker for clinical rationale) and a response panel that animates back from the payer. Process, not argument.',
+    href: './gatekeeper-prototype.html',
     accent: '#a3c5ff',
   },
 ]

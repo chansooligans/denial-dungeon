@@ -26,6 +26,11 @@ export default defineConfig({
         // a literal day countdown on a CO-29 timely-filing
         // waiver appeal. Lives at /reaper-prototype.html.
         reaper: resolve(__dirname, 'reaper-prototype.html'),
+        // Gatekeeper prototype: fourth sibling introducing the
+        // REQUEST verb — file a retroactive 278, wait for the
+        // response, transcribe the auth number onto Box 23.
+        // Lives at /gatekeeper-prototype.html.
+        gatekeeper: resolve(__dirname, 'gatekeeper-prototype.html'),
       },
       output: {
         // Pull Phaser into its own vendor chunk. The framework is the
