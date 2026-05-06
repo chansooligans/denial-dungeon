@@ -425,15 +425,9 @@ export class HospitalScene extends Phaser.Scene {
 
     this.canMove = false
 
-    const lines = [
-      "Friday. Late.",
-      "You should have gone home hours ago.",
-      "Exhausted. Undertrained.",
-      "Trying to prove you can handle real work.",
-      "...",
-      "Footsteps in the lobby.",
-    ]
-    this.showNarration(lines, () => {
+    // Beat the player has to look around at the empty office before
+    // the patient arrives.
+    this.time.delayedCall(900, () => {
       // Anjali enters from the lobby's north door and walks south to
       // her placement tile. Door tile is the player's spawn column,
       // y=32 (LOBBY's top edge).
