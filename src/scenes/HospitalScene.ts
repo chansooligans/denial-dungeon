@@ -708,27 +708,76 @@ export class HospitalScene extends Phaser.Scene {
   /**
    * Hospital → Waiting Room transition. Triggered from a dialogue
    * handoff (the player isn't supposed to *want* to descend; cases
-   * pull them in). The player sprite drops + fades while the camera
-   * fades to black, then starts WaitingRoomScene with the active
-   * encounter id so only that one obstacle is lit on arrival.
+   * pull them in). Animation reads as "the floor goes liquid":
+   *   1. Three concentric red rings ripple outward from the player.
+   *   2. The player rotates + drops + fades + squashes vertically.
+   *   3. A red flash washes over the camera as the floor "claims" them.
+   *   4. Camera fades to black; WR starts.
+   * Total ~1100ms — long enough for the metaphor to read, short
+   * enough that it doesn't get tiresome on repeat plays.
    */
   private descendThroughGap(activeEncounterId: string) {
     if (!this.canMove) return
     this.canMove = false
 
-    // Player sprite drops + fades. ScaleY shrinks slightly as if
-    // pulled downward into the floor.
+    const px = this.player.x
+    const py = this.player.y
+
+    // Floor ripple — three concentric magenta/red rings expanding from
+    // the player's tile. World-space, so they read as physical waves
+    // on the floor instead of a screen-space FX flash.
+    for (let i = 0; i < 3; i++) {
+      const ring = this.add.graphics().setDepth(20).setAlpha(0)
+      ring.lineStyle(2, 0xb13050, 1)
+      ring.strokeCircle(px, py, 4)
+      this.tweens.add({
+        targets: ring,
+        alpha: 0.9,
+        duration: 120,
+        delay: i * 110,
+        yoyo: true,
+        hold: 280,
+        onComplete: () => ring.destroy(),
+      })
+      this.tweens.add({
+        targets: ring,
+        scale: 6,
+        duration: 700,
+        delay: i * 110,
+        ease: 'Cubic.easeOut',
+      })
+    }
+
+    // Player drops, slow rotation, squash, fade. Slight delay so the
+    // ripple lands first.
     this.tweens.add({
       targets: this.player,
-      y: this.player.y + TILE * 4,
+      y: py + TILE * 4,
       alpha: 0,
-      scaleY: 1.4, // base scale 2 → ~30% squash
-      duration: 600,
+      scaleY: 1.2,
+      angle: 220,
+      duration: 800,
+      delay: 150,
       ease: 'Sine.easeIn',
     })
 
+    // Red flash overlay (screen-space) just before the camera fade —
+    // a moment of "the WR is bleeding through" before the cut.
+    const { width, height } = this.scale
+    const flash = this.add.rectangle(width / 2, height / 2, width, height, 0x6a0d10, 0)
+      .setScrollFactor(0).setDepth(50)
+    this.tweens.add({
+      targets: flash,
+      alpha: 0.55,
+      delay: 700,
+      duration: 200,
+      yoyo: true,
+      hold: 80,
+      onComplete: () => flash.destroy(),
+    })
+
     // Camera fade-to-black + start WR on completion.
-    this.cameras.main.fadeOut(700, 0, 0, 0)
+    this.cameras.main.fadeOut(900, 0, 0, 0)
     this.cameras.main.once('camerafadeoutcomplete', () => {
       const state = getState()
       state.inWaitingRoom = true

@@ -72,11 +72,65 @@ export class BootScene extends Phaser.Scene {
   }
 
   private makePlayerSprite() {
+    // Protagonist matches the intro cover + page-5 illustration:
+    // young woman, dark brown hair tied up in a messy bun, pale skin,
+    // warm sepia sweater, dark trousers, hospital ID badge.
     const g = this.make.graphics({ x: 0, y: 0 })
-    this.drawCharacter(g, 0x4a9e8e, 0x3a3a3a, 0xf5deb3)
-    // Badge on shirt
+    const HAIR = 0x2a1a0e
+    const SKIN = 0xf0d9be
+    const SWEATER = 0x5a4030
+    const PANTS = 0x1a1a2e
+
+    // Bun (tied-up hair on top of the head)
+    g.fillStyle(HAIR)
+    g.fillRect(7, 0, 2, 2)
+    g.fillRect(6, 1, 4, 1)
+    // Hair cap + sides
+    g.fillRect(4, 1, 8, 3)
+    g.fillRect(3, 2, 1, 5)
+    g.fillRect(12, 2, 1, 5)
+    // Loose wisps below the ears (frames the face)
+    g.fillRect(3, 7, 1, 1)
+    g.fillRect(12, 7, 1, 1)
+    // Bangs across forehead
+    g.fillRect(4, 3, 8, 1)
+
+    // Face (skin)
+    g.fillStyle(SKIN)
+    g.fillRect(4, 4, 8, 5)
+
+    // Eyes (slightly larger than NPC version — eyelashes implied)
+    g.fillStyle(0x1a1a2e)
+    g.fillRect(5, 5, 2, 2)
+    g.fillRect(9, 5, 2, 2)
+    g.fillStyle(0xffffff)
+    g.fillRect(5, 5, 1, 1)
+    g.fillRect(9, 5, 1, 1)
+
+    // Torso (sweater)
+    g.fillStyle(SWEATER)
+    g.fillRect(3, 9, 10, 4)
+    // Sweater highlight (subtle)
+    g.fillStyle(0xffffff, 0.10)
+    g.fillRect(4, 9, 4, 2)
+
+    // Arms / hands
+    g.fillStyle(SWEATER)
+    g.fillRect(1, 9, 2, 4)
+    g.fillRect(13, 9, 2, 4)
+    g.fillStyle(SKIN)
+    g.fillRect(1, 13, 2, 1)
+    g.fillRect(13, 13, 2, 1)
+
+    // Hospital ID badge (yellow, on the lanyard)
     g.fillStyle(0xf4d06f)
-    g.fillRect(10, 9, 2, 2)
+    g.fillRect(10, 10, 2, 2)
+
+    // Pants
+    g.fillStyle(PANTS)
+    g.fillRect(4, 13, 3, 3)
+    g.fillRect(9, 13, 3, 3)
+
     g.generateTexture('player', 16, 16)
     g.destroy()
   }

@@ -201,18 +201,49 @@ export class WaitingRoomScene extends Phaser.Scene {
     this.cameras.main.setZoom(1.5)
     this.cameras.main.setBounds(0, 0, this.mapDef.width * TILE, this.mapDef.height * TILE)
     // Fade in from black — the player just fell through the gap,
-    // and the WR resolves out of the dark. Slightly slower than
-    // the Hospital fade-in so the arrival has weight.
+    // and the WR resolves out of the dark.
     this.cameras.main.fadeIn(700, 0, 0, 0)
-    // Tiny "settling" beat on the player sprite — they squashed
-    // down on landing; ease back to scale 2 over 350ms.
-    this.player.setScale(2, 1.5)
+
+    // Arrival animation — the player drops in from above, rotating
+    // out of the spin from the Hospital descent, then settles with a
+    // squash. A red ground-flash hits the moment they land.
+    const targetX = this.player.x
+    const targetY = this.player.y
+    this.player.setPosition(targetX, targetY - TILE * 5)
+    this.player.setAlpha(0)
+    this.player.setAngle(220)
+    this.canMove = false
+    this.tweens.add({
+      targets: this.player,
+      y: targetY,
+      alpha: 1,
+      angle: 0,
+      duration: 600,
+      delay: 350,
+      ease: 'Sine.easeOut',
+    })
+    this.player.setScale(2, 1.0)
     this.tweens.add({
       targets: this.player,
       scaleY: 2,
-      duration: 350,
-      ease: 'Sine.easeOut',
-      delay: 200,
+      duration: 280,
+      ease: 'Back.easeOut',
+      delay: 900,
+    })
+    // Landing flash — concentric red ring out from the landing tile.
+    this.time.delayedCall(900, () => {
+      const ring = this.add.graphics().setDepth(20)
+      ring.lineStyle(2, 0xff3050, 1)
+      ring.strokeCircle(targetX, targetY, 4)
+      this.tweens.add({
+        targets: ring,
+        scale: 8,
+        alpha: 0,
+        duration: 700,
+        ease: 'Cubic.easeOut',
+        onComplete: () => ring.destroy(),
+      })
+      this.canMove = true
     })
 
     // When a battle returns control, refresh obstacle visibility (defeated
