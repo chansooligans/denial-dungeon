@@ -611,6 +611,19 @@ export class WaitingRoomScene extends Phaser.Scene {
     this.checkObstacleProximity()
   }
 
+  /** Swap the player texture based on the direction they're moving. */
+  private faceDirection(dx: number, dy: number) {
+    if (dx > 0) {
+      this.player.setTexture('player_side').setFlipX(false)
+    } else if (dx < 0) {
+      this.player.setTexture('player_side').setFlipX(true)
+    } else if (dy < 0) {
+      this.player.setTexture('player_up').setFlipX(false)
+    } else if (dy > 0) {
+      this.player.setTexture('player').setFlipX(false)
+    }
+  }
+
   private isSolid(x: number, y: number): boolean {
     const { width: mw, height: mh, layout } = this.mapDef
     if (x < 0 || x >= mw || y < 0 || y >= mh) return true
@@ -621,6 +634,8 @@ export class WaitingRoomScene extends Phaser.Scene {
   private tryMove(dx: number, dy: number) {
     const newX = this.playerTileX + dx
     const newY = this.playerTileY + dy
+
+    this.faceDirection(dx, dy)
 
     if (this.isSolid(newX, newY)) return
 
