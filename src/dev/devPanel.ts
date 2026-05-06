@@ -7,6 +7,7 @@ import { ENCOUNTERS } from '../content/enemies'
 import { PUZZLE_SPECS } from '../runtime/puzzle/specs'
 
 const PANEL_ID = '__dev_panel__'
+const TOGGLE_ID = '__dev_panel_toggle__'
 const STYLE_ID = '__dev_panel_style__'
 
 export function installDevPanel() {
@@ -18,17 +19,33 @@ export function installDevPanel() {
   style.textContent = CSS
   document.head.appendChild(style)
 
+  // Tiny always-on FAB for mobile (and as a desktop discoverability
+  // hint). Clicking it has the same effect as pressing backtick.
+  const toggle = document.createElement('button')
+  toggle.id = TOGGLE_ID
+  toggle.textContent = 'DEV'
+  toggle.setAttribute('aria-label', 'Toggle dev panel')
+  document.body.appendChild(toggle)
+
   const panel = document.createElement('div')
   panel.id = PANEL_ID
   panel.className = 'devp hidden'
   panel.innerHTML = renderPanel()
   document.body.appendChild(panel)
 
+  const togglePanel = () => panel.classList.toggle('hidden')
+
   panel.addEventListener('click', e => {
     const target = e.target as HTMLElement
     const action = target.closest('[data-dev-action]') as HTMLElement | null
     if (!action) return
     handleAction(action.dataset.devAction!, action.dataset.devArg)
+  })
+
+  toggle.addEventListener('click', e => {
+    e.preventDefault()
+    e.stopPropagation()
+    togglePanel()
   })
 
   document.addEventListener('keydown', e => {
@@ -38,7 +55,7 @@ export function installDevPanel() {
     const t = e.target as HTMLElement | null
     if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return
     e.preventDefault()
-    panel.classList.toggle('hidden')
+    togglePanel()
   })
 }
 
@@ -87,8 +104,16 @@ function handleAction(action: string, arg?: string) {
     case 'puzzle': {
       if (!arg) return
       const [encounterId, puzzleSpecId] = arg.split('|')
+      // Return the player to whichever gameplay scene they were in
+      // when they hit the dev panel. If neither is active (e.g. on
+      // Title), fall back to WaitingRoom — that's where puzzles
+      // organically live.
+      const returnScene =
+        sm.isActive('WaitingRoom') ? 'WaitingRoom'
+          : sm.isActive('Hospital') ? 'Hospital'
+          : 'WaitingRoom'
       stopAllScenes(sm)
-      sm.start('PuzzleBattle', { encounterId, puzzleSpecId, returnScene: 'Hospital' })
+      sm.start('PuzzleBattle', { encounterId, puzzleSpecId, returnScene })
       hidePanel()
       return
     }
@@ -122,6 +147,25 @@ function hidePanel() {
 }
 
 const CSS = `
+  #${TOGGLE_ID} {
+    position: fixed;
+    top: 8px;
+    right: 8px;
+    z-index: 9998;
+    background: rgba(14, 20, 32, 0.85);
+    color: #f0a868;
+    border: 1px solid #2a3142;
+    border-radius: 999px;
+    padding: 4px 10px;
+    font: 700 10px/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    letter-spacing: 0.12em;
+    cursor: pointer;
+    opacity: 0.5;
+    transition: opacity 0.15s;
+  }
+  #${TOGGLE_ID}:hover, #${TOGGLE_ID}:active {
+    opacity: 1;
+  }
   #${PANEL_ID} {
     position: fixed;
     top: 12px;
