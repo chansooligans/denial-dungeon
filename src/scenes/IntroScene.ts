@@ -42,64 +42,90 @@ const BEATS: Beat[] = [
   { type: 'wait', duration: 3000 },
   { type: 'text', lines: [
     'And somewhere between all of them,',
-    'things go wrong.',
+    'claims get lost.',
   ], color: '#e6edf3' },
   { type: 'wait', duration: 2500 },
 
-  // Beat 3: Your Desk — part-time intern, working late.
+  // Beat 3: Your Desk
   { type: 'scene', action: (s) => s.showDesk() },
   { type: 'text', lines: [
-    'You are a part-time intern in the',
-    'revenue-cycle office at Mercy General.',
+    'You are a part-time intern',
+    'at Mercy General Hospital.',
   ], color: '#e6edf3' },
-  { type: 'wait', duration: 2200 },
+  { type: 'wait', duration: 2000 },
   { type: 'text', lines: [
     "It's Friday. It's late.",
     'You should have gone home hours ago.',
   ], color: '#8b95a5' },
-  { type: 'wait', duration: 2200 },
-  { type: 'text', lines: [
-    'You are exhausted. Undertrained.',
-    'Trying to prove you can handle real work.',
-  ], color: '#8b95a5' },
   { type: 'wait', duration: 2500 },
 
-  // Beat 4: The Patient.
+  // Beat 4: The Vanishing
+  { type: 'scene', action: (s) => s.showClaimVanish() },
   { type: 'text', lines: [
-    'Near closing, you hear footsteps.',
+    'One claim. Routine knee replacement.',
+    'Filed correctly — you think.',
   ], color: '#e6edf3' },
-  { type: 'wait', duration: 1800 },
+  { type: 'wait', duration: 2000 },
   { type: 'text', lines: [
-    'A patient. In the waiting area.',
-    'Polite. Tired. Strangely calm.',
+    'But when you look for it in the system...',
   ], color: '#e6edf3' },
+  { type: 'wait', duration: 1500 },
+  { type: 'text', lines: [
+    "It's gone.",
+  ], color: '#ef5b7b' },
+  { type: 'wait', duration: 1200 },
+  { type: 'text', lines: [
+    'Not denied. Not rejected. Not pending.',
+    'Gone.',
+  ], color: '#ef5b7b' },
   { type: 'wait', duration: 2500 },
-  { type: 'text', lines: [
-    '"Sorry to bother you," she says.',
-    '"They told me someone here',
-    'could check whether I was approved."',
-  ], color: '#f0a868' },
+
+  // Beat 5: The Gap (procedural only; comic art shown as full reveal at end).
+  { type: 'scene', action: (s) => s.showGap() },
+  { type: 'wait', duration: 2000 },
+
+  // Beat 6: The Fall
+  { type: 'scene', action: (s) => s.showFall() },
   { type: 'wait', duration: 3500 },
+
+  // Beat 7: The Waiting Room
+  { type: 'scene', action: (s) => s.showWaitingRoom() },
   { type: 'text', lines: [
-    "You're not supposed to help patients directly.",
-  ], color: '#8b95a5' },
-  { type: 'wait', duration: 2200 },
-  { type: 'text', lines: [
-    "Part-time interns don't.",
-    "You don't fully understand the system yet.",
-  ], color: '#8b95a5' },
-  { type: 'wait', duration: 2500 },
-  { type: 'text', lines: [
-    'But she looks like she has been',
-    'waiting forever.',
+    'Below the hospital you know,',
+    'there is another place.',
   ], color: '#e6edf3' },
   { type: 'wait', duration: 2500 },
   { type: 'text', lines: [
-    'So you check.',
-  ], color: '#f0a868' },
+    'A place where every claim that was',
+    'ever filed still exists — waiting.',
+  ], color: '#8b95a5' },
   { type: 'wait', duration: 2500 },
+  { type: 'text', lines: [
+    'The chairs stretch on forever.',
+    'The number on the ticket counter',
+    'never seems to change.',
+  ], color: '#8b95a5' },
+  { type: 'wait', duration: 2500 },
+  { type: 'text', lines: [
+    'Forms fill out themselves, then unfill.',
+    'Somewhere, a phone rings',
+    'that no one answers.',
+  ], color: '#8b95a5' },
+  { type: 'wait', duration: 2500 },
+  { type: 'text', lines: [
+    'They call it',
+  ], color: '#e6edf3' },
+  { type: 'wait', duration: 1000 },
+  { type: 'text', lines: [
+    'The Waiting Room.',
+  ], color: '#f0a868' },
+  { type: 'wait', duration: 2000 },
 
-  // Beat 5: Title
+  // End reveal: full-bleed comic pages — the gap, then the waiting room.
+  { type: 'cover', key: 'intro_page5', duration: 4200 },
+  { type: 'cover', key: 'intro_page6', duration: 4800 },
+
+  // Beat 8: Title
   { type: 'title' },
 ]
 

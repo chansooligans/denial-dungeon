@@ -170,9 +170,11 @@ export const LEVEL_1_MAP: MapDef = {
   // Gap inside Main Hub, near the fountain.
   gapTile: { x: MAIN_HUB.x + 8, y: MAIN_HUB.y + 5 },
   npcPlacements: [
-    // Anjali waits in the lobby with her ER bill — first NPC the player
-    // sees on entry. She hands off the level-1 intro case.
-    { npcId: 'anjali', tileX: LOBBY.x + 8,        tileY: LOBBY.y + 4 },
+    // Anjali walks in during the level-1 opening sequence and lands
+    // here — directly on the player's column, three tiles north of
+    // spawn, between the lobby chair rows. (The opening sequence
+    // animates her in from the lobby's north door at runtime.)
+    { npcId: 'anjali', tileX: LOBBY.x + 10,       tileY: LOBBY.y + 4 },
     { npcId: 'dana',   tileX: PATIENT_SVC.x + 6,  tileY: PATIENT_SVC.y + 4 },
     { npcId: 'kim',    tileX: REGISTRATION.x + 4, tileY: REGISTRATION.y + 4 },
     { npcId: 'jordan', tileX: ELIGIBILITY.x + 5,  tileY: ELIGIBILITY.y + 3 },

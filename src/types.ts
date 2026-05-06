@@ -423,6 +423,13 @@ export interface GameState {
    * standing, not to the level's `playerStart`. Cleared after use.
    */
   pendingHospitalSpawn?: { x: number; y: number } | null
+  /**
+   * Has the level-1 in-game opening sequence (intern narration +
+   * Anjali walking in + auto-dialogue) played yet? Set true once the
+   * sequence finishes so it never replays. Distinct from the cinematic
+   * IntroScene (which is replayable from the title screen).
+   */
+  introOpeningPlayed?: boolean
 }
 
 export interface Decision {

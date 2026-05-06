@@ -33,6 +33,7 @@ const DEFAULT_STATE: GameState = {
   wingsUnlocked: ['eligibility'],
   obstaclesSeen: [],
   formsPerfected: [],
+  introOpeningPlayed: false,
 }
 
 let currentState: GameState = loadFromStorage() ?? structuredClone(DEFAULT_STATE)
@@ -61,6 +62,7 @@ function migrateState(loaded: Partial<GameState> & Record<string, unknown>): Gam
   merged.defeatedObstacles ??= []
   merged.obstaclesSeen ??= []
   merged.formsPerfected ??= []
+  merged.introOpeningPlayed ??= false
   merged.wingsUnlocked ??= base.wingsUnlocked
   merged.tools ??= []
   // Top up the tool list with any missing default tools. Players don't

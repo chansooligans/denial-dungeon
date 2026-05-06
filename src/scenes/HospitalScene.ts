@@ -192,6 +192,13 @@ export class HospitalScene extends Phaser.Scene {
       this.scheduleGhostPaper()
     }
 
+    // First-time level-1 opening: narrate the intern's situation, walk
+    // Anjali into the lobby, auto-launch her dialogue. Runs once per
+    // save (gated by state.introOpeningPlayed).
+    if (!state.introOpeningPlayed && state.currentLevel === 1) {
+      this.runOpeningSequence()
+    }
+
     // Mobile / accessibility: parallel scene with virtual D-pad + E + ESC.
     if (!this.scene.isActive('TouchOverlay')) this.scene.launch('TouchOverlay')
     // Deferred stop: when this scene shuts down, defer to the next tick
@@ -400,6 +407,129 @@ export class HospitalScene extends Phaser.Scene {
 
       this.npcSprites.push({ sprite, npc, label, tileX: p.tileX, tileY: p.tileY })
     }
+  }
+
+  /**
+   * Level-1 opening: narrate the intern's mood, walk Anjali in from the
+   * lobby's north door, auto-launch her dialogue. Runs once per save.
+   */
+  private runOpeningSequence() {
+    const anjali = this.npcSprites.find(n => n.npc.id === 'anjali')
+    if (!anjali) return
+
+    // Stash her destination, hide her until the narration ends.
+    const destX = anjali.tileX * TILE + TILE / 2
+    const destY = anjali.tileY * TILE + TILE / 2
+    anjali.sprite.setVisible(false)
+    anjali.label.setVisible(false)
+
+    this.canMove = false
+
+    const lines = [
+      "Friday. Late.",
+      "You should have gone home hours ago.",
+      "Exhausted. Undertrained.",
+      "Trying to prove you can handle real work.",
+      "...",
+      "Footsteps in the lobby.",
+    ]
+    this.showNarration(lines, () => {
+      // Anjali enters from the lobby's north door and walks south to
+      // her placement tile. Door tile is the player's spawn column,
+      // y=32 (LOBBY's top edge).
+      const startX = this.mapDef.playerStart.x * TILE + TILE / 2
+      const startY = 32 * TILE + TILE / 2
+      anjali.sprite.setPosition(startX, startY)
+      anjali.label.setPosition(startX, startY - 22)
+      anjali.sprite.setVisible(true).setAlpha(0)
+      anjali.label.setVisible(true).setAlpha(0)
+      anjali.sprite.setTexture('npc_anjali')
+
+      this.tweens.add({
+        targets: [anjali.sprite, anjali.label],
+        alpha: 1,
+        duration: 350,
+      })
+      // Walk the sprite down the lobby aisle.
+      this.tweens.add({
+        targets: anjali.sprite,
+        x: destX,
+        y: destY,
+        duration: 1700,
+        delay: 200,
+        ease: 'Sine.easeInOut',
+      })
+      // Label tracks the sprite, offset 22px above it.
+      this.tweens.add({
+        targets: anjali.label,
+        x: destX,
+        y: destY - 22,
+        duration: 1700,
+        delay: 200,
+        ease: 'Sine.easeInOut',
+        onComplete: () => {
+          // Mark the sequence done so it doesn't replay.
+          const s = getState()
+          s.introOpeningPlayed = true
+          saveGame()
+          // Auto-launch the dialogue, mirroring what interact() does.
+          this.canMove = false
+          this.scene.pause()
+          this.scene.launch('Dialogue', {
+            dialogueKey: 'anjali_intro',
+            callingScene: 'Hospital',
+          })
+        },
+      })
+    })
+  }
+
+  /**
+   * Show a sequence of narration lines centered at the bottom of the
+   * screen. Each line fades in, holds, fades out, and the next plays.
+   * UI-camera friendly (scrollFactor 0).
+   */
+  private showNarration(lines: string[], onComplete: () => void) {
+    const { width, height } = this.scale
+    const box = this.add.rectangle(width / 2, height / 2 + 100, width - 80, 70, 0x0e1116, 0.85)
+      .setStrokeStyle(1, 0x2a323d).setScrollFactor(0).setDepth(110).setAlpha(0)
+    const text = this.add.text(width / 2, height / 2 + 100, '', {
+      fontSize: '13px',
+      fontFamily: 'monospace',
+      color: '#e6edf3',
+      align: 'center',
+      wordWrap: { width: width - 120 },
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(111).setAlpha(0)
+
+    this.tweens.add({ targets: box, alpha: 0.85, duration: 280 })
+
+    let i = 0
+    const showNext = () => {
+      if (i >= lines.length) {
+        this.tweens.add({
+          targets: [box, text],
+          alpha: 0,
+          duration: 260,
+          onComplete: () => {
+            box.destroy()
+            text.destroy()
+            onComplete()
+          },
+        })
+        return
+      }
+      text.setText(lines[i])
+      i += 1
+      this.tweens.add({
+        targets: text,
+        alpha: 1,
+        duration: 280,
+        hold: 1500,
+        yoyo: true,
+        onComplete: () => this.time.delayedCall(180, showNext),
+      })
+    }
+    showNext()
   }
 
   private setupInput() {
