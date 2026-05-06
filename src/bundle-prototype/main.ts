@@ -251,7 +251,7 @@ function render(): string {
       ${renderCitationBuilder()}
       ${renderChecklist()}
     `}
-    ${renderDesignNotes()}
+    ${state.briefingDone ? '' : renderDesignNotes()}
     ${renderTermPopover()}
     ${renderBriefingPopover()}
     ${renderAmendModal()}
@@ -271,15 +271,17 @@ function renderHeader(): string {
           <a class="back-link" href="./">← back to game</a>
         </div>
       </div>
-      <p class="lede">
-        A second prototype, sibling to the
-        <a href="./wraith-prototype.html">Wraith</a>. This one is
-        AMEND-dominant: the fix is a missing modifier on Box 24
-        (not a wrong code on Box 21). Tests whether the verb-
-        space holds for "quick surgical fix" encounters too.
-        See the <a href="#design-notes">design notes</a> for what
-        this prototype is testing.
-      </p>
+      ${state.briefingDone ? '' : `
+        <p class="lede">
+          A second prototype, sibling to the
+          <a href="./wraith-prototype.html">Wraith</a>. This one
+          is AMEND-dominant: the fix is a missing modifier on
+          Box 24 (not a wrong code on Box 21). Tests whether the
+          verb-space holds for "quick surgical fix" encounters
+          too. See the <a href="#design-notes">design notes</a>
+          for what this prototype is testing.
+        </p>
+      `}
     </header>
   `
 }

@@ -278,7 +278,7 @@ function render(): string {
       ${renderChecklist()}
       ${renderWraith()}
     `}
-    ${renderDesignNotes()}
+    ${state.briefingDone ? '' : renderDesignNotes()}
     ${renderTermPopover()}
     ${renderBriefingPopover()}
     ${renderAmendModal()}
@@ -298,13 +298,16 @@ function renderHeader(): string {
           <a class="back-link" href="./">← back to game</a>
         </div>
       </div>
-      <p class="lede">
-        A redesign sketch of the Medical Necessity Wraith encounter
-        (${term('CO-50')}). Drops HP, tools-as-damage, and multiple
-        choice. First answer to "what does a battle look like in
-        this game." See the <a href="#design-notes">design notes</a>
-        for what's intentional vs placeholder.
-      </p>
+      ${state.briefingDone ? '' : `
+        <p class="lede">
+          A redesign sketch of the Medical Necessity Wraith
+          encounter (${term('CO-50')}). Drops HP, tools-as-damage,
+          and multiple choice. First answer to "what does a battle
+          look like in this game." See the
+          <a href="#design-notes">design notes</a> for what's
+          intentional vs placeholder.
+        </p>
+      `}
     </header>
   `
 }
