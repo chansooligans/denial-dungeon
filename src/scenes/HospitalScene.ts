@@ -601,12 +601,13 @@ export class HospitalScene extends Phaser.Scene {
     if (!style) {
       style = document.createElement('style')
       style.id = STYLE_ID
+      // 5s total: 2s sharp, 3s blur-out (40% / 60% split).
       style.textContent = `
         #${OVERLAY_ID} {
           position: fixed; inset: 0; z-index: 800;
           display: flex; align-items: center; justify-content: center;
           background: rgba(10, 12, 18, 0.78);
-          animation: claim-preview-blur 2200ms forwards;
+          animation: claim-preview-blur 5000ms forwards;
         }
         #${OVERLAY_ID} .panel {
           background: #f5e6c8; color: #1a1208;
@@ -625,7 +626,7 @@ export class HospitalScene extends Phaser.Scene {
         }
         @keyframes claim-preview-blur {
           0%   { filter: blur(0); opacity: 1; }
-          55%  { filter: blur(0); opacity: 1; }
+          40%  { filter: blur(0); opacity: 1; }
           100% { filter: blur(14px); opacity: 0; }
         }
       `
@@ -636,7 +637,7 @@ export class HospitalScene extends Phaser.Scene {
     overlay.innerHTML = html
     document.body.appendChild(overlay)
 
-    this.time.delayedCall(2200, () => {
+    this.time.delayedCall(5000, () => {
       overlay.remove()
       style?.remove()
       onComplete()
@@ -975,7 +976,9 @@ export class HospitalScene extends Phaser.Scene {
    * enough that it doesn't get tiresome on repeat plays.
    */
   private descendThroughGap(activeEncounterId: string) {
-    if (!this.canMove) return
+    // Descent is dialogue-driven now; canMove is intentionally false
+    // when we get here (set by the claim-preview step that runs
+    // before us). No guard needed.
     this.canMove = false
 
     const px = this.player.x
