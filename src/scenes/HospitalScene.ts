@@ -1,7 +1,7 @@
 import Phaser from 'phaser'
 import { NPCS } from '../content/npcs'
 import { LEVELS } from '../content/levels'
-import { getMapForLevel } from '../content/maps'
+import { HOSPITAL_MAP } from '../content/maps'
 import type { MapDef } from '../content/maps'
 import { getState, saveGame, consumePendingLevelBanner } from '../state'
 import type { NPC } from '../types'
@@ -110,7 +110,7 @@ export class HospitalScene extends Phaser.Scene {
 
   create() {
     const state = getState()
-    this.mapDef = getMapForLevel(state.currentLevel)
+    this.mapDef = HOSPITAL_MAP
 
     this.playerTileX = this.mapDef.playerStart.x
     this.playerTileY = this.mapDef.playerStart.y

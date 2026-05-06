@@ -2,7 +2,7 @@ import Phaser from 'phaser'
 import { getState, saveGame } from '../state'
 import { LEVELS } from '../content/levels'
 import { ENCOUNTERS } from '../content/enemies'
-import { getMapForLevel } from '../content/maps'
+import { HOSPITAL_MAP } from '../content/maps'
 import type { MapDef } from '../content/maps'
 
 const TILE = 32
@@ -16,8 +16,8 @@ const TILE = 32
  *   "Below the hospital you know, there is another place… every
  *    claim that was ever filed still exists, waiting."
  *
- * Mechanically: the Waiting Room reads `getMapForLevel(state.currentLevel)`
- * and renders the layout with WR-aesthetic tiles + cyberpunk overlays
+ * Mechanically: the Waiting Room reads the same `HOSPITAL_MAP` and
+ * renders the layout with WR-aesthetic tiles + cyberpunk overlays
  * (neon door glows, CRT scanlines, dramatic flicker, glitchy data
  * motes). Encounter markers get placed at thematic Hospital-room
  * positions (e.g. the eligibility kiosk hosts the Gatekeeper; main
@@ -140,7 +140,7 @@ export class WaitingRoomScene extends Phaser.Scene {
 
   create() {
     const state = getState()
-    this.mapDef = getMapForLevel(state.currentLevel)
+    this.mapDef = HOSPITAL_MAP
 
     // Spawn at the gap tile — the player fell through, so they
     // arrive where the gap is in the Hospital. Walking back to the
