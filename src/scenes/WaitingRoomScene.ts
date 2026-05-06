@@ -111,7 +111,12 @@ export class WaitingRoomScene extends Phaser.Scene {
   }
 
   create() {
-    this.cameras.main.setBackgroundColor(0x0a0d12)
+    // Red Room (Twin Peaks) treatment — deep burgundy stage,
+    // checkerboard floor, curtain-red walls, warm uncanny glow.
+    // The aesthetic-inspirations doc cites the Red Room as the
+    // canonical reference for the Waiting Room's "between" quality;
+    // this is the visual side of that.
+    this.cameras.main.setBackgroundColor(0x1a0608)
     this.canMove = true
     this.floatingPapers = []
     this.obstacleSprites = []
@@ -155,26 +160,40 @@ export class WaitingRoomScene extends Phaser.Scene {
         const px = x * TILE + TILE / 2
         const py = y * TILE + TILE / 2
 
-        this.add.image(px, py, 'wr_floor').setScale(2)
+        // Red Room floor — alternating black + bone-white checkerboard
+        // (a stand-in for the iconic chevron, since we don't have
+        // diagonal-pattern tiles). Tinted on existing wr_floor textures
+        // so we don't need new art.
+        const floor = this.add.image(px, py, 'wr_floor').setScale(2)
+        const isBoneTile = (x + y) % 2 === 0
+        floor.setTint(isBoneTile ? 0xd8cfc4 : 0x141014)
 
         if (ch === 'W') {
+          // Walls become red curtain panels. Vertical "fold" alternation
+          // gives a subtle drape texture on top of the existing wall
+          // sprite.
+          const isFold = (x + y) % 2 === 0
           this.add.image(px, py, 'wr_wall').setScale(2)
+            .setTint(isFold ? 0x6a0d10 : 0x4a0709)
         } else if (ch === 'C') {
-          this.add.image(px, py, 'wr_chair').setScale(2).setAlpha(0.7)
+          this.add.image(px, py, 'wr_chair').setScale(2).setAlpha(0.85)
+            .setTint(0x3a0608)
         } else if (ch === 'T') {
           this.add.image(px, py, 'wr_counter').setScale(2)
+            .setTint(0x2a0608)
         } else if (ch === 'D') {
-          this.add.image(px, py, 'h_door').setScale(2).setTint(0x6a4a8a)
+          this.add.image(px, py, 'h_door').setScale(2).setTint(0x8a1a1a)
         }
         // 'O' tiles: walkable, marker drawn separately by placeObstacles().
       }
     }
 
-    // Ticket counter display
+    // Ticket counter display — red on red still reads, but lift the
+    // hue toward the Red-Room neon-ish saturation.
     const counterX = 12 * TILE + TILE / 2
     const counterY = 8 * TILE + TILE / 2
     this.ticketText = this.add.text(counterX, counterY, 'NOW SERVING\n    037', {
-      fontSize: '8px', fontFamily: 'monospace', color: '#ef5b7b',
+      fontSize: '8px', fontFamily: 'monospace', color: '#ff8090',
     }).setOrigin(0.5).setDepth(5)
 
     // Flicker the ticket number
@@ -197,7 +216,8 @@ export class WaitingRoomScene extends Phaser.Scene {
   }
 
   private addAtmosphere() {
-    // Floating papers drifting slowly
+    // Floating papers — slightly tinted toward warm so they don't
+    // look out-of-place against the red-room palette.
     for (let i = 0; i < 20; i++) {
       const paper = this.add.image(
         Phaser.Math.Between(2 * TILE, (MAP_W - 2) * TILE),
@@ -207,6 +227,7 @@ export class WaitingRoomScene extends Phaser.Scene {
         .setAlpha(Phaser.Math.FloatBetween(0.05, 0.15))
         .setDepth(1)
         .setAngle(Phaser.Math.Between(-30, 30))
+        .setTint(0xf0c8a8)
 
       this.tweens.add({
         targets: paper,
@@ -224,27 +245,54 @@ export class WaitingRoomScene extends Phaser.Scene {
       this.floatingPapers.push(paper)
     }
 
-    // Subtle ambient color pulse on the camera
+    // Edge-curtain bars — narrow burgundy panels along the left
+    // and right of the camera that feel like drawn drapes framing
+    // the stage. Fixed-position (scroll factor 0) so they stay at
+    // the screen edges as the camera follows the player.
+    const { width: vw, height: vh } = this.scale
+    const curtain = this.add.graphics().setScrollFactor(0).setDepth(99)
+    const cWidth = 36
+    curtain.fillStyle(0x2a0608, 0.55)
+    curtain.fillRect(0, 0, cWidth, vh)
+    curtain.fillRect(vw - cWidth, 0, cWidth, vh)
+    curtain.fillStyle(0x4a0a0c, 0.35)
+    curtain.fillRect(cWidth, 0, 8, vh)
+    curtain.fillRect(vw - cWidth - 8, 0, 8, vh)
+
+    // Warm uncanny ambient pulse — slow, irregular, like a stage
+    // lamp that isn't quite stable. Replaces the old cool alpha
+    // breath. Cycle between 0.92 and 1.0.
     this.tweens.add({
       targets: this.cameras.main,
-      alpha: 0.95,
-      duration: 4000,
+      alpha: 0.92,
+      duration: 5200,
       yoyo: true,
       repeat: -1,
       ease: 'Sine.easeInOut',
     })
 
-    // Exit door prompt
+    // Occasional sharp flicker — the lights stutter for a beat,
+    // then recover. Twin-Peaks-y; not a constant strobe.
+    this.time.addEvent({
+      delay: 7000,
+      loop: true,
+      callback: () => {
+        this.cameras.main.setAlpha(0.65)
+        this.time.delayedCall(80, () => this.cameras.main.setAlpha(0.92))
+      },
+    })
+
+    // Exit door prompt — burgundy panel for legibility.
     this.exitPrompt = this.add.text(0, 0, '[E] Return to Hospital', {
-      fontSize: '9px', fontFamily: 'monospace', color: '#b18bd6',
-      backgroundColor: '#0a0d12',
+      fontSize: '9px', fontFamily: 'monospace', color: '#f0d090',
+      backgroundColor: '#1a0608',
       padding: { x: 4, y: 2 },
     }).setOrigin(0.5).setDepth(20).setVisible(false)
 
     // Engage prompt (shown when standing next to an obstacle marker)
     this.engagePrompt = this.add.text(0, 0, '', {
-      fontSize: '9px', fontFamily: 'monospace', color: '#b18bd6',
-      backgroundColor: '#0a0d12',
+      fontSize: '9px', fontFamily: 'monospace', color: '#f0d090',
+      backgroundColor: '#1a0608',
       padding: { x: 4, y: 2 },
     }).setOrigin(0.5).setDepth(20).setVisible(false)
   }
@@ -263,7 +311,9 @@ export class WaitingRoomScene extends Phaser.Scene {
         fontFamily: 'monospace',
         color: wing.color,
         fontStyle: 'bold',
-        backgroundColor: '#0a0d1280',
+        // Burgundy-on-burgundy panel so district colors still read
+        // against the red room palette without losing contrast.
+        backgroundColor: '#1a060880',
         padding: { x: 6, y: 3 },
       }).setOrigin(0.5).setDepth(3)
     }
@@ -294,8 +344,8 @@ export class WaitingRoomScene extends Phaser.Scene {
 
       const labelText = enc.archetype ?? enc.title
       const label = this.add.text(px, py - 26, labelText, {
-        fontSize: '9px', fontFamily: 'monospace', color: '#d0bce0',
-        backgroundColor: '#0a0d12cc', padding: { x: 4, y: 2 },
+        fontSize: '9px', fontFamily: 'monospace', color: '#f0d090',
+        backgroundColor: '#1a0608cc', padding: { x: 4, y: 2 },
       }).setOrigin(0.5).setDepth(5)
 
       this.obstacleSprites.push({ marker, graphics: g, label })
@@ -358,15 +408,15 @@ export class WaitingRoomScene extends Phaser.Scene {
     const level = LEVELS[state.currentLevel - 1]
 
     this.hudLevel = this.add.text(10, 10, `THE WAITING ROOM — ${level?.title ?? ''}`, {
-      fontSize: '10px', fontFamily: 'monospace', color: '#b18bd6',
-      backgroundColor: '#0a0d1280',
+      fontSize: '10px', fontFamily: 'monospace', color: '#f0d090',
+      backgroundColor: '#1a060880',
       padding: { x: 4, y: 2 },
     }).setScrollFactor(0).setDepth(100)
 
     this.add.text(10, 28, '"Your number will be called."', {
-      fontSize: '9px', fontFamily: 'monospace', color: '#5a4a6a',
+      fontSize: '9px', fontFamily: 'monospace', color: '#a8806a',
       fontStyle: 'italic',
-      backgroundColor: '#0a0d1280',
+      backgroundColor: '#1a060880',
       padding: { x: 4, y: 2 },
     }).setScrollFactor(0).setDepth(100)
 
@@ -374,8 +424,8 @@ export class WaitingRoomScene extends Phaser.Scene {
     // resources stay visible underground too.
     const r = state.resources
     this.add.text(10, 46, `HP: ${r.hp}/${r.maxHp}  Rep: ${r.reputation}  Audit: ${r.auditRisk}%  Stress: ${r.stress}`, {
-      fontSize: '9px', fontFamily: 'monospace', color: '#ef5b7b',
-      backgroundColor: '#0a0d1280',
+      fontSize: '9px', fontFamily: 'monospace', color: '#ff8090',
+      backgroundColor: '#1a060880',
       padding: { x: 4, y: 2 },
     }).setScrollFactor(0).setDepth(100)
   }
