@@ -121,11 +121,8 @@ function renderHospitalIntro(spec: PuzzleSpec): string {
 
 function renderBriefingInline(spec: PuzzleSpec): string {
   return `
-    <section class="briefing">
-      <div class="briefing-h">
-        <span class="briefing-tag">DANA, IN YOUR EAR</span>
-        <span class="briefing-sub">A new shape. Listen up.</span>
-      </div>
+    <section class="briefing notebook-page">
+      <div class="notebook-header">Dana’s notebook</div>
       <div class="briefing-body">
         ${spec.briefing.paragraphs.map(p => `<p>${p}</p>`).join('')}
         <ul>${spec.briefing.bullets.map(b => `<li>${b}</li>`).join('')}</ul>

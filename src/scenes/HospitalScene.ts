@@ -4,6 +4,7 @@ import { LEVELS } from '../content/levels'
 import { HOSPITAL_MAP } from '../content/maps'
 import type { MapDef } from '../content/maps'
 import { getState, saveGame, consumePendingLevelBanner } from '../state'
+import { showNarration } from './narration'
 import { ENCOUNTERS } from '../content/enemies'
 import { PUZZLE_SPECS } from '../runtime/puzzle/specs'
 import type { NPC } from '../types'
@@ -450,9 +451,25 @@ export class HospitalScene extends Phaser.Scene {
 
     this.canMove = false
 
-    // Beat the player has to look around at the empty office before
-    // the patient arrives.
-    this.time.delayedCall(900, () => {
+    // Establish Dana through her notebook. The intern has never met her
+    // — she's a presence-through-absence, a previous occupant of this
+    // desk who left guidance behind. Sets up the briefing card as
+    // "Dana's notebook" rather than an in-ear voice from a stranger.
+    showNarration(this, [
+      'There’s a notebook on your desk. Not yours.',
+      'Someone named Dana wrote in it.',
+      'Underlines, arrows. Things that don’t quite make sense yet.',
+    ], () => {
+      this.startAnjaliEntrance(anjali, destX, destY)
+    })
+  }
+
+  private startAnjaliEntrance(
+    anjali: NPCSprite,
+    destX: number,
+    destY: number,
+  ) {
+    this.time.delayedCall(400, () => {
       // Anjali enters from the lobby's north door and walks south to
       // her placement tile. Door tile is the player's spawn column,
       // y=32 (LOBBY's top edge).

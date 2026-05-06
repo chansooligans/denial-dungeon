@@ -417,6 +417,106 @@ export class PuzzleBattleScene extends Phaser.Scene {
 // in the header, the "amend callouts row" container, etc.). Keeping it
 // inline so the runtime port stays self-contained.
 const EXTRA_CSS = `
+  /* Notebook-page treatment for the briefing card. Cream paper, ruled
+     lines, spiral binding holes down the left edge, slight rotation,
+     handwriting-leaning typeface. Overrides the BASE_CSS .briefing
+     panel styling for the runtime puzzle only. */
+  .briefing.notebook-page {
+    position: relative;
+    background: #f5e6c8 !important;
+    color: #2a1a0e !important;
+    border: none !important;
+    border-radius: 3px !important;
+    padding: 32px 40px 28px 64px !important;
+    box-shadow:
+      0 18px 42px rgba(0, 0, 0, 0.55),
+      inset 0 0 0 1px rgba(0, 0, 0, 0.06),
+      inset 0 -2px 0 rgba(0, 0, 0, 0.05) !important;
+    background-image:
+      /* spiral-binding holes down the left margin */
+      radial-gradient(circle at 24px 38px,  rgba(0,0,0,0.22) 0 4px, transparent 5px),
+      radial-gradient(circle at 24px 78px,  rgba(0,0,0,0.22) 0 4px, transparent 5px),
+      radial-gradient(circle at 24px 118px, rgba(0,0,0,0.22) 0 4px, transparent 5px),
+      radial-gradient(circle at 24px 158px, rgba(0,0,0,0.22) 0 4px, transparent 5px),
+      radial-gradient(circle at 24px 198px, rgba(0,0,0,0.22) 0 4px, transparent 5px),
+      radial-gradient(circle at 24px 238px, rgba(0,0,0,0.22) 0 4px, transparent 5px),
+      radial-gradient(circle at 24px 278px, rgba(0,0,0,0.22) 0 4px, transparent 5px),
+      radial-gradient(circle at 24px 318px, rgba(0,0,0,0.22) 0 4px, transparent 5px),
+      radial-gradient(circle at 24px 358px, rgba(0,0,0,0.22) 0 4px, transparent 5px),
+      radial-gradient(circle at 24px 398px, rgba(0,0,0,0.22) 0 4px, transparent 5px),
+      /* horizontal ruling */
+      repeating-linear-gradient(
+        to bottom,
+        transparent 0 23px,
+        rgba(72, 40, 16, 0.18) 23px 24px
+      );
+    background-size: auto, auto, auto, auto, auto, auto, auto, auto, auto, auto, 100% 24px;
+    background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 28px;
+    transform: rotate(-0.5deg);
+    font-family: 'Patrick Hand', 'Caveat', 'Marker Felt', 'Comic Sans MS', cursive;
+    font-size: 16px !important;
+    line-height: 24px !important;
+  }
+  .briefing.notebook-page::before {
+    /* red margin line, like a real spiral notebook */
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 48px;
+    width: 1px;
+    background: rgba(180, 30, 50, 0.45);
+  }
+  .briefing.notebook-page .notebook-header {
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    font-size: 11px;
+    color: rgba(72, 40, 16, 0.55);
+    margin: 0 0 8px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  .briefing.notebook-page .briefing-body { margin: 0 !important; }
+  .briefing.notebook-page .briefing-body p {
+    margin: 0 0 14px !important;
+    color: #2a1a0e !important;
+  }
+  .briefing.notebook-page .briefing-body ul {
+    margin: 6px 0 14px !important;
+    padding-left: 18px !important;
+  }
+  .briefing.notebook-page .briefing-body li {
+    margin-bottom: 6px;
+  }
+  .briefing.notebook-page .briefing-body strong {
+    color: #5a2820;
+    text-decoration: underline wavy rgba(90, 40, 32, 0.4);
+    text-underline-offset: 3px;
+  }
+  .briefing.notebook-page .briefing-body em {
+    color: #5a3a1a;
+  }
+  .briefing.notebook-page .briefing-sign {
+    margin-top: 12px !important;
+    font-style: italic;
+    color: #5a3a1a;
+  }
+  .briefing.notebook-page .btn.primary {
+    margin-top: 18px;
+    background: #f5d56a !important;
+    color: #1a1208 !important;
+    border: 2px dashed #2a1a0e !important;
+    border-radius: 4px !important;
+    font-family: 'Patrick Hand', 'Caveat', 'Marker Felt', cursive !important;
+    font-size: 15px !important;
+    transform: rotate(0.8deg);
+    box-shadow: 2px 3px 0 rgba(0, 0, 0, 0.18);
+    padding: 8px 16px !important;
+  }
+  .briefing.notebook-page .btn.primary:hover {
+    background: #f6dd80 !important;
+    transform: rotate(-0.4deg) translateY(-1px);
+  }
+
   .back-link {
     background: transparent;
     color: var(--accent-2);
