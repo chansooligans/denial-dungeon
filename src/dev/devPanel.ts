@@ -109,6 +109,14 @@ function renderPanel(): string {
       <button class="devp-btn" data-dev-action="scene" data-dev-arg="WaitingRoom">Waiting Room</button>
     </section>
     <section>
+      <div class="devp-section-h">Skip into intro</div>
+      ${INTRO_BEATS.map(b => `
+        <button class="devp-btn" data-dev-action="intro-skip" data-dev-arg="${b.beat}">
+          ${b.label} <span class="devp-id">(beat ${b.beat})</span>
+        </button>
+      `).join('')}
+    </section>
+    <section>
       <div class="devp-section-h">Save</div>
       <button class="devp-btn" data-dev-action="copy-save">Copy save (JSON)</button>
       <button class="devp-btn" data-dev-action="paste-save">Load save (paste JSON)</button>
@@ -184,6 +192,22 @@ const PRESET_DEFEAT_SEQUENCE = [
   'boss_audit',            // L10
 ]
 
+/** Intro skip-to anchors. Indexes into BEATS in IntroScene.ts —
+ *  pick a beat and IntroScene.init reads `skipToBeat: N` from the
+ *  scene-start payload and jumps in. Voice counter is pre-advanced
+ *  so the right narration MP3 still fires. */
+const INTRO_BEATS: { beat: number; label: string }[] = [
+  { beat: 0,  label: 'Cover splash' },
+  { beat: 1,  label: '"$215" hook' },
+  { beat: 7,  label: 'Hospital pan' },
+  { beat: 14, label: 'Your desk' },
+  { beat: 19, label: 'The vanishing' },
+  { beat: 28, label: 'The gap' },
+  { beat: 30, label: 'The waiting room' },
+  { beat: 39, label: '"They call it"' },
+  { beat: 43, label: 'End covers' },
+]
+
 function buildPresetSave(targetLevel: number): string {
   const lvl = Math.max(1, Math.min(10, targetLevel))
   // Need (lvl - 1) defeats so threshold for the previous level is met,
@@ -228,6 +252,15 @@ function handleAction(action: string, arg?: string) {
   if (!game) return
   const sm = game.scene
   switch (action) {
+    case 'intro-skip': {
+      if (!arg) return
+      const beat = parseInt(arg, 10)
+      if (Number.isNaN(beat)) return
+      stopAllScenes(sm)
+      sm.start('Intro', { skipToBeat: beat })
+      hidePanel()
+      return
+    }
     case 'scene': {
       if (!arg) return
       stopAllScenes(sm)
