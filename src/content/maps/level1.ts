@@ -187,9 +187,15 @@ export const LEVEL_1_MAP: MapDef = {
     // here — directly on the player's column, three tiles north of
     // spawn, between the lobby chair rows. (The opening sequence
     // animates her in from the lobby's north door at runtime.)
-    { npcId: 'anjali', tileX: LOBBY.x + 10,       tileY: LOBBY.y + 4 },
-    { npcId: 'dana',   tileX: PATIENT_SVC.x + 6,  tileY: PATIENT_SVC.y + 4 },
-    { npcId: 'kim',    tileX: REGISTRATION.x + 4, tileY: REGISTRATION.y + 4 },
-    { npcId: 'jordan', tileX: ELIGIBILITY.x + 5,  tileY: ELIGIBILITY.y + 3 },
+    { npcId: 'anjali',   tileX: LOBBY.x + 10,        tileY: LOBBY.y + 4 },
+    { npcId: 'dana',     tileX: PATIENT_SVC.x + 6,   tileY: PATIENT_SVC.y + 4 },
+    { npcId: 'kim',      tileX: REGISTRATION.x + 4,  tileY: REGISTRATION.y + 4 },
+    { npcId: 'jordan',   tileX: ELIGIBILITY.x + 5,   tileY: ELIGIBILITY.y + 3 },
+    // The remaining staff. Placed in plausible rooms so the same
+    // map can host every level's case-handing dialogues.
+    { npcId: 'pat',      tileX: REGISTRATION.x + 14, tileY: REGISTRATION.y + 4 },
+    { npcId: 'alex',     tileX: MAIN_HUB.x + 4,      tileY: MAIN_HUB.y + 4 },
+    { npcId: 'sam',      tileX: PATIENT_SVC.x + 9,   tileY: PATIENT_SVC.y + 4 },
+    { npcId: 'martinez', tileX: MAIN_HUB.x + 14,     tileY: MAIN_HUB.y + 4 },
   ],
 }

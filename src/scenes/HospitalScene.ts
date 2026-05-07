@@ -7,6 +7,7 @@ import { getState, saveGame, consumePendingLevelBanner } from '../state'
 import { showNarration } from './narration'
 import { isTouchDevice } from './device'
 import { ENCOUNTERS } from '../content/enemies'
+import { LEVEL_NPC_DIALOGUES } from '../content/dialogue'
 import { PUZZLE_SPECS } from '../runtime/puzzle/specs'
 import type { NPC } from '../types'
 
@@ -1354,9 +1355,16 @@ export class HospitalScene extends Phaser.Scene {
       this.canMove = false
       this.interactPrompt.setVisible(false)
 
+      // Per-level dialogue override: if the current level routes this
+      // NPC to a different intake tree, use it. Falls back to the
+      // NPC's default dialogueKey otherwise.
+      const lvl = getState().currentLevel
+      const override = LEVEL_NPC_DIALOGUES[lvl]?.[this.nearbyNpc.npc.id]
+      const dialogueKey = override ?? this.nearbyNpc.npc.dialogueKey
+
       this.scene.pause()
       this.scene.launch('Dialogue', {
-        dialogueKey: this.nearbyNpc.npc.dialogueKey,
+        dialogueKey,
         callingScene: 'Hospital',
       })
       return

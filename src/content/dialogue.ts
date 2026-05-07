@@ -317,4 +317,236 @@ export const DIALOGUES: Record<string, DialogueNode> = {
       { text: "Take care.", effect: { unlockCodex: 'co_31' } },
     ],
   },
+
+  // === Level 2 — Kim hands off the eligibility-fog case ===
+  kim_l2_intake: {
+    id: 'kim_l2_intake',
+    speaker: 'Kim',
+    text: "Chloe — you're back. Word travels. Listen, I need a hand. The 270 we sent on Mai Nguyen this morning came back fogged. Half the fields blanked, no clear reason.",
+    next: 'kim_l2_intake_2',
+  },
+  kim_l2_intake_2: {
+    id: 'kim_l2_intake_2',
+    speaker: 'Kim',
+    text: "If we file without verifying her plan, that claim ends up in the Waiting Room with the rest of the half-answered ones. Want to take a look?",
+    choices: [
+      { text: '(Sit down at the workstation and pull her file.)',
+        effect: { triggerDescent: { encounterId: 'eligibility_fog' } } },
+      { text: "Maybe later.", next: 'kim_l2_intake_back' },
+    ],
+  },
+  kim_l2_intake_back: {
+    id: 'kim_l2_intake_back',
+    speaker: 'Kim',
+    text: "Fair. It'll still be here. They always are.",
+    choices: [{ text: '(Step away.)' }],
+  },
+
+  // === Level 3 — Sam (Denials) hands off the prior-auth gatekeeper ===
+  sam_l3_intake: {
+    id: 'sam_l3_intake',
+    speaker: 'Sam',
+    text: "There's a UHC denial on Adaeze Okafor — MRI lumbar, CO-197. No 278 on file. Pre-cert team swears they got verbal sign-off. Nobody wrote down the auth number.",
+    next: 'sam_l3_intake_2',
+  },
+  sam_l3_intake_2: {
+    id: 'sam_l3_intake_2',
+    speaker: 'Sam',
+    text: "If you can dig the auth out of the payer's UM portal and re-file with it, we recover. Otherwise it dies in appeals. Want to take it?",
+    choices: [
+      { text: '(Open the case.)',
+        effect: { triggerDescent: { encounterId: 'co_197' } } },
+      { text: 'Not yet.', next: 'sam_l3_intake_back' },
+    ],
+  },
+  sam_l3_intake_back: {
+    id: 'sam_l3_intake_back',
+    speaker: 'Sam',
+    text: "Take your time. The appeal clock is only ninety days.",
+    choices: [{ text: '(Step away.)' }],
+  },
+
+  // === Level 4 — Pat (Coding) hands off the bundling beast ===
+  pat_l4_intake: {
+    id: 'pat_l4_intake',
+    speaker: 'Pat',
+    text: "Got a CO-97 on Sarah Kim's chart. E&M and a procedure same day, NCCI bundled them. The visit was significant and separate — modifier 25 just never made it on.",
+    next: 'pat_l4_intake_2',
+  },
+  pat_l4_intake_2: {
+    id: 'pat_l4_intake_2',
+    speaker: 'Pat',
+    text: "Quick fix if you know where to put it. Care to give it a swing?",
+    choices: [
+      { text: '(Sit down and code it.)',
+        effect: { triggerDescent: { encounterId: 'co_97' } } },
+      { text: 'In a bit.', next: 'pat_l4_intake_back' },
+    ],
+  },
+  pat_l4_intake_back: {
+    id: 'pat_l4_intake_back',
+    speaker: 'Pat',
+    text: "Bundle's not going anywhere. It's bundled.",
+    choices: [{ text: '(Step away.)' }],
+  },
+
+  // === Level 5 — Sam hands off the medical-necessity wraith ===
+  sam_l5_intake: {
+    id: 'sam_l5_intake',
+    speaker: 'Sam',
+    text: "CO-50 on Walker. TTE for unspecified heart failure. Payer wants LCD evidence of LVEF under 35%. Echo report exists; it's just not stapled to the claim.",
+    next: 'sam_l5_intake_2',
+  },
+  sam_l5_intake_2: {
+    id: 'sam_l5_intake_2',
+    speaker: 'Sam',
+    text: "Wraiths feed on missing pages. Bring the evidence and it dissolves. Try?",
+    choices: [
+      { text: '(Pull the chart.)',
+        effect: { triggerDescent: { encounterId: 'co_50' } } },
+      { text: 'Later.', next: 'sam_l5_intake_back' },
+    ],
+  },
+  sam_l5_intake_back: {
+    id: 'sam_l5_intake_back',
+    speaker: 'Sam',
+    text: "It only gets harder to read once it's been a week.",
+    choices: [{ text: '(Step away.)' }],
+  },
+
+  // === Level 6 — Alex (IT/EDI) hands off the documentation-sprite swarm ===
+  alex_l6_intake: {
+    id: 'alex_l6_intake',
+    speaker: 'Alex',
+    text: "Yamada batch. 277CA rejects piling up — taxonomy missing on the rendering provider, and a dx pointer that points to nothing. We can scrub each reject one at a time, but they're regenerating faster than we sweep them.",
+    next: 'alex_l6_intake_2',
+  },
+  alex_l6_intake_2: {
+    id: 'alex_l6_intake_2',
+    speaker: 'Alex',
+    text: "Want to chase the source upstream? Patch the chart, the swarm starves.",
+    choices: [
+      { text: '(Trace the swarm.)',
+        effect: { triggerDescent: { encounterId: 'co_16_swarm' } } },
+      { text: 'Hold on.', next: 'alex_l6_intake_back' },
+    ],
+  },
+  alex_l6_intake_back: {
+    id: 'alex_l6_intake_back',
+    speaker: 'Alex',
+    text: "Sure. They multiply quietly until they don't.",
+    choices: [{ text: '(Step away.)' }],
+  },
+
+  // === Level 7 — Sam hands off the duplicate-claim reaper ===
+  sam_l7_intake: {
+    id: 'sam_l7_intake',
+    speaker: 'Sam',
+    text: "Park got a CO-29 on the 835 — duplicate claim. The provider hand-keyed a corrected version while a frequency-1 was still adjudicating. Now both look like duplicates to the payer.",
+    next: 'sam_l7_intake_2',
+  },
+  sam_l7_intake_2: {
+    id: 'sam_l7_intake_2',
+    speaker: 'Sam',
+    text: "Fix is a frequency-7 with the right ICN. Sound easy. Isn't. Want to handle it?",
+    choices: [
+      { text: '(Open the ERA.)',
+        effect: { triggerDescent: { encounterId: 'co_29_reaper' } } },
+      { text: 'Soon.', next: 'sam_l7_intake_back' },
+    ],
+  },
+  sam_l7_intake_back: {
+    id: 'sam_l7_intake_back',
+    speaker: 'Sam',
+    text: "Reaper's patient. Reaper waits.",
+    choices: [{ text: '(Step away.)' }],
+  },
+
+  // === Level 8 — Jordan (PFS) hands off the surprise-bill specter ===
+  jordan_l8_intake: {
+    id: 'jordan_l8_intake',
+    speaker: 'Jordan',
+    text: "Patient on the line — surprise bill from an out-of-network anesthesiologist. The procedure was at an in-network facility. NSA applies. Provider's billing it like it doesn't.",
+    next: 'jordan_l8_intake_2',
+  },
+  jordan_l8_intake_2: {
+    id: 'jordan_l8_intake_2',
+    speaker: 'Jordan',
+    text: "I need someone to push the IDR side and document the protections. Want to walk it through?",
+    choices: [
+      { text: '(Take the case.)',
+        effect: { triggerDescent: { encounterId: 'surprise_bill_specter' } } },
+      { text: 'Give me a minute.', next: 'jordan_l8_intake_back' },
+    ],
+  },
+  jordan_l8_intake_back: {
+    id: 'jordan_l8_intake_back',
+    speaker: 'Jordan',
+    text: "She's still on hold. She's been on hold a while.",
+    choices: [{ text: '(Step away.)' }],
+  },
+
+  // === Level 9 — Kim hands off the COB hydra ===
+  kim_l9_intake: {
+    id: 'kim_l9_intake',
+    speaker: 'Kim',
+    text: "Three-payer mess on Okwu. Medicare, BCBS, and a Medicaid wrap. Someone billed BCBS first. Now Medicare's recouping and the wrap won't move until the chain is in order.",
+    next: 'kim_l9_intake_2',
+  },
+  kim_l9_intake_2: {
+    id: 'kim_l9_intake_2',
+    speaker: 'Kim',
+    text: "If you sequence them out of order again, the hydra grows another head. Want to take it?",
+    choices: [
+      { text: '(Open the COB chain.)',
+        effect: { triggerDescent: { encounterId: 'oa_23_hydra' } } },
+      { text: 'Hold up.', next: 'kim_l9_intake_back' },
+    ],
+  },
+  kim_l9_intake_back: {
+    id: 'kim_l9_intake_back',
+    speaker: 'Kim',
+    text: "It'll keep. They always do.",
+    choices: [{ text: '(Step away.)' }],
+  },
+
+  // === Level 10 — Dana hands off the audit boss ===
+  dana_l10_intake: {
+    id: 'dana_l10_intake',
+    speaker: 'Dana',
+    text: "Auditors are in the conference room. They've got every claim you've touched in the last ninety days printed out, sorted by payer.",
+    next: 'dana_l10_intake_2',
+  },
+  dana_l10_intake_2: {
+    id: 'dana_l10_intake_2',
+    speaker: 'Dana',
+    text: "Documentation, modifiers, medical necessity, the whole stack. They'll ask, and your answers go on the record. You ready?",
+    choices: [
+      { text: '(Walk into the conference room.)',
+        effect: { triggerDescent: { encounterId: 'boss_audit' } } },
+      { text: 'Give me a minute.', next: 'dana_l10_intake_back' },
+    ],
+  },
+  dana_l10_intake_back: {
+    id: 'dana_l10_intake_back',
+    speaker: 'Dana',
+    text: "They're not in a hurry. They never are.",
+    choices: [{ text: '(Step away.)' }],
+  },
+}
+
+/** Per-level dialogue overrides. When `state.currentLevel` matches a
+ *  key here, the matching NPC opens the listed dialogue tree instead
+ *  of their default `dialogueKey`. Lets one NPC carry different cases
+ *  across levels without forking their identity. */
+export const LEVEL_NPC_DIALOGUES: Record<number, Record<string, string>> = {
+  2:  { kim:      'kim_l2_intake' },
+  3:  { sam:      'sam_l3_intake' },
+  4:  { pat:      'pat_l4_intake' },
+  5:  { sam:      'sam_l5_intake' },
+  6:  { alex:     'alex_l6_intake' },
+  7:  { sam:      'sam_l7_intake' },
+  8:  { jordan:   'jordan_l8_intake' },
+  9:  { kim:      'kim_l9_intake' },
+  10: { dana:     'dana_l10_intake' },
 }
