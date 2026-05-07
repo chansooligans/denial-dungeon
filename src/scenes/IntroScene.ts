@@ -14,6 +14,10 @@ interface Beat {
   // the line starts (so a visual can play *behind* the typed text
   // instead of running as a separate beat afterward).
   sceneAction?: (scene: IntroScene) => void
+  // For 'text' beats: when true, play the voiceover but don't render
+  // the typed text on screen. Useful when an upcoming cover image
+  // already shows the same text in the comic art.
+  silent?: boolean
 }
 
 const BEATS: Beat[] = [
@@ -87,11 +91,13 @@ const BEATS: Beat[] = [
     // falling visually rhymes with the claim being "gone".
     sceneAction: (s) => s.showFall(),
   },
-  { type: 'wait', duration: 1500 },
+  // Brief wait that extends to cover the voiceover's tail, then the
+  // gap-reveal scene action fires immediately (no extra dead air).
+  { type: 'wait', duration: 200 },
 
   // Beat 5: The Gap (procedural only; comic art shown as full reveal at end).
   { type: 'scene', action: (s) => s.showGap() },
-  { type: 'wait', duration: 1200 },
+  { type: 'wait', duration: 200 },
 
   // Beat 7: The Waiting Room
   { type: 'scene', action: (s) => s.showWaitingRoom() },
@@ -121,14 +127,19 @@ const BEATS: Beat[] = [
     'They call it',
   ], color: '#e6edf3' },
   { type: 'wait', duration: 1000 },
+  // Voiceover-only — the cover image that follows shows "THE WAITING
+  // ROOM" in its comic art, so we keep the narration but don't
+  // double-render the line on the dark backdrop.
   { type: 'text', lines: [
     'The Waiting Room.',
-  ], color: '#f0a868' },
-  { type: 'wait', duration: 2000 },
+  ], color: '#f0a868', silent: true },
+  { type: 'wait', duration: 200 },
 
-  // End reveal: full-bleed comic pages — the gap, then the waiting room.
-  { type: 'cover', key: 'intro_page5', duration: 5700 },
+  // End reveal: full-bleed comic pages. Order intentionally flipped
+  // — page6 first, then page5 (which has 'THE WAITING ROOM' lettered
+  // into the comic art) as the climactic final image.
   { type: 'cover', key: 'intro_page6', duration: 6300 },
+  { type: 'cover', key: 'intro_page5', duration: 5700 },
 
   // Beat 8: Title
   { type: 'title' },
@@ -324,9 +335,18 @@ export class IntroScene extends Phaser.Scene {
         // that should run while "Not denied. Not rejected. Not pending.
         // Gone." types out).
         if (beat.sceneAction) beat.sceneAction(this)
-        // Show + type the lines. When typing finishes (or user fast-forwards),
-        // onTypingComplete advances to the next beat (typically a 'wait').
-        this.showText(beat.lines!, beat.color || '#e6edf3')
+        if (beat.silent) {
+          // Voice-only beat — no visible text, no typing animation.
+          // Advance immediately; the following 'wait' beat extends to
+          // cover the voice's full duration via remainingVoiceMs().
+          this.currentBeat++
+          this.playBeat()
+        } else {
+          // Show + type the lines. When typing finishes (or user
+          // fast-forwards), onTypingComplete advances to the next
+          // beat (typically a 'wait').
+          this.showText(beat.lines!, beat.color || '#e6edf3')
+        }
         break
 
       case 'wait': {
