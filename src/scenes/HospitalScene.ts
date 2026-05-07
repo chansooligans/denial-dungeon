@@ -139,13 +139,13 @@ const TILE_FLAVOR: Record<string, string | string[]> = {
 const LEVEL_ORIENTATION_HINTS: Record<number, string> = {
   2:  'Find Kim at the Registration desk.',
   3:  'Sam is in Patient Services. There\'s a denial.',
-  4:  'Pat is at the Registration desk — a coding question.',
+  4:  'Pat moved down to HIM / Coding — head south.',
   5:  'Sam is back in Patient Services with another wraith.',
-  6:  'Alex is in the Main Hub. The clearinghouse is bleeding.',
+  6:  'Alex is in Billing — south wing. The clearinghouse is bleeding.',
   7:  'Sam in Patient Services. The reaper has surfaced.',
-  8:  'Jordan is in Eligibility. Patient on the line.',
+  8:  'Jordan is now at the PFS phone bank. Patient on the line.',
   9:  'Kim at Registration. Three payers, one claim.',
-  10: 'Dana in Patient Services. The auditors have arrived.',
+  10: 'Dana is in the Audit Conference Room. The auditors have arrived.',
 }
 
 /** Stable per-tile variant pick. Same (x, y) → same line every time;
@@ -520,10 +520,18 @@ export class HospitalScene extends Phaser.Scene {
       activeNpcs.push('anjali')
     }
 
+    // De-dupe NPCs that have multiple placements (different rooms per
+    // level) so each NPC is placed exactly once. Per-NPC, prefer a
+    // placement whose `levels` filter matches the current level; fall
+    // back to a placement with no filter (the default).
+    const placedSoFar = new Set<string>()
     for (const p of this.mapDef.npcPlacements) {
+      if (placedSoFar.has(p.npcId)) continue
+      if (p.levels && !p.levels.includes(state.currentLevel)) continue
       if (!activeNpcs.includes(p.npcId)) continue
       const npc = NPCS[p.npcId]
       if (!npc) continue
+      placedSoFar.add(p.npcId)
 
       const px = p.tileX * TILE + TILE / 2
       const py = p.tileY * TILE + TILE / 2
