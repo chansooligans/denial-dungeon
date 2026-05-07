@@ -9,6 +9,10 @@ interface Beat {
   action?: (scene: IntroScene) => void
   key?: string         // texture key for 'cover' and 'backdrop'
   alpha?: number       // target alpha for 'backdrop' (default 0.35)
+  // For 'text' beats: an optional scene action that fires the moment
+  // the line starts (so a visual can play *behind* the typed text
+  // instead of running as a separate beat afterward).
+  sceneAction?: (scene: IntroScene) => void
 }
 
 const BEATS: Beat[] = [
@@ -77,16 +81,16 @@ const BEATS: Beat[] = [
   { type: 'text', lines: [
     'Not denied. Not rejected. Not pending.',
     'Gone.',
-  ], color: '#ef5b7b' },
-  { type: 'wait', duration: 2500 },
+  ], color: '#ef5b7b',
+    // Drop into the fall animation as the line types — the character
+    // falling visually rhymes with the claim being "gone".
+    sceneAction: (s) => s.showFall(),
+  },
+  { type: 'wait', duration: 3500 },
 
   // Beat 5: The Gap (procedural only; comic art shown as full reveal at end).
   { type: 'scene', action: (s) => s.showGap() },
   { type: 'wait', duration: 2000 },
-
-  // Beat 6: The Fall
-  { type: 'scene', action: (s) => s.showFall() },
-  { type: 'wait', duration: 3500 },
 
   // Beat 7: The Waiting Room
   { type: 'scene', action: (s) => s.showWaitingRoom() },
@@ -154,6 +158,13 @@ export class IntroScene extends Phaser.Scene {
   private typingFinishedTimer?: Phaser.Time.TimerEvent
   // Pulsing "click to continue" indicator at bottom of screen.
   private continuePrompt!: Phaser.GameObjects.Text
+  // Voiceover state. textBeatCounter ticks once per `text` beat played,
+  // so it lines up 1:1 with the pre-split intro_voice_NN audio assets.
+  private textBeatCounter = 0
+  private currentVoice?: Phaser.Sound.BaseSound
+  // Intro song — fades in when the user advances past the title
+  // splash and carries through the rest of the cinematic.
+  private introSong?: Phaser.Sound.BaseSound
 
   constructor() {
     super('Intro')
@@ -172,6 +183,9 @@ export class IntroScene extends Phaser.Scene {
     this.typingEvents = []
     this.typingTextData = []
     this.typingFinishedTimer = undefined
+    this.textBeatCounter = 0
+    this.currentVoice = undefined
+    this.introSong = undefined
 
     const { width, height } = this.scale
 
@@ -204,6 +218,12 @@ export class IntroScene extends Phaser.Scene {
     this.input.keyboard!.on('keydown-ESC', () => this.skipToTitle())
     this.input.keyboard!.on('keydown-SPACE', () => this.userAdvance())
     this.input.keyboard!.on('keydown-ENTER', () => this.userAdvance())
+    // "Any key" advance — useful for the title-splash hold. Skip ESC
+    // since it's already wired to skipToTitle above.
+    this.input.keyboard!.on('keydown', (e: KeyboardEvent) => {
+      if (e.code === 'Escape') return
+      this.userAdvance()
+    })
     this.input.on('pointerdown', () => this.userAdvance())
 
     this.playBeat()
@@ -234,7 +254,8 @@ export class IntroScene extends Phaser.Scene {
     this.playBeat()
   }
 
-  private showContinuePrompt() {
+  private showContinuePrompt(label?: string) {
+    if (label) this.continuePrompt.setText(label)
     this.tweens.killTweensOf(this.continuePrompt)
     this.continuePrompt.setAlpha(0)
     this.tweens.add({
@@ -294,17 +315,31 @@ export class IntroScene extends Phaser.Scene {
         break
 
       case 'text':
+        // Play this beat's voiceover (one MP3 per text beat).
+        this.playBeatVoice()
+        // Optional concurrent scene visual (e.g. the falling animation
+        // that should run while "Not denied. Not rejected. Not pending.
+        // Gone." types out).
+        if (beat.sceneAction) beat.sceneAction(this)
         // Show + type the lines. When typing finishes (or user fast-forwards),
         // onTypingComplete advances to the next beat (typically a 'wait').
         this.showText(beat.lines!, beat.color || '#e6edf3')
         break
 
-      case 'wait':
-        // Click-driven: wait for the user instead of a timer. Original
-        // duration is preserved on the beat data but ignored here.
-        this.canAdvance = true
-        this.showContinuePrompt()
+      case 'wait': {
+        // Auto-advance after the beat's duration — but never before the
+        // current voiceover has finished. If the narration audio is
+        // longer than the original wait, extend the wait so we don't
+        // cut the line off when the next beat starts (and calls
+        // stopVoice on us).
+        const dwell = Math.max(beat.duration ?? 0, this.remainingVoiceMs() + 200)
+        this.pendingTimer = this.time.delayedCall(dwell, () => {
+          this.pendingTimer = undefined
+          this.currentBeat++
+          this.playBeat()
+        })
         break
+      }
 
       case 'scene':
         beat.action!(this)
@@ -325,6 +360,7 @@ export class IntroScene extends Phaser.Scene {
    */
   private showCover(key: string) {
     const { width, height } = this.scale
+    const isTitleSplash = this.currentBeat === 0
 
     // Hide procedural scene visuals and any active backdrop so only the
     // cover image (over solid black) is on screen.
@@ -361,6 +397,23 @@ export class IntroScene extends Phaser.Scene {
     this.tweens.add({
       targets: blackout, alpha: 1, duration: 300, ease: 'Sine.easeOut',
     })
+    const advanceFromCover = () => {
+      this.tweens.add({
+        targets: [image, blackout], alpha: 0,
+        duration: fadeOut, ease: 'Sine.easeIn',
+        onComplete: () => {
+          image.destroy()
+          blackout.destroy()
+          if (this.coverImage === image) this.coverImage = undefined
+          // Restore procedural-visuals layer for any later beats.
+          this.sceneContainer.setVisible(true)
+          if (this.done) return
+          this.currentBeat++
+          this.playBeat()
+        },
+      })
+    }
+
     this.tweens.add({
       targets: image, alpha: 1, duration: fadeIn, delay: 200, ease: 'Sine.easeOut',
       onComplete: () => {
@@ -368,25 +421,42 @@ export class IntroScene extends Phaser.Scene {
           blackout.destroy()
           return
         }
-        this.canAdvance = true
-        this.showContinuePrompt()
-        this.advanceCallback = () => {
-          this.tweens.add({
-            targets: [image, blackout], alpha: 0,
-            duration: fadeOut, ease: 'Sine.easeIn',
-            onComplete: () => {
-              image.destroy()
-              blackout.destroy()
-              if (this.coverImage === image) this.coverImage = undefined
-              // Restore procedural-visuals layer for any later beats.
-              this.sceneContainer.setVisible(true)
-              if (this.done) return
-              this.currentBeat++
-              this.playBeat()
-            },
+        if (isTitleSplash) {
+          // Hold here until the user clicks / presses any key. On
+          // advance, crossfade the cover audio into the intro song
+          // and dismiss the splash.
+          this.canAdvance = true
+          this.showContinuePrompt('press any key to begin')
+          this.advanceCallback = () => {
+            this.fadeInIntroSong()
+            this.hideContinuePrompt()
+            advanceFromCover()
+          }
+        } else {
+          // Auto-advance after the cover's duration — but never before
+          // any active voiceover finishes. Skip button still cuts to title.
+          const baseDwell = BEATS[this.currentBeat]?.duration ?? 3000
+          const dwell = Math.max(baseDwell, this.remainingVoiceMs() + 200)
+          this.pendingTimer = this.time.delayedCall(dwell, () => {
+            this.pendingTimer = undefined
+            advanceFromCover()
           })
         }
       },
+    })
+  }
+
+  /** Fade the intro song in. Plays under the rest of the cinematic;
+   *  voiceover plays on top. Triggered when the user advances past
+   *  the title splash. */
+  private fadeInIntroSong() {
+    if (!this.cache.audio.exists('intro_song')) return
+    this.introSong = this.sound.add('intro_song', { volume: 0 })
+    this.introSong.play()
+    this.tweens.add({
+      targets: this.introSong,
+      volume: 0.35,  // sits under the narration
+      duration: 1500,
     })
   }
 
@@ -740,6 +810,48 @@ export class IntroScene extends Phaser.Scene {
     this.typingEvents = []
     this.advanceCallback = undefined
     this.canAdvance = false
+    this.stopVoice()
+    // Intentionally do NOT stop the intro song — it carries from the
+    // cinematic into the title screen as a single bed of music. The
+    // sound persists because Phaser's sound manager is game-global.
     this.scene.start('Title')
+  }
+
+  private stopIntroSong() {
+    if (this.introSong) {
+      this.introSong.stop()
+      this.introSong.destroy()
+      this.introSong = undefined
+    }
+  }
+
+  /** Play the voiceover for the current text beat (1-indexed). Stops
+   *  any voice that was still playing from the previous beat. */
+  private playBeatVoice() {
+    this.textBeatCounter += 1
+    this.stopVoice()
+    const key = `intro_voice_${String(this.textBeatCounter).padStart(2, '0')}`
+    if (!this.cache.audio.exists(key)) return
+    this.currentVoice = this.sound.add(key)
+    this.currentVoice.play()
+  }
+
+  private stopVoice() {
+    if (this.currentVoice) {
+      this.currentVoice.stop()
+      this.currentVoice.destroy()
+      this.currentVoice = undefined
+    }
+  }
+
+  /** Milliseconds left in the currently-playing voiceover (if any).
+   *  Used by 'wait' / cover beats to ensure we don't advance — and
+   *  thus call stopVoice on ourselves — before the line finishes. */
+  private remainingVoiceMs(): number {
+    const v = this.currentVoice as any
+    if (!v || !v.isPlaying) return 0
+    const dur = typeof v.duration === 'number' ? v.duration : 0
+    const seek = typeof v.seek === 'number' ? v.seek : 0
+    return Math.max(0, (dur - seek) * 1000)
   }
 }

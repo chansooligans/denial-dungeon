@@ -75,11 +75,31 @@ export class TitleScene extends Phaser.Scene {
   }
 
   private startGame() {
+    this.fadeOutIntroSong()
     newGame()
     this.scene.start('Hospital')
   }
 
   private openCodex() {
+    this.fadeOutIntroSong()
     this.scene.start('Codex')
+  }
+
+  /** The intro song persists from IntroScene into the title menu (it's
+   *  on the global sound manager). When the player commits to a real
+   *  scene transition, fade it out so the gameplay scene gets silence
+   *  to start over. */
+  private fadeOutIntroSong() {
+    const song = this.sound.get('intro_song')
+    if (!song || !song.isPlaying) return
+    this.tweens.add({
+      targets: song,
+      volume: 0,
+      duration: 700,
+      onComplete: () => {
+        song.stop()
+        song.destroy()
+      },
+    })
   }
 }

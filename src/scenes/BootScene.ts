@@ -40,6 +40,25 @@ export class BootScene extends Phaser.Scene {
     this.load.image('intro_cover', 'intro/cover.png')
     this.load.image('intro_page5', 'intro/page5.png')
     this.load.image('intro_page6', 'intro/page6.png')
+
+    // Voiceover for the cinematic IntroScene — one MP3 per text beat,
+    // pre-split via whisper transcription so each line plays its own
+    // audio. Keys are 'intro_voice_NN' where NN matches the text-beat
+    // index (1-based, zero-padded). 18 beats total.
+    for (let i = 1; i <= 18; i++) {
+      const nn = String(i).padStart(2, '0')
+      this.load.audio(`intro_voice_${nn}`, `audio/intro/${nn}.mp3`)
+    }
+    // Intro song — fades in when the user advances past the title
+    // splash and runs underneath the rest of the cinematic.
+    this.load.audio('intro_song', 'audio/intro/intro_song.mp3')
+    // Red Room (Waiting Room) ambience tracks — one is picked at
+    // random when the player descends, looping with a fade-in. They
+    // carry from the WR scene through the PuzzleBattle overlay and
+    // fade out when control returns to the Hospital after submit.
+    this.load.audio('red_room_1', 'audio/wr/red_room_1.mp3')
+    this.load.audio('red_room_2', 'audio/wr/red_room_2.mp3')
+    this.load.audio('red_room_3', 'audio/wr/red_room_3.mp3')
   }
 
   create() {

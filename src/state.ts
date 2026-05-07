@@ -37,6 +37,7 @@ const DEFAULT_STATE: GameState = {
   firstWrArrivalNarrationPlayed: false,
   anjaliThanked: false,
   pendingAnjaliLeave: false,
+  pendingClaimSubmitted: null,
 }
 
 let currentState: GameState = loadFromStorage() ?? structuredClone(DEFAULT_STATE)
@@ -69,6 +70,7 @@ function migrateState(loaded: Partial<GameState> & Record<string, unknown>): Gam
   merged.firstWrArrivalNarrationPlayed ??= false
   merged.anjaliThanked ??= false
   merged.pendingAnjaliLeave ??= false
+  merged.pendingClaimSubmitted ??= null
   merged.wingsUnlocked ??= base.wingsUnlocked
   merged.tools ??= []
   // Top up the tool list with any missing default tools. Players don't

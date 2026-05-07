@@ -218,6 +218,12 @@ export class WaitingRoomScene extends Phaser.Scene {
     // and the WR resolves out of the dark.
     this.cameras.main.fadeIn(700, 0, 0, 0)
 
+    // Red Room ambience — pick one of three tracks at random, loop
+    // it, and fade in over 2s. The sound is on the global manager so
+    // it carries through the PuzzleBattle overlay; PuzzleBattleScene
+    // fades it out as part of its post-submit blur transition.
+    this.startRedRoomAmbience()
+
     // Arrival animation — the player drops in from above, rotating
     // out of the spin from the Hospital descent, then settles with a
     // squash. A red ground-flash hits the moment they land.
@@ -635,6 +641,26 @@ export class WaitingRoomScene extends Phaser.Scene {
   }
 
   /** Swap the player texture based on the direction they're moving. */
+  /** Pick one of three Red Room ambience tracks at random and start
+   *  it looped with a 2s fade-in. Skips if a red_room_* sound is
+   *  already playing on the global sound manager (e.g., we're
+   *  re-entering the WR while the previous track hasn't been faded
+   *  out yet). */
+  private startRedRoomAmbience() {
+    const keys = ['red_room_1', 'red_room_2', 'red_room_3']
+    // Already playing one? Don't stack.
+    if (keys.some(k => this.sound.get(k)?.isPlaying)) return
+    const key = keys[Math.floor(Math.random() * keys.length)]
+    if (!this.cache.audio.exists(key)) return
+    const ambient = this.sound.add(key, { volume: 0, loop: true })
+    ambient.play()
+    this.tweens.add({
+      targets: ambient,
+      volume: 0.45,
+      duration: 2000,
+    })
+  }
+
   private faceDirection(dx: number, dy: number) {
     if (dx > 0) {
       this.player.setTexture('player_side').setFlipX(false)

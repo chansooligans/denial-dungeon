@@ -439,6 +439,10 @@ export interface GameState {
   /** Set when the thanks dialogue closes; the next Hospital `resume`
    *  picks it up and animates Anjali walking out. */
   pendingAnjaliLeave?: boolean
+  /** Set when a puzzle is submitted; consumed by HospitalScene's
+   *  create() to play a blur-to-unblur "wake-up" transition with a
+   *  CLAIM SUBMITTED indicator before the thanks dialogue fires. */
+  pendingClaimSubmitted?: { encounterId: string; claimId: string | null } | null
 }
 
 export interface Decision {

@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Player design mocks · The Waiting Room</title>
+<style>
+  body {
+    margin: 0; padding: 32px;
+    background: #140a05;
+    color: #d8dee9;
+    font: 14px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+  }
+  h1 { font-size: 18px; font-weight: 700; margin: 0 0 6px; color: #f0a868; letter-spacing: 0.04em; }
+  p.lede { color: #8b95a5; margin: 0 0 28px; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 28px;
+    max-width: 760px;
+  }
+  .card {
+    background: #1a1208;
+    border: 1px solid #3a2a18;
+    border-radius: 6px;
+    padding: 18px 20px;
+    display: flex;
+    gap: 18px;
+    align-items: flex-start;
+  }
+  canvas {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    background: #2a1a08;
+    border: 1px solid #3a2a18;
+    flex-shrink: 0;
+  }
+  .meta h2 {
+    font-size: 14px;
+    font-weight: 700;
+    margin: 0 0 6px;
+    color: #f4d06f;
+    letter-spacing: 0.04em;
+  }
+  .meta p {
+    margin: 0 0 6px;
+    font-size: 12.5px;
+    color: #c4b8a0;
+  }
+  .meta .tradeoff {
+    font-size: 11.5px;
+    color: #8b7a60;
+    font-style: italic;
+  }
+  .legend {
+    margin-top: 28px;
+    color: #6c5a44;
+    font-size: 11px;
+  }
+</style>
+</head>
+<body>
+  <h1>Player design mocks</h1>
+  <p class="lede">Each sprite is 32×32 native, rendered at 6× for visibility. Same pixel-art tooling as the in-game character.</p>
+
+  <div class="grid">
+    <div class="card">
+      <canvas id="opt1" width="192" height="192"></canvas>
+      <div class="meta">
+        <h2>1 · Lab coat + scrubs</h2>
+        <p>White lab coat half-buttoned over teal scrubs. ID badge on lanyard. Sneakers.</p>
+        <p class="tradeoff">Reads clinical. Strongest "I work here" signal.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <canvas id="opt2" width="192" height="192"></canvas>
+      <div class="meta">
+        <h2>2 · Hoodie + jeans</h2>
+        <p>Charcoal hoodie (drawstrings + pocket), blue jeans, sneakers. ID clipped to the pocket.</p>
+        <p class="tradeoff">Reads casual / off-hours. Leans into part-time intern.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <canvas id="opt3" width="192" height="192"></canvas>
+      <div class="meta">
+        <h2>3 · Cardigan + glasses</h2>
+        <p>Shoulder-length hair, round glasses, oatmeal cardigan over a button-down. Slacks.</p>
+        <p class="tradeoff">Reads bookish, anxious, prepared.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <canvas id="opt4" width="192" height="192"></canvas>
+      <div class="meta">
+        <h2>4 · Current + glasses</h2>
+        <p>Bun + sepia sweater (current). Add round glasses, rolled-up sleeves, t-shirt collar at the neck.</p>
+        <p class="tradeoff">Incremental tweak. Same silhouette, more character.</p>
+      </div>
+    </div>
+  </div>
+
+  <p class="legend">Reload after edits. Rendering uses the same color ramps (lighten / darken) as BootScene.</p>
+
+<script>
+'use strict'
+
+// ---- helpers (match BootScene's lighten/darken) -----------------------
+function lighten(hex, amt) {
+  const r = (hex >> 16) & 0xff, g = (hex >> 8) & 0xff, b = hex & 0xff
+  return [
+    Math.min(255, Math.round(r + (255 - r) * amt)),
+    Math.min(255, Math.round(g + (255 - g) * amt)),
+    Math.min(255, Math.round(b + (255 - b) * amt)),
+  ]
+}
+function darken(hex, amt) {
+  const r = (hex >> 16) & 0xff, g = (hex >> 8) & 0xff, b = hex & 0xff
+  return [
+    Math.max(0, Math.round(r * (1 - amt))),
+    Math.max(0, Math.round(g * (1 - amt))),
+    Math.max(0, Math.round(b * (1 - amt))),
+  ]
+}
+function rgb(triple) { return `rgb(${triple[0]},${triple[1]},${triple[2]})` }
+function hexrgb(hex) {
+  return rgb([(hex >> 16) & 0xff, (hex >> 8) & 0xff, hex & 0xff])
+}
+function packRGB(triple) { return (triple[0] << 16) | (triple[1] << 8) | triple[2] }
+
+function makeCtx(canvasId, scale) {
+  const c = document.getElementById(canvasId)
+  const ctx = c.getContext('2d')
+  ctx.imageSmoothingEnabled = false
+  ctx.scale(scale, scale)
+  return ctx
+}
+function fill(ctx, color, x, y, w, h) {
+  ctx.fillStyle = typeof color === 'number' ? hexrgb(color) : color
+  ctx.fillRect(x, y, w, h)
+}
+
+// ---- shared pieces ---------------------------------------------------
+function drawHairBun(ctx, hair, hairHi, hairLo) {
+  fill(ctx, hair, 14, 0, 4, 2)
+  fill(ctx, hair, 13, 1, 6, 1)
+  fill(ctx, hairHi, 15, 0, 2, 1)
+  fill(ctx, hairLo, 11, 1, 1, 2)
+  fill(ctx, hairLo, 20, 1, 1, 2)
+  fill(ctx, hair, 11, 2, 10, 2)
+  fill(ctx, hair, 9, 3, 14, 2)
+  fill(ctx, hair, 8, 4, 16, 4)
+  fill(ctx, hair, 7, 5, 1, 7)
+  fill(ctx, hair, 24, 5, 1, 7)
+  fill(ctx, hair, 8, 7, 16, 1)
+  fill(ctx, hair, 7, 12, 1, 2)
+  fill(ctx, hair, 24, 12, 1, 2)
+  fill(ctx, hairLo, 8, 7, 16, 1)
+}
+function drawHairLooseShoulder(ctx, hair, hairLo) {
+  fill(ctx, hair, 11, 1, 10, 2)
+  fill(ctx, hair, 9, 2, 14, 2)
+  fill(ctx, hair, 8, 3, 16, 5)
+  fill(ctx, hair, 7, 5, 1, 12)
+  fill(ctx, hair, 24, 5, 1, 12)
+  fill(ctx, hair, 6, 8, 1, 8)
+  fill(ctx, hair, 25, 8, 1, 8)
+  fill(ctx, hair, 8, 7, 16, 1)
+  fill(ctx, hairLo, 8, 7, 16, 1)
+}
+function drawFace(ctx, skin, skinLo, mouth) {
+  fill(ctx, skin, 9, 8, 14, 8)
+  fill(ctx, skinLo, 9, 14, 14, 1)
+  fill(ctx, '#ffffff', 11, 10, 3, 2)
+  fill(ctx, '#ffffff', 18, 10, 3, 2)
+  fill(ctx, 0x1a1a2e, 12, 10, 2, 2)
+  fill(ctx, 0x1a1a2e, 19, 10, 2, 2)
+  fill(ctx, '#ffffff', 12, 10, 1, 1)
+  fill(ctx, '#ffffff', 19, 10, 1, 1)
+  fill(ctx, mouth, 14, 14, 4, 1)
+  fill(ctx, skinLo, 13, 16, 6, 1)
+}
+function drawGlasses(ctx) {
+  ctx.strokeStyle = '#1a1208'
+  ctx.lineWidth = 1
+  ctx.strokeRect(11, 9.5, 4, 4)
+  ctx.strokeRect(17, 9.5, 4, 4)
+  ctx.beginPath(); ctx.moveTo(15, 11); ctx.lineTo(17, 11); ctx.stroke()
+}
+function drawArmsHands(ctx, sleeve, sleeveLo, skin, skinLo) {
+  fill(ctx, sleeve, 4, 17, 2, 8)
+  fill(ctx, sleeve, 26, 17, 2, 8)
+  fill(ctx, sleeveLo, 4, 24, 2, 1)
+  fill(ctx, sleeveLo, 26, 24, 2, 1)
+  fill(ctx, skin, 4, 25, 2, 2)
+  fill(ctx, skin, 26, 25, 2, 2)
+  fill(ctx, skinLo, 4, 26, 2, 1)
+  fill(ctx, skinLo, 26, 26, 2, 1)
+}
+function drawPantsAndShoes(ctx, pants, pantsLo, shoeColor) {
+  fill(ctx, pants, 8, 26, 7, 5)
+  fill(ctx, pants, 17, 26, 7, 5)
+  fill(ctx, pantsLo, 8, 30, 7, 1)
+  fill(ctx, pantsLo, 17, 30, 7, 1)
+  fill(ctx, shoeColor, 8, 31, 7, 1)
+  fill(ctx, shoeColor, 17, 31, 7, 1)
+}
+
+// ---- shared character vars -------------------------------------------
+const HAIR = 0x2a1a0e
+const HAIR_HI = packRGB(lighten(HAIR, 0.18))
+const HAIR_LO = packRGB(darken(HAIR, 0.4))
+const SKIN = 0xf0d9be
+const SKIN_LO = packRGB(darken(SKIN, 0.18))
+const MOUTH = 0x6a3030
+
+// ---- Option 1: lab coat + scrubs -------------------------------------
+function drawOpt1(ctx) {
+  drawHairBun(ctx, HAIR, HAIR_HI, HAIR_LO)
+  drawFace(ctx, SKIN, SKIN_LO, MOUTH)
+
+  const SCRUB = 0x5fa9a3
+  const SCRUB_LO = packRGB(darken(SCRUB, 0.28))
+  const COAT = 0xeef0ec
+  const COAT_LO = 0xc5c8c2
+  const COAT_HI = 0xffffff
+
+  fill(ctx, SCRUB, 13, 17, 6, 4)
+  fill(ctx, SCRUB_LO, 14, 19, 4, 1)
+
+  fill(ctx, COAT, 6, 17, 7, 9)
+  fill(ctx, COAT, 19, 17, 7, 9)
+  fill(ctx, COAT_LO, 6, 17, 1, 9)
+  fill(ctx, COAT_LO, 25, 17, 1, 9)
+  fill(ctx, COAT_LO, 6, 25, 7, 1)
+  fill(ctx, COAT_LO, 19, 25, 7, 1)
+  fill(ctx, COAT_LO, 8, 22, 4, 2)
+  fill(ctx, COAT_HI, 12, 18, 1, 6)
+  fill(ctx, COAT_HI, 19, 18, 1, 6)
+  fill(ctx, 0xc28a3e, 13, 17, 1, 4)
+  fill(ctx, 0xc28a3e, 18, 17, 1, 4)
+  fill(ctx, 0xf4d06f, 14, 21, 4, 2)
+
+  drawArmsHands(ctx, COAT, COAT_LO, SKIN, SKIN_LO)
+
+  const PANTS_LO = packRGB(darken(SCRUB, 0.4))
+  drawPantsAndShoes(ctx, SCRUB, PANTS_LO, 0xffffff)
+}
+
+// ---- Option 2: hoodie + jeans ----------------------------------------
+function drawOpt2(ctx) {
+  drawHairBun(ctx, HAIR, HAIR_HI, HAIR_LO)
+  drawFace(ctx, SKIN, SKIN_LO, MOUTH)
+
+  const HOODIE = 0x3a3438
+  const HOODIE_HI = 0x4d464a
+  const HOODIE_LO = 0x1f1c1e
+  const JEANS = 0x2a4868
+  const JEANS_LO = 0x142234
+
+  fill(ctx, HOODIE_LO, 7, 16, 18, 2)
+
+  fill(ctx, HOODIE, 6, 17, 20, 9)
+  fill(ctx, HOODIE_LO, 6, 17, 1, 9)
+  fill(ctx, HOODIE_LO, 25, 17, 1, 9)
+  fill(ctx, HOODIE_HI, 14, 17, 1, 5)
+  fill(ctx, HOODIE_HI, 17, 17, 1, 5)
+  fill(ctx, HOODIE_LO, 9, 22, 14, 1)
+  fill(ctx, HOODIE_HI, 8, 18, 6, 3)
+  fill(ctx, 0xf4d06f, 18, 22, 3, 3)
+  fill(ctx, 0xc28a3e, 18, 24, 3, 1)
+
+  drawArmsHands(ctx, HOODIE, HOODIE_LO, SKIN, SKIN_LO)
+  drawPantsAndShoes(ctx, JEANS, JEANS_LO, 0xffffff)
+}
+
+// ---- Option 3: cardigan + glasses + button-down ----------------------
+function drawOpt3(ctx) {
+  drawHairLooseShoulder(ctx, HAIR, HAIR_LO)
+  drawFace(ctx, SKIN, SKIN_LO, MOUTH)
+  drawGlasses(ctx)
+
+  const SHIRT = 0xf3ede0
+  const CARD = 0xc6b591
+  const CARD_LO = 0x8d7e5e
+  const CARD_HI = 0xdac9a3
+  const SLACK = 0x3a3a3a
+  const SLACK_LO = 0x1c1c1c
+
+  fill(ctx, SHIRT, 13, 17, 6, 7)
+  fill(ctx, SHIRT, 12, 17, 2, 1)
+  fill(ctx, SHIRT, 18, 17, 2, 1)
+
+  fill(ctx, CARD, 6, 17, 7, 9)
+  fill(ctx, CARD, 19, 17, 7, 9)
+  fill(ctx, CARD_LO, 6, 17, 1, 9)
+  fill(ctx, CARD_LO, 25, 17, 1, 9)
+  fill(ctx, CARD_HI, 8, 18, 4, 4)
+  fill(ctx, 0x8d7e5e, 12, 19, 1, 1)
+  fill(ctx, 0x8d7e5e, 12, 22, 1, 1)
+  fill(ctx, 0x8d7e5e, 19, 19, 1, 1)
+  fill(ctx, 0x8d7e5e, 19, 22, 1, 1)
+
+  drawArmsHands(ctx, CARD, CARD_LO, SKIN, SKIN_LO)
+  drawPantsAndShoes(ctx, SLACK, SLACK_LO, 0x1a1208)
+}
+
+// ---- Option 4: current + glasses + rolled sleeves --------------------
+function drawOpt4(ctx) {
+  drawHairBun(ctx, HAIR, HAIR_HI, HAIR_LO)
+  drawFace(ctx, SKIN, SKIN_LO, MOUTH)
+  drawGlasses(ctx)
+
+  const SWEATER = 0x5a4030
+  const SWEATER_HI = packRGB(lighten(SWEATER, 0.16))
+  const SWEATER_LO = packRGB(darken(SWEATER, 0.28))
+  const TEE = 0xf0e2c8
+  const PANTS = 0x1a1a2e
+  const PANTS_LO = packRGB(darken(PANTS, 0.4))
+
+  fill(ctx, TEE, 14, 17, 4, 1)
+
+  fill(ctx, SWEATER, 6, 17, 20, 9)
+  fill(ctx, SWEATER_LO, 6, 17, 1, 9)
+  fill(ctx, SWEATER_LO, 25, 17, 1, 9)
+  fill(ctx, SWEATER_HI, 8, 18, 5, 4)
+  fill(ctx, 0xf4d06f, 18, 21, 3, 3)
+  fill(ctx, 0xc28a3e, 18, 23, 3, 1)
+  fill(ctx, SWEATER_LO, 15, 17, 2, 2)
+  fill(ctx, TEE, 15, 17, 2, 1)
+
+  fill(ctx, SWEATER, 4, 17, 2, 5)
+  fill(ctx, SWEATER, 26, 17, 2, 5)
+  fill(ctx, SWEATER_LO, 4, 21, 2, 1)
+  fill(ctx, SWEATER_LO, 26, 21, 2, 1)
+  fill(ctx, SKIN, 4, 22, 2, 3)
+  fill(ctx, SKIN, 26, 22, 2, 3)
+  fill(ctx, SKIN, 4, 25, 2, 2)
+  fill(ctx, SKIN, 26, 25, 2, 2)
+  fill(ctx, SKIN_LO, 4, 26, 2, 1)
+  fill(ctx, SKIN_LO, 26, 26, 2, 1)
+
+  drawPantsAndShoes(ctx, PANTS, PANTS_LO, 0x1a1208)
+}
+
+// ---- render all four -------------------------------------------------
+const SCALE = 6
+drawOpt1(makeCtx('opt1', SCALE))
+drawOpt2(makeCtx('opt2', SCALE))
+drawOpt3(makeCtx('opt3', SCALE))
+drawOpt4(makeCtx('opt4', SCALE))
+</script>
+</body>
+</html>
