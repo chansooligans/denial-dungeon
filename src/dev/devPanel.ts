@@ -236,6 +236,33 @@ const CSS = `
   #${TOGGLE_ID}:hover, #${TOGGLE_ID}:active {
     opacity: 1;
   }
+  /* Touch devices: bump the chip up to a real tap target so it
+     doesn't require fingertip surgery to hit. ~44pt-ish. */
+  @media (pointer: coarse) {
+    #${TOGGLE_ID} {
+      top: 10px;
+      right: 10px;
+      padding: 10px 16px;
+      font-size: 14px;
+      opacity: 0.85;
+    }
+  }
+  /* Touch panel buttons get bigger too — small mono buttons are
+     basically untappable on a phone. */
+  @media (pointer: coarse) {
+    #${PANEL_ID} {
+      width: min(92vw, 360px);
+      font-size: 14px;
+    }
+    #${PANEL_ID} .devp-btn {
+      padding: 10px 12px;
+      margin-bottom: 6px;
+      font-size: 13px;
+    }
+    #${PANEL_ID} .devp-section-h {
+      font-size: 12px;
+    }
+  }
   #${PANEL_ID} {
     position: fixed;
     top: 12px;
