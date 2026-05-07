@@ -133,6 +133,21 @@ const TILE_FLAVOR: Record<string, string | string[]> = {
   E: 'VITALS MONITOR\nOn a wheeled stand. The screen pulses\na slow green sine wave. Probably idle.',
 }
 
+/** Where the player should head when each level begins. Shown under
+ *  the level-advance banner. Mentions the case-handing NPC + their
+ *  rough location so the player isn't left scanning the whole map. */
+const LEVEL_ORIENTATION_HINTS: Record<number, string> = {
+  2:  'Find Kim at the Registration desk.',
+  3:  'Sam is in Patient Services. There\'s a denial.',
+  4:  'Pat is at the Registration desk — a coding question.',
+  5:  'Sam is back in Patient Services with another wraith.',
+  6:  'Alex is in the Main Hub. The clearinghouse is bleeding.',
+  7:  'Sam in Patient Services. The reaper has surfaced.',
+  8:  'Jordan is in Eligibility. Patient on the line.',
+  9:  'Kim at Registration. Three payers, one claim.',
+  10: 'Dana in Patient Services. The auditors have arrived.',
+}
+
 /** Stable per-tile variant pick. Same (x, y) → same line every time;
  *  different (x, y) with the same tile char → different line. */
 function flavorForTile(ch: string, x: number, y: number): string | undefined {
@@ -414,6 +429,7 @@ export class HospitalScene extends Phaser.Scene {
 
     const titleText = `LEVEL ${newLevel}`
     const subtitleText = level.title
+    const hintText = LEVEL_ORIENTATION_HINTS[newLevel]
 
     const title = this.add.text(vw / 2, 80, titleText, {
       fontSize: '22px', fontFamily: 'monospace', color: '#f0d090',
@@ -430,16 +446,28 @@ export class HospitalScene extends Phaser.Scene {
       stroke: '#05070a', strokeThickness: 2,
     }).setOrigin(0.5).setScrollFactor(0).setDepth(200).setAlpha(0)
 
+    const banners: Phaser.GameObjects.Text[] = [title, subtitle]
+    if (hintText) {
+      const hint = this.add.text(vw / 2, 148, hintText, {
+        fontSize: '11px', fontFamily: 'monospace', color: '#7ee2c1',
+        backgroundColor: '#1a060880',
+        padding: { x: 10, y: 4 },
+        stroke: '#05070a', strokeThickness: 2,
+        align: 'center',
+      }).setOrigin(0.5).setScrollFactor(0).setDepth(200).setAlpha(0)
+      banners.push(hint)
+    }
+
     // Fade in (slightly delayed so it lands on a fresh hospital), hold,
     // then fade out + destroy.
     this.tweens.add({
-      targets: [title, subtitle], alpha: 1, duration: 400, delay: 600,
+      targets: banners, alpha: 1, duration: 400, delay: 600,
       ease: 'Sine.easeOut',
     })
     this.tweens.add({
-      targets: [title, subtitle], alpha: 0, duration: 500, delay: 3000,
+      targets: banners, alpha: 0, duration: 500, delay: 4200,
       ease: 'Sine.easeIn',
-      onComplete: () => { title.destroy(); subtitle.destroy() },
+      onComplete: () => { for (const b of banners) b.destroy() },
     })
   }
 
