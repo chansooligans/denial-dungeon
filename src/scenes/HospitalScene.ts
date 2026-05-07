@@ -428,7 +428,14 @@ export class HospitalScene extends Phaser.Scene {
   private placeNPCs() {
     const state = getState()
     const level = LEVELS[state.currentLevel - 1]
-    const activeNpcs = level?.npcsActive ?? Object.keys(NPCS)
+    const activeNpcs = [...(level?.npcsActive ?? Object.keys(NPCS))]
+    // Anjali sticks around until her case is closed (the thanks
+    // dialogue runs and she walks out). Solving her puzzle bumps the
+    // player to level 2, which would otherwise drop her from the
+    // active-NPC roster mid-conversation.
+    if (!state.anjaliThanked && !activeNpcs.includes('anjali')) {
+      activeNpcs.push('anjali')
+    }
 
     for (const p of this.mapDef.npcPlacements) {
       if (!activeNpcs.includes(p.npcId)) continue
@@ -622,10 +629,22 @@ export class HospitalScene extends Phaser.Scene {
 
   private maybeRunAnjaliThanks() {
     const state = getState()
-    if (state.anjaliThanked) return
-    if (!state.defeatedObstacles.includes('intro_wrong_card')) return
+    // Defensive: if any precondition isn't met we still want movement
+    // re-enabled (the wake-up transition disabled it expecting we'd
+    // hand off to a dialogue here).
+    if (state.anjaliThanked) {
+      this.canMove = true
+      return
+    }
+    if (!state.defeatedObstacles.includes('intro_wrong_card')) {
+      this.canMove = true
+      return
+    }
     const anjali = this.npcSprites.find(n => n.npc.id === 'anjali')
-    if (!anjali) return
+    if (!anjali) {
+      this.canMove = true
+      return
+    }
 
     this.canMove = false
     this.time.delayedCall(700, () => {
