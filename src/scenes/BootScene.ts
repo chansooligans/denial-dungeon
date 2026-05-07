@@ -52,20 +52,12 @@ export class BootScene extends Phaser.Scene {
     // Intro song — fades in when the user advances past the title
     // splash and runs underneath the rest of the cinematic.
     this.load.audio('intro_song', 'audio/intro/intro_song.mp3')
-    // Red Room (Waiting Room) ambience tracks — one is picked at
-    // random when the player descends, looping with a fade-in. They
-    // carry from the WR scene through the PuzzleBattle overlay and
-    // fade out when control returns to the Hospital after submit.
-    this.load.audio('red_room_1', 'audio/wr/red_room_1.mp3')
-    this.load.audio('red_room_2', 'audio/wr/red_room_2.mp3')
-    this.load.audio('red_room_3', 'audio/wr/red_room_3.mp3')
-    // Hospital ambience tracks — Lynch-y / sci-fi melancholy. One is
-    // picked at random when the player is in the Hospital, but only
-    // after the intro song has finished (so the cinematic music
-    // doesn't get clipped on its way out).
-    this.load.audio('hospital_twin_peaks', 'audio/hospital/twin_peaks.mp3')
-    this.load.audio('hospital_mulholland', 'audio/hospital/mulholland_drive.mp3')
-    this.load.audio('hospital_blade_runner', 'audio/hospital/blade_runner_love.mp3')
+
+    // The Hospital ambient tracks (~12MB) and Waiting Room red-room
+    // tracks (~16MB) used to load here too. Moved to per-scene
+    // preload (HospitalScene / WaitingRoomScene) — they're not needed
+    // until the player reaches those scenes, and eager-loading them
+    // delayed first paint by ~28MB of downloads on a cold start.
   }
 
   create() {

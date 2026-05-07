@@ -184,6 +184,23 @@ export class WaitingRoomScene extends Phaser.Scene {
     this.sessionBounds = activeMarker?.bounds ?? null
   }
 
+  preload() {
+    // Red Room ambience — picked at random in startRedRoomAmbience.
+    // Loaded here (not in BootScene) so the title doesn't wait on
+    // ~16MB of music until the player actually descends. Phaser's
+    // .load.audio is idempotent so this is a no-op on subsequent
+    // entries that re-use the cached audio.
+    if (!this.cache.audio.exists('red_room_1')) {
+      this.load.audio('red_room_1', 'audio/wr/red_room_1.mp3')
+    }
+    if (!this.cache.audio.exists('red_room_2')) {
+      this.load.audio('red_room_2', 'audio/wr/red_room_2.mp3')
+    }
+    if (!this.cache.audio.exists('red_room_3')) {
+      this.load.audio('red_room_3', 'audio/wr/red_room_3.mp3')
+    }
+  }
+
   create() {
     const state = getState()
     this.mapDef = HOSPITAL_MAP
