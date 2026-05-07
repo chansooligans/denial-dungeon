@@ -38,7 +38,7 @@ export class TitleScene extends Phaser.Scene {
     }
 
     // Title
-    this.add.text(width / 2, 120, 'DENIAL DUNGEON', {
+    this.add.text(width / 2, 120, 'THE WAITING ROOM', {
       fontSize: '32px', fontFamily: 'monospace', color: '#ef5b7b',
       fontStyle: 'bold',
     }).setOrigin(0.5)
