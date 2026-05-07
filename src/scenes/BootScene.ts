@@ -49,9 +49,10 @@ export class BootScene extends Phaser.Scene {
       const nn = String(i).padStart(2, '0')
       this.load.audio(`intro_voice_${nn}`, `audio/intro/${nn}.mp3`)
     }
-    // Cover-page bed: plays from the very start of the IntroScene's
-    // first cover beat and runs underneath the rest of the intro.
+    // Cover-page audio: plays on the title splash and holds there
+    // until the user advances. On advance, crossfades into intro_song.
     this.load.audio('intro_cover_audio', 'audio/intro/cover.mp3')
+    this.load.audio('intro_song', 'audio/intro/intro_song.mp3')
   }
 
   create() {

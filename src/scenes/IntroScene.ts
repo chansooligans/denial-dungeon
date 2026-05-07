@@ -158,9 +158,11 @@ export class IntroScene extends Phaser.Scene {
   // so it lines up 1:1 with the pre-split intro_voice_NN audio assets.
   private textBeatCounter = 0
   private currentVoice?: Phaser.Sound.BaseSound
-  // Cover-page audio bed — plays from the first cover beat and runs
-  // underneath the rest of the intro. Stopped on skip / scene end.
+  // Cover-page audio bed — plays on the title splash. The first cover
+  // is held for user input; on advance, this audio crossfades into
+  // intro_song which carries through the rest of the cinematic.
   private coverAudio?: Phaser.Sound.BaseSound
+  private introSong?: Phaser.Sound.BaseSound
 
   constructor() {
     super('Intro')
@@ -182,6 +184,7 @@ export class IntroScene extends Phaser.Scene {
     this.textBeatCounter = 0
     this.currentVoice = undefined
     this.coverAudio = undefined
+    this.introSong = undefined
 
     const { width, height } = this.scale
 
@@ -214,6 +217,12 @@ export class IntroScene extends Phaser.Scene {
     this.input.keyboard!.on('keydown-ESC', () => this.skipToTitle())
     this.input.keyboard!.on('keydown-SPACE', () => this.userAdvance())
     this.input.keyboard!.on('keydown-ENTER', () => this.userAdvance())
+    // "Any key" advance — useful for the title-splash hold. Skip ESC
+    // since it's already wired to skipToTitle above.
+    this.input.keyboard!.on('keydown', (e: KeyboardEvent) => {
+      if (e.code === 'Escape') return
+      this.userAdvance()
+    })
     this.input.on('pointerdown', () => this.userAdvance())
 
     this.playBeat()
@@ -244,7 +253,8 @@ export class IntroScene extends Phaser.Scene {
     this.playBeat()
   }
 
-  private showContinuePrompt() {
+  private showContinuePrompt(label?: string) {
+    if (label) this.continuePrompt.setText(label)
     this.tweens.killTweensOf(this.continuePrompt)
     this.continuePrompt.setAlpha(0)
     this.tweens.add({
@@ -345,12 +355,13 @@ export class IntroScene extends Phaser.Scene {
    */
   private showCover(key: string) {
     const { width, height } = this.scale
+    const isTitleSplash = this.currentBeat === 0
 
-    // The first cover beat (the title splash) starts the cover audio
-    // bed. It runs under the rest of the intro and is stopped on skip
-    // / scene shutdown.
-    if (!this.coverAudio && this.cache.audio.exists('intro_cover_audio')) {
-      this.coverAudio = this.sound.add('intro_cover_audio', { volume: 0.6 })
+    // The title splash starts the cover audio bed. It loops while the
+    // player sits with the title; on advance, it crossfades into the
+    // intro song and the cinematic begins.
+    if (isTitleSplash && !this.coverAudio && this.cache.audio.exists('intro_cover_audio')) {
+      this.coverAudio = this.sound.add('intro_cover_audio', { volume: 0.6, loop: true })
       this.coverAudio.play()
     }
 
@@ -413,16 +424,58 @@ export class IntroScene extends Phaser.Scene {
           blackout.destroy()
           return
         }
-        // Auto-advance after the cover's duration — but never before
-        // any active voiceover finishes. Skip button still cuts to title.
-        const baseDwell = BEATS[this.currentBeat]?.duration ?? 3000
-        const dwell = Math.max(baseDwell, this.remainingVoiceMs() + 200)
-        this.pendingTimer = this.time.delayedCall(dwell, () => {
-          this.pendingTimer = undefined
-          advanceFromCover()
-        })
+        if (isTitleSplash) {
+          // Hold here until the user clicks / presses any key. On
+          // advance, crossfade the cover audio into the intro song
+          // and dismiss the splash.
+          this.canAdvance = true
+          this.showContinuePrompt('press any key to begin')
+          this.advanceCallback = () => {
+            this.crossfadeToIntroSong()
+            this.hideContinuePrompt()
+            advanceFromCover()
+          }
+        } else {
+          // Auto-advance after the cover's duration — but never before
+          // any active voiceover finishes. Skip button still cuts to title.
+          const baseDwell = BEATS[this.currentBeat]?.duration ?? 3000
+          const dwell = Math.max(baseDwell, this.remainingVoiceMs() + 200)
+          this.pendingTimer = this.time.delayedCall(dwell, () => {
+            this.pendingTimer = undefined
+            advanceFromCover()
+          })
+        }
       },
     })
+  }
+
+  /** Fade the cover-page audio out and the intro song in. ~1.5s
+   *  crossfade. The intro song carries through the rest of the
+   *  cinematic; voiceover plays on top. */
+  private crossfadeToIntroSong() {
+    const FADE = 1500
+    if (this.coverAudio) {
+      const cover = this.coverAudio
+      this.coverAudio = undefined
+      this.tweens.add({
+        targets: cover,
+        volume: 0,
+        duration: FADE,
+        onComplete: () => {
+          cover.stop()
+          cover.destroy()
+        },
+      })
+    }
+    if (this.cache.audio.exists('intro_song')) {
+      this.introSong = this.sound.add('intro_song', { volume: 0 })
+      this.introSong.play()
+      this.tweens.add({
+        targets: this.introSong,
+        volume: 0.35,  // sits under the narration
+        duration: FADE,
+      })
+    }
   }
 
   /**
@@ -777,6 +830,7 @@ export class IntroScene extends Phaser.Scene {
     this.canAdvance = false
     this.stopVoice()
     this.stopCoverAudio()
+    this.stopIntroSong()
     this.scene.start('Title')
   }
 
@@ -785,6 +839,14 @@ export class IntroScene extends Phaser.Scene {
       this.coverAudio.stop()
       this.coverAudio.destroy()
       this.coverAudio = undefined
+    }
+  }
+
+  private stopIntroSong() {
+    if (this.introSong) {
+      this.introSong.stop()
+      this.introSong.destroy()
+      this.introSong = undefined
     }
   }
 
