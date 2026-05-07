@@ -205,7 +205,7 @@ const INTRO_BEATS: { beat: number; label: string }[] = [
   { beat: 28, label: 'The gap' },
   { beat: 30, label: 'The waiting room' },
   { beat: 39, label: '"They call it"' },
-  { beat: 43, label: 'End covers' },
+  { beat: 41, label: 'End covers' },
 ]
 
 function buildPresetSave(targetLevel: number): string {
