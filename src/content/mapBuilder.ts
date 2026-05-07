@@ -5,8 +5,13 @@ export interface MapDef {
   height: number
   layout: string[]
   playerStart: { x: number; y: number }
-  gapTile: { x: number; y: number }
   npcPlacements: { npcId: string; tileX: number; tileY: number }[]
+  /** Optional room labels for the minimap. Drawn at the room center
+   *  when at least one tile of the room has been seen.
+   *  - `name` is the full label, shown when the minimap is expanded.
+   *  - `shortName` (optional) is the compact abbreviation shown by
+   *    default. If omitted, the full name is used in both states. */
+  rooms?: { name: string; shortName?: string; x: number; y: number; w: number; h: number }[]
 }
 
 // ---------------------------------------------------------------------------

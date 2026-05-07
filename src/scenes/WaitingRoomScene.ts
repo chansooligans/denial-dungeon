@@ -190,10 +190,10 @@ export class WaitingRoomScene extends Phaser.Scene {
     // Spawn at the same tile the player was standing on in the
     // Hospital — the WR is a parallel layer over the same map, so
     // they fall straight down into the corresponding room. Falls
-    // back to the map's gapTile if the scene was launched without
+    // back to the map's playerStart if the scene was launched without
     // a spawn (e.g. from the dev panel).
-    this.playerTileX = this.pendingSpawnX ?? this.mapDef.gapTile.x
-    this.playerTileY = this.pendingSpawnY ?? this.mapDef.gapTile.y
+    this.playerTileX = this.pendingSpawnX ?? this.mapDef.playerStart.x
+    this.playerTileY = this.pendingSpawnY ?? this.mapDef.playerStart.y
 
     // Deeper burgundy than the Hospital's warm dark — this is the
     // dramatic stage. Pure black with red highlights would feel too
@@ -217,6 +217,12 @@ export class WaitingRoomScene extends Phaser.Scene {
     // Fade in from black — the player just fell through the gap,
     // and the WR resolves out of the dark.
     this.cameras.main.fadeIn(700, 0, 0, 0)
+
+    // Fade out anything bleeding in from above — the hospital
+    // ambient track or, if the player skipped fast, the intro song.
+    // Both live on the global sound manager and would otherwise keep
+    // playing under the WR ambience.
+    this.fadeOutHospitalLayerAudio(900)
 
     // Red Room ambience — pick one of three tracks at random, loop
     // it, and fade in over 2s. The sound is on the global manager so
@@ -659,6 +665,33 @@ export class WaitingRoomScene extends Phaser.Scene {
       volume: 0.45,
       duration: 2000,
     })
+  }
+
+  /** Fade and stop any hospital-layer audio that might still be
+   *  playing on the global sound manager — the random hospital
+   *  ambient pick, or the intro song if the player descended before
+   *  it finished. Called on WR entry to keep the upper-floor music
+   *  from bleeding under the Red Room track. */
+  private fadeOutHospitalLayerAudio(durationMs: number) {
+    const keys = [
+      'hospital_twin_peaks',
+      'hospital_mulholland',
+      'hospital_blade_runner',
+      'intro_song',
+    ]
+    for (const k of keys) {
+      const s = this.sound.get(k)
+      if (!s || !s.isPlaying) continue
+      this.tweens.add({
+        targets: s,
+        volume: 0,
+        duration: durationMs,
+        onComplete: () => {
+          s.stop()
+          s.destroy()
+        },
+      })
+    }
   }
 
   private faceDirection(dx: number, dy: number) {

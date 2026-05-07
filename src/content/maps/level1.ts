@@ -132,11 +132,17 @@ const layout = buildMapLayout({
         // Side tables (with magazines / ashtrays — implied)
         { dx: 5,  dy: 4, ch: 'c' },
         { dx: 19, dy: 4, ch: 'c' },
-        // Two rows of chairs, denser than before; centered on the room
+        // Two rows of patient chairs flanking Chloe's intern station.
+        // Chloe's desk sits at (dx=9, dy=5) — between the rows on
+        // the player's spawn column — with her chair directly south
+        // at (dx=9, dy=6). The patient row at dy=6 leaves dx=9 open
+        // so it reads as "her chair," not part of public seating.
         { dx: 7,  dy: 4, ch: 'h' }, { dx: 9,  dy: 4, ch: 'h' }, { dx: 11, dy: 4, ch: 'h' },
         { dx: 14, dy: 4, ch: 'h' }, { dx: 16, dy: 4, ch: 'h' },
-        { dx: 7,  dy: 6, ch: 'h' }, { dx: 9,  dy: 6, ch: 'h' }, { dx: 11, dy: 6, ch: 'h' },
+        { dx: 9,  dy: 5, ch: 'c' }, // Chloe's desk
+        { dx: 7,  dy: 6, ch: 'h' },                              { dx: 11, dy: 6, ch: 'h' },
         { dx: 14, dy: 6, ch: 'h' }, { dx: 16, dy: 6, ch: 'h' },
+        { dx: 9,  dy: 6, ch: 'h' }, // Chloe's chair (player spawns here)
         // South wall amenities — vending, water cooler ("lamp"), bulletin
         { dx: 2,  dy: 7, ch: 'V' },
         { dx: 22, dy: 7, ch: 'w' }, // doubles as a tall lamp visually with the warm tint
@@ -167,8 +173,15 @@ export const LEVEL_1_MAP: MapDef = {
   layout,
   // Player spawns near the south of the lobby, looking up toward the chairs.
   playerStart: { x: LOBBY.x + 10, y: LOBBY.y + LOBBY.h - 3 },
-  // Gap inside Main Hub, near the fountain.
-  gapTile: { x: MAIN_HUB.x + 8, y: MAIN_HUB.y + 5 },
+  // Minimap labels — abbreviated by default, full names on click.
+  rooms: [
+    { name: 'MAIN HUB',         shortName: 'HUB',  ...MAIN_HUB },
+    { name: 'PRIOR AUTH',       shortName: 'AUTH', ...PRIOR_AUTH },
+    { name: 'PATIENT SERVICES', shortName: 'PT',   ...PATIENT_SVC },
+    { name: 'REGISTRATION',     shortName: 'REG',  ...REGISTRATION },
+    { name: 'ELIGIBILITY',      shortName: 'ELIG', ...ELIGIBILITY },
+    { name: 'LOBBY',            shortName: 'LBY',  ...LOBBY },
+  ],
   npcPlacements: [
     // Anjali walks in during the level-1 opening sequence and lands
     // here — directly on the player's column, three tiles north of

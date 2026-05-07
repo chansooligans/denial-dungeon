@@ -30,7 +30,7 @@ const TINT = {
   door:     0x9a6a3a, // brass door
   doorLock: 0x6a4828, // dim brass (locked)
   desk:     0x5a3820, // dark walnut
-  chair:    0x9a4a28, // burnt orange
+  chair:    0x4a6878, // slate teal (contrasts the sepia sweater)
   equip:    0x6a5a4a, // dim taupe
   plant:    0x5a7028, // avocado green
   water:    0xc8a040, // mustard yellow (doubles as a "lamp" highlight)
@@ -50,10 +50,10 @@ const TILE_TEXTURES: Record<string, { floor: string; obj?: string; solid?: boole
   '.': { floor: 'h_floor', floorTint: TINT.floor },
   '~': { floor: 'h_floor2', floorTint: TINT.floorAlt },
   '_': { floor: 'h_carpet', floorTint: TINT.carpet },
-  'c': { floor: 'h_floor', obj: 'h_desk',       floorTint: TINT.floor, objTint: TINT.desk },
+  'c': { floor: 'h_floor', obj: 'h_desk',       solid: true, floorTint: TINT.floor, objTint: TINT.desk },
   'h': { floor: 'h_floor', obj: 'h_chair',      floorTint: TINT.floor, objTint: TINT.chair },
   'E': { floor: 'h_floor', obj: 'h_equipment',  floorTint: TINT.floor, objTint: TINT.equip },
-  'P': { floor: 'h_floor', obj: 'h_plant',      floorTint: TINT.floor, objTint: TINT.plant },
+  'P': { floor: 'h_floor', obj: 'h_plant',      solid: true, floorTint: TINT.floor, objTint: TINT.plant },
   'w': { floor: 'h_floor', obj: 'h_water',      solid: true, floorTint: TINT.floor, objTint: TINT.water },
   'F': { floor: 'h_floor', obj: 'h_cabinet',    solid: true, floorTint: TINT.floor, objTint: TINT.cabinet },
   'B': { floor: 'h_floor', obj: 'h_whiteboard', solid: true, floorTint: TINT.floor, objTint: TINT.whiteboard },
@@ -67,6 +67,80 @@ const TILE_TEXTURES: Record<string, { floor: string; obj?: string; solid?: boole
 // Tiles that act as room boundaries for flood-fill: walls and doors.
 // (Doors are passable for the player but separate rooms visually.)
 const BARRIER_CHARS = new Set(['W', 'D', 'L'])
+
+// Flavor text shown when the player bumps a solid object (or presses
+// E facing a non-solid one). The toast renders this at the bottom of
+// the viewport. \n breaks lines; longer entries read like a small
+// in-world note. Voice is Chloe's: dry, slightly tired, observant.
+//
+// Each char can map to a single string OR a list of variants. When a
+// list is given, the variant is picked by a stable hash of the tile's
+// (x, y) — so the same tile always reads the same line, but two
+// neighboring desks won't say the same thing.
+const TILE_FLAVOR: Record<string, string | string[]> = {
+  L: 'LOCKED — KEYCARD REQUIRED\nThe reader sticker reads:\n"Authorized personnel only. Prior Auth team."',
+  F: [
+    'FILING CABINET\nDrawer locked. A peeling label:\nPRE-2018 / DO NOT PURGE.',
+    'FILING CABINET\nTop drawer half-open. Manila folders\ntabbed: AETNA, AETNA, AETNA, OTHER.',
+    'FILING CABINET\nLocked. The keyhole has been filled\nwith hot glue. Recently.',
+    'FILING CABINET\nA dent in the side from a kicked foot.\nLabel: APPEALS / RESOLVED.',
+  ],
+  B: [
+    'WHITEBOARD\n"DENIAL OF THE WEEK: CO-16"\nMissing remark code. Half-erased.',
+    'WHITEBOARD\nA flowchart titled FRONT-END EDITS.\nThe last branch trails off into a question mark.',
+    'WHITEBOARD\nKPI tracker. Clean Claim Rate: 84%.\n(Goal: 95%. The 84 has been there a month.)',
+  ],
+  R: [
+    'RECEPTION COUNTER\nIntake clipboards stacked four deep.\nA ballpoint pen, chained.',
+    'RECEPTION COUNTER\nA bell. A sign: "PLEASE RING ONCE."\nSomeone has rung it twice in pen.',
+    'RECEPTION COUNTER\nA candy dish. Empty. Just wrappers.\nStrawberry — always the strawberry left.',
+  ],
+  V: 'VENDING MACHINE\nOUT OF ORDER — BILL VALIDATOR JAM.\nThe sign has been there all month.',
+  w: [
+    'WATER COOLER\nThe jug gurgles. A taped note reads:\n"Refill before you leave. — Mgmt"',
+    'WATER COOLER\nNearly empty. The little cone cups\nare also nearly empty.',
+  ],
+  b: [
+    'BULLETIN BOARD\n• OPEN ENROLLMENT ENDS NOV 15\n• "Lost: blue badge — Sam, ext. 4112"\n• Pizza Friday (last week\'s flyer)',
+    'BULLETIN BOARD\nA payer policy update from 2019\npinned over a payer policy update from 2018.',
+    'BULLETIN BOARD\n"WORKFLOW POTLUCK — Thursday 5pm —\nbring a side and a denial story."',
+    'BULLETIN BOARD\nOSHA poster, faded. Someone has drawn\na tiny mustache on the regulator.',
+    'BULLETIN BOARD\n"DENIAL CODE OF THE WEEK: CO-97"\nThree CO-97 jokes pinned beneath. Each worse than the last.',
+  ],
+  H: 'EXAM TABLE\nPaper liner crinkled from the last patient.\nA blood-pressure cuff dangles off the side.',
+  X: [
+    'FAX MACHINE\nStatus light blinking: NO LINE.\nThe out-tray has a single curled page.',
+    'FAX MACHINE\nReceived: 1 page from UNKNOWN — 03:42 AM.\nThe page is upside down. You leave it.',
+  ],
+  c: [
+    "DESK\nA half-eaten bagel on a napkin.\nOpen browser tab: \"Aetna PPO formulary 2024.\"",
+    'DESK\nThe CRT hums. Photo of a corgi pinned\nto the monitor with packing tape.',
+    'DESK\nSticky note on the keyboard:\n"CALL ANJALI BACK — RE: BILL."',
+    'DESK\nA Rolodex. An actual Rolodex.\nMost cards are blank. First one: MERCY GENERAL — IT — ext. 3000.',
+    'DESK\nStacks of EOBs sorted by payer.\nA half-finished crossword. 14-down: PARTITA.',
+  ],
+  h: [
+    'WAITING-ROOM CHAIR\nVinyl. Cracked along the seam.\nThe foam underneath has gone hard.',
+    'WAITING-ROOM CHAIR\nA worn paperback wedged between\nthe cushion and the armrest.',
+    "WAITING-ROOM CHAIR\nA child's drawing taped to the back:\na hospital, but the windows are red.",
+  ],
+  P: [
+    'POTTED PLANT\nPlastic. Dust on the leaves.\nNobody has watered it since you started.',
+    'POTTED PLANT\nA philodendron. Real, somehow.\nLeaves yellow at the tips.',
+    'POTTED PLANT\nFake. The pot is full of takeout receipts\nsomeone shoved in there.',
+  ],
+  E: 'VITALS MONITOR\nOn a wheeled stand. The screen pulses\na slow green sine wave. Probably idle.',
+}
+
+/** Stable per-tile variant pick. Same (x, y) → same line every time;
+ *  different (x, y) with the same tile char → different line. */
+function flavorForTile(ch: string, x: number, y: number): string | undefined {
+  const v = TILE_FLAVOR[ch]
+  if (!v) return undefined
+  if (typeof v === 'string') return v
+  const h = ((x * 73856093) ^ (y * 19349663)) >>> 0
+  return v[h % v.length]
+}
 
 const VIS_HIDDEN = 0
 const VIS_VISITED = 1
@@ -94,8 +168,6 @@ export class HospitalScene extends Phaser.Scene {
   private wasdKeys!: Record<string, Phaser.Input.Keyboard.Key>
   private hudHp!: Phaser.GameObjects.Text
   private hudLevel!: Phaser.GameObjects.Text
-  private gapSprite!: Phaser.GameObjects.Graphics
-  private gapPrompt!: Phaser.GameObjects.Text
   private mapDef!: MapDef
 
   // Room visibility state
@@ -112,6 +184,13 @@ export class HospitalScene extends Phaser.Scene {
   private miniMapCell = 2
   private miniMapX = 0
   private miniMapY = 0
+  private miniMapLabels: Phaser.GameObjects.Text[] = []
+  private miniMapHitZone?: Phaser.GameObjects.Zone
+  private miniMapDim?: Phaser.GameObjects.Rectangle
+  private miniMapCloseHint?: Phaser.GameObjects.Text
+  private miniMapExpanded = false
+  private lockedToast?: Phaser.GameObjects.Text
+  private lockedToastTween?: Phaser.Tweens.Tween
   private uiCamera!: Phaser.Cameras.Scene2D.Camera
 
   constructor() {
@@ -145,7 +224,6 @@ export class HospitalScene extends Phaser.Scene {
 
     this.buildMap()
     this.applyAmbientPulse()
-    this.placeGap()
     this.placePlayer()
     this.placeNPCs()
     this.setupInput()
@@ -159,6 +237,10 @@ export class HospitalScene extends Phaser.Scene {
     // a battle land here too, so this single call covers all
     // entries into the Hospital.
     this.cameras.main.fadeIn(450, 0, 0, 0)
+
+    // Hospital ambience — Lynch-y / sci-fi melancholy. Only kicks in
+    // once the cinematic intro song is done so the two don't fight.
+    this.startHospitalAmbience()
 
     // Level-advance banner — if the player just crossed a defeat
     // threshold during the prior battle, surface it now. Banner
@@ -389,34 +471,6 @@ export class HospitalScene extends Phaser.Scene {
     })
   }
 
-  private placeGap() {
-    const ct = this.mapDef.gapTile
-    const px = ct.x * TILE + TILE / 2
-    const py = ct.y * TILE + TILE / 2
-
-    this.gapSprite = this.add.graphics().setDepth(3).setAlpha(0)
-    this.gapSprite.lineStyle(2, 0xb18bd6, 0.6)
-    this.gapSprite.lineBetween(px - 8, py - 12, px + 2, py)
-    this.gapSprite.lineBetween(px + 2, py, px - 4, py + 12)
-    this.gapSprite.lineStyle(1, 0xb18bd6, 0.3)
-    this.gapSprite.lineBetween(px + 2, py, px + 8, py + 6)
-
-    this.tweens.add({
-      targets: this.gapSprite,
-      alpha: 0.4,
-      duration: 2000,
-      yoyo: true,
-      repeat: -1,
-      ease: 'Sine.easeInOut',
-    })
-
-    this.gapPrompt = this.add.text(px, py - 24, '[E] Enter the gap', {
-      fontSize: '9px', fontFamily: 'monospace', color: '#b18bd6',
-      backgroundColor: '#1f1208',
-      padding: { x: 4, y: 2 },
-    }).setOrigin(0.5).setDepth(20).setVisible(false)
-  }
-
   private placePlayer() {
     this.player = this.add.image(
       this.playerTileX * TILE + TILE / 2,
@@ -552,6 +606,55 @@ export class HospitalScene extends Phaser.Scene {
    * gradually clears. When it's done, the caller's onComplete fires —
    * typically Anjali's thank-you dialogue.
    */
+  /**
+   * Start a random Hospital ambient track on a 2.5s fade-in. If the
+   * cinematic intro song is still playing, defer until it ends so the
+   * two music beds don't fight. Skips if any hospital_* track is
+   * already playing globally (e.g. we re-entered Hospital from a WR
+   * round-trip and the prior track is still going).
+   */
+  private startHospitalAmbience() {
+    const tracks = ['hospital_twin_peaks', 'hospital_mulholland', 'hospital_blade_runner']
+    if (tracks.some(k => this.sound.get(k)?.isPlaying)) return
+
+    const introSong = this.sound.get('intro_song')
+    if (introSong && introSong.isPlaying) {
+      // Wait for the cinematic song to finish, then start the bed.
+      introSong.once('complete', () => {
+        if (this.scene.isActive()) this.startHospitalAmbience()
+      })
+      return
+    }
+
+    const key = tracks[Math.floor(Math.random() * tracks.length)]
+    if (!this.cache.audio.exists(key)) return
+    const ambient = this.sound.add(key, { volume: 0, loop: true })
+    ambient.play()
+    this.tweens.add({
+      targets: ambient,
+      volume: 0.35,
+      duration: 2500,
+    })
+  }
+
+  /** Fade out any hospital_* ambience that's playing globally. Used
+   *  when leaving the Hospital (descent into the WR). */
+  private fadeOutHospitalAmbience(durationMs: number) {
+    for (const key of ['hospital_twin_peaks', 'hospital_mulholland', 'hospital_blade_runner']) {
+      const s = this.sound.get(key)
+      if (!s || !s.isPlaying) continue
+      this.tweens.add({
+        targets: s,
+        volume: 0,
+        duration: durationMs,
+        onComplete: () => {
+          s.stop()
+          s.destroy()
+        },
+      })
+    }
+  }
+
   private runWakeUpTransition(claimId: string | null, onComplete: () => void) {
     this.canMove = false
 
@@ -811,36 +914,155 @@ export class HospitalScene extends Phaser.Scene {
       padding: { x: 4, y: 2 },
     }).setScrollFactor(0).setDepth(100)
 
+    // Toast that flashes when the player bumps a locked door. Anchored
+    // to the bottom-center of the viewport, hidden until triggered.
+    const screenW = this.scale.width
+    const screenH = this.scale.height
+    this.lockedToast = this.add.text(screenW / 2, screenH - 60, '', {
+      fontSize: '12px', fontFamily: 'monospace', color: '#f4d06f',
+      backgroundColor: '#1f1208cc',
+      padding: { x: 8, y: 4 },
+      align: 'center',
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(120).setAlpha(0)
+
     this.refreshHUD()
   }
 
   private buildMiniMap() {
-    const { width: mw, height: mh } = this.mapDef
     const screenW = this.scale.width
+    const screenH = this.scale.height
 
-    this.miniMapCell = Math.max(1, Math.min(3, Math.floor(180 / mw))) || 1
-    const innerW = mw * this.miniMapCell
-    const innerH = mh * this.miniMapCell
-    const pad = 4
-    const totalW = innerW + pad * 2
-    const totalH = innerH + pad * 2
-    this.miniMapX = screenW - totalW - 8
-    this.miniMapY = 8
+    // Full-screen dim backdrop shown only in expanded mode.
+    this.miniMapDim = this.add.rectangle(0, 0, screenW, screenH, 0x000000, 0.7)
+      .setOrigin(0, 0).setDepth(98).setVisible(false)
+      .setInteractive() // swallows clicks behind the expanded map
 
     this.miniMapBg = this.add.graphics().setDepth(99)
-    this.miniMapBg.fillStyle(0x140a05, 0.88) // matches camera bg (warm dark)
-    this.miniMapBg.fillRect(this.miniMapX, this.miniMapY, totalW, totalH)
-    this.miniMapBg.lineStyle(1, 0xc8a040, 0.6) // mustard frame, fits 70s palette
-    this.miniMapBg.strokeRect(this.miniMapX + 0.5, this.miniMapY + 0.5, totalW - 1, totalH - 1)
-
     this.miniMapTiles = this.add.graphics().setDepth(100)
     this.miniMapPlayer = this.add.graphics().setDepth(101)
 
+    // Pre-create one label per room. Position, font, and text are
+    // re-applied in applyMiniMapLayout based on collapsed/expanded.
+    for (const _ of this.mapDef.rooms ?? []) {
+      const label = this.add.text(0, 0, '', {
+        fontFamily: 'monospace',
+        color: '#fff7e0',
+        fontStyle: 'bold',
+        align: 'center',
+        stroke: '#1f1208',
+        strokeThickness: 2,
+      }).setOrigin(0.5).setDepth(102).setVisible(false)
+      this.miniMapLabels.push(label)
+    }
+
+    // Hit zone over the minimap rect — click to toggle expand/collapse.
+    this.miniMapHitZone = this.add.zone(0, 0, 1, 1)
+      .setOrigin(0, 0).setDepth(103).setInteractive({ useHandCursor: true })
+    this.miniMapHitZone.on('pointerdown', () => this.toggleMiniMapExpanded())
+
+    // Expanded-mode close hint (top of screen).
+    this.miniMapCloseHint = this.add.text(screenW / 2, 14,
+      'click anywhere to close', {
+        fontFamily: 'monospace', fontSize: '11px',
+        color: '#c8a040',
+      }).setOrigin(0.5, 0).setDepth(104).setVisible(false)
+
+    const miniMapObjs: Phaser.GameObjects.GameObject[] = [
+      this.miniMapDim, this.miniMapBg, this.miniMapTiles, this.miniMapPlayer,
+      ...this.miniMapLabels, this.miniMapHitZone, this.miniMapCloseHint,
+    ]
+    if (this.lockedToast) miniMapObjs.push(this.lockedToast)
+
     // Main camera ignores the minimap; UI camera ignores everything else.
-    this.cameras.main.ignore([this.miniMapBg, this.miniMapTiles, this.miniMapPlayer])
-    this.uiCamera.ignore(this.children.list.filter(
-      c => c !== this.miniMapBg && c !== this.miniMapTiles && c !== this.miniMapPlayer
-    ))
+    this.cameras.main.ignore(miniMapObjs)
+    this.uiCamera.ignore(this.children.list.filter(c => !miniMapObjs.includes(c)))
+
+    this.applyMiniMapLayout()
+  }
+
+  /** Resolve cell size, position, frame, label fonts, and hit zone
+   *  bounds based on the current expand state. Called on build and
+   *  on every toggle. */
+  private applyMiniMapLayout() {
+    const { width: mw, height: mh } = this.mapDef
+    const screenW = this.scale.width
+    const screenH = this.scale.height
+
+    if (this.miniMapExpanded) {
+      // Fit to viewport with comfortable margins.
+      this.miniMapCell = Math.max(4, Math.min(
+        Math.floor((screenW - 80) / mw),
+        Math.floor((screenH - 100) / mh),
+      ))
+    } else {
+      this.miniMapCell = Math.max(1, Math.min(3, Math.floor(180 / mw))) || 1
+    }
+    const cell = this.miniMapCell
+    const innerW = mw * cell
+    const innerH = mh * cell
+    const pad = this.miniMapExpanded ? 12 : 4
+    const totalW = innerW + pad * 2
+    const totalH = innerH + pad * 2
+
+    if (this.miniMapExpanded) {
+      this.miniMapX = Math.floor((screenW - totalW) / 2)
+      this.miniMapY = Math.floor((screenH - totalH) / 2)
+    } else {
+      this.miniMapX = screenW - totalW - 8
+      this.miniMapY = 8
+    }
+
+    // Frame + fill.
+    this.miniMapBg.clear()
+    this.miniMapBg.fillStyle(0x140a05, 0.92)
+    this.miniMapBg.fillRect(this.miniMapX, this.miniMapY, totalW, totalH)
+    this.miniMapBg.lineStyle(this.miniMapExpanded ? 2 : 1, 0xc8a040, 0.7)
+    this.miniMapBg.strokeRect(
+      this.miniMapX + 0.5, this.miniMapY + 0.5, totalW - 1, totalH - 1,
+    )
+
+    // Hit zone — covers full screen in expanded mode (click outside
+    // to close), or just the minimap rect in collapsed mode.
+    if (this.miniMapHitZone) {
+      if (this.miniMapExpanded) {
+        this.miniMapHitZone.setPosition(0, 0).setSize(screenW, screenH)
+      } else {
+        this.miniMapHitZone.setPosition(this.miniMapX, this.miniMapY)
+          .setSize(totalW, totalH)
+      }
+      this.miniMapHitZone.input!.hitArea.setTo(
+        0, 0,
+        this.miniMapHitZone.width, this.miniMapHitZone.height,
+      )
+    }
+
+    this.miniMapDim?.setVisible(this.miniMapExpanded)
+    this.miniMapCloseHint?.setVisible(this.miniMapExpanded)
+
+    // Reposition + restyle labels.
+    const ox = this.miniMapX + pad
+    const oy = this.miniMapY + pad
+    const rooms = this.mapDef.rooms ?? []
+    for (let i = 0; i < rooms.length; i++) {
+      const r = rooms[i]
+      const label = this.miniMapLabels[i]
+      if (!label) continue
+      const cx = ox + (r.x + r.w / 2) * cell
+      const cy = oy + (r.y + r.h / 2) * cell
+      label.setPosition(cx, cy)
+      label.setText(this.miniMapExpanded ? r.name : (r.shortName ?? r.name))
+      label.setFontSize(this.miniMapExpanded ? 14 : 7)
+      label.setStyle({
+        wordWrap: { width: Math.max(24, r.w * cell - 2), useAdvancedWrap: true },
+      })
+    }
+
+    this.redrawMiniMapTiles()
+  }
+
+  private toggleMiniMapExpanded() {
+    this.miniMapExpanded = !this.miniMapExpanded
+    this.applyMiniMapLayout()
   }
 
   private refreshHUD() {
@@ -884,6 +1106,43 @@ export class HospitalScene extends Phaser.Scene {
     }
   }
 
+  private flashFlavorToast(message: string) {
+    if (!this.lockedToast) return
+    this.lockedToast.setText(message)
+    this.lockedToastTween?.stop()
+    this.lockedToast.setAlpha(1)
+    // Hold longer when the message is multi-line — give the player
+    // time to read each beat. Roughly 700ms per line, capped at 4s.
+    const lineCount = message.split('\n').length
+    const holdMs = Math.min(4000, 900 + lineCount * 700)
+    this.lockedToastTween = this.tweens.add({
+      targets: this.lockedToast,
+      alpha: 0,
+      delay: holdMs,
+      duration: 500,
+      ease: 'Sine.easeIn',
+    })
+  }
+
+  /** Press-E examine: look up the tile in front of the player and
+   *  show its flavor text if any. "In front" is determined by the
+   *  player's current facing texture. */
+  private examineFacingTile() {
+    const dir = this.facingDelta()
+    const tx = this.playerTileX + dir.dx
+    const ty = this.playerTileY + dir.dy
+    const ch = this.mapDef.layout[ty]?.[tx]
+    const flavor = ch ? flavorForTile(ch, tx, ty) : undefined
+    if (flavor) this.flashFlavorToast(flavor)
+  }
+
+  private facingDelta(): { dx: number; dy: number } {
+    const tex = this.player.texture.key
+    if (tex === 'player_up') return { dx: 0, dy: -1 }
+    if (tex === 'player_side') return { dx: this.player.flipX ? -1 : 1, dy: 0 }
+    return { dx: 0, dy: 1 } // 'player' = facing down
+  }
+
   private isSolid(x: number, y: number): boolean {
     const { width: mw, height: mh, layout } = this.mapDef
     if (x < 0 || x >= mw || y < 0 || y >= mh) return true
@@ -900,7 +1159,12 @@ export class HospitalScene extends Phaser.Scene {
     // sprite reads as "looking that way" even when bonking a wall.
     this.faceDirection(dx, dy)
 
-    if (this.isSolid(newX, newY)) return
+    if (this.isSolid(newX, newY)) {
+      const ch = this.mapDef.layout[newY]?.[newX]
+      const flavor = ch ? flavorForTile(ch, newX, newY) : undefined
+      if (flavor) this.flashFlavorToast(flavor)
+      return
+    }
 
     for (const ns of this.npcSprites) {
       if (newX === ns.tileX && newY === ns.tileY) return
@@ -992,10 +1256,6 @@ export class HospitalScene extends Phaser.Scene {
   }
 
   private applyEntityVisibility() {
-    const ct = this.mapDef.gapTile
-    const gapVis = this.tileVisState[ct.y]?.[ct.x] ?? VIS_HIDDEN
-    this.gapSprite.setVisible(gapVis !== VIS_HIDDEN)
-
     for (const ns of this.npcSprites) {
       const v = this.tileVisState[ns.tileY]?.[ns.tileX] ?? VIS_HIDDEN
       const a = ALPHA_FOR_STATE[v]
@@ -1030,10 +1290,19 @@ export class HospitalScene extends Phaser.Scene {
       }
     }
 
-    const ct = this.mapDef.gapTile
-    if (this.tileVisState[ct.y]?.[ct.x] !== VIS_HIDDEN) {
-      g.fillStyle(0xb18bd6, 1)
-      g.fillRect(ox + ct.x * cell - 1, oy + ct.y * cell - 1, cell + 2, cell + 2)
+    // Reveal each room label once any tile inside it has been seen.
+    const rooms = this.mapDef.rooms ?? []
+    for (let i = 0; i < rooms.length; i++) {
+      const r = rooms[i]
+      const label = this.miniMapLabels[i]
+      if (!label) continue
+      let seen = false
+      for (let yy = r.y; yy < r.y + r.h && !seen; yy++) {
+        for (let xx = r.x; xx < r.x + r.w; xx++) {
+          if (this.tileVisState[yy]?.[xx] !== VIS_HIDDEN) { seen = true; break }
+        }
+      }
+      label.setVisible(seen)
     }
 
     this.updateMiniMapPlayer()
@@ -1075,7 +1344,6 @@ export class HospitalScene extends Phaser.Scene {
     if (closest) {
       this.interactPrompt.setPosition(closest.sprite.x, closest.sprite.y - 36)
     }
-    // gapPrompt is intentionally never shown — descent is dialogue-driven.
   }
 
   private interact() {
@@ -1093,9 +1361,8 @@ export class HospitalScene extends Phaser.Scene {
       })
       return
     }
-    // The gap tile is no longer player-engageable — descent is
-    // triggered exclusively by NPC dialogue (DialogueEffect.triggerDescent).
-    // The visual remains as ambience.
+    // No nearby NPC — try examining whatever the player is facing.
+    this.examineFacingTile()
   }
 
   /**
@@ -1114,6 +1381,10 @@ export class HospitalScene extends Phaser.Scene {
     // when we get here (set by the claim-preview step that runs
     // before us). No guard needed.
     this.canMove = false
+
+    // Cross-fade hospital ambience out so the WR's red_room track can
+    // fade in without overlap.
+    this.fadeOutHospitalAmbience(900)
 
     const px = this.player.x
     const py = this.player.y

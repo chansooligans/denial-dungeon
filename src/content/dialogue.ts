@@ -5,7 +5,7 @@ export const DIALOGUES: Record<string, DialogueNode> = {
   dana_intro: {
     id: 'dana_intro',
     speaker: 'Dana',
-    text: "Oh — you're the part-time intern? Sorry, I'm slammed. Stick around the lobby; if anything weird comes up, flag me.",
+    text: "Oh — Chloe, right? The part-time intern. Sorry, I'm slammed. Stick around the lobby; if anything weird comes up, flag me.",
     next: 'dana_intro_2',
   },
   dana_intro_2: {
@@ -274,7 +274,7 @@ export const DIALOGUES: Record<string, DialogueNode> = {
   },
   anjali_hesitate: {
     id: 'anjali_hesitate',
-    speaker: 'Intern',
+    speaker: 'Chloe',
     text: "Part-time interns don't help patients directly. You're supposed to flag this to a supervisor — but it's late, and there's no supervisor here. And she looks like she's been waiting forever.",
     choices: [
       { text: "Let me pull up your file.", next: 'anjali_pull_file' },
@@ -303,7 +303,7 @@ export const DIALOGUES: Record<string, DialogueNode> = {
   anjali_thanks_2: {
     id: 'anjali_thanks_2',
     speaker: 'Anjali',
-    text: "I had my husband's card on me by accident. Of course I did. Thank you. Really.",
+    text: "I had my husband's card on me by accident. Of course I did. Thank you, Chloe. Really.",
     choices: [
       { text: "(You're not entirely sure what just happened either.)", next: 'anjali_thanks_3' },
       { text: "Glad I could help.", next: 'anjali_thanks_3' },

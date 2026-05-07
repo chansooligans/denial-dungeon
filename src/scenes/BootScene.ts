@@ -59,19 +59,21 @@ export class BootScene extends Phaser.Scene {
     this.load.audio('red_room_1', 'audio/wr/red_room_1.mp3')
     this.load.audio('red_room_2', 'audio/wr/red_room_2.mp3')
     this.load.audio('red_room_3', 'audio/wr/red_room_3.mp3')
+    // Hospital ambience tracks — Lynch-y / sci-fi melancholy. One is
+    // picked at random when the player is in the Hospital, but only
+    // after the intro song has finished (so the cinematic music
+    // doesn't get clipped on its way out).
+    this.load.audio('hospital_twin_peaks', 'audio/hospital/twin_peaks.mp3')
+    this.load.audio('hospital_mulholland', 'audio/hospital/mulholland_drive.mp3')
+    this.load.audio('hospital_blade_runner', 'audio/hospital/blade_runner_love.mp3')
   }
 
   create() {
     this.generateSprites()
-    // If a save exists, skip the cinematic intro and go straight back
-    // into gameplay — the player is "returning" to a session, not
-    // starting from scratch. The intro is still replayable from the
-    // title screen if they want it.
-    if (this.hasExistingSave()) {
-      this.scene.start('Hospital')
-    } else {
-      this.scene.start('Intro')
-    }
+    // Every page reload lands on the cover — which is the splash at
+    // the start of the cinematic intro. Players can hit Skip on the
+    // splash to jump to the title menu.
+    this.scene.start('Intro')
   }
 
   private hasExistingSave(): boolean {
@@ -501,15 +503,16 @@ export class BootScene extends Phaser.Scene {
     g.generateTexture('h_desk', 16, 16)
     g.destroy()
 
-    // Chair — office with wheels
+    // Chair — neutral body so TINT.chair in HospitalScene controls
+    // the actual color (Phaser tints multiply against the texture).
     g = this.make.graphics({ x: 0, y: 0 })
-    g.fillStyle(0x405080)
+    g.fillStyle(0xffffff)
     g.fillRect(3, 2, 10, 8)
-    g.fillStyle(0x4a5a90, 0.4)
+    g.fillStyle(0xd8d8d8, 0.4)
     g.fillRect(4, 2, 8, 2)
-    g.fillStyle(0x303840)
+    g.fillStyle(0x404040)
     g.fillRect(6, 10, 4, 3)
-    g.fillStyle(0x505860)
+    g.fillStyle(0x808080)
     g.fillRect(4, 13, 2, 2)
     g.fillRect(10, 13, 2, 2)
     g.generateTexture('h_chair', 16, 16)
