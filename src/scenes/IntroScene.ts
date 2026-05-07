@@ -54,7 +54,7 @@ const BEATS: Beat[] = [
   // Beat 3: Your Desk
   { type: 'scene', action: (s) => s.showDesk() },
   { type: 'text', lines: [
-    'You are a part-time intern',
+    'You, Chloe, are an intern',
     'at Mercy General Hospital.',
   ], color: '#e6edf3' },
   { type: 'wait', duration: 2000 },
@@ -87,11 +87,11 @@ const BEATS: Beat[] = [
     // falling visually rhymes with the claim being "gone".
     sceneAction: (s) => s.showFall(),
   },
-  { type: 'wait', duration: 3500 },
+  { type: 'wait', duration: 1500 },
 
   // Beat 5: The Gap (procedural only; comic art shown as full reveal at end).
   { type: 'scene', action: (s) => s.showGap() },
-  { type: 'wait', duration: 2000 },
+  { type: 'wait', duration: 1200 },
 
   // Beat 7: The Waiting Room
   { type: 'scene', action: (s) => s.showWaitingRoom() },
@@ -483,7 +483,7 @@ export class IntroScene extends Phaser.Scene {
     this.tweens.killTweensOf(this.introSong)
     this.tweens.add({
       targets: this.introSong,
-      volume: 0.6,
+      volume: 0.5,
       duration: 1500,
     })
   }

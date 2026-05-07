@@ -131,6 +131,24 @@ export class HospitalScene extends Phaser.Scene {
     super('Hospital')
   }
 
+  preload() {
+    // Hospital ambience — Lynch-y / sci-fi melancholy. One is picked
+    // at random in startHospitalAmbience after the intro song has
+    // finished. Loaded here (not in BootScene) so the title doesn't
+    // wait on ~12MB of music it doesn't need yet. Phaser's loader is
+    // idempotent — if these were already cached on a prior visit,
+    // the .load.audio call no-ops.
+    if (!this.cache.audio.exists('hospital_twin_peaks')) {
+      this.load.audio('hospital_twin_peaks', 'audio/hospital/twin_peaks.mp3')
+    }
+    if (!this.cache.audio.exists('hospital_mulholland')) {
+      this.load.audio('hospital_mulholland', 'audio/hospital/mulholland_drive.mp3')
+    }
+    if (!this.cache.audio.exists('hospital_blade_runner')) {
+      this.load.audio('hospital_blade_runner', 'audio/hospital/blade_runner_love.mp3')
+    }
+  }
+
   create() {
     const state = getState()
     this.mapDef = HOSPITAL_MAP
