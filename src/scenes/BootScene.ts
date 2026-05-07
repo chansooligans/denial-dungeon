@@ -44,7 +44,23 @@ export class BootScene extends Phaser.Scene {
 
   create() {
     this.generateSprites()
-    this.scene.start('Intro')
+    // If a save exists, skip the cinematic intro and go straight back
+    // into gameplay — the player is "returning" to a session, not
+    // starting from scratch. The intro is still replayable from the
+    // title screen if they want it.
+    if (this.hasExistingSave()) {
+      this.scene.start('Hospital')
+    } else {
+      this.scene.start('Intro')
+    }
+  }
+
+  private hasExistingSave(): boolean {
+    try {
+      return !!localStorage.getItem('denial_dungeon_save')
+    } catch {
+      return false
+    }
   }
 
   private generateSprites() {
