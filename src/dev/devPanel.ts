@@ -1,7 +1,11 @@
-// Dev-only jump panel. Toggled by `~` (backtick). Lists every
-// encounter that has a puzzleSpecId, plus shortcuts to the main
-// scenes and a "clear save" button. DEV-only — installs only when
-// `import.meta.env.DEV` is true, so it doesn't ship to prod builds.
+// Dev jump panel. Toggled by `~` (backtick) or the small DEV chip.
+// Lists every encounter that has a puzzleSpecId, plus scene shortcuts
+// and a "clear save" button.
+//
+// Available automatically in dev (`vite dev`). In production builds
+// it can be opted-in by appending `?dev=1` to the URL — useful for
+// QA on the deployed site without shipping a new build. Anything
+// other than `0`/`false`/empty enables it.
 
 import { ENCOUNTERS } from '../content/enemies'
 import { PUZZLE_SPECS } from '../runtime/puzzle/specs'
@@ -10,8 +14,19 @@ const PANEL_ID = '__dev_panel__'
 const TOGGLE_ID = '__dev_panel_toggle__'
 const STYLE_ID = '__dev_panel_style__'
 
+function isDevPanelEnabled(): boolean {
+  if (import.meta.env.DEV) return true
+  try {
+    const v = new URLSearchParams(location.search).get('dev')
+    if (v === null) return false
+    return v !== '0' && v.toLowerCase() !== 'false' && v !== ''
+  } catch {
+    return false
+  }
+}
+
 export function installDevPanel() {
-  if (!import.meta.env.DEV) return
+  if (!isDevPanelEnabled()) return
   if (document.getElementById(STYLE_ID)) return
 
   const style = document.createElement('style')

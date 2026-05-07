@@ -752,11 +752,27 @@ export class HospitalScene extends Phaser.Scene {
     `
     document.body.appendChild(overlay)
 
-    this.time.delayedCall(2800, () => {
+    // Cleanup is idempotent so the timer, click-to-skip escape, and
+    // a backstop window timeout can all race safely.
+    let done = false
+    const finish = () => {
+      if (done) return
+      done = true
       overlay.remove()
       style?.remove()
       onComplete()
-    })
+    }
+    // Click anywhere to skip — gives the player an escape hatch if
+    // the animation stalls or feels too long.
+    overlay.style.pointerEvents = 'auto'
+    overlay.style.cursor = 'pointer'
+    overlay.addEventListener('click', finish)
+    // Primary timer on the scene clock.
+    this.time.delayedCall(2800, finish)
+    // Belt-and-suspenders backstop on the global clock — fires even
+    // if the scene gets paused or shut down before the delayedCall
+    // resolves (which would otherwise leave the overlay stuck).
+    window.setTimeout(finish, 5000)
   }
 
   private maybeRunAnjaliThanks() {
@@ -943,16 +959,26 @@ export class HospitalScene extends Phaser.Scene {
       padding: { x: 4, y: 2 },
     }).setScrollFactor(0).setDepth(100)
 
-    // Toast that flashes when the player bumps a locked door. Anchored
-    // to the bottom-center of the viewport, hidden until triggered.
+    // Toast that flashes when the player bumps a solid object or
+    // examines a tile. Anchored to the bottom-center of the viewport,
+    // hidden until triggered. Larger font on touch devices so it's
+    // legible without fullscreen.
     const screenW = this.scale.width
     const screenH = this.scale.height
-    this.lockedToast = this.add.text(screenW / 2, screenH - 60, '', {
-      fontSize: '12px', fontFamily: 'monospace', color: '#f4d06f',
-      backgroundColor: '#1f1208cc',
-      padding: { x: 8, y: 4 },
-      align: 'center',
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(120).setAlpha(0)
+    const mobile = isTouchDevice()
+    this.lockedToast = this.add.text(
+      screenW / 2,
+      screenH - (mobile ? 80 : 60),
+      '',
+      {
+        fontSize: mobile ? '15px' : '12px',
+        fontFamily: 'monospace',
+        color: '#f4d06f',
+        backgroundColor: '#1f1208cc',
+        padding: { x: mobile ? 12 : 8, y: mobile ? 6 : 4 },
+        align: 'center',
+      },
+    ).setOrigin(0.5).setScrollFactor(0).setDepth(120).setAlpha(0)
 
     this.refreshHUD()
   }

@@ -1,6 +1,7 @@
 import Phaser from 'phaser'
 import { DIALOGUES } from '../content/dialogue'
 import { unlockCodex, unlockTool, updateResources, saveGame, getState } from '../state'
+import { isTouchDevice } from './device'
 import type { DialogueNode, DialogueChoice, DialogueEffect } from '../types'
 
 // Speaker → color mapping. Each character gets their own tint on the
@@ -49,16 +50,26 @@ export class DialogueScene extends Phaser.Scene {
 
   create() {
     const { width, height } = this.scale
+    // Mobile gets larger text + a taller box so dialogue is legible
+    // without fullscreen. The box still anchors to the bottom of the
+    // viewport so the player's view of the world is preserved above.
+    const m = isTouchDevice()
+    const speakerSize = m ? 17 : 13
+    const bodySize    = m ? 16 : 12
+    const boxHeight   = m ? 220 : 160
+    const speakerY    = height - boxHeight - 10
+    const bodyY       = speakerY + speakerSize + 6
 
-    this.textBox = this.add.rectangle(width / 2, height - 90, width - 40, 160, 0x0e1116, 0.95)
+    this.textBox = this.add
+      .rectangle(width / 2, height - boxHeight / 2, width - 40, boxHeight, 0x0e1116, 0.95)
       .setStrokeStyle(2, 0x2a323d)
 
-    this.speakerText = this.add.text(40, height - 160, '', {
-      fontSize: '13px', fontFamily: 'monospace', color: '#7ee2c1', fontStyle: 'bold',
+    this.speakerText = this.add.text(40, speakerY, '', {
+      fontSize: `${speakerSize}px`, fontFamily: 'monospace', color: '#7ee2c1', fontStyle: 'bold',
     })
 
-    this.bodyText = this.add.text(40, height - 138, '', {
-      fontSize: '12px', fontFamily: 'monospace', color: '#d0d8e0',
+    this.bodyText = this.add.text(40, bodyY, '', {
+      fontSize: `${bodySize}px`, fontFamily: 'monospace', color: '#d0d8e0',
       wordWrap: { width: width - 80 },
     })
 
@@ -76,11 +87,16 @@ export class DialogueScene extends Phaser.Scene {
 
     const { width, height } = this.scale
 
+    const m = isTouchDevice()
+    const choiceSize = m ? 15 : 11
+    const choiceStep = m ? 28 : 22
+    const choiceTopOffset = m ? 110 : 70
+
     if (node.choices && node.choices.length > 0) {
       node.choices.forEach((choice, i) => {
-        const y = height - 70 + i * 22
+        const y = height - choiceTopOffset + i * choiceStep
         const ct = this.add.text(60, y, `> ${choice.text}`, {
-          fontSize: '11px', fontFamily: 'monospace', color: '#f4d06f',
+          fontSize: `${choiceSize}px`, fontFamily: 'monospace', color: '#f4d06f',
         }).setInteractive({ useHandCursor: true })
 
         ct.on('pointerover', () => ct.setColor('#ffffff'))
@@ -91,7 +107,7 @@ export class DialogueScene extends Phaser.Scene {
       })
     } else if (node.next) {
       const advanceText = this.add.text(width - 60, height - 30, 'click to continue ▸', {
-        fontSize: '10px', fontFamily: 'monospace', color: '#5a6a7a',
+        fontSize: m ? '13px' : '10px', fontFamily: 'monospace', color: '#5a6a7a',
       }).setOrigin(1, 0.5)
       this.choiceTexts.push(advanceText)
 
