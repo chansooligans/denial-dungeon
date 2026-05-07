@@ -16,7 +16,8 @@ const SPEAKER_COLORS: Record<string, string> = {
   Pat: '#9bb0c8',            // slate (coding)
   Alex: '#a8a8b0',           // gray (IT/EDI)
   Sam: '#f0a868',            // orange (denials)
-  Intern: '#f4d06f',         // yellow (player ID badge)
+  Chloe: '#f4d06f',          // yellow (player ID badge)
+  Intern: '#f4d06f',         // legacy label, retained for any unmigrated nodes
 }
 const SPEAKER_DEFAULT_COLOR = '#7ee2c1'
 function colorForSpeaker(name: string): string {

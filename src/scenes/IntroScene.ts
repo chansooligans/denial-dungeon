@@ -165,6 +165,7 @@ export class IntroScene extends Phaser.Scene {
   // Intro song — fades in when the user advances past the title
   // splash and carries through the rest of the cinematic.
   private introSong?: Phaser.Sound.BaseSound
+  private introSongBoosted = false
 
   constructor() {
     super('Intro')
@@ -446,16 +447,41 @@ export class IntroScene extends Phaser.Scene {
     })
   }
 
-  /** Fade the intro song in. Plays under the rest of the cinematic;
-   *  voiceover plays on top. Triggered when the user advances past
-   *  the title splash. */
+  /** Fade the intro song in. Two-stage: first ramp to a quiet bed
+   *  level (0.15) over 5s — that's the pre-narration hold, where the
+   *  song would otherwise feel too loud sitting alone. Once the first
+   *  voiceover beat fires, `boostIntroSongForVoice` bumps it up to
+   *  the under-narration level (0.35). */
   private fadeInIntroSong() {
     if (!this.cache.audio.exists('intro_song')) return
-    this.introSong = this.sound.add('intro_song', { volume: 0 })
+    this.introSong = this.sound.add('intro_song')
+    // Force volume to 0 BEFORE play() so the song never bursts at
+    // the default 1.0 volume — some audio backends ignore the
+    // sound.add config until after the first playback tick.
+    ;(this.introSong as any).setVolume?.(0)
     this.introSong.play()
+    ;(this.introSong as any).setVolume?.(0)
     this.tweens.add({
       targets: this.introSong,
-      volume: 0.35,  // sits under the narration
+      volume: 0.03,
+      duration: 5000,
+    })
+  }
+
+  /** Bump the intro song from its quiet pre-narration level up to
+   *  the under-narration mix (0.35). Called once when the first
+   *  voiceover beat plays. Subsequent calls are no-ops. */
+  private boostIntroSongForVoice() {
+    if (!this.introSong || this.introSongBoosted) return
+    this.introSongBoosted = true
+    // Kill the still-running 5s pre-VO fade-in tween before pushing
+    // up to the under-narration mix. Otherwise the older tween keeps
+    // overwriting `volume` back toward its target and the boost
+    // appears to do nothing.
+    this.tweens.killTweensOf(this.introSong)
+    this.tweens.add({
+      targets: this.introSong,
+      volume: 0.6,
       duration: 1500,
     })
   }
@@ -814,6 +840,10 @@ export class IntroScene extends Phaser.Scene {
     // Intentionally do NOT stop the intro song — it carries from the
     // cinematic into the title screen as a single bed of music. The
     // sound persists because Phaser's sound manager is game-global.
+    //
+    // (If the player skipped before reaching the splash advance, the
+    // song hasn't started yet. TitleScene.create kicks it off with a
+    // fade-in in that case so the menu still gets a music bed.)
     this.scene.start('Title')
   }
 
@@ -823,6 +853,7 @@ export class IntroScene extends Phaser.Scene {
       this.introSong.destroy()
       this.introSong = undefined
     }
+    this.introSongBoosted = false
   }
 
   /** Play the voiceover for the current text beat (1-indexed). Stops
@@ -834,6 +865,9 @@ export class IntroScene extends Phaser.Scene {
     if (!this.cache.audio.exists(key)) return
     this.currentVoice = this.sound.add(key)
     this.currentVoice.play()
+    // Bring the music bed up to its under-narration mix the moment
+    // narration starts. Idempotent — only fires on the first VO beat.
+    this.boostIntroSongForVoice()
   }
 
   private stopVoice() {
