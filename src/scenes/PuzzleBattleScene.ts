@@ -398,9 +398,31 @@ export class PuzzleBattleScene extends Phaser.Scene {
     // the player back in the calling scene under a wake-up unblur.
     this.overlay.classList.add('puzzle-submit-out')
     this.cameras.main.fadeOut(1500, 0, 0, 0)
+    // Cross-fade the Red Room ambience out so the player doesn't
+    // arrive in the Hospital with WR music still playing.
+    this.fadeOutRedRoomAmbience(1500)
     this.cameras.main.once('camerafadeoutcomplete', () => {
       this.scene.start(this.returnScene)
     })
+  }
+
+  /** Fade out any red_room_* ambience that's playing globally, then
+   *  stop and destroy it. Used at the end of a puzzle so WR music
+   *  doesn't bleed into the Hospital. */
+  private fadeOutRedRoomAmbience(durationMs: number) {
+    for (const key of ['red_room_1', 'red_room_2', 'red_room_3']) {
+      const s = this.sound.get(key)
+      if (!s || !s.isPlaying) continue
+      this.tweens.add({
+        targets: s,
+        volume: 0,
+        duration: durationMs,
+        onComplete: () => {
+          s.stop()
+          s.destroy()
+        },
+      })
+    }
   }
 
   private finishToWaitingRoom(won: boolean) {
@@ -411,6 +433,7 @@ export class PuzzleBattleScene extends Phaser.Scene {
       saveGame()
     }
     this.cameras.main.fadeOut(400, 0, 0, 0)
+    this.fadeOutRedRoomAmbience(400)
     this.cameras.main.once('camerafadeoutcomplete', () => {
       this.scene.start(this.returnScene)
     })

@@ -52,6 +52,13 @@ export class BootScene extends Phaser.Scene {
     // Intro song — fades in when the user advances past the title
     // splash and runs underneath the rest of the cinematic.
     this.load.audio('intro_song', 'audio/intro/intro_song.mp3')
+    // Red Room (Waiting Room) ambience tracks — one is picked at
+    // random when the player descends, looping with a fade-in. They
+    // carry from the WR scene through the PuzzleBattle overlay and
+    // fade out when control returns to the Hospital after submit.
+    this.load.audio('red_room_1', 'audio/wr/red_room_1.mp3')
+    this.load.audio('red_room_2', 'audio/wr/red_room_2.mp3')
+    this.load.audio('red_room_3', 'audio/wr/red_room_3.mp3')
   }
 
   create() {
