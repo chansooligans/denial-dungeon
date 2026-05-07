@@ -5,7 +5,17 @@ export interface MapDef {
   height: number
   layout: string[]
   playerStart: { x: number; y: number }
-  npcPlacements: { npcId: string; tileX: number; tileY: number }[]
+  /** NPC placements. Each placement is a single position; if the same
+   *  NPC needs to be in different rooms across levels, supply multiple
+   *  placements with `levels` filters set so only the relevant one
+   *  spawns. Placements without `levels` apply to every level. */
+  npcPlacements: {
+    npcId: string
+    tileX: number
+    tileY: number
+    /** If set, this placement is only used when `currentLevel` is in the list. */
+    levels?: number[]
+  }[]
   /** Optional room labels for the minimap. Drawn at the room center
    *  when at least one tile of the room has been seen.
    *  - `name` is the full label, shown when the minimap is expanded.

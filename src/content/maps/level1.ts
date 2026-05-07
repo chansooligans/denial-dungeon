@@ -1,27 +1,33 @@
-// Level 1 — Orientation: North Wing of Mercy General.
+// Hospital floor plan. Used for every level — different rooms become
+// "active" depending on currentLevel via NPC placement filters and
+// the per-level dialogue overrides in content/dialogue.ts.
 //
 // Layout intent:
-//   - Player spawns inside a wide LOBBY at the south.
-//   - L-shaped CORRIDOR exits the lobby's north door, runs north along the
-//     west side, then bends east toward the MAIN HUB at the top-center.
-//     The bend creates a natural T-junction where Patient Services and
-//     Registration branch off.
-//   - ELIGIBILITY is a small kiosk reached only through Registration —
-//     a sub-room, not a peer.
-//   - PRIOR AUTH GATE sits east of the Main Hub behind a LOCKED door —
-//     visible foreshadowing for Level 3.
-//   - The GAP (Waiting Room portal) is in the Main Hub.
 //
-// Every room has a single door (except Main Hub, which has the southern
-// staff entrance plus the locked east door). Every dead-end terminates
-// in either a locked feature or content.
+//   NORTH (level 1-3 — orientation, registration, prior auth)
+//     - LOBBY at the south-center (player spawn).
+//     - L-shaped CORRIDOR exits north toward the MAIN HUB at the top.
+//     - PATIENT SVC and REGISTRATION branch off the corridor.
+//     - ELIGIBILITY hangs off Registration (sub-room).
+//     - PRIOR AUTH GATE sits east of the Main Hub behind a LOCKED door.
+//
+//   SOUTH WING (level 4-10 — added later, expands as the player learns
+//   more of the hospital)
+//     - HIM (Health Information Mgmt / coding)
+//     - BILLING (claim queue / clearinghouse)
+//     - PFS (Patient Financial Services / phone bank)
+//     - AUDIT CONFERENCE ROOM (the boss room — taller than the others)
+//
+// All wings share a single map so the player feels the hospital as one
+// place. Per-level NPC placements (`levels` filter) put the right
+// staffer in the right room for each level.
 
 import { buildMapLayout, type MapDef } from '../mapBuilder'
 
 const WIDTH = 60
-const HEIGHT = 46
+const HEIGHT = 72  // bumped from 46 to fit the south wing
 
-// Anchors used by both layout and MapDef metadata.
+// === North wing — level 1-3 ===
 const MAIN_HUB     = { x: 20, y: 3,  w: 18, h: 10 } // interior 16×8
 const PRIOR_AUTH   = { x: 37, y: 3,  w: 14, h: 10 } // shares east wall of Main Hub
 const PATIENT_SVC  = { x: 2,  y: 17, w: 12, h: 8  }
@@ -34,16 +40,28 @@ const ELIGIBILITY  = { x: 24, y: 24, w: 10, h: 6  } // hangs off Registration's 
 // the geometry connected.
 const LOBBY        = { x: 4,  y: 32, w: 26, h: 10 }
 
+// === South wing — level 4-10 ===
+const HIM      = { x: 4,  y: 50, w: 14, h: 10 } // coding / CDI floor
+const BILLING  = { x: 22, y: 50, w: 14, h: 10 } // clearinghouse / claim queue
+const PFS      = { x: 40, y: 50, w: 16, h: 10 } // patient financial services / phones
+const AUDIT    = { x: 18, y: 62, w: 28, h: 8  } // conference room — boss level
+
 // Door world-coords (used to plan corridor endpoints).
 const HUB_SOUTH_DOOR    = { x: MAIN_HUB.x + 10,    y: MAIN_HUB.y + MAIN_HUB.h - 1 } // (30, 12)
 const LOBBY_NORTH_DOOR  = { x: LOBBY.x + 10,        y: LOBBY.y }                    // (14, 32)
+const LOBBY_SOUTH_DOOR  = { x: LOBBY.x + 14,        y: LOBBY.y + LOBBY.h - 1 }      // (18, 41)
 const CORRIDOR_BEND     = { x: LOBBY_NORTH_DOOR.x,  y: HUB_SOUTH_DOOR.y + 1 }       // (14, 13)
+
+// South-wing corridor anchors.
+const SW_TROUGH_Y       = 49 // east-west corridor running just north of the south-wing rooms
+const SW_BAY_Y          = 60 // shorter corridor between the upper south-wing rooms and AUDIT
 
 const layout = buildMapLayout({
   width: WIDTH,
   height: HEIGHT,
   background: 'W',
   rooms: [
+    // ===== North wing =====
     {
       id: 'mainHub',
       ...MAIN_HUB,
@@ -114,7 +132,11 @@ const layout = buildMapLayout({
     {
       id: 'lobby',
       ...LOBBY,
-      doors: [{ side: 'N', offset: 10 }],
+      // North to the corridor / hospital interior, south to the new wing.
+      doors: [
+        { side: 'N', offset: 10 },
+        { side: 'S', offset: 14 },
+      ],
       // 70s-Lynch lobby — packed warmer + denser than the old cavern.
       // Reuses existing prop chars (lamps stand-in: water-cooler 'w';
       // side tables: 'c'; framed art: 'b'). The HospitalScene tints
@@ -143,11 +165,101 @@ const layout = buildMapLayout({
         { dx: 7,  dy: 6, ch: 'h' },                              { dx: 11, dy: 6, ch: 'h' },
         { dx: 14, dy: 6, ch: 'h' }, { dx: 16, dy: 6, ch: 'h' },
         { dx: 9,  dy: 6, ch: 'h' }, // Chloe's chair (player spawns here)
-        // South wall amenities — vending, water cooler ("lamp"), bulletin
+        // South wall amenities — vending, water cooler ("lamp"), bulletin.
+        // dx=13 was a bulletin print but the new south door at offset 14
+        // lands on dx=13 — relocate the print east to dx=10.
         { dx: 2,  dy: 7, ch: 'V' },
         { dx: 22, dy: 7, ch: 'w' }, // doubles as a tall lamp visually with the warm tint
         { dx: 24, dy: 7, ch: 'P' }, // corner plant
-        { dx: 13, dy: 8, ch: 'b' }, // framed print over a chair row
+        { dx: 10, dy: 8, ch: 'b' }, // framed print over a chair row
+      ],
+    },
+
+    // ===== South wing =====
+    {
+      id: 'him',
+      ...HIM,
+      doors: [{ side: 'N', offset: 7 }],
+      // Coding / CDI: monitors, code books, charts.
+      items: [
+        { dx: 1, dy: 1, ch: 'c' }, { dx: 1, dy: 2, ch: 'h' },
+        { dx: 4, dy: 1, ch: 'c' }, { dx: 4, dy: 2, ch: 'h' },
+        { dx: 8, dy: 1, ch: 'c' }, { dx: 8, dy: 2, ch: 'h' },
+        { dx: 1, dy: 5, ch: 'F' }, { dx: 4, dy: 5, ch: 'F' }, // file cabinets w/ chart binders
+        { dx: 8, dy: 5, ch: 'B' }, // whiteboard with code-of-the-week
+        { dx: 11, dy: 1, ch: 'P' },
+        { dx: 11, dy: 7, ch: 'P' },
+      ],
+    },
+    {
+      id: 'billing',
+      ...BILLING,
+      doors: [{ side: 'N', offset: 7 }],
+      // Clearinghouse / claim queue: terminals + scrubber screens.
+      items: [
+        { dx: 1, dy: 1, ch: 'c' }, { dx: 1, dy: 2, ch: 'h' },
+        { dx: 4, dy: 1, ch: 'c' }, { dx: 4, dy: 2, ch: 'h' },
+        { dx: 8, dy: 1, ch: 'c' }, { dx: 8, dy: 2, ch: 'h' },
+        { dx: 1, dy: 5, ch: 'X' }, { dx: 4, dy: 5, ch: 'X' }, // fax / EDI terminals
+        { dx: 8, dy: 5, ch: 'B' }, // claim-queue board
+        { dx: 11, dy: 1, ch: 'F' },
+        { dx: 11, dy: 7, ch: 'P' },
+      ],
+    },
+    {
+      id: 'pfs',
+      ...PFS,
+      doors: [{ side: 'N', offset: 8 }],
+      // Patient Financial Services: phone bank + paperwork mountain.
+      items: [
+        { dx: 1, dy: 1, ch: 'c' }, { dx: 1, dy: 2, ch: 'h' },
+        { dx: 4, dy: 1, ch: 'c' }, { dx: 4, dy: 2, ch: 'h' },
+        { dx: 8, dy: 1, ch: 'c' }, { dx: 8, dy: 2, ch: 'h' },
+        { dx: 12, dy: 1, ch: 'c' }, { dx: 12, dy: 2, ch: 'h' },
+        { dx: 1, dy: 5, ch: 'B' }, // hold-time / call-volume board
+        { dx: 5, dy: 5, ch: 'F' },
+        { dx: 9, dy: 5, ch: 'w' },
+        { dx: 13, dy: 7, ch: 'P' },
+      ],
+    },
+    {
+      id: 'audit',
+      ...AUDIT,
+      // North door connects to a stub corridor running south from the
+      // south-wing trough. Door is offset to land in the gap between
+      // BILLING (ends at x=35) and PFS (starts at x=40) so the
+      // connector doesn't have to puncture another room's wall.
+      doors: [{ side: 'N', offset: 19 }],
+      // Conference room: long table (chairs flanking), whiteboard at
+      // the head, a single plant, a water cooler. Sparse — the menace
+      // is the empty space and the auditors who haven't arrived yet.
+      items: [
+        // Long row of conference chairs, north side
+        { dx: 4,  dy: 2, ch: 'h' }, { dx: 7,  dy: 2, ch: 'h' },
+        { dx: 10, dy: 2, ch: 'h' }, { dx: 13, dy: 2, ch: 'h' },
+        { dx: 16, dy: 2, ch: 'h' }, { dx: 19, dy: 2, ch: 'h' },
+        { dx: 22, dy: 2, ch: 'h' },
+        // The conference table — a dense row of desks 'c' as a stand-in.
+        { dx: 4,  dy: 3, ch: 'c' }, { dx: 5,  dy: 3, ch: 'c' },
+        { dx: 6,  dy: 3, ch: 'c' }, { dx: 7,  dy: 3, ch: 'c' },
+        { dx: 8,  dy: 3, ch: 'c' }, { dx: 9,  dy: 3, ch: 'c' },
+        { dx: 10, dy: 3, ch: 'c' }, { dx: 11, dy: 3, ch: 'c' },
+        { dx: 12, dy: 3, ch: 'c' }, { dx: 13, dy: 3, ch: 'c' },
+        { dx: 14, dy: 3, ch: 'c' }, { dx: 15, dy: 3, ch: 'c' },
+        { dx: 16, dy: 3, ch: 'c' }, { dx: 17, dy: 3, ch: 'c' },
+        { dx: 18, dy: 3, ch: 'c' }, { dx: 19, dy: 3, ch: 'c' },
+        { dx: 20, dy: 3, ch: 'c' }, { dx: 21, dy: 3, ch: 'c' },
+        { dx: 22, dy: 3, ch: 'c' },
+        // South side of the table — chairs facing north
+        { dx: 4,  dy: 4, ch: 'h' }, { dx: 7,  dy: 4, ch: 'h' },
+        { dx: 10, dy: 4, ch: 'h' }, { dx: 13, dy: 4, ch: 'h' },
+        { dx: 16, dy: 4, ch: 'h' }, { dx: 19, dy: 4, ch: 'h' },
+        { dx: 22, dy: 4, ch: 'h' },
+        // Whiteboard at the west head, water cooler east, plant in corner
+        { dx: 1,  dy: 3, ch: 'B' },
+        { dx: 25, dy: 3, ch: 'w' },
+        { dx: 25, dy: 5, ch: 'P' },
+        { dx: 1,  dy: 5, ch: 'F' }, // a single audit binder cabinet
       ],
     },
   ],
@@ -161,9 +273,34 @@ const layout = buildMapLayout({
       ],
       width: 1,
     },
-    // Short stub at the T-junction so doors at (13,20) and (15,20) connect
-    // to the corridor on both sides; the corridor at x=14 already covers
-    // the door tile gap.
+    // South-wing trough: a single east-west corridor at y=49 that
+    // every south-wing room's north door opens onto, plus the
+    // vertical run from the lobby's new south door down to it.
+    {
+      points: [
+        [LOBBY_SOUTH_DOOR.x, LOBBY_SOUTH_DOOR.y + 1], // (18, 42) — just south of lobby south door
+        [LOBBY_SOUTH_DOOR.x, SW_TROUGH_Y],             // (18, 49) — bend
+      ],
+      width: 1,
+    },
+    {
+      points: [
+        [HIM.x + 7,    SW_TROUGH_Y], // east-west cross-corridor, anchored to HIM's door col
+        [PFS.x + 8,    SW_TROUGH_Y], // ... extends to PFS's door col
+      ],
+      width: 1,
+    },
+    // Stub from the trough down to AUDIT's north door (audit lives in
+    // its own bay one row below the upper south-wing rooms). Routes
+    // through the gap between BILLING and PFS so it doesn't punch
+    // through anyone else's wall.
+    {
+      points: [
+        [AUDIT.x + 19, SW_TROUGH_Y],     // (37, 49) — junction with trough
+        [AUDIT.x + 19, AUDIT.y - 1],     // (37, 61) — just north of AUDIT door
+      ],
+      width: 1,
+    },
   ],
 })
 
@@ -181,21 +318,54 @@ export const LEVEL_1_MAP: MapDef = {
     { name: 'REGISTRATION',     shortName: 'REG',  ...REGISTRATION },
     { name: 'ELIGIBILITY',      shortName: 'ELIG', ...ELIGIBILITY },
     { name: 'LOBBY',            shortName: 'LBY',  ...LOBBY },
+    { name: 'HIM / CODING',     shortName: 'HIM',  ...HIM },
+    { name: 'BILLING',          shortName: 'BIL',  ...BILLING },
+    { name: 'PFS / PHONES',     shortName: 'PFS',  ...PFS },
+    { name: 'AUDIT CONFERENCE', shortName: 'AUD',  ...AUDIT },
   ],
   npcPlacements: [
+    // === Always-present (level-agnostic) placements ===
     // Anjali walks in during the level-1 opening sequence and lands
     // here — directly on the player's column, three tiles north of
     // spawn, between the lobby chair rows. (The opening sequence
     // animates her in from the lobby's north door at runtime.)
     { npcId: 'anjali',   tileX: LOBBY.x + 10,        tileY: LOBBY.y + 4 },
-    { npcId: 'dana',     tileX: PATIENT_SVC.x + 6,   tileY: PATIENT_SVC.y + 4 },
     { npcId: 'kim',      tileX: REGISTRATION.x + 4,  tileY: REGISTRATION.y + 4 },
-    { npcId: 'jordan',   tileX: ELIGIBILITY.x + 5,   tileY: ELIGIBILITY.y + 3 },
-    // The remaining staff. Placed in plausible rooms so the same
-    // map can host every level's case-handing dialogues.
-    { npcId: 'pat',      tileX: REGISTRATION.x + 14, tileY: REGISTRATION.y + 4 },
-    { npcId: 'alex',     tileX: MAIN_HUB.x + 4,      tileY: MAIN_HUB.y + 4 },
-    { npcId: 'sam',      tileX: PATIENT_SVC.x + 9,   tileY: PATIENT_SVC.y + 4 },
     { npcId: 'martinez', tileX: MAIN_HUB.x + 14,     tileY: MAIN_HUB.y + 4 },
+
+    // === Per-level placements ===
+    // Dana — Patient Services for L1-9, then in the Audit conference
+    // room for the L10 boss.
+    { npcId: 'dana', tileX: PATIENT_SVC.x + 6, tileY: PATIENT_SVC.y + 4,
+      levels: [1, 2, 3, 4, 5, 6, 7, 8, 9] },
+    { npcId: 'dana', tileX: AUDIT.x + 14, tileY: AUDIT.y + 5,
+      levels: [10] },
+
+    // Jordan — Eligibility for L1-7 (covers the early-game
+    // patient-side beats), then PFS for L8 (where her phone-bank
+    // case lives).
+    { npcId: 'jordan', tileX: ELIGIBILITY.x + 5, tileY: ELIGIBILITY.y + 3,
+      levels: [1, 2, 3, 4, 5, 6, 7] },
+    { npcId: 'jordan', tileX: PFS.x + 6, tileY: PFS.y + 5,
+      levels: [8, 9, 10] },
+
+    // Pat — Registration for L1-3 (close to the coding workflow at
+    // the front), HIM for L4+ (where they actually work).
+    { npcId: 'pat', tileX: REGISTRATION.x + 14, tileY: REGISTRATION.y + 4,
+      levels: [1, 2, 3] },
+    { npcId: 'pat', tileX: HIM.x + 5, tileY: HIM.y + 5,
+      levels: [4, 5, 6, 7, 8, 9, 10] },
+
+    // Alex — Main Hub by default, Billing on L6 (where the swarm
+    // case lives).
+    { npcId: 'alex', tileX: MAIN_HUB.x + 4, tileY: MAIN_HUB.y + 4,
+      levels: [1, 2, 3, 4, 5, 7, 8, 9, 10] },
+    { npcId: 'alex', tileX: BILLING.x + 5, tileY: BILLING.y + 5,
+      levels: [6] },
+
+    // Sam — Patient Services by default (L3 / L5 / L7 cases),
+    // never moves out (the south wing all goes through her in
+    // late-game too via Reaper).
+    { npcId: 'sam', tileX: PATIENT_SVC.x + 9, tileY: PATIENT_SVC.y + 4 },
   ],
 }
