@@ -91,10 +91,14 @@ function renderPanel(): string {
     </section>
     <section>
       <div class="devp-section-h">State</div>
+      <button class="devp-btn" data-dev-action="copy-save">Copy save (JSON)</button>
+      <button class="devp-btn" data-dev-action="paste-save">Load save (paste JSON)</button>
       <button class="devp-btn warn" data-dev-action="clear-save">Clear save</button>
     </section>
   `
 }
+
+const SAVE_KEY = 'denial_dungeon_save'
 
 function handleAction(action: string, arg?: string) {
   const game = (window as any).__PHASER_GAME__ as Phaser.Game | undefined
@@ -126,13 +130,64 @@ function handleAction(action: string, arg?: string) {
     }
     case 'clear-save': {
       try {
-        localStorage.removeItem('twr-save')
-        // eslint-disable-next-line no-alert
+        localStorage.removeItem(SAVE_KEY)
         alert('Save cleared. Reload to start fresh.')
       } catch {}
       return
     }
+    case 'copy-save': {
+      try {
+        const raw = localStorage.getItem(SAVE_KEY) ?? ''
+        if (!raw) {
+          alert('No save in localStorage.')
+          return
+        }
+        // Pretty-print so it's readable when pasted into a doc/snippet.
+        const pretty = JSON.stringify(JSON.parse(raw), null, 2)
+        navigator.clipboard.writeText(pretty).then(
+          () => alert('Save copied to clipboard.'),
+          () => {
+            // Fallback: show in a textarea the user can manually copy
+            // from. Some browsers (or non-https contexts) reject
+            // navigator.clipboard.
+            promptCopyFallback(pretty)
+          },
+        )
+      } catch (err) {
+        alert('Could not read save: ' + (err as Error).message)
+      }
+      return
+    }
+    case 'paste-save': {
+      const incoming = prompt('Paste a save JSON blob:')
+      if (!incoming) return
+      try {
+        // Validate it's parseable JSON before writing.
+        JSON.parse(incoming)
+        localStorage.setItem(SAVE_KEY, incoming)
+        if (confirm('Save loaded. Reload now?')) {
+          location.reload()
+        }
+      } catch (err) {
+        alert('Invalid JSON: ' + (err as Error).message)
+      }
+      return
+    }
   }
+}
+
+function promptCopyFallback(text: string) {
+  const ta = document.createElement('textarea')
+  ta.value = text
+  ta.style.cssText =
+    'position:fixed; inset:50% 0 0 50%; transform:translate(-50%,-50%); ' +
+    'width:560px; height:300px; z-index:9999; padding:8px; ' +
+    'font:11px/1.4 ui-monospace, Menlo, monospace; background:#0e1420; ' +
+    'color:#d8dee9; border:1px solid #2a3142;'
+  document.body.appendChild(ta)
+  ta.select()
+  alert("Couldn't copy automatically. Hit Cmd/Ctrl-C to copy from the textarea, then click OK to dismiss.")
+  ta.remove()
 }
 
 function stopAllScenes(sm: Phaser.Scenes.SceneManager) {

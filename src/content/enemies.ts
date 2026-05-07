@@ -1,6 +1,27 @@
 import type { Encounter } from '../types'
 
 export const ENCOUNTERS: Record<string, Encounter> = {
+  intro_wrong_card: {
+    id: 'intro_wrong_card',
+    title: 'The Wrong Card',
+    description:
+      'Anjali handed her husband\'s card to the registrar. The claim went out under his subscriber id and bounced. One amend on Box 1a fixes it.',
+    surfaceSymptom: 'Patient cannot be identified as our insured',
+    rootCause: 'patient',
+    carcCode: 'CO-31',
+    carcName: 'Patient cannot be identified as our insured',
+    watchpoint: 'The 271 eligibility response is the source of truth — not the card photocopy.',
+    level: 1,
+    archetype: 'Wrong Card',
+    wing: 'eligibility',
+    codexOnSight: 'obstacle_intro_wrong_card',
+    puzzleSpecId: 'intro',
+    cashRecovered: 387,
+    caseId: 'case_intro_patel',
+    highlightedBoxes: ['1a'],
+    payerNote:
+      'Subscriber AET447821903 (PATEL, RAVI) — dependent ANJALI PATEL listed under separate subscriber id AET447821491. Resubmit with Box 1a corrected.',
+  },
   co_50: {
     id: 'co_50',
     title: 'Medical Necessity Wraith',

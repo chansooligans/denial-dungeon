@@ -33,6 +33,10 @@ const DEFAULT_STATE: GameState = {
   wingsUnlocked: ['eligibility'],
   obstaclesSeen: [],
   formsPerfected: [],
+  introOpeningPlayed: false,
+  firstWrArrivalNarrationPlayed: false,
+  anjaliThanked: false,
+  pendingAnjaliLeave: false,
 }
 
 let currentState: GameState = loadFromStorage() ?? structuredClone(DEFAULT_STATE)
@@ -61,6 +65,10 @@ function migrateState(loaded: Partial<GameState> & Record<string, unknown>): Gam
   merged.defeatedObstacles ??= []
   merged.obstaclesSeen ??= []
   merged.formsPerfected ??= []
+  merged.introOpeningPlayed ??= false
+  merged.firstWrArrivalNarrationPlayed ??= false
+  merged.anjaliThanked ??= false
+  merged.pendingAnjaliLeave ??= false
   merged.wingsUnlocked ??= base.wingsUnlocked
   merged.tools ??= []
   // Top up the tool list with any missing default tools. Players don't
@@ -132,7 +140,7 @@ export function newGame() {
  * after 2 defeats, out of level 2 after 4 cumulative defeats, etc.
  */
 export const LEVEL_DEFEAT_THRESHOLD: number[] = [
-  2,  // L1 → 2 defeats to advance
+  1,  // L1 → 1 defeat to advance (intro is dialogue-driven; only one case for now)
   4,  // L2 → 4 cumulative
   6,  // L3 → 6
   8,  // L4 → 8

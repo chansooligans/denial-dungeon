@@ -156,8 +156,15 @@ export interface DialogueEffect {
   cashDelta?: number
   addTool?: string
   unlockCodex?: string
-  triggerBattle?: string
   triggerForm?: string
+  /**
+   * Drop the player into the Waiting Room with one specific obstacle
+   * active. Used for NPC-handed cases — the conversation summons the
+   * descent, the player walks the WR to the lit obstacle, engages it,
+   * and the puzzle launches from there. The obstacle's spec is looked
+   * up via ENCOUNTERS[encounterId].puzzleSpecId.
+   */
+  triggerDescent?: { encounterId: string }
 }
 
 export interface DialogueNode {
@@ -403,6 +410,35 @@ export interface GameState {
    * announcement on next entry.
    */
   pendingLevelBanner?: number | null
+  /**
+   * One-shot signal from a dialogue handoff. When set, HospitalScene
+   * picks it up on the next `resume` and plays the descent animation
+   * into WaitingRoomScene with this encounter as the active one.
+   * Cleared after consumption.
+   */
+  pendingDescent?: { encounterId: string } | null
+  /**
+   * Player tile to spawn at on the next Hospital `create()`. Set
+   * before descending so the player returns to where they were
+   * standing, not to the level's `playerStart`. Cleared after use.
+   */
+  pendingHospitalSpawn?: { x: number; y: number } | null
+  /**
+   * Has the level-1 in-game opening sequence (intern narration +
+   * Anjali walking in + auto-dialogue) played yet? Set true once the
+   * sequence finishes so it never replays. Distinct from the cinematic
+   * IntroScene (which is replayable from the title screen).
+   */
+  introOpeningPlayed?: boolean
+  /** First time the player ever lands in the WR — show the surreal-
+   *  reveal narration ("You are somewhere else…") on arrival. */
+  firstWrArrivalNarrationPlayed?: boolean
+  /** Has Anjali said her thanks after the intro case was solved?
+   *  One-shot — once true, she's left the lobby. */
+  anjaliThanked?: boolean
+  /** Set when the thanks dialogue closes; the next Hospital `resume`
+   *  picks it up and animates Anjali walking out. */
+  pendingAnjaliLeave?: boolean
 }
 
 export interface Decision {

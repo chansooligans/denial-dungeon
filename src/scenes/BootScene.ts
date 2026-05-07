@@ -2,6 +2,29 @@ import Phaser from 'phaser'
 import { FACTION_COLOR } from '../types'
 import type { Faction } from '../types'
 
+/** Mix a hex color toward white by `amt` (0..1). Used for highlight ramps. */
+function lighten(hex: number, amt: number): number {
+  const r = (hex >> 16) & 0xff
+  const g = (hex >> 8) & 0xff
+  const b = hex & 0xff
+  return (
+    (Math.min(255, Math.round(r + (255 - r) * amt)) << 16) |
+    (Math.min(255, Math.round(g + (255 - g) * amt)) << 8) |
+    Math.min(255, Math.round(b + (255 - b) * amt))
+  )
+}
+/** Mix a hex color toward black by `amt` (0..1). Used for shadow ramps. */
+function darken(hex: number, amt: number): number {
+  const r = (hex >> 16) & 0xff
+  const g = (hex >> 8) & 0xff
+  const b = hex & 0xff
+  return (
+    (Math.max(0, Math.round(r * (1 - amt))) << 16) |
+    (Math.max(0, Math.round(g * (1 - amt))) << 8) |
+    Math.max(0, Math.round(b * (1 - amt)))
+  )
+}
+
 export class BootScene extends Phaser.Scene {
   constructor() {
     super('Boot')
@@ -34,50 +57,285 @@ export class BootScene extends Phaser.Scene {
     this.makeEncounterPortraits()
   }
 
-  private drawCharacter(g: Phaser.GameObjects.Graphics, shirt: number, hair: number, skin: number) {
-    // Hair (top of head + sides)
+  /**
+   * Higher-fidelity 32×32 character draw. More pixels per element so
+   * each character can carry recognizable features (eye shape, hair
+   * texture, collar, pant fold) instead of reading as a colored
+   * rectangle. Generic NPC body — accessories are added on top by
+   * the caller.
+   */
+  private drawCharacter(
+    g: Phaser.GameObjects.Graphics,
+    shirt: number,
+    hair: number,
+    skin: number,
+    pants = 0x1a1a2e,
+  ) {
+    const HAIR_DARK = darken(hair, 0.5)
+    const SHIRT_HI = lighten(shirt, 0.18)
+    const SHIRT_LO = darken(shirt, 0.25)
+    const SKIN_LO = darken(skin, 0.18)
+    const PANTS_LO = darken(pants, 0.35)
+    const SHOE = 0x1a1208
+    const EYE = 0x1a1a2e
+    const MOUTH = 0x6a3030
+
+    // -- Head dome / hair cap --
     g.fillStyle(hair)
-    g.fillRect(4, 0, 8, 3)
-    g.fillRect(3, 1, 1, 3)
-    g.fillRect(12, 1, 1, 3)
-    // Head
+    g.fillRect(11, 1, 10, 2)
+    g.fillRect(9, 2, 14, 2)
+    g.fillRect(8, 3, 16, 4)
+    g.fillRect(7, 4, 1, 5)
+    g.fillRect(24, 4, 1, 5)
+    g.fillStyle(HAIR_DARK)
+    g.fillRect(8, 7, 16, 1) // hair shadow strip above forehead
+
+    // -- Face --
     g.fillStyle(skin)
-    g.fillRect(4, 2, 8, 6)
-    // Eyes
-    g.fillStyle(0x1a1a2e)
-    g.fillRect(5, 4, 2, 2)
-    g.fillRect(9, 4, 2, 2)
-    // Eye highlights
+    g.fillRect(9, 8, 14, 8)
+    // Cheek shading
+    g.fillStyle(SKIN_LO)
+    g.fillRect(9, 14, 14, 1)
+
+    // -- Eyes --
     g.fillStyle(0xffffff)
-    g.fillRect(5, 4, 1, 1)
-    g.fillRect(9, 4, 1, 1)
-    // Torso
+    g.fillRect(11, 10, 3, 2) // left eye white
+    g.fillRect(18, 10, 3, 2) // right eye white
+    g.fillStyle(EYE)
+    g.fillRect(12, 10, 2, 2) // left iris
+    g.fillRect(19, 10, 2, 2) // right iris
+    g.fillStyle(0xffffff)
+    g.fillRect(12, 10, 1, 1) // left highlight
+    g.fillRect(19, 10, 1, 1) // right highlight
+
+    // -- Mouth --
+    g.fillStyle(MOUTH)
+    g.fillRect(14, 14, 4, 1)
+
+    // -- Neck --
+    g.fillStyle(SKIN_LO)
+    g.fillRect(13, 16, 6, 1)
+
+    // -- Torso (shirt) --
     g.fillStyle(shirt)
-    g.fillRect(3, 8, 10, 5)
-    // Shirt highlight
-    g.fillStyle(0xffffff, 0.12)
-    g.fillRect(4, 8, 4, 2)
-    // Arms
+    g.fillRect(6, 17, 20, 9)
+    // Shoulder slope
+    g.fillStyle(SHIRT_LO)
+    g.fillRect(6, 17, 1, 9)
+    g.fillRect(25, 17, 1, 9)
+    // Collar V
+    g.fillStyle(SHIRT_LO)
+    g.fillRect(15, 17, 2, 2)
+    g.fillStyle(skin)
+    g.fillRect(15, 17, 2, 1)
+    // Light highlight on the chest
+    g.fillStyle(SHIRT_HI, 1)
+    g.fillRect(8, 18, 5, 4)
+
+    // -- Arms --
     g.fillStyle(shirt)
-    g.fillRect(1, 8, 2, 4)
-    g.fillRect(13, 8, 2, 4)
+    g.fillRect(4, 17, 2, 8)
+    g.fillRect(26, 17, 2, 8)
+    g.fillStyle(SHIRT_LO)
+    g.fillRect(4, 24, 2, 1)
+    g.fillRect(26, 24, 2, 1)
     // Hands
     g.fillStyle(skin)
-    g.fillRect(1, 12, 2, 1)
-    g.fillRect(13, 12, 2, 1)
-    // Pants
-    g.fillStyle(0x2a323d)
-    g.fillRect(4, 13, 3, 3)
-    g.fillRect(9, 13, 3, 3)
+    g.fillRect(4, 25, 2, 2)
+    g.fillRect(26, 25, 2, 2)
+    g.fillStyle(SKIN_LO)
+    g.fillRect(4, 26, 2, 1)
+    g.fillRect(26, 26, 2, 1)
+
+    // -- Pants --
+    g.fillStyle(pants)
+    g.fillRect(8, 26, 7, 5)
+    g.fillRect(17, 26, 7, 5)
+    g.fillStyle(PANTS_LO)
+    g.fillRect(8, 30, 7, 1) // pant cuff
+    g.fillRect(17, 30, 7, 1)
+
+    // -- Shoes --
+    g.fillStyle(SHOE)
+    g.fillRect(8, 31, 7, 1)
+    g.fillRect(17, 31, 7, 1)
   }
 
   private makePlayerSprite() {
+    // Protagonist matches the intro cover + page-5 illustration:
+    // young woman, dark brown hair tied up in a messy bun, pale skin,
+    // warm sepia sweater, dark trousers, hospital ID badge.
+    //
+    // Three textures: 'player' (front/down), 'player_up' (back),
+    // 'player_side' (profile facing right; flipped via setFlipX for
+    // left-facing). Movement code swaps the texture based on the last
+    // direction the player walked.
+    this.makePlayerDirection('player', 'down')
+    this.makePlayerDirection('player_up', 'up')
+    this.makePlayerDirection('player_side', 'side')
+  }
+
+  private makePlayerDirection(key: string, dir: 'down' | 'up' | 'side') {
     const g = this.make.graphics({ x: 0, y: 0 })
-    this.drawCharacter(g, 0x4a9e8e, 0x3a3a3a, 0xf5deb3)
-    // Badge on shirt
-    g.fillStyle(0xf4d06f)
-    g.fillRect(10, 9, 2, 2)
-    g.generateTexture('player', 16, 16)
+    const HAIR = 0x2a1a0e
+    const HAIR_HI = lighten(HAIR, 0.18)
+    const HAIR_LO = darken(HAIR, 0.4)
+    const SKIN = 0xf0d9be
+    const SKIN_LO = darken(SKIN, 0.18)
+    const SWEATER = 0x5a4030
+    const SWEATER_HI = lighten(SWEATER, 0.16)
+    const SWEATER_LO = darken(SWEATER, 0.28)
+    const PANTS = 0x1a1a2e
+    const PANTS_LO = darken(PANTS, 0.4)
+    const SHOE = 0x1a1208
+    const EYE = 0x1a1a2e
+    const MOUTH = 0x6a3030
+
+    // Messy bun on top of the head (visible from every angle).
+    g.fillStyle(HAIR)
+    g.fillRect(14, 0, 4, 2)
+    g.fillRect(13, 1, 6, 1)
+    g.fillStyle(HAIR_HI)
+    g.fillRect(15, 0, 2, 1)
+    // Stray hair strands escaping the bun
+    g.fillStyle(HAIR_LO)
+    g.fillRect(11, 1, 1, 2)
+    g.fillRect(20, 1, 1, 2)
+
+    if (dir === 'up') {
+      // Back of head: hair covers the face area entirely + side strands.
+      g.fillStyle(HAIR)
+      g.fillRect(11, 2, 10, 2)
+      g.fillRect(9, 3, 14, 4)
+      g.fillRect(8, 4, 16, 11)
+      g.fillRect(7, 6, 1, 7)
+      g.fillRect(24, 6, 1, 7)
+      g.fillStyle(HAIR_LO)
+      g.fillRect(8, 14, 16, 1) // shadow at the nape
+      // Tiny strip of skin where the neck peeks out
+      g.fillStyle(SKIN_LO)
+      g.fillRect(13, 15, 6, 2)
+    } else if (dir === 'side') {
+      // Profile facing right. Hair on the left half (back of head),
+      // face/skin on the right. One eye visible on the right.
+      g.fillStyle(HAIR)
+      g.fillRect(8, 3, 16, 4) // hair cap
+      g.fillRect(7, 4, 1, 9)
+      g.fillRect(8, 4, 8, 12) // back of head all hair
+      g.fillStyle(SKIN)
+      g.fillRect(16, 8, 8, 8) // face (right side only)
+      // Bangs falling
+      g.fillStyle(HAIR)
+      g.fillRect(16, 6, 8, 2)
+      g.fillRect(22, 8, 2, 3)
+      // Single eye + brow
+      g.fillStyle(0xffffff)
+      g.fillRect(19, 10, 3, 2)
+      g.fillStyle(EYE)
+      g.fillRect(20, 10, 2, 2)
+      g.fillStyle(0xffffff)
+      g.fillRect(20, 10, 1, 1)
+      g.fillStyle(MOUTH)
+      g.fillRect(21, 14, 2, 1)
+      // Neck
+      g.fillStyle(SKIN_LO)
+      g.fillRect(16, 16, 6, 1)
+    } else {
+      // Front (down)
+      g.fillStyle(HAIR)
+      g.fillRect(11, 2, 10, 2) // crown
+      g.fillRect(9, 3, 14, 2)
+      g.fillRect(8, 4, 16, 4)
+      g.fillRect(7, 5, 1, 7)
+      g.fillRect(24, 5, 1, 7)
+      g.fillRect(8, 7, 16, 1) // bangs across forehead
+      g.fillRect(7, 12, 1, 2) // wisp by left ear
+      g.fillRect(24, 12, 1, 2) // wisp by right ear
+      g.fillStyle(HAIR_LO)
+      g.fillRect(8, 7, 16, 1) // bang shadow
+      // Face
+      g.fillStyle(SKIN)
+      g.fillRect(9, 8, 14, 8)
+      g.fillStyle(SKIN_LO)
+      g.fillRect(9, 14, 14, 1) // cheek shading
+      // Eyes
+      g.fillStyle(0xffffff)
+      g.fillRect(11, 10, 3, 2)
+      g.fillRect(18, 10, 3, 2)
+      g.fillStyle(EYE)
+      g.fillRect(12, 10, 2, 2)
+      g.fillRect(19, 10, 2, 2)
+      g.fillStyle(0xffffff)
+      g.fillRect(12, 10, 1, 1)
+      g.fillRect(19, 10, 1, 1)
+      // Mouth
+      g.fillStyle(MOUTH)
+      g.fillRect(14, 14, 4, 1)
+      // Neck
+      g.fillStyle(SKIN_LO)
+      g.fillRect(13, 16, 6, 1)
+    }
+
+    // -- Sweater (torso) --
+    g.fillStyle(SWEATER)
+    g.fillRect(6, 17, 20, 9)
+    g.fillStyle(SWEATER_LO)
+    g.fillRect(6, 17, 1, 9)
+    g.fillRect(25, 17, 1, 9)
+    if (dir === 'down') {
+      // Collar V + ID lanyard hint
+      g.fillStyle(SWEATER_LO)
+      g.fillRect(15, 17, 2, 2)
+      g.fillStyle(SKIN)
+      g.fillRect(15, 17, 2, 1)
+      // Highlight stripe
+      g.fillStyle(SWEATER_HI)
+      g.fillRect(8, 18, 5, 4)
+      // Hospital ID badge (yellow)
+      g.fillStyle(0xf4d06f)
+      g.fillRect(18, 21, 3, 3)
+      g.fillStyle(0xc28a3e)
+      g.fillRect(18, 23, 3, 1)
+    } else if (dir === 'up') {
+      // Spine shadow
+      g.fillStyle(SWEATER_LO)
+      g.fillRect(15, 17, 2, 9)
+    } else {
+      // Side: highlight on the front side, shadow on the back
+      g.fillStyle(SWEATER_HI)
+      g.fillRect(15, 18, 8, 5)
+      g.fillStyle(SWEATER_LO)
+      g.fillRect(7, 18, 4, 6)
+    }
+
+    // -- Arms / hands --
+    g.fillStyle(SWEATER)
+    g.fillRect(4, 17, 2, 8)
+    g.fillRect(26, 17, 2, 8)
+    g.fillStyle(SWEATER_LO)
+    g.fillRect(4, 24, 2, 1)
+    g.fillRect(26, 24, 2, 1)
+    g.fillStyle(SKIN)
+    g.fillRect(4, 25, 2, 2)
+    g.fillRect(26, 25, 2, 2)
+    g.fillStyle(SKIN_LO)
+    g.fillRect(4, 26, 2, 1)
+    g.fillRect(26, 26, 2, 1)
+
+    // -- Pants --
+    g.fillStyle(PANTS)
+    g.fillRect(8, 26, 7, 5)
+    g.fillRect(17, 26, 7, 5)
+    g.fillStyle(PANTS_LO)
+    g.fillRect(8, 30, 7, 1)
+    g.fillRect(17, 30, 7, 1)
+
+    // -- Shoes --
+    g.fillStyle(SHOE)
+    g.fillRect(8, 31, 7, 1)
+    g.fillRect(17, 31, 7, 1)
+
+    g.generateTexture(key, 32, 32)
     g.destroy()
   }
 
@@ -94,21 +352,30 @@ export class BootScene extends Phaser.Scene {
       { key: 'npc_carl', shirt: 0x6a6a6a, hair: 0x5a5a5a, skin: 0xf5deb3 },
       { key: 'npc_chen', shirt: 0x4a4a7a, hair: 0x1a1a1a, skin: 0xf0c8a0 },
       { key: 'npc_rivera', shirt: 0x2a4a6a, hair: 0x3a3a3a, skin: 0xc68642 },
+      // Patient (Anjali) — softer palette than staff so the visitor reads
+      // as a visitor, not as another desk.
+      { key: 'npc_anjali', shirt: 0xb8d4e8, hair: 0x2a1a0e, skin: 0xc8a070 },
     ]
 
     for (const npc of npcs) {
       const g = this.make.graphics({ x: 0, y: 0 })
       this.drawCharacter(g, npc.shirt, npc.hair, npc.skin)
       if (npc.accessory === 'glasses') {
-        g.lineStyle(1, 0xc0c0c0)
-        g.strokeRect(4, 3, 4, 3)
-        g.strokeRect(8, 3, 4, 3)
+        g.lineStyle(1, 0xe0e0e0)
+        g.strokeRect(11, 9, 4, 4)
+        g.strokeRect(17, 9, 4, 4)
+        g.lineBetween(15, 11, 17, 11) // bridge
       } else if (npc.accessory === 'stethoscope') {
-        g.lineStyle(1, 0x808890)
-        g.lineBetween(7, 8, 7, 10)
-        g.lineBetween(9, 8, 9, 10)
+        // Tubing draped around the neck, dipping into the chest
+        g.lineStyle(1, 0x9098a0)
+        g.lineBetween(13, 16, 13, 21)
+        g.lineBetween(19, 16, 19, 21)
+        g.lineBetween(13, 21, 16, 24)
+        g.lineBetween(19, 21, 16, 24)
+        g.fillStyle(0x6a7280)
+        g.fillRect(15, 24, 3, 2) // bell
       }
-      g.generateTexture(npc.key, 16, 16)
+      g.generateTexture(npc.key, 32, 32)
       g.destroy()
     }
   }

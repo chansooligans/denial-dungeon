@@ -4,7 +4,17 @@ import { LEVELS } from '../content/levels'
 import { HOSPITAL_MAP } from '../content/maps'
 import type { MapDef } from '../content/maps'
 import { getState, saveGame, consumePendingLevelBanner } from '../state'
+import { showNarration } from './narration'
+import { isTouchDevice } from './device'
+import { ENCOUNTERS } from '../content/enemies'
+import { PUZZLE_SPECS } from '../runtime/puzzle/specs'
 import type { NPC } from '../types'
+
+function esc(s: string): string {
+  return String(s).replace(/[&<>"']/g, ch => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[ch] ?? ch))
+}
 
 const TILE = 32
 
@@ -112,8 +122,18 @@ export class HospitalScene extends Phaser.Scene {
     const state = getState()
     this.mapDef = HOSPITAL_MAP
 
-    this.playerTileX = this.mapDef.playerStart.x
-    this.playerTileY = this.mapDef.playerStart.y
+    // If we're returning from a puzzle round-trip (NPC handed us a case
+    // → descended → solved → coming back), respawn at the saved tile
+    // so the player wakes up next to whoever they were talking to.
+    const wasReturnFromWr = state.pendingHospitalSpawn != null
+    if (state.pendingHospitalSpawn) {
+      this.playerTileX = state.pendingHospitalSpawn.x
+      this.playerTileY = state.pendingHospitalSpawn.y
+      state.pendingHospitalSpawn = null
+    } else {
+      this.playerTileX = this.mapDef.playerStart.x
+      this.playerTileY = this.mapDef.playerStart.y
+    }
     this.canMove = true
     this.npcSprites = []
     this.currentRoomId = -1
@@ -158,8 +178,32 @@ export class HospitalScene extends Phaser.Scene {
     this.enterRoomAt(this.playerTileX, this.playerTileY)
 
     this.events.on('resume', () => {
+      // Always re-enable movement first — interact() set canMove=false
+      // when it launched the dialogue, and descendThroughGap below
+      // expects canMove to be true (it early-returns otherwise).
       this.canMove = true
       this.refreshHUD()
+      // A dialogue handoff may have flagged a descent. Save the
+      // player's current position so we can return them here. Show
+      // the claim preview first (player gets to see what's broken
+      // before falling), then descend.
+      const s = getState()
+      if (s.pendingDescent) {
+        const descent = s.pendingDescent
+        s.pendingDescent = null
+        s.pendingHospitalSpawn = { x: this.playerTileX, y: this.playerTileY }
+        saveGame()
+        this.canMove = false
+        this.showClaimPreview(descent.encounterId, () => {
+          this.descendThroughGap(descent.encounterId)
+        })
+      }
+      // After the thanks dialogue closes, walk Anjali out.
+      if (s.pendingAnjaliLeave) {
+        s.pendingAnjaliLeave = false
+        saveGame()
+        this.runAnjaliLeave()
+      }
     })
 
     // Level-1 atmosphere: occasionally a sheet of paper scuttles across
@@ -169,8 +213,25 @@ export class HospitalScene extends Phaser.Scene {
       this.scheduleGhostPaper()
     }
 
+    // First-time level-1 opening: narrate the intern's situation, walk
+    // Anjali into the lobby, auto-launch her dialogue. Runs once per
+    // save (gated by state.introOpeningPlayed).
+    if (!state.introOpeningPlayed && state.currentLevel === 1) {
+      this.runOpeningSequence()
+    } else if (wasReturnFromWr) {
+      // Returning from a puzzle round-trip. If the case Anjali handed
+      // over has been solved and she hasn't said her piece yet, auto-
+      // launch the thank-you dialogue so the moment doesn't depend on
+      // the player walking back to her.
+      this.maybeRunAnjaliThanks()
+    }
+
     // Mobile / accessibility: parallel scene with virtual D-pad + E + ESC.
-    if (!this.scene.isActive('TouchOverlay')) this.scene.launch('TouchOverlay')
+    // Only launched on touch-primary devices — desktop keyboards don't
+    // need the on-screen controls cluttering the view.
+    if (isTouchDevice() && !this.scene.isActive('TouchOverlay')) {
+      this.scene.launch('TouchOverlay')
+    }
     // Deferred stop: when this scene shuts down, defer to the next tick
     // so the next scene has had a chance to start. If we're transitioning
     // to another scene that also wants the overlay (Hospital ⇄ WaitingRoom),
@@ -353,7 +414,7 @@ export class HospitalScene extends Phaser.Scene {
       this.playerTileX * TILE + TILE / 2,
       this.playerTileY * TILE + TILE / 2,
       'player'
-    ).setScale(2).setDepth(10)
+    ).setScale(1).setDepth(10)
   }
 
   private placeNPCs() {
@@ -369,7 +430,7 @@ export class HospitalScene extends Phaser.Scene {
       const px = p.tileX * TILE + TILE / 2
       const py = p.tileY * TILE + TILE / 2
 
-      const sprite = this.add.image(px, py, npc.spriteKey).setScale(2).setDepth(5).setAlpha(0)
+      const sprite = this.add.image(px, py, npc.spriteKey).setScale(1).setDepth(5).setAlpha(0)
 
       const label = this.add.text(px, py - 22, npc.name, {
         fontSize: '8px', fontFamily: 'monospace', color: '#7ee2c1',
@@ -377,6 +438,232 @@ export class HospitalScene extends Phaser.Scene {
 
       this.npcSprites.push({ sprite, npc, label, tileX: p.tileX, tileY: p.tileY })
     }
+  }
+
+  /**
+   * Level-1 opening: narrate the intern's mood, walk Anjali in from the
+   * lobby's north door, auto-launch her dialogue. Runs once per save.
+   */
+  private runOpeningSequence() {
+    const anjali = this.npcSprites.find(n => n.npc.id === 'anjali')
+    if (!anjali) return
+
+    // Stash her destination, hide her until the narration ends.
+    const destX = anjali.tileX * TILE + TILE / 2
+    const destY = anjali.tileY * TILE + TILE / 2
+    anjali.sprite.setVisible(false)
+    anjali.label.setVisible(false)
+
+    this.canMove = false
+
+    // Establish Dana through her notebook. The intern has never met her
+    // — she's a presence-through-absence, a previous occupant of this
+    // desk who left guidance behind. Sets up the briefing card as
+    // "Dana's notebook" rather than an in-ear voice from a stranger.
+    showNarration(this, [
+      'There’s a notebook on your desk. Not yours.',
+      'Someone named Dana wrote in it.',
+      'Underlines, arrows. Things that don’t quite make sense yet.',
+    ], () => {
+      this.startAnjaliEntrance(anjali, destX, destY)
+    }, { ignoreCameras: [this.cameras.main] })
+  }
+
+  private startAnjaliEntrance(
+    anjali: NPCSprite,
+    destX: number,
+    destY: number,
+  ) {
+    this.time.delayedCall(400, () => {
+      // Anjali enters from the lobby's north door and walks south to
+      // her placement tile. Door tile is the player's spawn column,
+      // y=32 (LOBBY's top edge).
+      const startX = this.mapDef.playerStart.x * TILE + TILE / 2
+      const startY = 32 * TILE + TILE / 2
+      anjali.sprite.setPosition(startX, startY)
+      anjali.label.setPosition(startX, startY - 22)
+      anjali.sprite.setVisible(true).setAlpha(0)
+      anjali.label.setVisible(true).setAlpha(0)
+      anjali.sprite.setTexture('npc_anjali')
+
+      this.tweens.add({
+        targets: [anjali.sprite, anjali.label],
+        alpha: 1,
+        duration: 350,
+      })
+      // Walk the sprite down the lobby aisle.
+      this.tweens.add({
+        targets: anjali.sprite,
+        x: destX,
+        y: destY,
+        duration: 1700,
+        delay: 200,
+        ease: 'Sine.easeInOut',
+      })
+      // Label tracks the sprite, offset 22px above it.
+      this.tweens.add({
+        targets: anjali.label,
+        x: destX,
+        y: destY - 22,
+        duration: 1700,
+        delay: 200,
+        ease: 'Sine.easeInOut',
+        onComplete: () => {
+          // Mark the sequence done so it doesn't replay.
+          const s = getState()
+          s.introOpeningPlayed = true
+          saveGame()
+          // Auto-launch the dialogue, mirroring what interact() does.
+          this.canMove = false
+          this.scene.pause()
+          this.scene.launch('Dialogue', {
+            dialogueKey: 'anjali_intro',
+            callingScene: 'Hospital',
+          })
+        },
+      })
+    })
+  }
+
+  /**
+   * Auto-launch Anjali's thank-you dialogue if she's still here, the
+   * intro case is solved, and we haven't done it yet. Fires on the
+   * Hospital scene's create() right after a return-from-WR.
+   */
+  private maybeRunAnjaliThanks() {
+    const state = getState()
+    if (state.anjaliThanked) return
+    if (!state.defeatedObstacles.includes('intro_wrong_card')) return
+    const anjali = this.npcSprites.find(n => n.npc.id === 'anjali')
+    if (!anjali) return
+
+    this.canMove = false
+    this.time.delayedCall(700, () => {
+      this.scene.pause()
+      this.scene.launch('Dialogue', {
+        dialogueKey: 'anjali_thanks',
+        callingScene: 'Hospital',
+        onComplete: () => {
+          // Mark thanked + flag the leave; the resume handler will
+          // pick up pendingAnjaliLeave and run the walk-out.
+          const s = getState()
+          s.anjaliThanked = true
+          s.pendingAnjaliLeave = true
+          saveGame()
+        },
+      })
+    })
+  }
+
+  /** Walk Anjali back out the lobby's north door, fading as she goes,
+   *  then drop her sprite + label so she stops being engageable. */
+  private runAnjaliLeave() {
+    const anjali = this.npcSprites.find(n => n.npc.id === 'anjali')
+    if (!anjali) return
+    this.canMove = false
+    const exitX = this.mapDef.playerStart.x * TILE + TILE / 2
+    const exitY = (32 - 1) * TILE + TILE / 2
+    this.tweens.add({
+      targets: anjali.sprite,
+      x: exitX,
+      y: exitY,
+      alpha: 0,
+      duration: 1500,
+      ease: 'Sine.easeIn',
+      onComplete: () => {
+        anjali.sprite.destroy()
+        anjali.label.destroy()
+        this.npcSprites = this.npcSprites.filter(n => n.npc.id !== 'anjali')
+        this.canMove = true
+      },
+    })
+    this.tweens.add({
+      targets: anjali.label,
+      x: exitX,
+      y: exitY - 22,
+      alpha: 0,
+      duration: 1500,
+      ease: 'Sine.easeIn',
+    })
+  }
+
+  /**
+   * Brief read-only claim preview before the descent fires. The player
+   * sees what's broken on the bill, the panel CSS-blurs out, then the
+   * descent animation kicks in. Total ~2.2s.
+   */
+  private showClaimPreview(encounterId: string, onComplete: () => void) {
+    const enc = ENCOUNTERS[encounterId]
+    const spec = enc?.puzzleSpecId ? PUZZLE_SPECS[enc.puzzleSpecId] : undefined
+    if (!spec || !spec.claim) {
+      onComplete()
+      return
+    }
+    const c = spec.claim
+    const carc = enc.carcCode ? `${enc.carcCode} — ${enc.carcName ?? ''}`.trim() : 'CLAIM REJECTED'
+    const dxLines = c.diagnoses.map(d => `<div>Dx: ${esc(d.code)}${d.label ? ' — ' + esc(d.label) : ''}</div>`).join('')
+    const lineRows = c.serviceLines.map(line => {
+      const cpt = `${esc(line.cptCode)}${line.cptLabel ? ' — ' + esc(line.cptLabel) : ''}`
+      return `<div>${esc(line.dos)} · POS ${esc(line.pos)} · ${cpt} · ${esc(line.charges)}</div>`
+    }).join('')
+    const html = `
+      <div class="panel">
+        <div class="h">CMS-1500 · ${esc(c.claimId)}</div>
+        <div>Patient: ${esc(c.patientName)} · ${esc(c.patientDob)}</div>
+        <div>Insurer: ${esc(c.insurer)} · ${esc(c.insuredId)}</div>
+        ${dxLines}
+        ${lineRows}
+        <div class="denied">DENIED · ${esc(carc)}</div>
+      </div>
+    `
+
+    const STYLE_ID = '__claim_preview_style__'
+    const OVERLAY_ID = '__claim_preview__'
+    let style = document.getElementById(STYLE_ID) as HTMLStyleElement | null
+    if (!style) {
+      style = document.createElement('style')
+      style.id = STYLE_ID
+      // 5s total: 2s sharp, 3s blur-out (40% / 60% split).
+      style.textContent = `
+        #${OVERLAY_ID} {
+          position: fixed; inset: 0; z-index: 800;
+          display: flex; align-items: center; justify-content: center;
+          background: rgba(10, 12, 18, 0.78);
+          animation: claim-preview-blur 5000ms forwards;
+        }
+        #${OVERLAY_ID} .panel {
+          background: #f5e6c8; color: #1a1208;
+          border: 1px solid #2a1a0e; border-radius: 6px;
+          padding: 22px 28px; max-width: 480px;
+          font: 13px/1.55 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+          box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+        }
+        #${OVERLAY_ID} .h {
+          font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+          border-bottom: 1px dashed #2a1a0e; padding-bottom: 6px; margin-bottom: 8px;
+        }
+        #${OVERLAY_ID} .denied {
+          color: #b13050; font-weight: 700; margin-top: 10px;
+          letter-spacing: 0.04em;
+        }
+        @keyframes claim-preview-blur {
+          0%   { filter: blur(0); opacity: 1; }
+          40%  { filter: blur(0); opacity: 1; }
+          100% { filter: blur(14px); opacity: 0; }
+        }
+      `
+      document.head.appendChild(style)
+    }
+    const overlay = document.createElement('div')
+    overlay.id = OVERLAY_ID
+    overlay.innerHTML = html
+    document.body.appendChild(overlay)
+
+    this.time.delayedCall(5000, () => {
+      overlay.remove()
+      style?.remove()
+      onComplete()
+    })
   }
 
   private setupInput() {
@@ -475,6 +762,19 @@ export class HospitalScene extends Phaser.Scene {
     this.checkNpcProximity()
   }
 
+  /** Swap the player texture based on the direction they're moving. */
+  private faceDirection(dx: number, dy: number) {
+    if (dx > 0) {
+      this.player.setTexture('player_side').setFlipX(false)
+    } else if (dx < 0) {
+      this.player.setTexture('player_side').setFlipX(true)
+    } else if (dy < 0) {
+      this.player.setTexture('player_up').setFlipX(false)
+    } else if (dy > 0) {
+      this.player.setTexture('player').setFlipX(false)
+    }
+  }
+
   private isSolid(x: number, y: number): boolean {
     const { width: mw, height: mh, layout } = this.mapDef
     if (x < 0 || x >= mw || y < 0 || y >= mh) return true
@@ -486,6 +786,10 @@ export class HospitalScene extends Phaser.Scene {
   private tryMove(dx: number, dy: number) {
     const newX = this.playerTileX + dx
     const newY = this.playerTileY + dy
+
+    // Face the direction of intent before checking blockers — so the
+    // sprite reads as "looking that way" even when bonking a wall.
+    this.faceDirection(dx, dy)
 
     if (this.isSolid(newX, newY)) return
 
@@ -514,7 +818,7 @@ export class HospitalScene extends Phaser.Scene {
     // without becoming cartoony.
     this.tweens.add({
       targets: this.player,
-      scaleY: 1.84, // base scale is 2; 1.84 = 8% squash
+      scaleY: 0.92, // 8% squash from base 1
       duration: 60,
       yoyo: true,
       ease: 'Sine.easeInOut',
@@ -658,25 +962,17 @@ export class HospitalScene extends Phaser.Scene {
     }
 
     this.nearbyNpc = closest
+    this.interactPrompt.setVisible(!!closest)
     if (closest) {
       this.interactPrompt.setPosition(closest.sprite.x, closest.sprite.y - 36)
-      this.interactPrompt.setVisible(true)
-      this.gapPrompt.setVisible(false)
-    } else {
-      this.interactPrompt.setVisible(false)
-
-      const ct = this.mapDef.gapTile
-      const gapVis = this.tileVisState[ct.y]?.[ct.x] ?? VIS_HIDDEN
-      const gapPx = ct.x * TILE + TILE / 2
-      const gapPy = ct.y * TILE + TILE / 2
-      const gapDist = Phaser.Math.Distance.Between(
-        this.player.x, this.player.y, gapPx, gapPy
-      )
-      this.gapPrompt.setVisible(gapVis === VIS_CURRENT && gapDist < TILE * 2)
     }
+    // gapPrompt is intentionally never shown — descent is dialogue-driven.
   }
 
   private interact() {
+    // Don't interact while frozen (e.g. during the opening notebook
+    // narration, the claim preview, or a transition).
+    if (!this.canMove) return
     if (this.nearbyNpc) {
       this.canMove = false
       this.interactPrompt.setVisible(false)
@@ -688,47 +984,96 @@ export class HospitalScene extends Phaser.Scene {
       })
       return
     }
-
-    const ct = this.mapDef.gapTile
-    const gapPx = ct.x * TILE + TILE / 2
-    const gapPy = ct.y * TILE + TILE / 2
-    const gapDist = Phaser.Math.Distance.Between(
-      this.player.x, this.player.y, gapPx, gapPy
-    )
-    if (gapDist < TILE * 2) {
-      this.descendThroughGap()
-    }
+    // The gap tile is no longer player-engageable — descent is
+    // triggered exclusively by NPC dialogue (DialogueEffect.triggerDescent).
+    // The visual remains as ambience.
   }
 
   /**
-   * Hospital → Waiting Room transition. Echoes the intro's "you fell
-   * through the gap" beat: the player sprite drops + fades while the
-   * camera fades to black, then starts WaitingRoomScene which fades
-   * back in. The whole thing runs ~700ms so it reads as a deliberate
-   * descent, not an instant cut.
+   * Hospital → Waiting Room transition. Triggered from a dialogue
+   * handoff (the player isn't supposed to *want* to descend; cases
+   * pull them in). Animation reads as "the floor goes liquid":
+   *   1. Three concentric red rings ripple outward from the player.
+   *   2. The player rotates + drops + fades + squashes vertically.
+   *   3. A red flash washes over the camera as the floor "claims" them.
+   *   4. Camera fades to black; WR starts.
+   * Total ~1100ms — long enough for the metaphor to read, short
+   * enough that it doesn't get tiresome on repeat plays.
    */
-  private descendThroughGap() {
-    if (!this.canMove) return
+  private descendThroughGap(activeEncounterId: string) {
+    // Descent is dialogue-driven now; canMove is intentionally false
+    // when we get here (set by the claim-preview step that runs
+    // before us). No guard needed.
     this.canMove = false
 
-    // Player sprite drops + fades. ScaleY shrinks slightly as if
-    // pulled downward into the floor.
+    const px = this.player.x
+    const py = this.player.y
+
+    // Floor ripple — three concentric magenta/red rings expanding from
+    // the player's tile. World-space, so they read as physical waves
+    // on the floor instead of a screen-space FX flash.
+    for (let i = 0; i < 3; i++) {
+      const ring = this.add.graphics().setDepth(20).setAlpha(0)
+      ring.lineStyle(2, 0xb13050, 1)
+      ring.strokeCircle(px, py, 4)
+      this.tweens.add({
+        targets: ring,
+        alpha: 0.9,
+        duration: 120,
+        delay: i * 110,
+        yoyo: true,
+        hold: 280,
+        onComplete: () => ring.destroy(),
+      })
+      this.tweens.add({
+        targets: ring,
+        scale: 6,
+        duration: 700,
+        delay: i * 110,
+        ease: 'Cubic.easeOut',
+      })
+    }
+
+    // Player drops, slow rotation, squash, fade. Slight delay so the
+    // ripple lands first.
     this.tweens.add({
       targets: this.player,
-      y: this.player.y + TILE * 4,
+      y: py + TILE * 4,
       alpha: 0,
-      scaleY: 1.4, // base scale 2 → ~30% squash
-      duration: 600,
+      scaleY: 0.6, // ~40% squash from base 1
+      angle: 220,
+      duration: 800,
+      delay: 150,
       ease: 'Sine.easeIn',
     })
 
-    // Camera fade-to-black + start WR on completion.
-    this.cameras.main.fadeOut(700, 0, 0, 0)
+    // Red flash overlay (screen-space) just before the camera fade —
+    // a moment of "the WR is bleeding through" before the cut.
+    const { width, height } = this.scale
+    const flash = this.add.rectangle(width / 2, height / 2, width, height, 0x6a0d10, 0)
+      .setScrollFactor(0).setDepth(50)
+    this.tweens.add({
+      targets: flash,
+      alpha: 0.55,
+      delay: 700,
+      duration: 200,
+      yoyo: true,
+      hold: 80,
+      onComplete: () => flash.destroy(),
+    })
+
+    // Camera fade-to-black + start WR on completion. Pass the
+    // player's current Hospital tile so the WR layer drops them at
+    // the corresponding tile in the parallel layer (same map, same
+    // room, same coords) instead of teleporting to the map's gapTile.
+    const spawnTileX = this.playerTileX
+    const spawnTileY = this.playerTileY
+    this.cameras.main.fadeOut(900, 0, 0, 0)
     this.cameras.main.once('camerafadeoutcomplete', () => {
       const state = getState()
       state.inWaitingRoom = true
       saveGame()
-      this.scene.start('WaitingRoom')
+      this.scene.start('WaitingRoom', { activeEncounterId, spawnTileX, spawnTileY })
     })
   }
 

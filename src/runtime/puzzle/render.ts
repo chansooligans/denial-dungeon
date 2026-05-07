@@ -68,16 +68,28 @@ export function render(spec: PuzzleSpec, state: PuzzleState): string {
   if (state.packetSubmitted) {
     return renderVictory(spec)
   }
+  // Pre-dismissal: only Dana's briefing card, vertically centered.
+  // The hospital-intro prose is redundant with the in-game NPC
+  // dialogue + claim-preview that already played, so it's not
+  // rendered at all. min-height accounts for the overlay's
+  // 28px+80px vertical padding.
+  if (!state.briefingDone) {
+    return `
+      <div style="min-height: calc(100vh - 108px); display: flex; align-items: center; justify-content: center;">
+        <div style="max-width: 720px; width: 100%;">
+          ${renderBriefingInline(spec)}
+        </div>
+      </div>
+    `
+  }
   const hasWorkbench = (spec.payerPhrases?.length ?? 0) > 0
   return [
     renderHeader(spec),
-    renderHospitalIntro(spec),
-    state.briefingDone ? '' : renderBriefingInline(spec),
-    state.briefingDone && spec.claim ? renderClaim(spec, state) : '',
-    state.briefingDone && spec.amendSlots.length > 0 ? renderAmendCallouts(spec, state) : '',
-    state.briefingDone && hasWorkbench ? renderWorkbench(spec, state) : '',
-    state.briefingDone && hasWorkbench ? renderCitationBuilder(spec, state) : '',
-    state.briefingDone ? renderChecklist(spec, state) : '',
+    spec.claim ? renderClaim(spec, state) : '',
+    spec.amendSlots.length > 0 ? renderAmendCallouts(spec, state) : '',
+    hasWorkbench ? renderWorkbench(spec, state) : '',
+    hasWorkbench ? renderCitationBuilder(spec, state) : '',
+    renderChecklist(spec, state),
     renderAmendModal(spec, state),
   ].join('')
 }
@@ -109,11 +121,8 @@ function renderHospitalIntro(spec: PuzzleSpec): string {
 
 function renderBriefingInline(spec: PuzzleSpec): string {
   return `
-    <section class="briefing">
-      <div class="briefing-h">
-        <span class="briefing-tag">DANA, IN YOUR EAR</span>
-        <span class="briefing-sub">A new shape. Listen up.</span>
-      </div>
+    <section class="briefing notebook-page">
+      <div class="notebook-header">Dana’s notebook</div>
       <div class="briefing-body">
         ${spec.briefing.paragraphs.map(p => `<p>${p}</p>`).join('')}
         <ul>${spec.briefing.bullets.map(b => `<li>${b}</li>`).join('')}</ul>
@@ -435,7 +444,6 @@ function renderVictory(spec: PuzzleSpec): string {
   return `
     <section class="victory">
       <h2>${escape(spec.victory.headline)}</h2>
-      <p class="register hospital">Hospital, the next morning.</p>
       ${spec.victory.paragraphs.map(p => `<p>${p}</p>`).join('')}
       <button class="btn primary" data-action="finish">Continue</button>
     </section>

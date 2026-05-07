@@ -49,7 +49,7 @@ const BEATS: Beat[] = [
   // Beat 3: Your Desk
   { type: 'scene', action: (s) => s.showDesk() },
   { type: 'text', lines: [
-    'You are a revenue cycle analyst',
+    'You are a part-time intern',
     'at Mercy General Hospital.',
   ], color: '#e6edf3' },
   { type: 'wait', duration: 2000 },
