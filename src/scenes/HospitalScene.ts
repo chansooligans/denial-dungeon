@@ -177,27 +177,33 @@ export class HospitalScene extends Phaser.Scene {
       debugEvent(`cam α=${this.cameras.main.alpha}`)
     })
     debugStatus(`Hospital L${state.currentLevel}`)
+    debugEvent('hosp:cam-set')
 
     // Hospital ambience — Lynch-y / sci-fi melancholy. Only kicks in
     // once the cinematic intro song is done so the two don't fight.
-    this.startHospitalAmbience()
+    try { this.startHospitalAmbience() } catch (e) { debugEvent('hosp:ambience-err ' + (e as Error).message?.slice(0,30)) }
+    debugEvent('hosp:after-ambience')
 
     // Level-advance banner — if the player just crossed a defeat
     // threshold during the prior battle, surface it now. Banner
     // is screen-space (UI camera) and self-cleans after ~3s.
     const advancedLevel = consumePendingLevelBanner()
     if (advancedLevel !== null) {
-      this.showLevelAdvanceBanner(advancedLevel)
+      try { this.showLevelAdvanceBanner(advancedLevel) } catch (e) { debugEvent('hosp:banner-err ' + (e as Error).message?.slice(0,30)) }
     }
+    debugEvent('hosp:after-banner')
 
     // Dedicated UI camera (zoom 1, no scroll) so HUD/mini-map aren't affected
     // by the main camera's zoom or follow.
     this.uiCamera = this.cameras.add(0, 0, this.scale.width, this.scale.height)
     this.uiCamera.setScroll(0, 0)
+    debugEvent('hosp:ui-cam')
 
-    this.buildMiniMap()
+    try { this.buildMiniMap() } catch (e) { debugEvent('hosp:minimap-err ' + (e as Error).message?.slice(0,40)) }
+    debugEvent('hosp:after-minimap')
 
-    this.enterRoomAt(this.playerTileX, this.playerTileY)
+    try { this.enterRoomAt(this.playerTileX, this.playerTileY) } catch (e) { debugEvent('hosp:enterRoom-err ' + (e as Error).message?.slice(0,40)) }
+    debugEvent('hosp:after-enterRoom')
 
     this.events.on('resume', () => {
       // Always re-enable movement first — interact() set canMove=false

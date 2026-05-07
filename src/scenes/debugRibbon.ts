@@ -70,7 +70,7 @@ export function debugEvent(label: string) {
   const t = new Date()
   const ts = `${String(t.getMinutes()).padStart(2, '0')}:${String(t.getSeconds()).padStart(2, '0')}`
   events.push(`${ts} ${label}`)
-  while (events.length > 4) events.shift()
+  while (events.length > 12) events.shift()
   refresh()
 }
 
@@ -85,5 +85,5 @@ export function debugStatus(left: string) {
 function refresh() {
   if (!ribbon) return
   const rightEl = ribbon.querySelector('.right') as HTMLElement | null
-  if (rightEl) rightEl.textContent = events.slice(-2).join(' · ')
+  if (rightEl) rightEl.textContent = events.slice(-6).join(' · ')
 }
