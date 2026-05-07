@@ -360,9 +360,22 @@ export class IntroScene extends Phaser.Scene {
     // The title splash starts the cover audio bed. It loops while the
     // player sits with the title; on advance, it crossfades into the
     // intro song and the cinematic begins.
+    //
+    // Browsers block audio that starts before any user interaction, so
+    // if the audio context is locked (which it usually is on first
+    // page load) we queue the play and trigger it the instant Phaser
+    // dispatches its 'unlocked' event — which fires on the user's
+    // first key/click. After that, intro_song plays without issue
+    // because the context has been unlocked.
     if (isTitleSplash && !this.coverAudio && this.cache.audio.exists('intro_cover_audio')) {
       this.coverAudio = this.sound.add('intro_cover_audio', { volume: 0.6, loop: true })
-      this.coverAudio.play()
+      if (this.sound.locked) {
+        this.sound.once('unlocked', () => {
+          if (this.coverAudio && !this.done) this.coverAudio.play()
+        })
+      } else {
+        this.coverAudio.play()
+      }
     }
 
     // Hide procedural scene visuals and any active backdrop so only the
