@@ -414,7 +414,7 @@ export class HospitalScene extends Phaser.Scene {
       this.playerTileX * TILE + TILE / 2,
       this.playerTileY * TILE + TILE / 2,
       'player'
-    ).setScale(2).setDepth(10)
+    ).setScale(1).setDepth(10)
   }
 
   private placeNPCs() {
@@ -430,7 +430,7 @@ export class HospitalScene extends Phaser.Scene {
       const px = p.tileX * TILE + TILE / 2
       const py = p.tileY * TILE + TILE / 2
 
-      const sprite = this.add.image(px, py, npc.spriteKey).setScale(2).setDepth(5).setAlpha(0)
+      const sprite = this.add.image(px, py, npc.spriteKey).setScale(1).setDepth(5).setAlpha(0)
 
       const label = this.add.text(px, py - 22, npc.name, {
         fontSize: '8px', fontFamily: 'monospace', color: '#7ee2c1',
@@ -818,7 +818,7 @@ export class HospitalScene extends Phaser.Scene {
     // without becoming cartoony.
     this.tweens.add({
       targets: this.player,
-      scaleY: 1.84, // base scale is 2; 1.84 = 8% squash
+      scaleY: 0.92, // 8% squash from base 1
       duration: 60,
       yoyo: true,
       ease: 'Sine.easeInOut',
@@ -1040,7 +1040,7 @@ export class HospitalScene extends Phaser.Scene {
       targets: this.player,
       y: py + TILE * 4,
       alpha: 0,
-      scaleY: 1.2,
+      scaleY: 0.6, // ~40% squash from base 1
       angle: 220,
       duration: 800,
       delay: 150,

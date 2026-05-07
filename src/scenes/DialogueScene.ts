@@ -3,6 +3,26 @@ import { DIALOGUES } from '../content/dialogue'
 import { unlockCodex, unlockTool, updateResources, saveGame, getState } from '../state'
 import type { DialogueNode, DialogueChoice, DialogueEffect } from '../types'
 
+// Speaker → color mapping. Each character gets their own tint on the
+// speaker label so it's clear who's talking at a glance. Colors are
+// keyed by the speaker string set on each DialogueNode.
+const SPEAKER_COLORS: Record<string, string> = {
+  Anjali: '#b8d4e8',         // soft cyan, matches her sprite shirt
+  'Anjali Patel': '#b8d4e8',
+  Dana: '#6da9e3',           // blue (revenue cycle)
+  Kim: '#a8d8a8',            // green (registration)
+  Jordan: '#d4a0d4',         // purple (PFS)
+  'Dr. Martinez': '#f0eedc', // warm white (white coat)
+  Pat: '#9bb0c8',            // slate (coding)
+  Alex: '#a8a8b0',           // gray (IT/EDI)
+  Sam: '#f0a868',            // orange (denials)
+  Intern: '#f4d06f',         // yellow (player ID badge)
+}
+const SPEAKER_DEFAULT_COLOR = '#7ee2c1'
+function colorForSpeaker(name: string): string {
+  return SPEAKER_COLORS[name] ?? SPEAKER_DEFAULT_COLOR
+}
+
 export class DialogueScene extends Phaser.Scene {
   private currentNode!: DialogueNode
   private speakerText!: Phaser.GameObjects.Text
@@ -47,6 +67,7 @@ export class DialogueScene extends Phaser.Scene {
   private showNode(node: DialogueNode) {
     this.currentNode = node
     this.speakerText.setText(node.speaker)
+    this.speakerText.setColor(colorForSpeaker(node.speaker))
     this.bodyText.setText(node.text)
 
     this.choiceTexts.forEach(t => t.destroy())

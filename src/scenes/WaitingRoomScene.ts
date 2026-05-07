@@ -227,10 +227,10 @@ export class WaitingRoomScene extends Phaser.Scene {
       delay: 350,
       ease: 'Sine.easeOut',
     })
-    this.player.setScale(2, 1.0)
+    this.player.setScale(1, 0.5)
     this.tweens.add({
       targets: this.player,
-      scaleY: 2,
+      scaleY: 1,
       duration: 280,
       ease: 'Back.easeOut',
       delay: 900,
@@ -380,7 +380,7 @@ export class WaitingRoomScene extends Phaser.Scene {
       this.playerTileX * TILE + TILE / 2,
       this.playerTileY * TILE + TILE / 2,
       'player'
-    ).setScale(2).setDepth(10)
+    ).setScale(1).setDepth(10)
   }
 
   private addAtmosphere() {
@@ -699,7 +699,7 @@ export class WaitingRoomScene extends Phaser.Scene {
     // present in both layers.
     this.tweens.add({
       targets: this.player,
-      scaleY: 1.84,
+      scaleY: 0.92, // 8% squash from base 1
       duration: 70, yoyo: true, ease: 'Sine.easeInOut',
     })
   }
@@ -799,7 +799,7 @@ export class WaitingRoomScene extends Phaser.Scene {
       targets: this.player,
       y: this.player.y - TILE * 4,
       alpha: 0,
-      scaleY: 2.4, // slight stretch — they're being pulled up
+      scaleY: 1.2, // slight stretch from base 1 — pulled upward
       duration: 600,
       ease: 'Sine.easeOut',
     })
