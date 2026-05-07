@@ -25,25 +25,45 @@ export function showNarration(
   // edge of the viewport (closer to where the player is looking) so
   // the narration is legible without fullscreen. Desktop keeps the
   // original mid-screen layout.
+  //
+  // Position is intended in *screen* pixels but Phaser objects with
+  // setScrollFactor(0) are still scaled by the main camera's zoom
+  // when no UI camera owns them. To land where we expect, divide
+  // by the rendering camera's zoom unless the caller has handed off
+  // to a UI camera via `ignoreCameras: [main]`.
   const m = isTouchDevice()
-  const fontSize = m ? '17px' : '13px'
-  const hintSize = m ? '12px' : '10px'
-  const boxW = m ? width - 40 : width - 80
-  const boxH = m ? 110 : 70
-  const boxY = m ? height - boxH / 2 - 24 : height / 2 + 100
+  const renderedByMain = !(options?.ignoreCameras ?? []).includes(scene.cameras.main)
+  const zoom = renderedByMain ? scene.cameras.main.zoom || 1 : 1
+
+  // Sizes are authored in screen pixels — divide by zoom so the
+  // rendered output lands at the intended on-screen size when the
+  // main camera has gameplay zoom applied.
+  const fontPx   = m ? 17 : 13
+  const hintPx   = m ? 12 : 10
+  const screenBoxW = m ? width - 40 : width - 80
+  const screenBoxH = m ? 110 : 70
+  const screenBoxY = m ? height - screenBoxH / 2 - 24 : height / 2 + 100
+
+  const boxX = (width / 2) / zoom
+  const boxY = screenBoxY / zoom
+  const boxW = screenBoxW / zoom
+  const boxH = screenBoxH / zoom
+  const fontSize = `${fontPx / zoom}px`
+  const hintSize = `${hintPx / zoom}px`
+
   const box = scene.add
-    .rectangle(width / 2, boxY, boxW, boxH, 0x0e1116, 0.92)
+    .rectangle(boxX, boxY, boxW, boxH, 0x0e1116, 0.92)
     .setStrokeStyle(1, 0x2a323d)
     .setScrollFactor(0)
     .setDepth(110)
     .setAlpha(0)
   const text = scene.add
-    .text(width / 2, boxY, '', {
+    .text(boxX, boxY, '', {
       fontSize,
       fontFamily: 'monospace',
       color,
       align: 'center',
-      wordWrap: { width: boxW - 40 },
+      wordWrap: { width: boxW - 40 / zoom },
     })
     .setOrigin(0.5)
     .setScrollFactor(0)
@@ -52,7 +72,7 @@ export function showNarration(
   // Small "click to continue" hint inside the box — only visible while
   // a line is fully shown and waiting for input.
   const hint = scene.add
-    .text(width / 2 + boxW / 2 - 14, boxY + boxH / 2 - 12, 'click ▸', {
+    .text(boxX + boxW / 2 - 14 / zoom, boxY + boxH / 2 - 12 / zoom, 'click ▸', {
       fontSize: hintSize,
       fontFamily: 'monospace',
       color: '#5a6a7a',
