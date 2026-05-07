@@ -463,7 +463,7 @@ export class HospitalScene extends Phaser.Scene {
     showNarration(this, [
       'There’s a notebook on your desk. Not yours.',
       'Someone named Dana wrote in it.',
-      'Underlines, arrows. Things that don’t quite make sense yet.',
+      'Diagrams. Step-by-steps. Worked examples. Like a handover she never got to give in person.',
     ], () => {
       this.startAnjaliEntrance(anjali, destX, destY)
     }, { ignoreCameras: [this.cameras.main] })
