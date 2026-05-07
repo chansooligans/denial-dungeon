@@ -12,6 +12,7 @@ import { PUZZLE_SPECS } from '../runtime/puzzle/specs'
 import { flavorForTile, LEVEL_ORIENTATION_HINTS } from './hospitalFlavor'
 import { runWakeUpTransition } from './wakeUpOverlay'
 import { showClaimPreview } from './claimPreview'
+import { debugStatus, debugEvent } from './debugRibbon'
 import type { NPC } from '../types'
 
 const TILE = 32
@@ -173,7 +174,9 @@ export class HospitalScene extends Phaser.Scene {
     // canvas can never be permanently invisible.
     this.time.delayedCall(700, () => {
       this.cameras.main.setAlpha(1)
+      debugEvent(`cam α=${this.cameras.main.alpha}`)
     })
+    debugStatus(`Hospital L${state.currentLevel}`)
 
     // Hospital ambience — Lynch-y / sci-fi melancholy. Only kicks in
     // once the cinematic intro song is done so the two don't fight.
@@ -244,7 +247,11 @@ export class HospitalScene extends Phaser.Scene {
       const sub = state.pendingClaimSubmitted
       state.pendingClaimSubmitted = null
       saveGame()
-      this.runWakeUpTransition(sub.claimId, () => this.maybeRunAnjaliThanks())
+      debugEvent(`wake-up ${sub.encounterId}`)
+      this.runWakeUpTransition(sub.claimId, () => {
+        debugEvent('wake-up done')
+        this.maybeRunAnjaliThanks()
+      })
     } else if (wasReturnFromWr) {
       // Returning from a puzzle round-trip. If the case Anjali handed
       // over has been solved and she hasn't said her piece yet, auto-
