@@ -9,6 +9,8 @@
 
 import { ENCOUNTERS } from '../content/enemies'
 import { PUZZLE_SPECS } from '../runtime/puzzle/specs'
+import { getState } from '../state'
+import type { GameState } from '../types'
 
 const PANEL_ID = '__dev_panel__'
 const TOGGLE_ID = '__dev_panel_toggle__'
@@ -48,7 +50,15 @@ export function installDevPanel() {
   panel.innerHTML = renderPanel()
   document.body.appendChild(panel)
 
-  const togglePanel = () => panel.classList.toggle('hidden')
+  const togglePanel = () => {
+    panel.classList.toggle('hidden')
+    // When opening, refresh the state inspector so it reflects what's
+    // happening RIGHT NOW (rather than what was true at panel mount).
+    if (!panel.classList.contains('hidden')) {
+      const slot = panel.querySelector('#__devp_state__') as HTMLElement | null
+      if (slot) slot.innerHTML = renderStateInspector()
+    }
+  }
 
   panel.addEventListener('click', e => {
     const target = e.target as HTMLElement
@@ -89,6 +99,20 @@ function renderPanel(): string {
       <span class="devp-hint">\` to toggle</span>
     </div>
     <section>
+      <div class="devp-section-h">State inspector
+        <button class="devp-mini-btn" data-dev-action="refresh-state">refresh</button>
+      </div>
+      <div class="devp-state" id="__devp_state__">${renderStateInspector()}</div>
+    </section>
+    <section>
+      <div class="devp-section-h">Save presets</div>
+      ${LEVEL_PRESETS.map(p => `
+        <button class="devp-btn" data-dev-action="preset" data-dev-arg="${p.level}">
+          ${p.label} <span class="devp-id">(${p.note})</span>
+        </button>
+      `).join('')}
+    </section>
+    <section>
       <div class="devp-section-h">Jump to puzzle</div>
       ${puzzleEncounters.map(p => `
         <button class="devp-btn"
@@ -111,6 +135,103 @@ function renderPanel(): string {
       <button class="devp-btn warn" data-dev-action="clear-save">Clear save</button>
     </section>
   `
+}
+
+/** Snapshot the most-debug-relevant fields of GameState as compact
+ *  HTML rows. Re-render on demand via the 'refresh' button — auto-
+ *  refresh would conflict with input focus. */
+function renderStateInspector(): string {
+  let s: GameState | null = null
+  try { s = getState() } catch { /* not booted yet */ }
+  if (!s) return `<div class="devp-row"><em>game not booted yet</em></div>`
+  const row = (label: string, value: string) =>
+    `<div class="devp-row"><span class="devp-row-l">${label}</span><span class="devp-row-v">${value}</span></div>`
+  const truthy = (v: any) => (v ? '<b style="color:#7ee2c1">yes</b>' : '<span style="color:#5a6a7a">—</span>')
+  const lastDefeat = s.defeatedObstacles[s.defeatedObstacles.length - 1] ?? '—'
+  const pcs = s.pendingClaimSubmitted
+    ? `${s.pendingClaimSubmitted.encounterId}` + (s.pendingClaimSubmitted.claimId ? ` · ${s.pendingClaimSubmitted.claimId}` : '')
+    : '—'
+  const pd = s.pendingDescent ? s.pendingDescent.encounterId : '—'
+  const phs = s.pendingHospitalSpawn ? `(${s.pendingHospitalSpawn.x},${s.pendingHospitalSpawn.y})` : '—'
+  const plb = s.pendingLevelBanner ?? '—'
+  return [
+    row('currentLevel', String(s.currentLevel)),
+    row('defeats', `${s.defeatedObstacles.length} · last: ${lastDefeat}`),
+    row('pendingClaimSubmitted', pcs),
+    row('pendingDescent', String(pd)),
+    row('pendingHospitalSpawn', phs),
+    row('pendingLevelBanner', String(plb)),
+    row('introOpeningPlayed', truthy(s.introOpeningPlayed)),
+    row('firstWrArrivalNarration', truthy(s.firstWrArrivalNarrationPlayed)),
+    row('anjaliThanked', truthy(s.anjaliThanked)),
+    row('hp / maxHp', `${s.resources.hp} / ${s.resources.maxHp}`),
+    row('reputation', String(s.resources.reputation)),
+    row('audit', `${s.resources.auditRisk}%`),
+    row('stress', String(s.resources.stress)),
+  ].join('')
+}
+
+/** Save-state presets so QA can land on any level instantly without
+ *  playing through. Each preset injects a save with `defeatedObstacles`
+ *  populated to satisfy `LEVEL_DEFEAT_THRESHOLD` and clears any pending
+ *  flags. Reloads the page so BootScene picks up the fresh state. */
+type LevelPreset = { level: number; label: string; note: string }
+const LEVEL_PRESETS: LevelPreset[] = [
+  { level: 1,  label: 'L1 — Orientation',           note: 'fresh start' },
+  { level: 2,  label: 'L2 — Front Door',             note: 'Kim · fog' },
+  { level: 3,  label: 'L3 — The Gate',               note: 'Sam · gatekeeper' },
+  { level: 4,  label: 'L4 — The Copy',               note: 'Pat · bundle' },
+  { level: 5,  label: 'L5 — The Library',            note: 'Sam · wraith' },
+  { level: 6,  label: 'L6 — The Conveyor',           note: 'Alex · swarm' },
+  { level: 7,  label: 'L7 — The Courtroom',          note: 'Sam · reaper' },
+  { level: 8,  label: 'L8 — The River',              note: 'Jordan · specter' },
+  { level: 9,  label: 'L9 — The Maze',               note: 'Kim · hydra' },
+  { level: 10, label: 'L10 — The Audit',             note: 'Dana · boss' },
+]
+
+/** Encounter id used to mark the "previous level done" for each
+ *  level transition. Order matches LEVEL_DEFEAT_THRESHOLD = [1,2,…]. */
+const PRESET_DEFEAT_SEQUENCE = [
+  'intro_wrong_card',     // L1
+  'eligibility_fog',       // L2
+  'co_197',                // L3
+  'co_97',                 // L4
+  'co_50',                 // L5
+  'co_16_swarm',           // L6
+  'co_29_reaper',          // L7
+  'surprise_bill_specter', // L8
+  'oa_23_hydra',           // L9
+  'boss_audit',            // L10
+]
+
+function buildPresetSave(targetLevel: number): string {
+  const lvl = Math.max(1, Math.min(10, targetLevel))
+  // Need (lvl - 1) defeats so threshold for the previous level is met,
+  // landing the player AT `lvl` ready to take its case.
+  const defeats = PRESET_DEFEAT_SEQUENCE.slice(0, lvl - 1)
+  const levelComplete = Array(10).fill(false)
+  for (let i = 0; i < lvl - 1; i++) levelComplete[i] = true
+  const state = {
+    currentLevel: lvl,
+    levelComplete,
+    levelStars: Array(10).fill(0),
+    resources: { hp: 100, maxHp: 100, cash: 0, reputation: 50, auditRisk: 0, stress: 0 },
+    tools: ['submit_837p', 'eligibility_270', 'claim_scrubber', 'cdi_query', 'appeal_letter'],
+    codexUnlocked: [],
+    decisions: [],
+    inWaitingRoom: false,
+    activeTickets: [],
+    defeatedObstacles: defeats,
+    wingsUnlocked: ['eligibility'],
+    obstaclesSeen: [],
+    formsPerfected: [],
+    introOpeningPlayed: lvl > 1,
+    firstWrArrivalNarrationPlayed: lvl > 1,
+    anjaliThanked: lvl > 1,
+    pendingAnjaliLeave: false,
+    pendingClaimSubmitted: null,
+  }
+  return JSON.stringify(state)
 }
 
 const SAVE_KEY = 'denial_dungeon_save'
@@ -186,6 +307,25 @@ function handleAction(action: string, arg?: string) {
       } catch (err) {
         alert('Invalid JSON: ' + (err as Error).message)
       }
+      return
+    }
+    case 'preset': {
+      if (!arg) return
+      const lvl = parseInt(arg, 10)
+      if (Number.isNaN(lvl)) return
+      try {
+        localStorage.setItem(SAVE_KEY, buildPresetSave(lvl))
+        if (confirm(`Preset for L${lvl} loaded. Reload now?`)) {
+          location.reload()
+        }
+      } catch (err) {
+        alert('Could not save preset: ' + (err as Error).message)
+      }
+      return
+    }
+    case 'refresh-state': {
+      const slot = document.getElementById('__devp_state__')
+      if (slot) slot.innerHTML = renderStateInspector()
       return
     }
   }
@@ -332,5 +472,46 @@ const CSS = `
     color: #6c7585;
     font-size: 10.5px;
     margin-left: 4px;
+  }
+  #${PANEL_ID} .devp-mini-btn {
+    float: right;
+    background: transparent;
+    color: #7ee2c1;
+    border: 1px solid #2a3142;
+    border-radius: 3px;
+    padding: 1px 6px;
+    margin-top: -2px;
+    cursor: pointer;
+    font: 9px/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    letter-spacing: 0.06em;
+    text-transform: lowercase;
+  }
+  #${PANEL_ID} .devp-mini-btn:hover { background: #1a2030; }
+  #${PANEL_ID} .devp-state {
+    background: #07090e;
+    border: 1px solid #1f2632;
+    border-radius: 4px;
+    padding: 6px 8px;
+    font: 10.5px/1.4 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    color: #b8c0cc;
+  }
+  #${PANEL_ID} .devp-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 1px 0;
+    border-bottom: 1px dotted #1f2632;
+  }
+  #${PANEL_ID} .devp-row:last-child { border-bottom: none; }
+  #${PANEL_ID} .devp-row-l { color: #6c7585; }
+  #${PANEL_ID} .devp-row-v {
+    color: #d8dee9;
+    text-align: right;
+    font-feature-settings: "tnum";
+    overflow-wrap: anywhere;
+  }
+  @media (pointer: coarse) {
+    #${PANEL_ID} .devp-state { font-size: 12px; }
+    #${PANEL_ID} .devp-mini-btn { font-size: 12px; padding: 4px 10px; }
   }
 `
