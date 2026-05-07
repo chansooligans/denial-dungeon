@@ -707,6 +707,8 @@ export class HospitalScene extends Phaser.Scene {
     // driven by Phaser tweens on a plain DOM element.
     const overlay = document.createElement('div')
     overlay.id = OVERLAY_ID
+    // Start fully opaque so we don't depend on a CSS transition to
+    // appear — fade-out is the only animation, applied on `finish`.
     overlay.style.cssText = [
       'position: fixed',
       'inset: 0',
@@ -715,7 +717,7 @@ export class HospitalScene extends Phaser.Scene {
       'display: flex',
       'align-items: center',
       'justify-content: center',
-      'opacity: 0',
+      'opacity: 1',
       'transition: opacity 350ms ease',
       'cursor: pointer',
     ].join('; ')
@@ -731,8 +733,6 @@ export class HospitalScene extends Phaser.Scene {
       'letter-spacing: 0.06em',
       'box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5)',
       'text-align: center',
-      'transform: scale(0.92)',
-      'transition: transform 350ms ease',
     ].join('; ')
     const checkColor = '#1a6e52'
     panel.innerHTML = `
@@ -743,11 +743,6 @@ export class HospitalScene extends Phaser.Scene {
     `
     overlay.appendChild(panel)
     document.body.appendChild(overlay)
-
-    // Force a reflow so the opacity transition lands on the new style.
-    void overlay.offsetWidth
-    overlay.style.opacity = '1'
-    panel.style.transform = 'scale(1)'
 
     let done = false
     const finish = () => {
@@ -762,8 +757,15 @@ export class HospitalScene extends Phaser.Scene {
       }, 380)
     }
 
-    // Click-to-skip escape hatch.
-    overlay.addEventListener('click', finish)
+    // Click-to-skip escape hatch — but debounce so a synthetic click
+    // event leftover from the puzzle submit (mobile touch can replay
+    // a click after touchstart→touchend on a freshly-mounted overlay)
+    // doesn't dismiss the panel before the player sees it.
+    const createdAt = Date.now()
+    overlay.addEventListener('click', () => {
+      if (Date.now() - createdAt < 600) return
+      finish()
+    })
     // Primary timer on the scene clock.
     this.time.delayedCall(2400, finish)
     // Backstop on the global clock so we can never leave the player
