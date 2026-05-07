@@ -79,6 +79,7 @@ export function flavorForTile(ch: string, x: number, y: number): string | undefi
  *  the level-advance banner. Mentions the case-handing NPC + their
  *  rough location so the player isn't left scanning the whole map. */
 export const LEVEL_ORIENTATION_HINTS: Record<number, string> = {
+  1:  'Wait at your desk — Anjali is on her way.',
   2:  'Find Kim at the Registration desk.',
   3:  'Sam is in Patient Services. There\'s a denial.',
   4:  'Pat moved down to HIM / Coding — head south.',
