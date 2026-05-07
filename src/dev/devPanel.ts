@@ -7,9 +7,7 @@
 // QA on the deployed site without shipping a new build. Anything
 // other than `0`/`false`/empty enables it.
 
-import { ENCOUNTERS } from '../content/enemies'
-import { PUZZLE_SPECS } from '../runtime/puzzle/specs'
-import { getState } from '../state'
+import { getState, loadGame, newGame } from '../state'
 import type { GameState } from '../types'
 
 const PANEL_ID = '__dev_panel__'
@@ -85,14 +83,6 @@ export function installDevPanel() {
 }
 
 function renderPanel(): string {
-  const puzzleEncounters = Object.values(ENCOUNTERS)
-    .filter(e => e.puzzleSpecId && PUZZLE_SPECS[e.puzzleSpecId])
-    .map(e => ({
-      encounterId: e.id,
-      puzzleSpecId: e.puzzleSpecId!,
-      title: e.title,
-    }))
-
   return `
     <div class="devp-h">
       <span class="devp-tag">DEV PANEL</span>
@@ -113,23 +103,13 @@ function renderPanel(): string {
       `).join('')}
     </section>
     <section>
-      <div class="devp-section-h">Jump to puzzle</div>
-      ${puzzleEncounters.map(p => `
-        <button class="devp-btn"
-                data-dev-action="puzzle"
-                data-dev-arg="${p.encounterId}|${p.puzzleSpecId}">
-          ${p.title} <span class="devp-id">(${p.encounterId})</span>
-        </button>
-      `).join('')}
-    </section>
-    <section>
       <div class="devp-section-h">Jump to scene</div>
       <button class="devp-btn" data-dev-action="scene" data-dev-arg="Title">Title</button>
       <button class="devp-btn" data-dev-action="scene" data-dev-arg="Hospital">Hospital</button>
       <button class="devp-btn" data-dev-action="scene" data-dev-arg="WaitingRoom">Waiting Room</button>
     </section>
     <section>
-      <div class="devp-section-h">State</div>
+      <div class="devp-section-h">Save</div>
       <button class="devp-btn" data-dev-action="copy-save">Copy save (JSON)</button>
       <button class="devp-btn" data-dev-action="paste-save">Load save (paste JSON)</button>
       <button class="devp-btn warn" data-dev-action="clear-save">Clear save</button>
@@ -241,22 +221,6 @@ function handleAction(action: string, arg?: string) {
   if (!game) return
   const sm = game.scene
   switch (action) {
-    case 'puzzle': {
-      if (!arg) return
-      const [encounterId, puzzleSpecId] = arg.split('|')
-      // Return the player to whichever gameplay scene they were in
-      // when they hit the dev panel. If neither is active (e.g. on
-      // Title), fall back to WaitingRoom — that's where puzzles
-      // organically live.
-      const returnScene =
-        sm.isActive('WaitingRoom') ? 'WaitingRoom'
-          : sm.isActive('Hospital') ? 'Hospital'
-          : 'WaitingRoom'
-      stopAllScenes(sm)
-      sm.start('PuzzleBattle', { encounterId, puzzleSpecId, returnScene })
-      hidePanel()
-      return
-    }
     case 'scene': {
       if (!arg) return
       stopAllScenes(sm)
@@ -267,8 +231,15 @@ function handleAction(action: string, arg?: string) {
     case 'clear-save': {
       try {
         localStorage.removeItem(SAVE_KEY)
-        alert('Save cleared. Reload to start fresh.')
-      } catch {}
+        // Reset the in-memory state to defaults so the running game
+        // doesn't keep behaving like the cleared save was still there.
+        newGame()
+        stopAllScenes(sm)
+        sm.start('Title')
+        hidePanel()
+      } catch (err) {
+        alert('Could not clear save: ' + (err as Error).message)
+      }
       return
     }
     case 'copy-save': {
@@ -301,9 +272,12 @@ function handleAction(action: string, arg?: string) {
         // Validate it's parseable JSON before writing.
         JSON.parse(incoming)
         localStorage.setItem(SAVE_KEY, incoming)
-        if (confirm('Save loaded. Reload now?')) {
-          location.reload()
-        }
+        // Refresh in-memory state from the new save and jump to
+        // Hospital so the change takes effect without a page reload.
+        loadGame()
+        stopAllScenes(sm)
+        sm.start('Hospital')
+        hidePanel()
       } catch (err) {
         alert('Invalid JSON: ' + (err as Error).message)
       }
@@ -315,9 +289,14 @@ function handleAction(action: string, arg?: string) {
       if (Number.isNaN(lvl)) return
       try {
         localStorage.setItem(SAVE_KEY, buildPresetSave(lvl))
-        if (confirm(`Preset for L${lvl} loaded. Reload now?`)) {
-          location.reload()
-        }
+        // Refresh in-memory state from the just-written save (so the
+        // running game uses it without a page reload — page reload
+        // would bounce through Intro / Title) and jump straight to
+        // Hospital with the active level applied.
+        loadGame()
+        stopAllScenes(sm)
+        sm.start('Hospital')
+        hidePanel()
       } catch (err) {
         alert('Could not save preset: ' + (err as Error).message)
       }
