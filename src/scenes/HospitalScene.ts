@@ -776,11 +776,19 @@ export class HospitalScene extends Phaser.Scene {
     this.miniMapTiles = this.add.graphics().setDepth(100)
     this.miniMapPlayer = this.add.graphics().setDepth(101)
 
-    // Pre-create one label per room. Position, font, and text are
-    // re-applied in applyMiniMapLayout based on collapsed/expanded.
-    for (const _ of this.mapDef.rooms ?? []) {
-      const label = this.add.text(0, 0, '', {
+    // Pre-create one label per room with its actual short text and a
+    // baseline fontSize so Phaser's internal text texture is allocated
+    // up-front. Creating a Text with empty content can leave the
+    // backing frame in a half-initialized state where a later
+    // setStyle({ wordWrap }) trips an internal drawImage on a null
+    // texture (observed crash in Hospital.create on mobile).
+    // Position, font size, and wrap width are re-applied in
+    // applyMiniMapLayout based on collapsed / expanded.
+    for (const room of this.mapDef.rooms ?? []) {
+      const initialText = room.shortName ?? room.name
+      const label = this.add.text(0, 0, initialText, {
         fontFamily: 'monospace',
+        fontSize: '7px',
         color: '#fff7e0',
         fontStyle: 'bold',
         align: 'center',
@@ -887,9 +895,12 @@ export class HospitalScene extends Phaser.Scene {
       label.setPosition(cx, cy)
       label.setText(this.miniMapExpanded ? r.name : (r.shortName ?? r.name))
       label.setFontSize(this.miniMapExpanded ? 14 : 7)
-      label.setStyle({
-        wordWrap: { width: Math.max(24, r.w * cell - 2), useAdvancedWrap: true },
-      })
+      // Use setWordWrapWidth instead of setStyle({ wordWrap }) — the
+      // latter tripped a Phaser internal "Cannot read properties of
+      // null (reading 'drawImage')" on first paint, on at least one
+      // mobile browser. setWordWrapWidth is the official narrow API
+      // for this and skips the full style reset.
+      label.setWordWrapWidth(Math.max(24, r.w * cell - 2), true)
     }
 
     this.redrawMiniMapTiles()
