@@ -9,7 +9,14 @@ export function showNarration(
   scene: Phaser.Scene,
   lines: string[],
   onComplete: () => void,
-  options?: { color?: string },
+  options?: {
+    color?: string
+    /** Cameras that should NOT render this narration. Pass the world
+     *  camera in scenes that also have a UI camera, otherwise the
+     *  overlay renders twice (once per camera) at slightly offset
+     *  positions. */
+    ignoreCameras?: Phaser.Cameras.Scene2D.Camera[]
+  },
 ) {
   const { width, height } = scene.scale
   const color = options?.color ?? '#e6edf3'
@@ -31,6 +38,7 @@ export function showNarration(
     .setScrollFactor(0)
     .setDepth(111)
     .setAlpha(0)
+  options?.ignoreCameras?.forEach(cam => cam.ignore([box, text]))
 
   scene.tweens.add({ targets: box, alpha: 0.85, duration: 280 })
 

@@ -466,7 +466,7 @@ export class HospitalScene extends Phaser.Scene {
       'Underlines, arrows. Things that don’t quite make sense yet.',
     ], () => {
       this.startAnjaliEntrance(anjali, destX, destY)
-    })
+    }, { ignoreCameras: [this.cameras.main] })
   }
 
   private startAnjaliEntrance(
