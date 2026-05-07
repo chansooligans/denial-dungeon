@@ -444,7 +444,6 @@ function renderVictory(spec: PuzzleSpec): string {
   return `
     <section class="victory">
       <h2>${escape(spec.victory.headline)}</h2>
-      <p class="register hospital">Hospital, the next morning.</p>
       ${spec.victory.paragraphs.map(p => `<p>${p}</p>`).join('')}
       <button class="btn primary" data-action="finish">Continue</button>
     </section>

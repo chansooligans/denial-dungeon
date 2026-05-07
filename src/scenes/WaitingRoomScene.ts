@@ -56,15 +56,19 @@ interface ObstacleMarker {
  *   Lobby          — no fights (the safe entry space)
  *   Prior Auth     — locked (post-L1)
  */
+// Lobby bounds (matches LOBBY in level1.ts: x:4, y:32, w:26, h:10).
+// The intro case is handed off in the lobby, so the WR session for
+// it is bounded to the parallel-lobby layer.
+const LOBBY_BOUNDS = { x: 4, y: 32, w: 26, h: 10 }
 // Main Hub room bounds (matches MAIN_HUB in level1.ts: x:20, y:3, w:18, h:10).
-// The intro session pins the player here; the obstacle sits a few tiles
-// from the gap landing so the player can see it as they arrive.
 const MAIN_HUB_BOUNDS = { x: 20, y: 3, w: 18, h: 10 }
 
 const OBSTACLES: ObstacleMarker[] = [
-  // Intro — same room as the gap landing (Main Hub). Bounded so the
-  // player can't drift into other rooms during a focused case.
-  { tileX: 32, tileY: 9, encounterId: 'intro_wrong_card', bounds: MAIN_HUB_BOUNDS },
+  // Intro — placed in the lobby's parallel layer at the same tile
+  // Anjali stands on in the Hospital. The player descends from her
+  // counter and the obstacle is right there, two tiles from where
+  // they landed. Bounded to the lobby so they can't wander.
+  { tileX: 14, tileY: 36, encounterId: 'intro_wrong_card', bounds: LOBBY_BOUNDS },
   // Patient Services
   { tileX: 8,  tileY: 21, encounterId: 'co_50' },          // Wraith
   // Registration (two beats — Fog at the west end, Swarm at the east)
@@ -152,6 +156,11 @@ export class WaitingRoomScene extends Phaser.Scene {
   /** When set, tryMove rejects any tile outside this rectangle —
    *  confines the player to the active obstacle's room. */
   private sessionBounds: { x: number; y: number; w: number; h: number } | null = null
+  /** Spawn tile passed in by the dialogue handoff — the player's
+   *  Hospital tile at the moment of descent. WR drops them at the
+   *  same coords so the room-by-room parallelism reads. */
+  private pendingSpawnX: number | null = null
+  private pendingSpawnY: number | null = null
 
   private floatingMotes: Phaser.GameObjects.Graphics[] = []
   private ticketText!: Phaser.GameObjects.Text
@@ -164,8 +173,10 @@ export class WaitingRoomScene extends Phaser.Scene {
     super('WaitingRoom')
   }
 
-  init(data: { activeEncounterId?: string }) {
+  init(data: { activeEncounterId?: string; spawnTileX?: number; spawnTileY?: number }) {
     this.activeEncounterId = data?.activeEncounterId ?? null
+    this.pendingSpawnX = data?.spawnTileX ?? null
+    this.pendingSpawnY = data?.spawnTileY ?? null
     const activeMarker = this.activeEncounterId
       ? OBSTACLES.find(m => m.encounterId === this.activeEncounterId)
       : null
@@ -176,12 +187,13 @@ export class WaitingRoomScene extends Phaser.Scene {
     const state = getState()
     this.mapDef = HOSPITAL_MAP
 
-    // Spawn at the map's gap tile — the symbolic "where they fell
-    // through" point. There's no exit here anymore; the puzzle's
-    // own victory transition takes the player back to the Hospital,
-    // and they 'wake up' next to the NPC who handed them the case.
-    this.playerTileX = this.mapDef.gapTile.x
-    this.playerTileY = this.mapDef.gapTile.y
+    // Spawn at the same tile the player was standing on in the
+    // Hospital — the WR is a parallel layer over the same map, so
+    // they fall straight down into the corresponding room. Falls
+    // back to the map's gapTile if the scene was launched without
+    // a spawn (e.g. from the dev panel).
+    this.playerTileX = this.pendingSpawnX ?? this.mapDef.gapTile.x
+    this.playerTileY = this.pendingSpawnY ?? this.mapDef.gapTile.y
 
     // Deeper burgundy than the Hospital's warm dark — this is the
     // dramatic stage. Pure black with red highlights would feel too

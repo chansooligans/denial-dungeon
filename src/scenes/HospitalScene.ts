@@ -1062,13 +1062,18 @@ export class HospitalScene extends Phaser.Scene {
       onComplete: () => flash.destroy(),
     })
 
-    // Camera fade-to-black + start WR on completion.
+    // Camera fade-to-black + start WR on completion. Pass the
+    // player's current Hospital tile so the WR layer drops them at
+    // the corresponding tile in the parallel layer (same map, same
+    // room, same coords) instead of teleporting to the map's gapTile.
+    const spawnTileX = this.playerTileX
+    const spawnTileY = this.playerTileY
     this.cameras.main.fadeOut(900, 0, 0, 0)
     this.cameras.main.once('camerafadeoutcomplete', () => {
       const state = getState()
       state.inWaitingRoom = true
       saveGame()
-      this.scene.start('WaitingRoom', { activeEncounterId })
+      this.scene.start('WaitingRoom', { activeEncounterId, spawnTileX, spawnTileY })
     })
   }
 
