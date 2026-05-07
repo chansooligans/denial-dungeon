@@ -106,7 +106,7 @@ export class DialogueScene extends Phaser.Scene {
         this.choiceTexts.push(ct)
       })
     } else if (node.next) {
-      const advanceText = this.add.text(width - 60, height - 30, 'click to continue ▸', {
+      const advanceText = this.add.text(width - 60, height - 30, 'click or space ▸', {
         fontSize: m ? '13px' : '10px', fontFamily: 'monospace', color: '#5a6a7a',
       }).setOrigin(1, 0.5)
       this.choiceTexts.push(advanceText)
@@ -116,9 +116,23 @@ export class DialogueScene extends Phaser.Scene {
         if (nextNode) this.showNode(nextNode)
       }
 
-      // Click-only — keyboard SPACE is owned by the calling scene
-      // (it's the engage key in Hospital + WR), so we don't double-bind.
+      // Click OR SPACE/ENTER advances. The calling scene's SPACE
+      // handler is paused while this DialogueScene is active (the
+      // caller called scene.pause()), so there's no double-bind.
+      // Use `once` semantics so an accidental held Space doesn't
+      // skip multiple lines.
       this.input.once('pointerdown', advanceFn)
+      const onKey = (e: KeyboardEvent) => {
+        if (e.code === 'Space' || e.code === 'Enter') {
+          e.preventDefault()
+          window.removeEventListener('keydown', onKey)
+          advanceFn()
+        }
+      }
+      window.addEventListener('keydown', onKey)
+      // Ensure the listener doesn't outlive the scene if the dialogue
+      // ends (or scene shuts down) before either input fires.
+      this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => window.removeEventListener('keydown', onKey))
     } else {
       this.endDialogue()
     }
