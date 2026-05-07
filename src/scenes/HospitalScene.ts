@@ -9,13 +9,10 @@ import { isTouchDevice } from './device'
 import { ENCOUNTERS } from '../content/enemies'
 import { LEVEL_NPC_DIALOGUES } from '../content/dialogue'
 import { PUZZLE_SPECS } from '../runtime/puzzle/specs'
+import { flavorForTile, LEVEL_ORIENTATION_HINTS } from './hospitalFlavor'
+import { runWakeUpTransition } from './wakeUpOverlay'
+import { showClaimPreview } from './claimPreview'
 import type { NPC } from '../types'
-
-function esc(s: string): string {
-  return String(s).replace(/[&<>"']/g, ch => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
-  }[ch] ?? ch))
-}
 
 const TILE = 32
 
@@ -69,94 +66,9 @@ const TILE_TEXTURES: Record<string, { floor: string; obj?: string; solid?: boole
 // (Doors are passable for the player but separate rooms visually.)
 const BARRIER_CHARS = new Set(['W', 'D', 'L'])
 
-// Flavor text shown when the player bumps a solid object (or presses
-// E facing a non-solid one). The toast renders this at the bottom of
-// the viewport. \n breaks lines; longer entries read like a small
-// in-world note. Voice is Chloe's: dry, slightly tired, observant.
-//
-// Each char can map to a single string OR a list of variants. When a
-// list is given, the variant is picked by a stable hash of the tile's
-// (x, y) — so the same tile always reads the same line, but two
-// neighboring desks won't say the same thing.
-const TILE_FLAVOR: Record<string, string | string[]> = {
-  L: 'LOCKED — KEYCARD REQUIRED\nThe reader sticker reads:\n"Authorized personnel only. Prior Auth team."',
-  F: [
-    'FILING CABINET\nDrawer locked. A peeling label:\nPRE-2018 / DO NOT PURGE.',
-    'FILING CABINET\nTop drawer half-open. Manila folders\ntabbed: AETNA, AETNA, AETNA, OTHER.',
-    'FILING CABINET\nLocked. The keyhole has been filled\nwith hot glue. Recently.',
-    'FILING CABINET\nA dent in the side from a kicked foot.\nLabel: APPEALS / RESOLVED.',
-  ],
-  B: [
-    'WHITEBOARD\n"DENIAL OF THE WEEK: CO-16"\nMissing remark code. Half-erased.',
-    'WHITEBOARD\nA flowchart titled FRONT-END EDITS.\nThe last branch trails off into a question mark.',
-    'WHITEBOARD\nKPI tracker. Clean Claim Rate: 84%.\n(Goal: 95%. The 84 has been there a month.)',
-  ],
-  R: [
-    'RECEPTION COUNTER\nIntake clipboards stacked four deep.\nA ballpoint pen, chained.',
-    'RECEPTION COUNTER\nA bell. A sign: "PLEASE RING ONCE."\nSomeone has rung it twice in pen.',
-    'RECEPTION COUNTER\nA candy dish. Empty. Just wrappers.\nStrawberry — always the strawberry left.',
-  ],
-  V: 'VENDING MACHINE\nOUT OF ORDER — BILL VALIDATOR JAM.\nThe sign has been there all month.',
-  w: [
-    'WATER COOLER\nThe jug gurgles. A taped note reads:\n"Refill before you leave. — Mgmt"',
-    'WATER COOLER\nNearly empty. The little cone cups\nare also nearly empty.',
-  ],
-  b: [
-    'BULLETIN BOARD\n• OPEN ENROLLMENT ENDS NOV 15\n• "Lost: blue badge — Sam, ext. 4112"\n• Pizza Friday (last week\'s flyer)',
-    'BULLETIN BOARD\nA payer policy update from 2019\npinned over a payer policy update from 2018.',
-    'BULLETIN BOARD\n"WORKFLOW POTLUCK — Thursday 5pm —\nbring a side and a denial story."',
-    'BULLETIN BOARD\nOSHA poster, faded. Someone has drawn\na tiny mustache on the regulator.',
-    'BULLETIN BOARD\n"DENIAL CODE OF THE WEEK: CO-97"\nThree CO-97 jokes pinned beneath. Each worse than the last.',
-  ],
-  H: 'EXAM TABLE\nPaper liner crinkled from the last patient.\nA blood-pressure cuff dangles off the side.',
-  X: [
-    'FAX MACHINE\nStatus light blinking: NO LINE.\nThe out-tray has a single curled page.',
-    'FAX MACHINE\nReceived: 1 page from UNKNOWN — 03:42 AM.\nThe page is upside down. You leave it.',
-  ],
-  c: [
-    "DESK\nA half-eaten bagel on a napkin.\nOpen browser tab: \"Aetna PPO formulary 2024.\"",
-    'DESK\nThe CRT hums. Photo of a corgi pinned\nto the monitor with packing tape.',
-    'DESK\nSticky note on the keyboard:\n"CALL ANJALI BACK — RE: BILL."',
-    'DESK\nA Rolodex. An actual Rolodex.\nMost cards are blank. First one: MERCY GENERAL — IT — ext. 3000.',
-    'DESK\nStacks of EOBs sorted by payer.\nA half-finished crossword. 14-down: PARTITA.',
-  ],
-  h: [
-    'WAITING-ROOM CHAIR\nVinyl. Cracked along the seam.\nThe foam underneath has gone hard.',
-    'WAITING-ROOM CHAIR\nA worn paperback wedged between\nthe cushion and the armrest.',
-    "WAITING-ROOM CHAIR\nA child's drawing taped to the back:\na hospital, but the windows are red.",
-  ],
-  P: [
-    'POTTED PLANT\nPlastic. Dust on the leaves.\nNobody has watered it since you started.',
-    'POTTED PLANT\nA philodendron. Real, somehow.\nLeaves yellow at the tips.',
-    'POTTED PLANT\nFake. The pot is full of takeout receipts\nsomeone shoved in there.',
-  ],
-  E: 'VITALS MONITOR\nOn a wheeled stand. The screen pulses\na slow green sine wave. Probably idle.',
-}
-
-/** Where the player should head when each level begins. Shown under
- *  the level-advance banner. Mentions the case-handing NPC + their
- *  rough location so the player isn't left scanning the whole map. */
-const LEVEL_ORIENTATION_HINTS: Record<number, string> = {
-  2:  'Find Kim at the Registration desk.',
-  3:  'Sam is in Patient Services. There\'s a denial.',
-  4:  'Pat moved down to HIM / Coding — head south.',
-  5:  'Sam is back in Patient Services with another wraith.',
-  6:  'Alex is in Billing — south wing. The clearinghouse is bleeding.',
-  7:  'Sam in Patient Services. The reaper has surfaced.',
-  8:  'Jordan is now at the PFS phone bank. Patient on the line.',
-  9:  'Kim at Registration. Three payers, one claim.',
-  10: 'Dana is in the Audit Conference Room. The auditors have arrived.',
-}
-
-/** Stable per-tile variant pick. Same (x, y) → same line every time;
- *  different (x, y) with the same tile char → different line. */
-function flavorForTile(ch: string, x: number, y: number): string | undefined {
-  const v = TILE_FLAVOR[ch]
-  if (!v) return undefined
-  if (typeof v === 'string') return v
-  const h = ((x * 73856093) ^ (y * 19349663)) >>> 0
-  return v[h % v.length]
-}
+// Object flavor text + level orientation hints live in a sibling
+// module (./hospitalFlavor) — pure data + a stable-hash picker, no
+// scene state.
 
 const VIS_HIDDEN = 0
 const VIS_VISITED = 1
@@ -292,7 +204,7 @@ export class HospitalScene extends Phaser.Scene {
         s.pendingHospitalSpawn = { x: this.playerTileX, y: this.playerTileY }
         saveGame()
         this.canMove = false
-        this.showClaimPreview(descent.encounterId, () => {
+        showClaimPreview(this, descent.encounterId, () => {
           this.descendThroughGap(descent.encounterId)
         })
       }
@@ -694,83 +606,7 @@ export class HospitalScene extends Phaser.Scene {
 
   private runWakeUpTransition(claimId: string | null, onComplete: () => void) {
     this.canMove = false
-
-    const OVERLAY_ID = '__wake_up_overlay__'
-    // Tear down any orphaned overlay from a prior invocation. Some
-    // browsers can leave the previous one in the DOM if the scene
-    // shut down before its remove() ran.
-    document.getElementById(OVERLAY_ID)?.remove()
-
-    // Build the overlay entirely with inline styles — no CSS class,
-    // no backdrop-filter (some platforms render the layer black or
-    // fail silently), no @keyframes. Opacity-based animation only,
-    // driven by Phaser tweens on a plain DOM element.
-    const overlay = document.createElement('div')
-    overlay.id = OVERLAY_ID
-    // Start fully opaque so we don't depend on a CSS transition to
-    // appear — fade-out is the only animation, applied on `finish`.
-    overlay.style.cssText = [
-      'position: fixed',
-      'inset: 0',
-      'z-index: 700',
-      'background: rgba(20, 10, 5, 0.55)',
-      'display: flex',
-      'align-items: center',
-      'justify-content: center',
-      'opacity: 1',
-      'transition: opacity 350ms ease',
-      'cursor: pointer',
-    ].join('; ')
-
-    const panel = document.createElement('div')
-    panel.style.cssText = [
-      'background: #f5e6c8',
-      'color: #1a1208',
-      'border: 2px solid #2a1a0e',
-      'border-radius: 4px',
-      'padding: 22px 30px',
-      'font: 700 18px/1.3 ui-monospace, "SF Mono", Menlo, Consolas, monospace',
-      'letter-spacing: 0.06em',
-      'box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5)',
-      'text-align: center',
-    ].join('; ')
-    const checkColor = '#1a6e52'
-    panel.innerHTML = `
-      <div><span style="color:${checkColor};margin-right:8px;">✓</span>CLAIM SUBMITTED</div>
-      ${claimId
-        ? `<div style="margin-top:6px;font-size:11px;font-weight:400;letter-spacing:0.08em;color:#5a3a1a;">${claimId}</div>`
-        : ''}
-    `
-    overlay.appendChild(panel)
-    document.body.appendChild(overlay)
-
-    let done = false
-    const finish = () => {
-      if (done) return
-      done = true
-      overlay.style.opacity = '0'
-      // Wait for the fade-out before removing so the player sees a
-      // clean transition into the hospital, not a sudden disappearance.
-      window.setTimeout(() => {
-        overlay.remove()
-        onComplete()
-      }, 380)
-    }
-
-    // Click-to-skip escape hatch — but debounce so a synthetic click
-    // event leftover from the puzzle submit (mobile touch can replay
-    // a click after touchstart→touchend on a freshly-mounted overlay)
-    // doesn't dismiss the panel before the player sees it.
-    const createdAt = Date.now()
-    overlay.addEventListener('click', () => {
-      if (Date.now() - createdAt < 600) return
-      finish()
-    })
-    // Primary timer on the scene clock.
-    this.time.delayedCall(2400, finish)
-    // Backstop on the global clock so we can never leave the player
-    // stuck behind the overlay if the scene clock pauses / shuts down.
-    window.setTimeout(finish, 5000)
+    runWakeUpTransition(this, claimId, onComplete)
   }
 
   private maybeRunAnjaliThanks() {
@@ -842,84 +678,8 @@ export class HospitalScene extends Phaser.Scene {
     })
   }
 
-  /**
-   * Brief read-only claim preview before the descent fires. The player
-   * sees what's broken on the bill, the panel CSS-blurs out, then the
-   * descent animation kicks in. Total ~2.2s.
-   */
-  private showClaimPreview(encounterId: string, onComplete: () => void) {
-    const enc = ENCOUNTERS[encounterId]
-    const spec = enc?.puzzleSpecId ? PUZZLE_SPECS[enc.puzzleSpecId] : undefined
-    if (!spec || !spec.claim) {
-      onComplete()
-      return
-    }
-    const c = spec.claim
-    const carc = enc.carcCode ? `${enc.carcCode} — ${enc.carcName ?? ''}`.trim() : 'CLAIM REJECTED'
-    const dxLines = c.diagnoses.map(d => `<div>Dx: ${esc(d.code)}${d.label ? ' — ' + esc(d.label) : ''}</div>`).join('')
-    const lineRows = c.serviceLines.map(line => {
-      const cpt = `${esc(line.cptCode)}${line.cptLabel ? ' — ' + esc(line.cptLabel) : ''}`
-      return `<div>${esc(line.dos)} · POS ${esc(line.pos)} · ${cpt} · ${esc(line.charges)}</div>`
-    }).join('')
-    const html = `
-      <div class="panel">
-        <div class="h">CMS-1500 · ${esc(c.claimId)}</div>
-        <div>Patient: ${esc(c.patientName)} · ${esc(c.patientDob)}</div>
-        <div>Insurer: ${esc(c.insurer)} · ${esc(c.insuredId)}</div>
-        ${dxLines}
-        ${lineRows}
-        <div class="denied">DENIED · ${esc(carc)}</div>
-      </div>
-    `
-
-    const STYLE_ID = '__claim_preview_style__'
-    const OVERLAY_ID = '__claim_preview__'
-    let style = document.getElementById(STYLE_ID) as HTMLStyleElement | null
-    if (!style) {
-      style = document.createElement('style')
-      style.id = STYLE_ID
-      // 5s total: 2s sharp, 3s blur-out (40% / 60% split).
-      style.textContent = `
-        #${OVERLAY_ID} {
-          position: fixed; inset: 0; z-index: 800;
-          display: flex; align-items: center; justify-content: center;
-          background: rgba(10, 12, 18, 0.78);
-          animation: claim-preview-blur 5000ms forwards;
-        }
-        #${OVERLAY_ID} .panel {
-          background: #f5e6c8; color: #1a1208;
-          border: 1px solid #2a1a0e; border-radius: 6px;
-          padding: 22px 28px; max-width: 480px;
-          font: 13px/1.55 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-          box-shadow: 0 12px 40px rgba(0,0,0,0.6);
-        }
-        #${OVERLAY_ID} .h {
-          font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
-          border-bottom: 1px dashed #2a1a0e; padding-bottom: 6px; margin-bottom: 8px;
-        }
-        #${OVERLAY_ID} .denied {
-          color: #b13050; font-weight: 700; margin-top: 10px;
-          letter-spacing: 0.04em;
-        }
-        @keyframes claim-preview-blur {
-          0%   { filter: blur(0); opacity: 1; }
-          40%  { filter: blur(0); opacity: 1; }
-          100% { filter: blur(14px); opacity: 0; }
-        }
-      `
-      document.head.appendChild(style)
-    }
-    const overlay = document.createElement('div')
-    overlay.id = OVERLAY_ID
-    overlay.innerHTML = html
-    document.body.appendChild(overlay)
-
-    this.time.delayedCall(5000, () => {
-      overlay.remove()
-      style?.remove()
-      onComplete()
-    })
-  }
+  // showClaimPreview lives in ./claimPreview — pure DOM overlay, no
+  // scene state.
 
   private setupInput() {
     this.cursors = this.input.keyboard!.createCursorKeys()
