@@ -6,6 +6,7 @@ import { HOSPITAL_MAP } from '../content/maps'
 import { showNarration } from './narration'
 import { isTouchDevice } from './device'
 import { debugEvent } from './debugRibbon'
+import { pickNextTrack } from './musicShuffle'
 import type { MapDef } from '../content/maps'
 
 const TILE = 32
@@ -690,7 +691,7 @@ export class WaitingRoomScene extends Phaser.Scene {
       sm.unlock()
       debugEvent('wr:sm-unlock')
     }
-    const key = keys[Math.floor(Math.random() * keys.length)]
+    const key = pickNextTrack('redRoom', keys)
     if (!this.cache.audio.exists(key)) {
       debugEvent('wr:audio-missing ' + key)
       return
