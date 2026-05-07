@@ -9,6 +9,10 @@ interface Beat {
   action?: (scene: IntroScene) => void
   key?: string         // texture key for 'cover' and 'backdrop'
   alpha?: number       // target alpha for 'backdrop' (default 0.35)
+  // For 'text' beats: an optional scene action that fires the moment
+  // the line starts (so a visual can play *behind* the typed text
+  // instead of running as a separate beat afterward).
+  sceneAction?: (scene: IntroScene) => void
 }
 
 const BEATS: Beat[] = [
@@ -77,16 +81,16 @@ const BEATS: Beat[] = [
   { type: 'text', lines: [
     'Not denied. Not rejected. Not pending.',
     'Gone.',
-  ], color: '#ef5b7b' },
-  { type: 'wait', duration: 2500 },
+  ], color: '#ef5b7b',
+    // Drop into the fall animation as the line types — the character
+    // falling visually rhymes with the claim being "gone".
+    sceneAction: (s) => s.showFall(),
+  },
+  { type: 'wait', duration: 3500 },
 
   // Beat 5: The Gap (procedural only; comic art shown as full reveal at end).
   { type: 'scene', action: (s) => s.showGap() },
   { type: 'wait', duration: 2000 },
-
-  // Beat 6: The Fall
-  { type: 'scene', action: (s) => s.showFall() },
-  { type: 'wait', duration: 3500 },
 
   // Beat 7: The Waiting Room
   { type: 'scene', action: (s) => s.showWaitingRoom() },
@@ -313,6 +317,10 @@ export class IntroScene extends Phaser.Scene {
       case 'text':
         // Play this beat's voiceover (one MP3 per text beat).
         this.playBeatVoice()
+        // Optional concurrent scene visual (e.g. the falling animation
+        // that should run while "Not denied. Not rejected. Not pending.
+        // Gone." types out).
+        if (beat.sceneAction) beat.sceneAction(this)
         // Show + type the lines. When typing finishes (or user fast-forwards),
         // onTypingComplete advances to the next beat (typically a 'wait').
         this.showText(beat.lines!, beat.color || '#e6edf3')
@@ -803,7 +811,9 @@ export class IntroScene extends Phaser.Scene {
     this.advanceCallback = undefined
     this.canAdvance = false
     this.stopVoice()
-    this.stopIntroSong()
+    // Intentionally do NOT stop the intro song — it carries from the
+    // cinematic into the title screen as a single bed of music. The
+    // sound persists because Phaser's sound manager is game-global.
     this.scene.start('Title')
   }
 
