@@ -142,16 +142,16 @@ export function newGame() {
  * after 2 defeats, out of level 2 after 4 cumulative defeats, etc.
  */
 export const LEVEL_DEFEAT_THRESHOLD: number[] = [
-  1,  // L1 → 1 defeat to advance (intro is dialogue-driven; only one case for now)
-  4,  // L2 → 4 cumulative
-  6,  // L3 → 6
-  8,  // L4 → 8
-  10, // L5 → 10
-  12, // L6 → 12
-  14, // L7 → 14
-  16, // L8 → 16
-  18, // L9 → 18
-  20, // L10 → 20 (audit boss completes the run)
+  1,  // L1 → 1 defeat to advance (intro)
+  2,  // L2 → +1
+  3,  // L3 → +1
+  4,  // L4 → +1
+  5,  // L5 → +1
+  6,  // L6 → +1
+  7,  // L7 → +1
+  8,  // L8 → +1
+  9,  // L9 → +1
+  10, // L10 → +1 (audit boss completes the run)
 ]
 
 /**
