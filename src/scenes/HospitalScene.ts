@@ -11,6 +11,7 @@ import { LEVEL_NPC_DIALOGUES } from '../content/dialogue'
 import { PUZZLE_SPECS } from '../runtime/puzzle/specs'
 import { flavorForTile, LEVEL_ORIENTATION_HINTS } from './hospitalFlavor'
 import { runWakeUpTransition } from './wakeUpOverlay'
+import { pickNextTrack } from './musicShuffle'
 import { showClaimPreview } from './claimPreview'
 import { debugStatus, debugEvent } from './debugRibbon'
 import type { NPC } from '../types'
@@ -640,7 +641,7 @@ export class HospitalScene extends Phaser.Scene {
       return
     }
 
-    const key = tracks[Math.floor(Math.random() * tracks.length)]
+    const key = pickNextTrack('hospital', tracks)
     if (!this.cache.audio.exists(key)) return
     const ambient = this.sound.add(key, { volume: 0, loop: true })
     ambient.play()
