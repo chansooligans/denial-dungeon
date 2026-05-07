@@ -161,10 +161,19 @@ export class HospitalScene extends Phaser.Scene {
     this.cameras.main.startFollow(this.player, true, 0.1, 0.1)
     this.cameras.main.setZoom(1.5)
     this.cameras.main.setBounds(0, 0, this.mapDef.width * TILE, this.mapDef.height * TILE)
-    // Fade in from black on scene start. Returns from the WR or
-    // a battle land here too, so this single call covers all
-    // entries into the Hospital.
+    // Defensive: clear any residual fade state from the previous scene
+    // (the PuzzleBattle scene fades to black before scene.start; on
+    // some mobile browsers the new camera was inheriting a stuck
+    // fade overlay, leaving the player on a fully black screen). Then
+    // fade in cleanly from black.
+    this.cameras.main.resetFX()
     this.cameras.main.fadeIn(450, 0, 0, 0)
+    // Belt-and-suspenders: if the camera fade-in tween silently fails,
+    // force alpha back to 1 after the fade should be done, so the
+    // canvas can never be permanently invisible.
+    this.time.delayedCall(700, () => {
+      this.cameras.main.setAlpha(1)
+    })
 
     // Hospital ambience — Lynch-y / sci-fi melancholy. Only kicks in
     // once the cinematic intro song is done so the two don't fight.
