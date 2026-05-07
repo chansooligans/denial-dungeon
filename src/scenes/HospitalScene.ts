@@ -5,6 +5,7 @@ import { HOSPITAL_MAP } from '../content/maps'
 import type { MapDef } from '../content/maps'
 import { getState, saveGame, consumePendingLevelBanner } from '../state'
 import { showNarration } from './narration'
+import { isTouchDevice } from './device'
 import { ENCOUNTERS } from '../content/enemies'
 import { PUZZLE_SPECS } from '../runtime/puzzle/specs'
 import type { NPC } from '../types'
@@ -226,7 +227,11 @@ export class HospitalScene extends Phaser.Scene {
     }
 
     // Mobile / accessibility: parallel scene with virtual D-pad + E + ESC.
-    if (!this.scene.isActive('TouchOverlay')) this.scene.launch('TouchOverlay')
+    // Only launched on touch-primary devices — desktop keyboards don't
+    // need the on-screen controls cluttering the view.
+    if (isTouchDevice() && !this.scene.isActive('TouchOverlay')) {
+      this.scene.launch('TouchOverlay')
+    }
     // Deferred stop: when this scene shuts down, defer to the next tick
     // so the next scene has had a chance to start. If we're transitioning
     // to another scene that also wants the overlay (Hospital ⇄ WaitingRoom),
@@ -965,6 +970,9 @@ export class HospitalScene extends Phaser.Scene {
   }
 
   private interact() {
+    // Don't interact while frozen (e.g. during the opening notebook
+    // narration, the claim preview, or a transition).
+    if (!this.canMove) return
     if (this.nearbyNpc) {
       this.canMove = false
       this.interactPrompt.setVisible(false)

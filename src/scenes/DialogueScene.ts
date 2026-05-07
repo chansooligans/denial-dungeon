@@ -68,7 +68,7 @@ export class DialogueScene extends Phaser.Scene {
         this.choiceTexts.push(ct)
       })
     } else if (node.next) {
-      const advanceText = this.add.text(width - 60, height - 30, '[SPACE]', {
+      const advanceText = this.add.text(width - 60, height - 30, 'click to continue ▸', {
         fontSize: '10px', fontFamily: 'monospace', color: '#5a6a7a',
       }).setOrigin(1, 0.5)
       this.choiceTexts.push(advanceText)
@@ -78,7 +78,8 @@ export class DialogueScene extends Phaser.Scene {
         if (nextNode) this.showNode(nextNode)
       }
 
-      this.input.keyboard!.once('keydown-SPACE', advanceFn)
+      // Click-only — keyboard SPACE is owned by the calling scene
+      // (it's the engage key in Hospital + WR), so we don't double-bind.
       this.input.once('pointerdown', advanceFn)
     } else {
       this.endDialogue()

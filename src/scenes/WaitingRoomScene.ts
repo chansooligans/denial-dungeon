@@ -4,6 +4,7 @@ import { LEVELS } from '../content/levels'
 import { ENCOUNTERS } from '../content/enemies'
 import { HOSPITAL_MAP } from '../content/maps'
 import { showNarration } from './narration'
+import { isTouchDevice } from './device'
 import type { MapDef } from '../content/maps'
 
 const TILE = 32
@@ -273,8 +274,11 @@ export class WaitingRoomScene extends Phaser.Scene {
       this.refreshObstacleVisibility()
     })
 
-    // Mobile / accessibility: virtual D-pad + E button.
-    if (!this.scene.isActive('TouchOverlay')) this.scene.launch('TouchOverlay')
+    // Mobile / accessibility: virtual D-pad + E button. Touch devices
+    // only — desktop keyboards skip the overlay.
+    if (isTouchDevice() && !this.scene.isActive('TouchOverlay')) {
+      this.scene.launch('TouchOverlay')
+    }
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       const sm = this.game.scene
       setTimeout(() => {
@@ -549,11 +553,22 @@ export class WaitingRoomScene extends Phaser.Scene {
       S: this.input.keyboard!.addKey('S'),
       D: this.input.keyboard!.addKey('D'),
     }
+    // E: engage obstacle OR return to Hospital (via the gap).
+    // SPACE: engage obstacle only — return-to-hospital is deliberately
+    //        E-only so accidental space-bar presses don't bounce the
+    //        player out mid-puzzle exploration.
     this.input.keyboard!.on('keydown-E', () => this.tryInteract())
-    this.input.keyboard!.on('keydown-SPACE', () => this.tryInteract())
+    this.input.keyboard!.on('keydown-SPACE', () => {
+      if (!this.canMove) return
+      if (this.nearbyObstacle) this.tryEngageObstacle(this.nearbyObstacle)
+    })
   }
 
   private tryInteract() {
+    // Don't fire while a narration is on screen or the arrival
+    // animation is still settling — avoids stacking narration boxes
+    // when E is mashed.
+    if (!this.canMove) return
     if (this.nearbyObstacle) {
       this.tryEngageObstacle(this.nearbyObstacle)
     } else {

@@ -65,8 +65,8 @@ export const INTRO_PUZZLE: PuzzleSpec = {
       '"Welcome to the building. You\'ll get a feel for the rhythm ' +
       'fast. Most of what we do here looks like this one: somebody ' +
       'in the chain typed the wrong thing into a box, and the ' +
-      'payer\'s computer kicked it back. Not a fight. Not a ' +
-      'conspiracy. A typo, a card swap, a missing field."',
+      'payer\'s computer kicked it back. A typo, a card swap, a ' +
+      'missing field."',
       '"You\'re going to learn one verb today:"',
     ],
     bullets: [
