@@ -38,7 +38,19 @@ export function showNarration(
     .setScrollFactor(0)
     .setDepth(111)
     .setAlpha(0)
-  options?.ignoreCameras?.forEach(cam => cam.ignore([box, text]))
+  // Small "click to continue" hint inside the box — only visible while
+  // a line is fully shown and waiting for input.
+  const hint = scene.add
+    .text(width / 2 + (width - 80) / 2 - 14, height / 2 + 100 + 22, 'click ▸', {
+      fontSize: '10px',
+      fontFamily: 'monospace',
+      color: '#5a6a7a',
+    })
+    .setOrigin(1, 0.5)
+    .setScrollFactor(0)
+    .setDepth(111)
+    .setAlpha(0)
+  options?.ignoreCameras?.forEach(cam => cam.ignore([box, text, hint]))
 
   scene.tweens.add({ targets: box, alpha: 0.85, duration: 280 })
 
@@ -46,12 +58,13 @@ export function showNarration(
   const showNext = () => {
     if (i >= lines.length) {
       scene.tweens.add({
-        targets: [box, text],
+        targets: [box, text, hint],
         alpha: 0,
         duration: 260,
         onComplete: () => {
           box.destroy()
           text.destroy()
+          hint.destroy()
           onComplete()
         },
       })
@@ -59,13 +72,23 @@ export function showNarration(
     }
     text.setText(lines[i])
     i += 1
+    // Fade the line in, then wait for a click to advance.
     scene.tweens.add({
       targets: text,
       alpha: 1,
       duration: 280,
-      hold: 1500,
-      yoyo: true,
-      onComplete: () => scene.time.delayedCall(180, showNext),
+      onComplete: () => {
+        scene.tweens.add({ targets: hint, alpha: 1, duration: 200 })
+        scene.input.once('pointerdown', () => {
+          scene.tweens.add({ targets: hint, alpha: 0, duration: 120 })
+          scene.tweens.add({
+            targets: text,
+            alpha: 0,
+            duration: 200,
+            onComplete: showNext,
+          })
+        })
+      },
     })
   }
   showNext()
