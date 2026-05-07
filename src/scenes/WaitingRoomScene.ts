@@ -152,14 +152,10 @@ export class WaitingRoomScene extends Phaser.Scene {
   /** When set, tryMove rejects any tile outside this rectangle —
    *  confines the player to the active obstacle's room. */
   private sessionBounds: { x: number; y: number; w: number; h: number } | null = null
-  /** Re-entrancy guard so spamming E on the gap doesn't stack the
-   *  locked-exit narration overlays on top of each other. */
-  private lockedExitNarrationOpen = false
 
   private floatingMotes: Phaser.GameObjects.Graphics[] = []
   private ticketText!: Phaser.GameObjects.Text
   private hudLevel!: Phaser.GameObjects.Text
-  private exitPrompt!: Phaser.GameObjects.Text
   private obstacleSprites: ObstacleSprite[] = []
   private engagePrompt!: Phaser.GameObjects.Text
   private nearbyObstacle: ObstacleSprite | null = null
@@ -180,9 +176,10 @@ export class WaitingRoomScene extends Phaser.Scene {
     const state = getState()
     this.mapDef = HOSPITAL_MAP
 
-    // Spawn at the gap tile — the player fell through, so they
-    // arrive where the gap is in the Hospital. Walking back to the
-    // same tile + pressing E exits to the Hospital.
+    // Spawn at the map's gap tile — the symbolic "where they fell
+    // through" point. There's no exit here anymore; the puzzle's
+    // own victory transition takes the player back to the Hospital,
+    // and they 'wake up' next to the NPC who handed them the case.
     this.playerTileX = this.mapDef.gapTile.x
     this.playerTileY = this.mapDef.gapTile.y
 
@@ -384,21 +381,6 @@ export class WaitingRoomScene extends Phaser.Scene {
   }
 
   private addAtmosphere() {
-    // Drop a subtle "you arrived here" glow at the gap so the player
-    // can find their way back. Lavender, matching the gap in the
-    // Hospital — the only tile where the two layers visually agree.
-    const gapPx = this.mapDef.gapTile.x * TILE + TILE / 2
-    const gapPy = this.mapDef.gapTile.y * TILE + TILE / 2
-    const gapGlow = this.add.graphics().setDepth(0)
-    gapGlow.fillStyle(0xb18bd6, 0.12)
-    gapGlow.fillCircle(gapPx, gapPy, TILE * 1.6)
-    gapGlow.fillStyle(0xb18bd6, 0.25)
-    gapGlow.fillCircle(gapPx, gapPy, TILE * 0.9)
-    this.tweens.add({
-      targets: gapGlow, alpha: 0.65, duration: 2400,
-      yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
-    })
-
     // Floating data motes — replace the old papers with small
     // glowing dots that drift slowly. Cyberpunk-ish; the room's
     // air is thick with information that never resolves.
@@ -477,11 +459,6 @@ export class WaitingRoomScene extends Phaser.Scene {
       },
     })
 
-    // Exit prompt + engage prompt
-    this.exitPrompt = this.add.text(0, 0, '[E] Return to Hospital', {
-      fontSize: '9px', fontFamily: 'monospace', color: '#f0d090',
-      backgroundColor: '#1a0608', padding: { x: 4, y: 2 },
-    }).setOrigin(0.5).setDepth(20).setVisible(false)
     this.engagePrompt = this.add.text(0, 0, '', {
       fontSize: '9px', fontFamily: 'monospace', color: '#f0d090',
       backgroundColor: '#1a0608', padding: { x: 4, y: 2 },
@@ -571,9 +548,9 @@ export class WaitingRoomScene extends Phaser.Scene {
     if (!this.canMove) return
     if (this.nearbyObstacle) {
       this.tryEngageObstacle(this.nearbyObstacle)
-    } else {
-      this.tryExit()
     }
+    // No gap exit — the player wakes up at their desk after the
+    // puzzle finishes; they don't need to walk anywhere.
   }
 
   private tryEngageObstacle(os: ObstacleSprite) {
@@ -642,7 +619,6 @@ export class WaitingRoomScene extends Phaser.Scene {
 
     if (dx !== 0 || dy !== 0) this.tryMove(dx, dy)
 
-    this.checkExitProximity()
     this.checkObstacleProximity()
   }
 
@@ -735,81 +711,4 @@ export class WaitingRoomScene extends Phaser.Scene {
     }
   }
 
-  private checkExitProximity() {
-    const gapX = this.mapDef.gapTile.x * TILE + TILE / 2
-    const gapY = this.mapDef.gapTile.y * TILE + TILE / 2
-    const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, gapX, gapY)
-
-    if (dist < TILE * 2 && !this.nearbyObstacle) {
-      this.exitPrompt.setPosition(gapX, gapY - 28)
-      this.exitPrompt.setVisible(true)
-    } else {
-      this.exitPrompt.setVisible(false)
-    }
-  }
-
-  private tryExit() {
-    // Block return until the active obstacle is defeated. NPC-triggered
-    // sessions are one-way until the case is resolved.
-    if (this.activeEncounterId) {
-      const state = getState()
-      if (!state.defeatedObstacles.includes(this.activeEncounterId)) {
-        this.explainLockedExit()
-        return
-      }
-    }
-    const gapX = this.mapDef.gapTile.x * TILE + TILE / 2
-    const gapY = this.mapDef.gapTile.y * TILE + TILE / 2
-    const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, gapX, gapY)
-
-    if (dist < TILE * 2) {
-      this.ascendThroughGap()
-    }
-  }
-
-  /**
-   * The player tried to leave the WR with the case unresolved. Surface
-   * a short narration that explains why — once at a time. If a
-   * narration is already on screen, additional presses are swallowed
-   * so the messages don't stack.
-   */
-  private explainLockedExit() {
-    if (this.lockedExitNarrationOpen) return
-    this.lockedExitNarrationOpen = true
-    showNarration(this, [
-      'The gap doesn’t open.',
-      'Anjali is still upstairs, waiting for an answer.',
-      'You finish the case, or you stay down here.',
-    ], () => {
-      this.lockedExitNarrationOpen = false
-    })
-  }
-
-  /**
-   * Waiting Room → Hospital transition. Player rises (the inverse
-   * of the descent: y up + alpha fade) while the camera fades to
-   * black, then HospitalScene starts and fades back in.
-   */
-  private ascendThroughGap() {
-    if (!this.canMove) return
-    this.canMove = false
-
-    // Player rises out of frame — opposite direction of the descent.
-    this.tweens.add({
-      targets: this.player,
-      y: this.player.y - TILE * 4,
-      alpha: 0,
-      scaleY: 1.2, // slight stretch from base 1 — pulled upward
-      duration: 600,
-      ease: 'Sine.easeOut',
-    })
-
-    this.cameras.main.fadeOut(700, 0, 0, 0)
-    this.cameras.main.once('camerafadeoutcomplete', () => {
-      const state = getState()
-      state.inWaitingRoom = false
-      saveGame()
-      this.scene.start('Hospital')
-    })
-  }
 }

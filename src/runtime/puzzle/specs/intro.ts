@@ -120,10 +120,11 @@ export const INTRO_PUZZLE: PuzzleSpec = {
   ],
   submitLabel: 'SUBMIT CORRECTED CLAIM',
   victory: {
-    headline: 'The claim adjudicates clean.',
+    headline: 'You blink.',
     paragraphs: [
-      "Aetna processes the corrected claim on the next cycle. Anjali's $387 becomes a $40 ER copay; the corrected statement reaches her by the end of the week. She calls patient services to make sure it's real. It is.",
-      'You walk back upstairs. The fluorescents look the way fluorescents normally look. Dana raises a coffee cup at you from across the bullpen. <em>"Welcome aboard."</em>',
+      'You’re at your desk. Or — you never left.',
+      'The screen in front of you shows the claim has resubmitted. Anjali is still standing across the counter, still holding the bill.',
+      'She hasn’t realized anything has happened yet.',
     ],
   },
 }

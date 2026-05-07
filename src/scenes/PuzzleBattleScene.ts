@@ -127,6 +127,10 @@ export class PuzzleBattleScene extends Phaser.Scene {
       overlay.style.font = '14.5px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif'
       // Center column with max-width so it reads like the prototype.
       overlay.style.boxSizing = 'border-box'
+      // Make all puzzle text selectable so the player can highlight +
+      // copy briefing / claim / victory copy.
+      overlay.style.userSelect = 'text'
+      ;(overlay.style as any).webkitUserSelect = 'text'
       const game = document.getElementById('game')
       ;(game ?? document.body).appendChild(overlay)
     }
