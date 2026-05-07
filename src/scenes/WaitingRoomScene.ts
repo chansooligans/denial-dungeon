@@ -218,6 +218,7 @@ export class WaitingRoomScene extends Phaser.Scene {
     // and the WR resolves out of the dark.
     this.cameras.main.fadeIn(700, 0, 0, 0)
 
+
     // Fade out anything bleeding in from above — the hospital
     // ambient track or, if the player skipped fast, the intro song.
     // Both live on the global sound manager and would otherwise keep
