@@ -209,6 +209,13 @@ function buildPresetSave(targetLevel: number): string {
     firstWrArrivalNarrationPlayed: lvl > 1,
     anjaliThanked: lvl > 1,
     pendingAnjaliLeave: false,
+    // Pending level banner so Hospital surfaces the orientation hint
+    // ('Find Kim at the Registration desk', etc.) the moment the
+    // preset takes effect — otherwise the player lands in the lobby
+    // with no signal about where the level's case lives. Skip for
+    // L1 since the L1 banner has nothing to advertise (Anjali walks
+    // up to you).
+    pendingLevelBanner: lvl > 1 ? lvl : null,
     pendingClaimSubmitted: null,
   }
   return JSON.stringify(state)
