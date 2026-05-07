@@ -127,8 +127,8 @@ const BEATS: Beat[] = [
   { type: 'wait', duration: 2000 },
 
   // End reveal: full-bleed comic pages — the gap, then the waiting room.
-  { type: 'cover', key: 'intro_page5', duration: 4200 },
-  { type: 'cover', key: 'intro_page6', duration: 4800 },
+  { type: 'cover', key: 'intro_page5', duration: 5700 },
+  { type: 'cover', key: 'intro_page6', duration: 6300 },
 
   // Beat 8: Title
   { type: 'title' },
