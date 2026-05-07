@@ -154,6 +154,10 @@ export class IntroScene extends Phaser.Scene {
   private typingFinishedTimer?: Phaser.Time.TimerEvent
   // Pulsing "click to continue" indicator at bottom of screen.
   private continuePrompt!: Phaser.GameObjects.Text
+  // Voiceover state. textBeatCounter ticks once per `text` beat played,
+  // so it lines up 1:1 with the pre-split intro_voice_NN audio assets.
+  private textBeatCounter = 0
+  private currentVoice?: Phaser.Sound.BaseSound
 
   constructor() {
     super('Intro')
@@ -172,6 +176,8 @@ export class IntroScene extends Phaser.Scene {
     this.typingEvents = []
     this.typingTextData = []
     this.typingFinishedTimer = undefined
+    this.textBeatCounter = 0
+    this.currentVoice = undefined
 
     const { width, height } = this.scale
 
@@ -294,6 +300,8 @@ export class IntroScene extends Phaser.Scene {
         break
 
       case 'text':
+        // Play this beat's voiceover (one MP3 per text beat).
+        this.playBeatVoice()
         // Show + type the lines. When typing finishes (or user fast-forwards),
         // onTypingComplete advances to the next beat (typically a 'wait').
         this.showText(beat.lines!, beat.color || '#e6edf3')
@@ -740,6 +748,26 @@ export class IntroScene extends Phaser.Scene {
     this.typingEvents = []
     this.advanceCallback = undefined
     this.canAdvance = false
+    this.stopVoice()
     this.scene.start('Title')
+  }
+
+  /** Play the voiceover for the current text beat (1-indexed). Stops
+   *  any voice that was still playing from the previous beat. */
+  private playBeatVoice() {
+    this.textBeatCounter += 1
+    this.stopVoice()
+    const key = `intro_voice_${String(this.textBeatCounter).padStart(2, '0')}`
+    if (!this.cache.audio.exists(key)) return
+    this.currentVoice = this.sound.add(key)
+    this.currentVoice.play()
+  }
+
+  private stopVoice() {
+    if (this.currentVoice) {
+      this.currentVoice.stop()
+      this.currentVoice.destroy()
+      this.currentVoice = undefined
+    }
   }
 }
