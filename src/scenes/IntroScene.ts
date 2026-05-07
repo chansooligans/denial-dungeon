@@ -18,6 +18,10 @@ interface Beat {
   // the typed text on screen. Useful when an upcoming cover image
   // already shows the same text in the comic art.
   silent?: boolean
+  // For 'cover' beats: when true, fire the next narration MP3 as
+  // the cover starts displaying. Lets a line of voiceover land on
+  // the comic page rather than before it.
+  voice?: boolean
 }
 
 const BEATS: Beat[] = [
@@ -127,18 +131,14 @@ const BEATS: Beat[] = [
     'They call it',
   ], color: '#e6edf3' },
   { type: 'wait', duration: 1000 },
-  // Voiceover-only — the cover image that follows shows "THE WAITING
-  // ROOM" in its comic art, so we keep the narration but don't
-  // double-render the line on the dark backdrop.
-  { type: 'text', lines: [
-    'The Waiting Room.',
-  ], color: '#f0a868', silent: true },
-  { type: 'wait', duration: 200 },
 
   // End reveal: full-bleed comic pages. Order intentionally flipped
   // — page6 first, then page5 (which has 'THE WAITING ROOM' lettered
-  // into the comic art) as the climactic final image.
-  { type: 'cover', key: 'intro_page6', duration: 6300 },
+  // into the comic art) as the climactic final image. The 18.mp3
+  // narration ('The Waiting Room.') fires on the FIRST cover via
+  // `voice: true` so the line lands on the comic page rather than
+  // before it.
+  { type: 'cover', key: 'intro_page6', duration: 6300, voice: true },
   { type: 'cover', key: 'intro_page5', duration: 5700 },
 
   // Beat 8: Title
@@ -341,7 +341,11 @@ export class IntroScene extends Phaser.Scene {
     switch (beat.type) {
       case 'cover':
         // Cover handles its own fade-in and then waits for the user.
+        // If the beat is flagged with `voice: true`, fire the next
+        // narration MP3 the moment the cover mounts so the line
+        // plays over the comic image instead of before it.
         this.showCover(beat.key!)
+        if (beat.voice) this.playBeatVoice()
         break
 
       case 'backdrop':
