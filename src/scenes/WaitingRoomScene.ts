@@ -5,6 +5,7 @@ import { ENCOUNTERS } from '../content/enemies'
 import { HOSPITAL_MAP } from '../content/maps'
 import { showNarration } from './narration'
 import { isTouchDevice } from './device'
+import { debugEvent } from './debugRibbon'
 import type { MapDef } from '../content/maps'
 
 const TILE = 32
@@ -655,12 +656,31 @@ export class WaitingRoomScene extends Phaser.Scene {
    *  out yet). */
   private startRedRoomAmbience() {
     const keys = ['red_room_1', 'red_room_2', 'red_room_3']
-    // Already playing one? Don't stack.
-    if (keys.some(k => this.sound.get(k)?.isPlaying)) return
+    // If a previous track is somehow still playing (slow tween
+    // teardown from a prior session), tear it down now and continue.
+    // The OLD code just returned, leaving a 'silent' state if the
+    // sound was technically still alive.
+    for (const k of keys) {
+      const s = this.sound.get(k)
+      if (s) { s.stop(); s.destroy() }
+    }
+    const sm = this.sound as Phaser.Sound.BaseSoundManager & { locked?: boolean; unlock?: () => void }
+    if (sm.locked && typeof sm.unlock === 'function') {
+      // Mobile autoplay gate — Phaser stores a locked flag until any
+      // user input. By the time the player descends from Hospital,
+      // they've tapped enough times that this should already be
+      // unlocked. Call it defensively in case it's still gated.
+      sm.unlock()
+      debugEvent('wr:sm-unlock')
+    }
     const key = keys[Math.floor(Math.random() * keys.length)]
-    if (!this.cache.audio.exists(key)) return
+    if (!this.cache.audio.exists(key)) {
+      debugEvent('wr:audio-missing ' + key)
+      return
+    }
     const ambient = this.sound.add(key, { volume: 0, loop: true })
-    ambient.play()
+    const playResult = ambient.play()
+    debugEvent(`wr:start ${key} play=${playResult} muted=${this.sound.mute}`)
     this.tweens.add({
       targets: ambient,
       volume: 0.45,
