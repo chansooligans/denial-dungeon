@@ -179,12 +179,35 @@ export class IntroScene extends Phaser.Scene {
   private introSong?: Phaser.Sound.BaseSound
   private introSongBoosted = false
 
+  // Set by init() when scene.start('Intro', { skipToBeat: N }) is
+  // called from the dev panel. Lets QA jump into a specific beat
+  // without sitting through the prior cinematic.
+  private skipToBeatIndex = 0
+  private skipPreloadVoiceCounter = 0
+
   constructor() {
     super('Intro')
   }
 
+  init(data?: { skipToBeat?: number }) {
+    // Allow the dev panel (or any caller) to jump straight to a
+    // specific beat by passing { skipToBeat: N } to scene.start.
+    // create() picks this up below.
+    this.skipToBeatIndex = typeof data?.skipToBeat === 'number'
+      ? Math.max(0, Math.min(BEATS.length - 1, data.skipToBeat))
+      : 0
+    // Pre-advance the text-beat counter so the right voiceover plays
+    // when we land mid-cinematic. (Each 'text' beat ticks the counter.)
+    let voiceCounter = 0
+    for (let j = 0; j < this.skipToBeatIndex; j++) {
+      if (BEATS[j].type === 'text') voiceCounter += 1
+    }
+    this.skipPreloadVoiceCounter = voiceCounter
+  }
+
   create() {
-    this.currentBeat = 0
+    this.currentBeat = this.skipToBeatIndex ?? 0
+    this.textBeatCounter = this.skipPreloadVoiceCounter ?? 0
     this.done = false
     this.textObjects = []
     this.pendingTimer = undefined
@@ -196,7 +219,6 @@ export class IntroScene extends Phaser.Scene {
     this.typingEvents = []
     this.typingTextData = []
     this.typingFinishedTimer = undefined
-    this.textBeatCounter = 0
     this.currentVoice = undefined
     this.introSong = undefined
 
