@@ -8,6 +8,7 @@
 // other than `0`/`false`/empty enables it.
 
 import { getState, loadGame, newGame } from '../state'
+import { clearHospitalFog } from '../scenes/HospitalScene'
 import type { GameState } from '../types'
 
 const PANEL_ID = '__dev_panel__'
@@ -274,6 +275,9 @@ function handleAction(action: string, arg?: string) {
         // Reset the in-memory state to defaults so the running game
         // doesn't keep behaving like the cleared save was still there.
         newGame()
+        // Also clear the in-memory fog-of-war cache so the next
+        // Hospital entry starts fully hidden.
+        clearHospitalFog()
         stopAllScenes(sm)
         sm.start('Title')
         hidePanel()

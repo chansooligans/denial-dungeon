@@ -78,6 +78,16 @@ const VIS_CURRENT = 2
 
 const ALPHA_FOR_STATE = [0, 0.28, 1]
 
+// Module-level cache of the player's fog-of-war reveal state, so it
+// survives Hospital → WaitingRoom → Hospital round-trips. Reset by
+// `clearHospitalFog()` (called from the dev panel's clear-save). Lost
+// on full page reload, which we accept — exploration in-session is
+// the main UX win, and a reload is a deliberate fresh start.
+let cachedTileVisState: number[][] | null = null
+export function clearHospitalFog() {
+  cachedTileVisState = null
+}
+
 interface NPCSprite {
   sprite: Phaser.GameObjects.Image
   npc: NPC
@@ -321,6 +331,10 @@ export class HospitalScene extends Phaser.Scene {
     // to another scene that also wants the overlay (Hospital ⇄ WaitingRoom),
     // leave it running; otherwise stop it.
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      // Persist fog-of-war so a return-from-WR doesn't blow it away.
+      // Snapshot a copy (the next Hospital create() will allocate a
+      // fresh array, so we want value-copies, not aliased rows).
+      cachedTileVisState = this.tileVisState.map(row => [...row])
       const sm = this.game.scene
       setTimeout(() => {
         if (!sm.isActive('Hospital') && !sm.isActive('WaitingRoom')) {
@@ -335,7 +349,23 @@ export class HospitalScene extends Phaser.Scene {
 
     this.tileFloorSprites = Array.from({ length: mh }, () => new Array(mw))
     this.tileObjSprites = Array.from({ length: mh }, () => new Array(mw).fill(null))
-    this.tileVisState = Array.from({ length: mh }, () => new Array(mw).fill(VIS_HIDDEN))
+    // Restore fog-of-war from the module-level cache if it matches
+    // the current map dimensions — preserves exploration across the
+    // Hospital → WR → Hospital round-trip. Otherwise start fully
+    // hidden. Any VIS_CURRENT cells from the prior session demote
+    // to VIS_VISITED so the player's just-arrived tile becomes the
+    // new "current" via enterRoomAt below.
+    if (
+      cachedTileVisState &&
+      cachedTileVisState.length === mh &&
+      cachedTileVisState[0]?.length === mw
+    ) {
+      this.tileVisState = cachedTileVisState.map(row =>
+        row.map(v => (v === VIS_CURRENT ? VIS_VISITED : v))
+      )
+    } else {
+      this.tileVisState = Array.from({ length: mh }, () => new Array(mw).fill(VIS_HIDDEN))
+    }
 
     for (let y = 0; y < mh; y++) {
       const row = layout[y] || ''
