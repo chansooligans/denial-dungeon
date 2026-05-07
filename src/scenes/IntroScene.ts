@@ -158,6 +158,9 @@ export class IntroScene extends Phaser.Scene {
   // so it lines up 1:1 with the pre-split intro_voice_NN audio assets.
   private textBeatCounter = 0
   private currentVoice?: Phaser.Sound.BaseSound
+  // Cover-page audio bed — plays from the first cover beat and runs
+  // underneath the rest of the intro. Stopped on skip / scene end.
+  private coverAudio?: Phaser.Sound.BaseSound
 
   constructor() {
     super('Intro')
@@ -178,6 +181,7 @@ export class IntroScene extends Phaser.Scene {
     this.typingFinishedTimer = undefined
     this.textBeatCounter = 0
     this.currentVoice = undefined
+    this.coverAudio = undefined
 
     const { width, height } = this.scale
 
@@ -341,6 +345,14 @@ export class IntroScene extends Phaser.Scene {
    */
   private showCover(key: string) {
     const { width, height } = this.scale
+
+    // The first cover beat (the title splash) starts the cover audio
+    // bed. It runs under the rest of the intro and is stopped on skip
+    // / scene shutdown.
+    if (!this.coverAudio && this.cache.audio.exists('intro_cover_audio')) {
+      this.coverAudio = this.sound.add('intro_cover_audio', { volume: 0.6 })
+      this.coverAudio.play()
+    }
 
     // Hide procedural scene visuals and any active backdrop so only the
     // cover image (over solid black) is on screen.
@@ -764,7 +776,16 @@ export class IntroScene extends Phaser.Scene {
     this.advanceCallback = undefined
     this.canAdvance = false
     this.stopVoice()
+    this.stopCoverAudio()
     this.scene.start('Title')
+  }
+
+  private stopCoverAudio() {
+    if (this.coverAudio) {
+      this.coverAudio.stop()
+      this.coverAudio.destroy()
+      this.coverAudio = undefined
+    }
   }
 
   /** Play the voiceover for the current text beat (1-indexed). Stops
