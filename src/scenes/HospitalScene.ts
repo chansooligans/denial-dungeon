@@ -149,6 +149,13 @@ export class HospitalScene extends Phaser.Scene {
     this.canMove = true
     this.npcSprites = []
     this.currentRoomId = -1
+    // Reset stateful refs that don't survive a scene re-create. The
+    // arrays/fields are populated again below; if we leave stale
+    // references from the prior run, applyMiniMapLayout (and related)
+    // try to setStyle on destroyed Phaser Text objects and throw a
+    // Phaser-internal "Cannot read properties of null (drawImage)".
+    this.miniMapLabels = []
+    this.deferredLevelBanner = null
 
     // 70s-Lynch warm darkness — incandescent-bulb register, not
     // fluorescent. Deeper than #1a1208 because the camera shows a
