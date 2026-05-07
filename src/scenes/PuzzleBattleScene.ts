@@ -25,6 +25,7 @@ import {
 } from '../state'
 import { BASE_CSS, districtVars } from '../shared/prototype-base'
 import { getPuzzleSpec } from '../runtime/puzzle/specs'
+import { debugEvent } from './debugRibbon'
 import {
   makeInitialState,
   render,
@@ -401,8 +402,20 @@ export class PuzzleBattleScene extends Phaser.Scene {
     // Cross-fade the Red Room ambience out so the player doesn't
     // arrive in the Hospital with WR music still playing.
     this.fadeOutRedRoomAmbience(1500)
+    debugEvent(`submit ${this.encounterId}`)
     this.cameras.main.once('camerafadeoutcomplete', () => {
+      debugEvent(`fadeOutComplete -> ${this.returnScene}`)
       this.scene.start(this.returnScene)
+    })
+    // Backstop: if the camerafadeoutcomplete event never fires
+    // (Phaser tween bugs on certain mobile browsers / WebGL context
+    // hiccups), force the scene transition after 1.6s so the player
+    // can never get stuck on a black puzzle screen.
+    this.time.delayedCall(1600, () => {
+      if (this.scene.isActive(this.scene.key)) {
+        debugEvent('fadeOut backstop fired')
+        this.scene.start(this.returnScene)
+      }
     })
   }
 
