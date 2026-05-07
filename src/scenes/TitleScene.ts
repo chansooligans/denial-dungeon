@@ -1,6 +1,7 @@
 import Phaser from 'phaser'
 import { newGame } from '../state'
 import { addFullscreenButton } from './fullscreenButton'
+import { addMuteButton } from './muteButton'
 
 export class TitleScene extends Phaser.Scene {
   constructor() {
@@ -10,6 +11,7 @@ export class TitleScene extends Phaser.Scene {
   create() {
     const { width, height } = this.scale
     addFullscreenButton(this)
+    addMuteButton(this)
 
     // If the player reached the title without ever advancing past the
     // splash (i.e. they hit Skip from the beginning), the intro song

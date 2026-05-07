@@ -11,6 +11,8 @@ import { CodexScene } from './scenes/CodexScene'
 import { TouchOverlay } from './scenes/TouchOverlay'
 import { installDevPanel } from './dev/devPanel'
 import { installDebugRibbon, debugEvent } from './scenes/debugRibbon'
+import { addFullscreenButton } from './scenes/fullscreenButton'
+import { addMuteButton } from './scenes/muteButton'
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
@@ -38,6 +40,11 @@ const game = new Phaser.Game(config)
 
 installDevPanel()
 installDebugRibbon()
+// Fullscreen + mute are pure DOM globals — mount them once at game
+// init so they're always present regardless of which scene is active.
+// Pass `null as any` since the Phaser scene argument is unused.
+addFullscreenButton(null as unknown as Phaser.Scene)
+addMuteButton(null as unknown as Phaser.Scene)
 
 // Track scene starts via the SceneManager event so the ribbon shows
 // transitions even from code paths we haven't manually instrumented.

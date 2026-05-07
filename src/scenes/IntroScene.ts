@@ -1,5 +1,6 @@
 import Phaser from 'phaser'
 import { addFullscreenButton } from './fullscreenButton'
+import { addMuteButton } from './muteButton'
 
 interface Beat {
   type: 'text' | 'scene' | 'wait' | 'title' | 'cover' | 'backdrop'
@@ -206,6 +207,7 @@ export class IntroScene extends Phaser.Scene {
     })
 
     addFullscreenButton(this)
+    addMuteButton(this)
 
     this.continuePrompt = this.add.text(
       width / 2, height - 30,
