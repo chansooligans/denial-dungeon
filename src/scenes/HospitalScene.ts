@@ -695,91 +695,79 @@ export class HospitalScene extends Phaser.Scene {
   private runWakeUpTransition(claimId: string | null, onComplete: () => void) {
     this.canMove = false
 
-    const STYLE_ID = '__wake_up_style__'
     const OVERLAY_ID = '__wake_up_overlay__'
+    // Tear down any orphaned overlay from a prior invocation. Some
+    // browsers can leave the previous one in the DOM if the scene
+    // shut down before its remove() ran.
+    document.getElementById(OVERLAY_ID)?.remove()
 
-    let style = document.getElementById(STYLE_ID) as HTMLStyleElement | null
-    if (!style) {
-      style = document.createElement('style')
-      style.id = STYLE_ID
-      style.textContent = `
-        #${OVERLAY_ID} {
-          position: fixed; inset: 0; z-index: 700;
-          pointer-events: none;
-          backdrop-filter: blur(16px);
-          -webkit-backdrop-filter: blur(16px);
-          background: rgba(20, 10, 5, 0.18);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          animation: wake-up-unblur 2800ms forwards;
-        }
-        #${OVERLAY_ID} .panel {
-          background: #f5e6c8;
-          color: #1a1208;
-          border: 2px solid #2a1a0e;
-          border-radius: 4px;
-          padding: 22px 30px;
-          font: 700 18px/1.3 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-          letter-spacing: 0.06em;
-          box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
-          text-align: center;
-          animation: wake-up-panel 2800ms forwards;
-        }
-        #${OVERLAY_ID} .check { color: #1a6e52; margin-right: 8px; }
-        #${OVERLAY_ID} .claim {
-          margin-top: 6px;
-          font-size: 11px;
-          font-weight: 400;
-          letter-spacing: 0.08em;
-          color: #5a3a1a;
-        }
-        @keyframes wake-up-unblur {
-          0%   { backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-                 background: rgba(20, 10, 5, 0.30); }
-          100% { backdrop-filter: blur(0);    -webkit-backdrop-filter: blur(0);
-                 background: rgba(20, 10, 5, 0); }
-        }
-        @keyframes wake-up-panel {
-          0%   { opacity: 0; transform: scale(0.92); }
-          25%  { opacity: 1; transform: scale(1); }
-          70%  { opacity: 1; transform: scale(1); }
-          100% { opacity: 0; transform: scale(1); }
-        }
-      `
-      document.head.appendChild(style)
-    }
-
+    // Build the overlay entirely with inline styles — no CSS class,
+    // no backdrop-filter (some platforms render the layer black or
+    // fail silently), no @keyframes. Opacity-based animation only,
+    // driven by Phaser tweens on a plain DOM element.
     const overlay = document.createElement('div')
     overlay.id = OVERLAY_ID
-    overlay.innerHTML = `
-      <div class="panel">
-        <div><span class="check">✓</span>CLAIM SUBMITTED</div>
-        ${claimId ? `<div class="claim">${claimId}</div>` : ''}
-      </div>
+    overlay.style.cssText = [
+      'position: fixed',
+      'inset: 0',
+      'z-index: 700',
+      'background: rgba(20, 10, 5, 0.55)',
+      'display: flex',
+      'align-items: center',
+      'justify-content: center',
+      'opacity: 0',
+      'transition: opacity 350ms ease',
+      'cursor: pointer',
+    ].join('; ')
+
+    const panel = document.createElement('div')
+    panel.style.cssText = [
+      'background: #f5e6c8',
+      'color: #1a1208',
+      'border: 2px solid #2a1a0e',
+      'border-radius: 4px',
+      'padding: 22px 30px',
+      'font: 700 18px/1.3 ui-monospace, "SF Mono", Menlo, Consolas, monospace',
+      'letter-spacing: 0.06em',
+      'box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5)',
+      'text-align: center',
+      'transform: scale(0.92)',
+      'transition: transform 350ms ease',
+    ].join('; ')
+    const checkColor = '#1a6e52'
+    panel.innerHTML = `
+      <div><span style="color:${checkColor};margin-right:8px;">✓</span>CLAIM SUBMITTED</div>
+      ${claimId
+        ? `<div style="margin-top:6px;font-size:11px;font-weight:400;letter-spacing:0.08em;color:#5a3a1a;">${claimId}</div>`
+        : ''}
     `
+    overlay.appendChild(panel)
     document.body.appendChild(overlay)
 
-    // Cleanup is idempotent so the timer, click-to-skip escape, and
-    // a backstop window timeout can all race safely.
+    // Force a reflow so the opacity transition lands on the new style.
+    void overlay.offsetWidth
+    overlay.style.opacity = '1'
+    panel.style.transform = 'scale(1)'
+
     let done = false
     const finish = () => {
       if (done) return
       done = true
-      overlay.remove()
-      style?.remove()
-      onComplete()
+      overlay.style.opacity = '0'
+      // Wait for the fade-out before removing so the player sees a
+      // clean transition into the hospital, not a sudden disappearance.
+      window.setTimeout(() => {
+        overlay.remove()
+        onComplete()
+      }, 380)
     }
-    // Click anywhere to skip — gives the player an escape hatch if
-    // the animation stalls or feels too long.
-    overlay.style.pointerEvents = 'auto'
-    overlay.style.cursor = 'pointer'
+
+    // Click-to-skip escape hatch.
     overlay.addEventListener('click', finish)
     // Primary timer on the scene clock.
-    this.time.delayedCall(2800, finish)
-    // Belt-and-suspenders backstop on the global clock — fires even
-    // if the scene gets paused or shut down before the delayedCall
-    // resolves (which would otherwise leave the overlay stuck).
+    this.time.delayedCall(2400, finish)
+    // Backstop on the global clock so we can never leave the player
+    // stuck behind the overlay if the scene clock pauses / shuts down.
     window.setTimeout(finish, 5000)
   }
 
