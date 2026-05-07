@@ -376,26 +376,37 @@ export class PuzzleBattleScene extends Phaser.Scene {
   private submitPacket() {
     const s = this.puzzleState
     if (s.resolvedIssues.size < this.spec.issues.length) return
-    s.packetSubmitted = true
-    this.rerender()
+
+    const gs = getState()
+    const enc = ENCOUNTERS[this.encounterId]
+    if (!gs.defeatedObstacles.includes(this.encounterId)) {
+      gs.defeatedObstacles.push(this.encounterId)
+    }
+    updateResources({ stress: -3 })
+    unlockCodex(enc.id)
+    for (const tool of enc.unlocksOnDefeat ?? []) unlockTool(tool)
+    // Flag the wake-up transition for the destination scene.
+    gs.pendingClaimSubmitted = {
+      encounterId: this.encounterId,
+      claimId: this.spec.claim?.claimId ?? null,
+    }
+    saveGame()
+    checkLevelProgression()
+
+    // Blur + fade the puzzle overlay while the camera fades to black.
+    // No static victory page anymore — the cinematic transition lands
+    // the player back in the calling scene under a wake-up unblur.
+    this.overlay.classList.add('puzzle-submit-out')
+    this.cameras.main.fadeOut(1500, 0, 0, 0)
+    this.cameras.main.once('camerafadeoutcomplete', () => {
+      this.scene.start(this.returnScene)
+    })
   }
 
   private finishToWaitingRoom(won: boolean) {
-    const gs = getState()
-    if (won) {
-      const enc = ENCOUNTERS[this.encounterId]
-      if (!gs.defeatedObstacles.includes(this.encounterId)) {
-        gs.defeatedObstacles.push(this.encounterId)
-      }
-      // Resolution brings a small relief; persistent across run.
-      updateResources({ stress: -3 })
-      unlockCodex(enc.id)
-      const earned = enc.unlocksOnDefeat ?? []
-      for (const tool of earned) unlockTool(tool)
-      saveGame()
-      checkLevelProgression()
-    } else {
-      // Fled — minor stress hit, no obstacle marked defeated.
+    // Now only used for the 'flee' action — submitting handles its
+    // own transition above.
+    if (!won) {
       updateResources({ stress: +2 })
       saveGame()
     }
@@ -421,6 +432,18 @@ export class PuzzleBattleScene extends Phaser.Scene {
 // in the header, the "amend callouts row" container, etc.). Keeping it
 // inline so the runtime port stays self-contained.
 const EXTRA_CSS = `
+  /* Blur-out played on the puzzle overlay when the player hits SUBMIT.
+     Pairs with the camera fade-to-black + scene transition into the
+     Hospital wake-up sequence. */
+  .puzzle-submit-out {
+    animation: puzzle-submit-blur 1500ms forwards;
+    pointer-events: none;
+  }
+  @keyframes puzzle-submit-blur {
+    0%   { filter: blur(0); opacity: 1; }
+    100% { filter: blur(16px); opacity: 0; }
+  }
+
   /* Notebook-page treatment for the briefing card. Cream paper, ruled
      lines, spiral binding holes down the left edge, slight rotation,
      handwriting-leaning typeface. Overrides the BASE_CSS .briefing
