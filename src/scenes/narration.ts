@@ -88,10 +88,12 @@ export function showNarration(
 
   let i = 0
   let done = false
+  let onKey: ((e: KeyboardEvent) => void) | null = null
 
   const finish = () => {
     if (done) return
     done = true
+    if (onKey) window.removeEventListener('keydown', onKey)
     overlay.classList.add('fading')
     overlay.classList.remove('idle')
     window.setTimeout(() => {
@@ -117,11 +119,11 @@ export function showNarration(
     }, 350)
   }
 
-  // Click anywhere on the overlay to advance — but ignore taps in
-  // the first ~500ms so a synthetic click from the preceding scene's
-  // touch-end doesn't blow past the first line on mobile.
+  // Advance handler — same logic for click and Space/Enter. Ignore
+  // input in the first ~500ms so a synthetic click from the preceding
+  // scene's touch-end doesn't blow past the first line on mobile.
   const createdAt = Date.now()
-  overlay.addEventListener('click', () => {
+  const advance = () => {
     if (Date.now() - createdAt < 500) return
     if (done) return
     if (i >= lines.length) {
@@ -129,7 +131,16 @@ export function showNarration(
       return
     }
     showNext()
-  })
+  }
+  overlay.addEventListener('click', advance)
+
+  onKey = (e: KeyboardEvent) => {
+    if (e.code === 'Space' || e.code === 'Enter') {
+      e.preventDefault()
+      advance()
+    }
+  }
+  window.addEventListener('keydown', onKey)
 
   // Backstop: if the scene shuts down while narration is up, tear it
   // down on the global clock so the overlay can never linger.
