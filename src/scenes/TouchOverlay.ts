@@ -12,6 +12,7 @@
 
 import Phaser from 'phaser'
 import { addFullscreenButton } from './fullscreenButton'
+import { addMuteButton } from './muteButton'
 
 const ROOT_ID = 'touch-overlay-root'
 
@@ -187,6 +188,7 @@ export class TouchOverlay extends Phaser.Scene {
     })
 
     addFullscreenButton(this)
+    addMuteButton(this)
 
     this.events.once('shutdown', () => this.teardown())
     this.events.once('destroy', () => this.teardown())

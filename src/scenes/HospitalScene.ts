@@ -113,6 +113,10 @@ export class HospitalScene extends Phaser.Scene {
   private miniMapCell = 2
   private miniMapX = 0
   private miniMapY = 0
+  private miniMapPad = 4
+  /** Set when level-banner display is intentionally postponed (e.g.
+   *  the L2 banner waits for Anjali's thank-you + leave to finish). */
+  private deferredLevelBanner: number | null = null
   private miniMapLabels: Phaser.GameObjects.Text[] = []
   private miniMapHitZone?: Phaser.GameObjects.Zone
   private miniMapDim?: Phaser.GameObjects.Rectangle
@@ -187,9 +191,22 @@ export class HospitalScene extends Phaser.Scene {
     // Level-advance banner — if the player just crossed a defeat
     // threshold during the prior battle, surface it now. Banner
     // is screen-space (UI camera) and self-cleans after ~3s.
+    //
+    // Special case: when advancing INTO L2 (i.e. just defeated
+    // Anjali's intro case), defer the banner until *after* Anjali's
+    // thank-you dialogue plays and she walks out. Showing the
+    // 'Find Kim at Registration' hint while she's still on screen
+    // saying thank-you is jarring. The deferred trigger lives in
+    // runAnjaliLeave's onComplete.
     const advancedLevel = consumePendingLevelBanner()
     if (advancedLevel !== null) {
-      try { this.showLevelAdvanceBanner(advancedLevel) } catch (e) { debugEvent('hosp:banner-err ' + (e as Error).message?.slice(0,30)) }
+      const state = getState()
+      const isPostAnjaliL2 = advancedLevel === 2 && !state.anjaliThanked
+      if (isPostAnjaliL2) {
+        this.deferredLevelBanner = advancedLevel
+      } else {
+        try { this.showLevelAdvanceBanner(advancedLevel) } catch (e) { debugEvent('hosp:banner-err ' + (e as Error).message?.slice(0,30)) }
+      }
     }
     debugEvent('hosp:after-banner')
 
@@ -688,6 +705,17 @@ export class HospitalScene extends Phaser.Scene {
         anjali.label.destroy()
         this.npcSprites = this.npcSprites.filter(n => n.npc.id !== 'anjali')
         this.canMove = true
+        // If the L2 (or any) level-advance banner was deferred
+        // because Anjali was still on screen, surface it now.
+        if (this.deferredLevelBanner !== null) {
+          const lvl = this.deferredLevelBanner
+          this.deferredLevelBanner = null
+          this.time.delayedCall(300, () => {
+            try { this.showLevelAdvanceBanner(lvl) } catch (e) {
+              debugEvent('hosp:deferred-banner-err ' + (e as Error).message?.slice(0,30))
+            }
+          })
+        }
       },
     })
     this.tweens.add({
@@ -844,6 +872,7 @@ export class HospitalScene extends Phaser.Scene {
     const innerW = mw * cell
     const innerH = mh * cell
     const pad = this.miniMapExpanded ? 12 : 4
+    this.miniMapPad = pad
     const totalW = innerW + pad * 2
     const totalH = innerH + pad * 2
 
@@ -1114,8 +1143,8 @@ export class HospitalScene extends Phaser.Scene {
     const { width: mw, height: mh, layout } = this.mapDef
     const g = this.miniMapTiles
     const cell = this.miniMapCell
-    const ox = this.miniMapX + 4
-    const oy = this.miniMapY + 4
+    const ox = this.miniMapX + this.miniMapPad
+    const oy = this.miniMapY + this.miniMapPad
 
     g.clear()
 
@@ -1156,8 +1185,8 @@ export class HospitalScene extends Phaser.Scene {
 
   private updateMiniMapPlayer() {
     const cell = this.miniMapCell
-    const ox = this.miniMapX + 4
-    const oy = this.miniMapY + 4
+    const ox = this.miniMapX + this.miniMapPad
+    const oy = this.miniMapY + this.miniMapPad
     this.miniMapPlayer.clear()
     this.miniMapPlayer.fillStyle(0x7ee2c1, 1)
     this.miniMapPlayer.fillRect(
