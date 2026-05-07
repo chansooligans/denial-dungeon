@@ -307,15 +307,20 @@ export class IntroScene extends Phaser.Scene {
         this.showText(beat.lines!, beat.color || '#e6edf3')
         break
 
-      case 'wait':
-        // Auto-advance after the beat's duration so the intro plays
-        // through without click-to-continue. Skip button still works.
-        this.pendingTimer = this.time.delayedCall(beat.duration ?? 0, () => {
+      case 'wait': {
+        // Auto-advance after the beat's duration — but never before the
+        // current voiceover has finished. If the narration audio is
+        // longer than the original wait, extend the wait so we don't
+        // cut the line off when the next beat starts (and calls
+        // stopVoice on us).
+        const dwell = Math.max(beat.duration ?? 0, this.remainingVoiceMs() + 200)
+        this.pendingTimer = this.time.delayedCall(dwell, () => {
           this.pendingTimer = undefined
           this.currentBeat++
           this.playBeat()
         })
         break
+      }
 
       case 'scene':
         beat.action!(this)
@@ -396,9 +401,10 @@ export class IntroScene extends Phaser.Scene {
           blackout.destroy()
           return
         }
-        // Auto-advance after the cover's duration (defaults to 3s if
-        // unspecified). Skip button still cuts straight to title.
-        const dwell = BEATS[this.currentBeat]?.duration ?? 3000
+        // Auto-advance after the cover's duration — but never before
+        // any active voiceover finishes. Skip button still cuts to title.
+        const baseDwell = BEATS[this.currentBeat]?.duration ?? 3000
+        const dwell = Math.max(baseDwell, this.remainingVoiceMs() + 200)
         this.pendingTimer = this.time.delayedCall(dwell, () => {
           this.pendingTimer = undefined
           advanceFromCover()
@@ -778,5 +784,16 @@ export class IntroScene extends Phaser.Scene {
       this.currentVoice.destroy()
       this.currentVoice = undefined
     }
+  }
+
+  /** Milliseconds left in the currently-playing voiceover (if any).
+   *  Used by 'wait' / cover beats to ensure we don't advance — and
+   *  thus call stopVoice on ourselves — before the line finishes. */
+  private remainingVoiceMs(): number {
+    const v = this.currentVoice as any
+    if (!v || !v.isPlaying) return 0
+    const dur = typeof v.duration === 'number' ? v.duration : 0
+    const seek = typeof v.seek === 'number' ? v.seek : 0
+    return Math.max(0, (dur - seek) * 1000)
   }
 }
