@@ -308,10 +308,13 @@ export class IntroScene extends Phaser.Scene {
         break
 
       case 'wait':
-        // Click-driven: wait for the user instead of a timer. Original
-        // duration is preserved on the beat data but ignored here.
-        this.canAdvance = true
-        this.showContinuePrompt()
+        // Auto-advance after the beat's duration so the intro plays
+        // through without click-to-continue. Skip button still works.
+        this.pendingTimer = this.time.delayedCall(beat.duration ?? 0, () => {
+          this.pendingTimer = undefined
+          this.currentBeat++
+          this.playBeat()
+        })
         break
 
       case 'scene':
@@ -369,6 +372,23 @@ export class IntroScene extends Phaser.Scene {
     this.tweens.add({
       targets: blackout, alpha: 1, duration: 300, ease: 'Sine.easeOut',
     })
+    const advanceFromCover = () => {
+      this.tweens.add({
+        targets: [image, blackout], alpha: 0,
+        duration: fadeOut, ease: 'Sine.easeIn',
+        onComplete: () => {
+          image.destroy()
+          blackout.destroy()
+          if (this.coverImage === image) this.coverImage = undefined
+          // Restore procedural-visuals layer for any later beats.
+          this.sceneContainer.setVisible(true)
+          if (this.done) return
+          this.currentBeat++
+          this.playBeat()
+        },
+      })
+    }
+
     this.tweens.add({
       targets: image, alpha: 1, duration: fadeIn, delay: 200, ease: 'Sine.easeOut',
       onComplete: () => {
@@ -376,24 +396,13 @@ export class IntroScene extends Phaser.Scene {
           blackout.destroy()
           return
         }
-        this.canAdvance = true
-        this.showContinuePrompt()
-        this.advanceCallback = () => {
-          this.tweens.add({
-            targets: [image, blackout], alpha: 0,
-            duration: fadeOut, ease: 'Sine.easeIn',
-            onComplete: () => {
-              image.destroy()
-              blackout.destroy()
-              if (this.coverImage === image) this.coverImage = undefined
-              // Restore procedural-visuals layer for any later beats.
-              this.sceneContainer.setVisible(true)
-              if (this.done) return
-              this.currentBeat++
-              this.playBeat()
-            },
-          })
-        }
+        // Auto-advance after the cover's duration (defaults to 3s if
+        // unspecified). Skip button still cuts straight to title.
+        const dwell = BEATS[this.currentBeat]?.duration ?? 3000
+        this.pendingTimer = this.time.delayedCall(dwell, () => {
+          this.pendingTimer = undefined
+          advanceFromCover()
+        })
       },
     })
   }
