@@ -121,6 +121,7 @@ export class HospitalScene extends Phaser.Scene {
   private miniMapHitZone?: Phaser.GameObjects.Zone
   private miniMapDim?: Phaser.GameObjects.Rectangle
   private miniMapCloseHint?: Phaser.GameObjects.Text
+  private miniMapHint?: Phaser.GameObjects.Text
   private miniMapExpanded = false
   private lockedToast?: Phaser.GameObjects.Text
   private lockedToastTween?: Phaser.Tweens.Tween
@@ -845,9 +846,25 @@ export class HospitalScene extends Phaser.Scene {
         color: '#c8a040',
       }).setOrigin(0.5, 0).setDepth(104).setVisible(false)
 
+    // Persistent next-step hint along the bottom edge inside the
+    // minimap frame. Sources its text from LEVEL_ORIENTATION_HINTS
+    // for the current level. Position + wrap width are recomputed in
+    // applyMiniMapLayout. Stroke + bold so the cyan reads cleanly
+    // against any tile color underneath.
+    this.miniMapHint = this.add.text(0, 0, '', {
+      fontFamily: 'monospace',
+      fontSize: '8px',
+      color: '#7ee2c1',
+      align: 'center',
+      fontStyle: 'bold',
+      stroke: '#0e1116',
+      strokeThickness: 3,
+    }).setOrigin(0.5, 1).setDepth(102)
+
     const miniMapObjs: Phaser.GameObjects.GameObject[] = [
       this.miniMapDim, this.miniMapBg, this.miniMapTiles, this.miniMapPlayer,
       ...this.miniMapLabels, this.miniMapHitZone, this.miniMapCloseHint,
+      this.miniMapHint,
     ]
     if (this.lockedToast) miniMapObjs.push(this.lockedToast)
 
@@ -917,6 +934,22 @@ export class HospitalScene extends Phaser.Scene {
 
     this.miniMapDim?.setVisible(this.miniMapExpanded)
     this.miniMapCloseHint?.setVisible(this.miniMapExpanded)
+
+    // Position + populate the persistent next-step hint anchored to
+    // the bottom edge INSIDE the minimap frame (origin 0.5, 1 lets
+    // the text grow upward as it wraps). Hidden in expanded mode
+    // (the room labels + close hint cover that view).
+    if (this.miniMapHint) {
+      const lvl = getState().currentLevel
+      const hintText = LEVEL_ORIENTATION_HINTS[lvl] ?? ''
+      this.miniMapHint.setText(hintText)
+      this.miniMapHint.setPosition(
+        this.miniMapX + totalW / 2,
+        this.miniMapY + totalH - 3,
+      )
+      this.miniMapHint.setWordWrapWidth(totalW - 8, true)
+      this.miniMapHint.setVisible(!this.miniMapExpanded && !!hintText)
+    }
 
     // Reposition + restyle labels.
     const ox = this.miniMapX + pad
