@@ -2,6 +2,7 @@ import Phaser from 'phaser'
 import { DIALOGUES } from '../content/dialogue'
 import { unlockCodex, unlockTool, updateResources, saveGame, getState } from '../state'
 import { isTouchDevice } from './device'
+import { setTouchOverlayHidden } from './TouchOverlay'
 import type { DialogueNode, DialogueChoice, DialogueEffect } from '../types'
 
 // Speaker → color mapping. Each character gets their own tint on the
@@ -76,6 +77,14 @@ export class DialogueScene extends Phaser.Scene {
       fontSize: `${bodySize}px`, fontFamily: 'monospace', color: '#d0d8e0',
       wordWrap: { width: width - 80 },
     })
+
+    // Mobile: the touch d-pad + interact button live in the bottom
+    // 200px of the viewport, exactly where the dialogue text box
+    // sits. Hide the overlay while dialogue is active — it's not
+    // useful here (advance by tapping the box / Space) and it
+    // visually overlaps the text.
+    setTouchOverlayHidden(true)
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => setTouchOverlayHidden(false))
 
     this.showNode(this.currentNode)
   }
