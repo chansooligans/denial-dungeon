@@ -141,7 +141,7 @@ export class TitleScene extends Phaser.Scene {
     this.tweens.add({
       targets: song,
       volume: 0.35,
-      duration: 5000,
+      duration: 2000,
     })
   }
 
