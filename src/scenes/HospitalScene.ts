@@ -552,11 +552,19 @@ export class HospitalScene extends Phaser.Scene {
       placedSoFar.add(p.npcId)
 
       const px = p.tileX * TILE + TILE / 2
-      const py = p.tileY * TILE + TILE / 2
+      // Anchor sprite bottom-center to the bottom of the tile so the
+      // 64-px LoRA art's feet sit on the floor. Falls back gracefully
+      // for the 32-px procedural fallback (which is square — the
+      // bottom-anchor still puts feet at tile bottom, just with the
+      // body extending up from there). Mirrors player placement.
+      const spriteY = (p.tileY + 1) * TILE
+      const sprite = this.add.image(px, spriteY, npc.spriteKey)
+        .setOrigin(0.5, 1).setDepth(5).setAlpha(0)
 
-      const sprite = this.add.image(px, py, npc.spriteKey).setScale(1).setDepth(5).setAlpha(0)
-
-      const label = this.add.text(px, py - 22, npc.name, {
+      // Label sits above the sprite — taller offset for the upgraded
+      // art so it doesn't overlap the head.
+      const labelY = spriteY - sprite.height - 4
+      const label = this.add.text(px, labelY, npc.name, {
         fontSize: '8px', fontFamily: 'monospace', color: '#7ee2c1',
       }).setOrigin(0.5).setDepth(6).setAlpha(0)
 
@@ -573,8 +581,9 @@ export class HospitalScene extends Phaser.Scene {
     if (!anjali) return
 
     // Stash her destination, hide her until the narration ends.
+    // Sprite origin is (0.5, 1) so y is the bottom of the tile.
     const destX = anjali.tileX * TILE + TILE / 2
-    const destY = anjali.tileY * TILE + TILE / 2
+    const destY = (anjali.tileY + 1) * TILE
     anjali.sprite.setVisible(false)
     anjali.label.setVisible(false)
 
@@ -603,9 +612,11 @@ export class HospitalScene extends Phaser.Scene {
       // her placement tile. Door tile is the player's spawn column,
       // y=32 (LOBBY's top edge).
       const startX = this.mapDef.playerStart.x * TILE + TILE / 2
-      const startY = 32 * TILE + TILE / 2
+      const startY = (32 + 1) * TILE  // bottom of tile y=32
+      // Label sits above the sprite by sprite.height + 4px.
+      const labelOffset = anjali.sprite.height + 4
       anjali.sprite.setPosition(startX, startY)
-      anjali.label.setPosition(startX, startY - 22)
+      anjali.label.setPosition(startX, startY - labelOffset)
       anjali.sprite.setVisible(true).setAlpha(0)
       anjali.label.setVisible(true).setAlpha(0)
       anjali.sprite.setTexture('npc_anjali')
@@ -624,11 +635,11 @@ export class HospitalScene extends Phaser.Scene {
         delay: 200,
         ease: 'Sine.easeInOut',
       })
-      // Label tracks the sprite, offset 22px above it.
+      // Label tracks the sprite, offset to sit above the head.
       this.tweens.add({
         targets: anjali.label,
         x: destX,
-        y: destY - 22,
+        y: destY - labelOffset,
         duration: 1700,
         delay: 200,
         ease: 'Sine.easeInOut',
@@ -1332,7 +1343,9 @@ export class HospitalScene extends Phaser.Scene {
     this.nearbyNpc = closest
     this.interactPrompt.setVisible(!!closest)
     if (closest) {
-      this.interactPrompt.setPosition(closest.sprite.x, closest.sprite.y - 36)
+      // Sprite origin is (0.5, 1), so sprite.y is the bottom edge.
+      // Prompt sits a fixed gap above the top of the sprite.
+      this.interactPrompt.setPosition(closest.sprite.x, closest.sprite.y - closest.sprite.height - 8)
     }
   }
 
