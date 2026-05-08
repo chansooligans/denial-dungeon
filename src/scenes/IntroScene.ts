@@ -397,6 +397,9 @@ export class IntroScene extends Phaser.Scene {
       }
 
       case 'scene':
+        // Clear any text from the prior beat so its dark text-bg
+        // rectangles don't linger on top of the new procedural visual.
+        this.clearLingeringText()
         beat.action!(this)
         this.currentBeat++
         this.playBeat()
@@ -565,6 +568,27 @@ export class IntroScene extends Phaser.Scene {
         onComplete: () => old.destroy(),
       })
     }
+  }
+
+  /** Cancel any in-flight typing and fade out + destroy lingering
+   *  text from the previous beat. Used before a `scene` beat fires
+   *  so the typed text's dark background rectangle doesn't sit on
+   *  top of the new procedural visual. */
+  private clearLingeringText() {
+    if (this.textObjects.length === 0) return
+    for (const ev of this.typingEvents) ev.remove(false)
+    this.typingEvents = []
+    this.typingTextData = []
+    if (this.typingFinishedTimer) {
+      this.typingFinishedTimer.remove(false)
+      this.typingFinishedTimer = undefined
+    }
+    const targets = this.textObjects
+    this.textObjects = []
+    this.tweens.add({
+      targets, alpha: 0, duration: 250, ease: 'Sine.easeIn',
+      onComplete: () => { for (const t of targets) t.destroy() },
+    })
   }
 
   private showText(lines: string[], color: string) {
