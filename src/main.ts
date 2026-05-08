@@ -38,6 +38,45 @@ const config: Phaser.Types.Core.GameConfig = {
 const game = new Phaser.Game(config)
 ;(window as any).__PHASER_GAME__ = game
 
+// Mobile audio unlock. iOS Safari and Android Chrome create the
+// AudioContext in `suspended` state until a user gesture. Phaser
+// has its own unlock, but it can miss taps on DOM overlays
+// (touch d-pad, mute/fullscreen buttons, anything outside the
+// canvas) — and on iOS it sometimes doesn't fire at all. Bind
+// our own one-shot listener in capture phase on the document so
+// any user gesture (tap, click, key) resumes the context and
+// drains Phaser's pending sound queue.
+const unlockAudio = () => {
+  const sm = game.sound as Phaser.Sound.BaseSoundManager & {
+    locked?: boolean
+    unlock?: () => void
+    context?: AudioContext
+  }
+  const ctx = sm.context
+  const finish = () => {
+    if (sm.locked) {
+      sm.locked = false
+      if (typeof sm.unlock === 'function') sm.unlock()
+    }
+    debugEvent('audio-unlocked')
+  }
+  if (ctx && ctx.state === 'suspended') {
+    ctx.resume().then(finish).catch(() => {})
+  } else {
+    finish()
+  }
+  document.removeEventListener('touchstart', unlockAudio, true)
+  document.removeEventListener('touchend', unlockAudio, true)
+  document.removeEventListener('mousedown', unlockAudio, true)
+  document.removeEventListener('click', unlockAudio, true)
+  document.removeEventListener('keydown', unlockAudio, true)
+}
+document.addEventListener('touchstart', unlockAudio, true)
+document.addEventListener('touchend', unlockAudio, true)
+document.addEventListener('mousedown', unlockAudio, true)
+document.addEventListener('click', unlockAudio, true)
+document.addEventListener('keydown', unlockAudio, true)
+
 installDevPanel()
 installDebugRibbon()
 // Fullscreen + mute are pure DOM globals — mount them once at game
