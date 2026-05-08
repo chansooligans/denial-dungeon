@@ -64,6 +64,113 @@ const NPC_SOURCES: Record<string, string> = {
   noah:          'npc4_3', // visitor
 }
 
+/**
+ * Mapping from canonical hospital / Waiting Room texture key to the
+ * source slot in `public/sprites/objects-raw/`. Slot names encode
+ * which LoRA-generated sheet + row + col (obj1..obj5 × rows 0..3 ×
+ * cols 0..3 = 80 cells total, all 64×64 transparent PNGs).
+ *
+ * 11 canonical replacements override the procedural draws in
+ * `BootScene.makeHospitalTiles`. The remaining 69 entries register
+ * new texture keys (IV stand, wheelchair, AED, etc.) for future
+ * placement — they aren't referenced by any tile char yet.
+ *
+ * Generated from the `Auto-fill suggestions` button on the
+ * `/sprites.html` Objects section (manual visual inspection of each
+ * cell). Override slot-by-slot in the picker if a different
+ * assignment is desired, then update this dict.
+ */
+const OBJECT_SOURCES: Record<string, string> = {
+  // ===== Canonical replacements (override procedural draws) =====
+  h_counter:    'obj1_0_0', // reception desk
+  h_desk:       'obj1_0_1', // wood desk + monitor
+  h_chair:      'obj1_0_2', // office chair
+  h_cabinet:    'obj1_0_3', // filing cabinet (with plant on top)
+  h_bulletin:   'obj1_1_0', // cork bulletin board
+  h_plant:      'obj1_1_1', // potted fern
+  h_water:      'obj1_2_1', // water cooler
+  h_vending:    'obj1_2_2', // snack vending machine
+  h_bed:        'obj3_0_0', // hospital bed
+  h_equipment:  'obj3_1_3', // vital monitor on cart
+  h_fax:        'obj5_1_0', // fax machine
+
+  // ===== New keys registered for future placement =====
+  // Sheet 1 — office / lobby
+  h_computer:        'obj1_1_2',
+  h_printer:         'obj1_1_3',
+  h_box_stack:       'obj1_2_0',
+  h_armchair:        'obj1_2_3',
+  h_stanchion:       'obj1_3_0',
+  h_clock_wall:      'obj1_3_1',
+  h_supply_cart:     'obj1_3_2',
+  h_kiosk:           'obj1_3_3',
+  // Sheet 2 — waiting / lobby
+  h_couch:           'obj2_0_0',
+  h_bench:           'obj2_0_1',
+  h_side_table:      'obj2_0_2',
+  h_brochure:        'obj2_0_3',
+  h_directory:       'obj2_1_0',
+  h_sanitizer:       'obj2_1_1',
+  h_coat_rack:       'obj2_1_2',
+  h_trash:           'obj2_1_3',
+  h_recycle:         'obj2_2_0',
+  h_plant_lobby:     'obj2_2_1',
+  h_reception_bell:  'obj2_2_2',
+  h_atm:             'obj2_2_3',
+  h_monitor_wall:    'obj2_3_0',
+  h_tablet:          'obj2_3_1',
+  h_umbrella_stand:  'obj2_3_2',
+  h_signin:          'obj2_3_3',
+  // Sheet 3 — clinical / medical
+  h_exam_table:      'obj3_0_1',
+  h_iv_stand:        'obj3_0_2',
+  h_wheelchair:      'obj3_0_3',
+  h_stool:           'obj3_1_0',
+  h_bedside:         'obj3_1_1',
+  h_screen:          'obj3_1_2',
+  h_med_cart:        'obj3_2_0',
+  h_crash_cart:      'obj3_2_1',
+  h_sink:            'obj3_2_2',
+  h_biohazard:       'obj3_2_3',
+  h_linen_cart:      'obj3_3_0',
+  h_step:            'obj3_3_1',
+  h_equip_cart:      'obj3_3_2',
+  h_gurney:          'obj3_3_3',
+  // Sheet 4 — facilities / safety
+  h_cleaning_cart:   'obj4_0_0',
+  h_mop_bucket:      'obj4_0_1',
+  h_wet_floor:       'obj4_0_2',
+  h_bin_cart:        'obj4_0_3',
+  h_supply_cart_2:   'obj4_1_0',
+  h_bin_cart_full:   'obj4_1_1',
+  h_biohazard_sm:    'obj4_1_2',
+  h_linen_bin:       'obj4_1_3',
+  h_paper_towels:    'obj4_2_0',
+  h_elevator:        'obj4_2_1',
+  h_drink_counter:   'obj4_2_2',
+  h_fountain:        'obj4_2_3',
+  h_aed:             'obj4_3_0',
+  h_payphone:        'obj4_3_1',
+  h_arrow_sign:      'obj4_3_2',
+  h_clock_office:    'obj4_3_3',
+  // Sheet 5 — admin / records
+  h_bookshelf:       'obj5_0_0',
+  h_file_cart:       'obj5_0_1',
+  h_cabinet_open:    'obj5_0_2',
+  h_lamp:            'obj5_0_3',
+  h_kiosk_admin:     'obj5_1_1',
+  h_intercom:        'obj5_1_2',
+  h_pneumatic:       'obj5_1_3',
+  h_test_tubes:      'obj5_2_0',
+  h_printer_lab:     'obj5_2_1',
+  h_shredder:        'obj5_2_2',
+  h_cashbox:         'obj5_2_3',
+  h_med_vending:     'obj5_3_0',
+  h_reception_admin: 'obj5_3_1',
+  h_ticker:          'obj5_3_2',
+  h_paper_stack:     'obj5_3_3',
+}
+
 export class BootScene extends Phaser.Scene {
   constructor() {
     super('Boot')
@@ -130,6 +237,16 @@ export class BootScene extends Phaser.Scene {
       this.load.image(`npc_${id}_left`,  `sprites/npcs-raw/${slot}_1.png`)
       this.load.image(`npc_${id}_right`, `sprites/npcs-raw/${slot}_2.png`)
       this.load.image(`npc_${id}_up`,    `sprites/npcs-raw/${slot}_3.png`)
+    }
+
+    // Hospital objects — LoRA-generated 64×64 transparent PNGs from
+    // the Object contact sheet (5 sheets × 16 cells = 80 total).
+    // 11 keys override existing procedural draws; the rest register
+    // new texture keys for future placement. makeHospitalTiles skips
+    // its procedural draw per-key when the loaded texture already
+    // claimed that key (same pattern as makeNPCSprites).
+    for (const [key, slot] of Object.entries(OBJECT_SOURCES)) {
+      this.load.image(key, `sprites/objects-raw/${slot}.png`)
     }
 
     // The Hospital ambient tracks (~12MB) and Waiting Room red-room
@@ -593,7 +710,7 @@ export class BootScene extends Phaser.Scene {
     g.fillRect(3, 1, 4, 3)
     g.fillStyle(0x404850)
     g.fillRect(4, 5, 2, 1)
-    g.generateTexture('h_desk', 16, 16)
+    if (!this.textures.exists('h_desk')) g.generateTexture('h_desk', 16, 16)
     g.destroy()
 
     // Chair — neutral body so TINT.chair in HospitalScene controls
@@ -608,7 +725,7 @@ export class BootScene extends Phaser.Scene {
     g.fillStyle(0x808080)
     g.fillRect(4, 13, 2, 2)
     g.fillRect(10, 13, 2, 2)
-    g.generateTexture('h_chair', 16, 16)
+    if (!this.textures.exists('h_chair')) g.generateTexture('h_chair', 16, 16)
     g.destroy()
 
     // Medical equipment — vitals monitor on stand
@@ -626,7 +743,7 @@ export class BootScene extends Phaser.Scene {
     g.fillRect(6, 10, 4, 2)
     g.fillRect(5, 12, 6, 1)
     g.fillRect(4, 13, 8, 3)
-    g.generateTexture('h_equipment', 16, 16)
+    if (!this.textures.exists('h_equipment')) g.generateTexture('h_equipment', 16, 16)
     g.destroy()
 
     // Plant — potted fern with detail
@@ -643,7 +760,7 @@ export class BootScene extends Phaser.Scene {
     g.fillStyle(0x70b060, 0.5)
     g.fillCircle(8, 4, 2)
     g.fillRect(5, 15, 6, 1)
-    g.generateTexture('h_plant', 16, 16)
+    if (!this.textures.exists('h_plant')) g.generateTexture('h_plant', 16, 16)
     g.destroy()
 
     // Water cooler
@@ -660,7 +777,7 @@ export class BootScene extends Phaser.Scene {
     g.fillRect(9, 7, 2, 1)
     g.fillStyle(0x5080e0)
     g.fillRect(5, 7, 2, 1)
-    g.generateTexture('h_water', 16, 16)
+    if (!this.textures.exists('h_water')) g.generateTexture('h_water', 16, 16)
     g.destroy()
 
     // Filing cabinet — metal with handles
@@ -676,7 +793,7 @@ export class BootScene extends Phaser.Scene {
     g.fillRect(7, 12, 3, 1)
     g.fillStyle(0x7888a0, 0.3)
     g.fillRect(3, 0, 2, 5)
-    g.generateTexture('h_cabinet', 16, 16)
+    if (!this.textures.exists('h_cabinet')) g.generateTexture('h_cabinet', 16, 16)
     g.destroy()
 
     // Whiteboard — with colored notes
@@ -708,7 +825,7 @@ export class BootScene extends Phaser.Scene {
     g.fillRect(2, 5, 12, 1)
     g.lineStyle(1, 0x5a4020, 0.6)
     g.strokeRect(0, 4, 16, 10)
-    g.generateTexture('h_counter', 16, 16)
+    if (!this.textures.exists('h_counter')) g.generateTexture('h_counter', 16, 16)
     g.destroy()
 
     // Vending machine — bright and inviting
@@ -729,7 +846,7 @@ export class BootScene extends Phaser.Scene {
     g.fillRect(5, 10, 6, 3)
     g.fillStyle(0x40d080, 0.6)
     g.fillRect(11, 13, 2, 2)
-    g.generateTexture('h_vending', 16, 16)
+    if (!this.textures.exists('h_vending')) g.generateTexture('h_vending', 16, 16)
     g.destroy()
 
     // Bulletin board — cork with colorful notes
@@ -751,7 +868,7 @@ export class BootScene extends Phaser.Scene {
     g.fillRect(10, 3, 1, 1)
     g.fillRect(5, 8, 1, 1)
     g.fillRect(10, 9, 1, 1)
-    g.generateTexture('h_bulletin', 16, 16)
+    if (!this.textures.exists('h_bulletin')) g.generateTexture('h_bulletin', 16, 16)
     g.destroy()
 
     // Bed — hospital with pillow and blanket
@@ -767,7 +884,7 @@ export class BootScene extends Phaser.Scene {
     g.fillRect(13, 14, 3, 2)
     g.fillRect(0, 2, 3, 2)
     g.fillRect(13, 2, 3, 2)
-    g.generateTexture('h_bed', 16, 16)
+    if (!this.textures.exists('h_bed')) g.generateTexture('h_bed', 16, 16)
     g.destroy()
 
     // Fax machine — with paper feed
@@ -782,7 +899,7 @@ export class BootScene extends Phaser.Scene {
     g.fillRect(10, 11, 2, 2)
     g.fillStyle(0x606868)
     g.fillRect(4, 11, 4, 1)
-    g.generateTexture('h_fax', 16, 16)
+    if (!this.textures.exists('h_fax')) g.generateTexture('h_fax', 16, 16)
     g.destroy()
   }
 
