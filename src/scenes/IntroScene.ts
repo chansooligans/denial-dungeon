@@ -130,7 +130,7 @@ const BEATS: Beat[] = [
   { type: 'text', lines: [
     'They call it',
   ], color: '#e6edf3' },
-  { type: 'wait', duration: 1000 },
+  { type: 'wait', duration: 2000 },
 
   // End reveal: full-bleed comic pages. Order intentionally flipped
   // — page6 first, then page5 (which has 'THE WAITING ROOM' lettered
