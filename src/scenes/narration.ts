@@ -10,6 +10,7 @@
 
 import Phaser from 'phaser'
 import { isTouchDevice } from './device'
+import { setTouchOverlayHidden } from './TouchOverlay'
 
 const STYLE_ID = '__narration_style__'
 const OVERLAY_ID = '__narration_overlay__'
@@ -78,6 +79,11 @@ export function showNarration(
   // Tear down any orphaned narration overlay before creating a new one.
   document.getElementById(OVERLAY_ID)?.remove()
 
+  // Hide mobile touch d-pad while narration is up — the overlay sits
+  // at the bottom of the viewport, exactly where the d-pad lives.
+  // Restored in finish() once narration tears down.
+  setTouchOverlayHidden(true)
+
   const overlay = document.createElement('div')
   overlay.id = OVERLAY_ID
   if (options?.color) overlay.style.color = options.color
@@ -94,6 +100,7 @@ export function showNarration(
     if (done) return
     done = true
     if (onKey) window.removeEventListener('keydown', onKey)
+    setTouchOverlayHidden(false)
     overlay.classList.add('fading')
     overlay.classList.remove('idle')
     window.setTimeout(() => {
