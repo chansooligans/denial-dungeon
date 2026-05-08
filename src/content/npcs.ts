@@ -101,4 +101,73 @@ export const NPCS: Record<string, NPC> = {
     dialogueKey: 'auditor_eddi_intro',
     description: 'Doesn\'t introduce themselves. Doesn\'t need to.',
   },
+
+  // === Ambient populace — atmosphere NPCs that hang around the
+  //     hospital regardless of story level. Each has a one-line
+  //     dialogue for color; none hand cases. Sprites mapped via
+  //     BootScene.NPC_SOURCES from the LoRA contact sheet. ===
+  liana: {
+    id: 'liana',
+    name: 'Liana',
+    department: 'Nursing',
+    spriteKey: 'npc_liana',
+    dialogueKey: 'liana_intro',
+    description: 'Six discharges before lunch. She tracks them in a paper notebook.',
+  },
+  dr_priya: {
+    id: 'dr_priya',
+    name: 'Dr. Priya',
+    department: 'Surgery',
+    spriteKey: 'npc_dr_priya',
+    dialogueKey: 'dr_priya_intro',
+    description: 'Surgeon. Documents in third-person past tense like a court transcript.',
+  },
+  dev: {
+    id: 'dev',
+    name: 'Dev',
+    department: 'Patient Transport',
+    spriteKey: 'npc_dev',
+    dialogueKey: 'dev_intro',
+    description: 'Pushes beds between floors. Has memorized every shortcut.',
+  },
+  walter: {
+    id: 'walter',
+    name: 'Walter',
+    department: 'Patient',
+    spriteKey: 'npc_walter',
+    dialogueKey: 'walter_intro',
+    description: 'Came in for a follow-up two hours ago. Still waiting.',
+  },
+  dr_ethan: {
+    id: 'dr_ethan',
+    name: 'Dr. Ethan',
+    department: 'Hospitalist',
+    spriteKey: 'npc_dr_ethan',
+    dialogueKey: 'dr_ethan_intro',
+    description: 'Internal medicine. Wears a white coat for the patients more than himself.',
+  },
+  officer_reyes: {
+    id: 'officer_reyes',
+    name: 'Officer Reyes',
+    department: 'Security',
+    spriteKey: 'npc_officer_reyes',
+    dialogueKey: 'officer_reyes_intro',
+    description: 'Watches the lobby door. Knows every regular by name.',
+  },
+  joe: {
+    id: 'joe',
+    name: 'Joe',
+    department: 'Facilities',
+    spriteKey: 'npc_joe',
+    dialogueKey: 'joe_intro',
+    description: 'Janitor. Has been here longer than anyone else on the floor.',
+  },
+  noah: {
+    id: 'noah',
+    name: 'Noah',
+    department: 'Visitor',
+    spriteKey: 'npc_noah',
+    dialogueKey: 'noah_intro',
+    description: 'Picking up a relative from radiology. Lost twice already.',
+  },
 }
