@@ -65,4 +65,40 @@ export const NPCS: Record<string, NPC> = {
     dialogueKey: 'anjali_intro',
     description: 'Came in for strep. Now holding a $387 ER bill that says she isn\'t on the plan.',
   },
+
+  // === L10: The audit team. Show up only in the conference room when
+  //     the player has reached the boss. Each one is talkable but
+  //     none hands a case — the only progress path is Dana. ===
+  auditor_carl: {
+    id: 'auditor_carl',
+    name: 'Carl Westbrook',
+    department: 'Audit / Partner',
+    spriteKey: 'npc_carl',
+    dialogueKey: 'auditor_carl_intro',
+    description: 'Senior partner. Smile that lives only on his face.',
+  },
+  auditor_chen: {
+    id: 'auditor_chen',
+    name: 'Wendy Chen',
+    department: 'Audit / Data Analytics',
+    spriteKey: 'npc_chen',
+    dialogueKey: 'auditor_chen_intro',
+    description: 'Built the regression model that flagged your hospital.',
+  },
+  auditor_rivera: {
+    id: 'auditor_rivera',
+    name: 'Mira Rivera',
+    department: 'Audit / Compliance',
+    spriteKey: 'npc_rivera',
+    dialogueKey: 'auditor_rivera_intro',
+    description: 'JD/MPH. Has read every NCD published in the last decade.',
+  },
+  auditor_eddi: {
+    id: 'auditor_eddi',
+    name: 'Eddi',
+    department: 'Audit / Observer',
+    spriteKey: 'npc_eddi',
+    dialogueKey: 'auditor_eddi_intro',
+    description: 'Doesn\'t introduce themselves. Doesn\'t need to.',
+  },
 }

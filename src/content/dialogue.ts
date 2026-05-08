@@ -527,6 +527,30 @@ export const DIALOGUES: Record<string, DialogueNode> = {
       { text: 'Give me a minute.', next: 'dana_l10_intake_back' },
     ],
   },
+  // === L10 audit team — atmosphere NPCs. Each speaks one line and
+  //     ends. They don't hand off cases (that's Dana's job); they're
+  //     here to make the conference room feel like a deposition. ===
+  auditor_carl_intro: {
+    id: 'auditor_carl_intro',
+    speaker: 'Carl Westbrook',
+    text: "We've blocked off four hours for this. We'll need them.",
+  },
+  auditor_chen_intro: {
+    id: 'auditor_chen_intro',
+    speaker: 'Wendy Chen',
+    text: "Your CMI variance is in the 96th percentile. That's not a compliment.",
+  },
+  auditor_rivera_intro: {
+    id: 'auditor_rivera_intro',
+    speaker: 'Mira Rivera',
+    text: "We're not here to teach. We're here to find.",
+  },
+  auditor_eddi_intro: {
+    id: 'auditor_eddi_intro',
+    speaker: 'Eddi',
+    text: "...",
+  },
+
   dana_l10_intake_back: {
     id: 'dana_l10_intake_back',
     speaker: 'Dana',

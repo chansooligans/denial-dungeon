@@ -110,7 +110,7 @@ export const LEVELS: LevelDef[] = [
     concepts: ['audit', 'compliance', 'upcoding', 'documentation'],
     encounters: ['boss_audit'],
     cases: ['case_audit_finale'],
-    npcsActive: ['dana', 'martinez', 'pat', 'sam'],
+    npcsActive: ['dana', 'martinez', 'pat', 'sam', 'auditor_carl', 'auditor_chen', 'auditor_rivera', 'auditor_eddi'],
     bossEncounter: 'boss_audit',
   },
 ]
