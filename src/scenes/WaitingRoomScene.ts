@@ -164,7 +164,8 @@ function tileForChar(ch: string): WrTileDef {
 }
 
 export class WaitingRoomScene extends Phaser.Scene {
-  private player!: Phaser.GameObjects.Image
+  private player!: Phaser.GameObjects.Sprite
+  private playerFacing: 'down' | 'up' | 'left' | 'right' = 'down'
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys
   private wasdKeys!: Record<string, Phaser.Input.Keyboard.Key>
   private canMove = true
@@ -437,11 +438,12 @@ export class WaitingRoomScene extends Phaser.Scene {
   }
 
   private placePlayer() {
-    this.player = this.add.image(
+    this.player = this.add.sprite(
       this.playerTileX * TILE + TILE / 2,
-      this.playerTileY * TILE + TILE / 2,
-      'player'
-    ).setScale(1).setDepth(10)
+      (this.playerTileY + 1) * TILE,
+      'player_down_0'
+    ).setOrigin(0.5, 1).setDepth(10)
+    this.playerFacing = 'down'
   }
 
   private addAtmosphere() {
@@ -681,7 +683,12 @@ export class WaitingRoomScene extends Phaser.Scene {
     else if (this.cursors.up.isDown    || this.wasdKeys.W.isDown) dy = -1
     else if (this.cursors.down.isDown  || this.wasdKeys.S.isDown) dy = 1
 
-    if (dx !== 0 || dy !== 0) this.tryMove(dx, dy)
+    if (dx !== 0 || dy !== 0) {
+      this.tryMove(dx, dy)
+    } else if (this.player.anims.isPlaying) {
+      this.player.anims.stop()
+      this.player.setTexture(`player_${this.playerFacing}_0`)
+    }
 
     this.checkObstacleProximity()
   }
@@ -754,14 +761,17 @@ export class WaitingRoomScene extends Phaser.Scene {
   }
 
   private faceDirection(dx: number, dy: number) {
-    if (dx > 0) {
-      this.player.setTexture('player_side').setFlipX(false)
-    } else if (dx < 0) {
-      this.player.setTexture('player_side').setFlipX(true)
-    } else if (dy < 0) {
-      this.player.setTexture('player_up').setFlipX(false)
-    } else if (dy > 0) {
-      this.player.setTexture('player').setFlipX(false)
+    let dir: 'down' | 'up' | 'left' | 'right'
+    if (dx > 0) dir = 'right'
+    else if (dx < 0) dir = 'left'
+    else if (dy < 0) dir = 'up'
+    else dir = 'down'
+
+    this.playerFacing = dir
+    const animKey = `player_${dir}_walk`
+    const current = this.player.anims.currentAnim
+    if (current?.key !== animKey || !this.player.anims.isPlaying) {
+      this.player.play(animKey)
     }
   }
 
@@ -794,7 +804,7 @@ export class WaitingRoomScene extends Phaser.Scene {
 
     this.canMove = false
     const targetX = newX * TILE + TILE / 2
-    const targetY = newY * TILE + TILE / 2
+    const targetY = (newY + 1) * TILE
     this.tweens.add({
       targets: this.player,
       x: targetX, y: targetY,

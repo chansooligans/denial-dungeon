@@ -58,6 +58,18 @@ export class BootScene extends Phaser.Scene {
     // splash and runs underneath the rest of the cinematic.
     this.load.audio('intro_song', 'audio/intro/intro_song.mp3')
 
+    // Player walk-cycle frames — 4 directions × 4 frames each, all
+    // 64×64 transparent PNGs. Authored by the LoRA pipeline (see
+    // reference/art-direction-roadmap.md). Loaded as individual
+    // textures keyed `player_<dir>_<frame>` and stitched into
+    // animations in create() below.
+    const directions = ['down', 'up', 'left', 'right'] as const
+    for (const dir of directions) {
+      for (let i = 0; i < 4; i++) {
+        this.load.image(`player_${dir}_${i}`, `sprites/player/${dir}_walk_${i}.png`)
+      }
+    }
+
     // The Hospital ambient tracks (~12MB) and Waiting Room red-room
     // tracks (~16MB) used to load here too. Moved to per-scene
     // preload (HospitalScene / WaitingRoomScene) — they're not needed
@@ -67,10 +79,28 @@ export class BootScene extends Phaser.Scene {
 
   create() {
     this.generateSprites()
+    this.registerPlayerWalkAnimations()
     // Every page reload lands on the cover — which is the splash at
     // the start of the cinematic intro. Players can hit Skip on the
     // splash to jump to the title menu.
     this.scene.start('Intro')
+  }
+
+  /** Register the four directional walk-cycle animations. Anims are
+   *  global (live on AnimationManager, not per-scene), so once this
+   *  fires every scene can `sprite.play('player_down_walk')` etc. */
+  private registerPlayerWalkAnimations() {
+    const directions = ['down', 'up', 'left', 'right'] as const
+    for (const dir of directions) {
+      const key = `player_${dir}_walk`
+      if (this.anims.exists(key)) continue
+      this.anims.create({
+        key,
+        frames: [0, 1, 2, 3].map(i => ({ key: `player_${dir}_${i}` })),
+        frameRate: 8,
+        repeat: -1,
+      })
+    }
   }
 
   private hasExistingSave(): boolean {

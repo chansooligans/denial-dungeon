@@ -97,7 +97,11 @@ interface NPCSprite {
 }
 
 export class HospitalScene extends Phaser.Scene {
-  private player!: Phaser.GameObjects.Image
+  private player!: Phaser.GameObjects.Sprite
+  /** Direction the player is currently facing — drives which walk
+   *  animation plays and which tile `examineFacingTile` looks at.
+   *  Replaces the old "read it back from the texture key" trick. */
+  private playerFacing: 'down' | 'up' | 'left' | 'right' = 'down'
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys
   private npcSprites: NPCSprite[] = []
   private interactPrompt!: Phaser.GameObjects.Text
@@ -509,11 +513,17 @@ export class HospitalScene extends Phaser.Scene {
   }
 
   private placePlayer() {
-    this.player = this.add.image(
+    // 64×64 walk frames anchored bottom-center so the character's
+    // feet sit at the bottom edge of their tile and the body extends
+    // up into the tile above. Player still occupies one logical
+    // tile for collision/proximity — the sprite is just visually
+    // taller than the 32-px tiles + NPCs.
+    this.player = this.add.sprite(
       this.playerTileX * TILE + TILE / 2,
-      this.playerTileY * TILE + TILE / 2,
-      'player'
-    ).setScale(1).setDepth(10)
+      (this.playerTileY + 1) * TILE,
+      'player_down_0'
+    ).setOrigin(0.5, 1).setDepth(10)
+    this.playerFacing = 'down'
   }
 
   private placeNPCs() {
@@ -1052,21 +1062,35 @@ export class HospitalScene extends Phaser.Scene {
 
     if (dx !== 0 || dy !== 0) {
       this.tryMove(dx, dy)
+    } else {
+      // Idle — pause the walk loop on frame 0 of the current
+      // facing direction so the character stops mid-stride
+      // instead of continuing to bob legs in place.
+      if (this.player.anims.isPlaying) {
+        this.player.anims.stop()
+        this.player.setTexture(`player_${this.playerFacing}_0`)
+      }
     }
 
     this.checkNpcProximity()
   }
 
-  /** Swap the player texture based on the direction they're moving. */
+  /** Play the walk-cycle animation matching the direction of intent.
+   *  Idempotent: if the player is already walking that way, leave
+   *  the current loop running rather than restarting at frame 0
+   *  (which makes movement look stuttery). */
   private faceDirection(dx: number, dy: number) {
-    if (dx > 0) {
-      this.player.setTexture('player_side').setFlipX(false)
-    } else if (dx < 0) {
-      this.player.setTexture('player_side').setFlipX(true)
-    } else if (dy < 0) {
-      this.player.setTexture('player_up').setFlipX(false)
-    } else if (dy > 0) {
-      this.player.setTexture('player').setFlipX(false)
+    let dir: 'down' | 'up' | 'left' | 'right'
+    if (dx > 0) dir = 'right'
+    else if (dx < 0) dir = 'left'
+    else if (dy < 0) dir = 'up'
+    else dir = 'down'
+
+    this.playerFacing = dir
+    const animKey = `player_${dir}_walk`
+    const current = this.player.anims.currentAnim
+    if (current?.key !== animKey || !this.player.anims.isPlaying) {
+      this.player.play(animKey)
     }
   }
 
@@ -1101,10 +1125,12 @@ export class HospitalScene extends Phaser.Scene {
   }
 
   private facingDelta(): { dx: number; dy: number } {
-    const tex = this.player.texture.key
-    if (tex === 'player_up') return { dx: 0, dy: -1 }
-    if (tex === 'player_side') return { dx: this.player.flipX ? -1 : 1, dy: 0 }
-    return { dx: 0, dy: 1 } // 'player' = facing down
+    switch (this.playerFacing) {
+      case 'up':    return { dx: 0, dy: -1 }
+      case 'down':  return { dx: 0, dy: 1 }
+      case 'left':  return { dx: -1, dy: 0 }
+      case 'right': return { dx: 1, dy: 0 }
+    }
   }
 
   private isSolid(x: number, y: number): boolean {
@@ -1139,7 +1165,7 @@ export class HospitalScene extends Phaser.Scene {
 
     this.canMove = false
     const targetX = newX * TILE + TILE / 2
-    const targetY = newY * TILE + TILE / 2
+    const targetY = (newY + 1) * TILE
     // Position tween — moves the player to the new tile.
     this.tweens.add({
       targets: this.player,
