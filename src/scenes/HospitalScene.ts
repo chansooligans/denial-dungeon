@@ -384,7 +384,13 @@ export class HospitalScene extends Phaser.Scene {
         this.tileFloorSprites[y][x] = floor
 
         if (tileDef.obj) {
-          const obj = this.add.image(px, py, tileDef.obj).setScale(2).setDepth(2).setAlpha(0)
+          // setDisplaySize fits the sprite into one tile regardless
+          // of source resolution: 16×16 procedural fallback OR 64×64
+          // LoRA art (loaded as PNG override in BootScene). Replaces
+          // the prior setScale(2) which only worked for 16×16.
+          const obj = this.add.image(px, py, tileDef.obj)
+            .setDepth(2).setAlpha(0)
+          obj.setDisplaySize(TILE, TILE)
           if (tileDef.objTint !== undefined) obj.setTint(tileDef.objTint)
           this.tileObjSprites[y][x] = obj
         }
