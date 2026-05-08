@@ -19,6 +19,10 @@ const SPEAKER_COLORS: Record<string, string> = {
   Sam: '#f0a868',            // orange (denials)
   Chloe: '#f4d06f',          // yellow (player ID badge)
   Intern: '#f4d06f',         // legacy label, retained for any unmigrated nodes
+  'Carl Westbrook — Senior Partner': '#c9b074', // grey-gold, authoritative
+  'Wendy Chen — Data Analytics':     '#7fb6d4', // cool data-blue
+  'Mira Rivera — Compliance':        '#b5494a', // rule-red / maroon
+  'Eddi — Observer':                 '#bdbcb4', // soft neutral, fades back
 }
 const SPEAKER_DEFAULT_COLOR = '#7ee2c1'
 function colorForSpeaker(name: string): string {
