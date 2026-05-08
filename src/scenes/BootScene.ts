@@ -31,15 +31,20 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload() {
-    // Comic-page intro art. We use only three images:
+    // Comic-page intro art. Five images:
     //   - cover  : opening title splash
     //   - page5  : "the gap" reveal (Beat 5)
     //   - page6  : "the waiting room" reveal (Beat 7)
+    //   - page7  : Mercy General corridor closer (gothic figures, plague
+    //              doctor, ghost — the Waiting Room bleeding into the day job)
+    //   - page8  : Chloe at her desk surrounded by claims (back to work)
     // Other pages are intentionally not loaded — beats 1-4 stay procedural
     // so typed text stays clearly readable.
     this.load.image('intro_cover', 'intro/cover.png')
     this.load.image('intro_page5', 'intro/page5.png')
     this.load.image('intro_page6', 'intro/page6.png')
+    this.load.image('intro_page7', 'intro/page7.jpg')
+    this.load.image('intro_page8', 'intro/page8.jpg')
 
     // Voiceover for the cinematic IntroScene — one MP3 per text beat,
     // pre-split via whisper transcription so each line plays its own

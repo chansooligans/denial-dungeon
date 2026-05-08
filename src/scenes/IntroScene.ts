@@ -141,6 +141,12 @@ const BEATS: Beat[] = [
   { type: 'cover', key: 'intro_page6', duration: 6300, voice: true },
   { type: 'cover', key: 'intro_page5', duration: 5700 },
 
+  // Closer: corridor reveal (gothic figures lurking in Mercy General)
+  // and Chloe at her desk back at work — bridges the cinematic into
+  // the gameplay framing without any new narration.
+  { type: 'cover', key: 'intro_page7', duration: 5500 },
+  { type: 'cover', key: 'intro_page8', duration: 5500 },
+
   // Beat 8: Title
   { type: 'title' },
 ]
