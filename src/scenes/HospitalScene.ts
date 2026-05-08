@@ -521,7 +521,7 @@ export class HospitalScene extends Phaser.Scene {
     this.player = this.add.sprite(
       this.playerTileX * TILE + TILE / 2,
       (this.playerTileY + 1) * TILE,
-      'player_down_0'
+      'player_idle_down'
     ).setOrigin(0.5, 1).setDepth(10)
     this.playerFacing = 'down'
   }
@@ -1075,11 +1075,11 @@ export class HospitalScene extends Phaser.Scene {
       this.tryMove(dx, dy)
     } else {
       // Idle — pause the walk loop on frame 0 of the current
-      // facing direction so the character stops mid-stride
-      // instead of continuing to bob legs in place.
+      // facing direction so the character stands still instead of
+      // freezing on a mid-stride walk frame.
       if (this.player.anims.isPlaying) {
         this.player.anims.stop()
-        this.player.setTexture(`player_${this.playerFacing}_0`)
+        this.player.setTexture(`player_idle_${this.playerFacing}`)
       }
     }
 
