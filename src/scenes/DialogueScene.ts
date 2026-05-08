@@ -134,7 +134,27 @@ export class DialogueScene extends Phaser.Scene {
       // ends (or scene shuts down) before either input fires.
       this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => window.removeEventListener('keydown', onKey))
     } else {
-      this.endDialogue()
+      // Terminal node — no `next`, no `choices`. Wait for the player
+      // to click / press Space before ending so they can actually
+      // read the line. (Previously this called endDialogue() right
+      // after setText, so single-line atmosphere dialogues like the
+      // L10 auditors flashed and vanished.)
+      const closeText = this.add.text(width - 60, height - 30, 'click or space to close ▸', {
+        fontSize: m ? '13px' : '10px', fontFamily: 'monospace', color: '#5a6a7a',
+      }).setOrigin(1, 0.5)
+      this.choiceTexts.push(closeText)
+
+      const closeFn = () => this.endDialogue()
+      this.input.once('pointerdown', closeFn)
+      const onKey = (e: KeyboardEvent) => {
+        if (e.code === 'Space' || e.code === 'Enter') {
+          e.preventDefault()
+          window.removeEventListener('keydown', onKey)
+          closeFn()
+        }
+      }
+      window.addEventListener('keydown', onKey)
+      this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => window.removeEventListener('keydown', onKey))
     }
   }
 
