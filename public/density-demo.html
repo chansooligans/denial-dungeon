@@ -36,13 +36,15 @@
 
 <h1>Source-asset density / canvas resolution comparison</h1>
 <p>
-  All three sprites display at the same visual size (~256px tall) so the
+  All sprites display at the same visual size (~256px tall) so the
   comparison is purely about how many art-pixels go into the figure.
   32×32 is the current production sprite, ported verbatim from
-  <code>BootScene.makePlayerDirection</code>. 64×64 and 128×128 are
-  sketches — same character, but with extra detail strokes that can only
-  exist at higher density. Real production assets would need a proper
-  pass; these are just to show the ceiling.
+  <code>BootScene.makePlayerDirection</code>. 64–256 are procedural
+  sketches — same character, with extra detail strokes that only fit
+  at higher density. The last panel is a crop from the existing
+  page8.jpg comic art and shows what hand-drawn raster looks like at
+  gameplay scale — the realistic ceiling if you abandon procedural
+  pixel-art and use a paint or AI pipeline instead.
 </p>
 
 <div class="row" id="sprites"></div>
@@ -227,6 +229,87 @@ function draw128(ctx, ox, oy, s) {
   px('#3a2818', 76, 124, 12, 1);
 }
 
+// ---------- 256×256 (128×128 doubled + dense sub-pixel detail / fabric noise) ----------
+function draw256(ctx, ox, oy, s) {
+  const px = (color, x, y, w, h) => { ctx.fillStyle = color; ctx.fillRect(ox + x*s, oy + y*s, w*s, h*s); };
+  draw128(ctx, ox, oy, s * 2);
+
+  // Cheek blush (warm pink shading)
+  for (let i = 0; i < 24; i++) {
+    const x = 90 + Math.floor(Math.random() * 20);
+    const y = 110 + Math.floor(Math.random() * 16);
+    px('rgba(220,140,130,0.4)', x, y, 1, 1);
+  }
+  for (let i = 0; i < 24; i++) {
+    const x = 152 + Math.floor(Math.random() * 20);
+    const y = 110 + Math.floor(Math.random() * 16);
+    px('rgba(220,140,130,0.4)', x, y, 1, 1);
+  }
+
+  // Detailed iris (multi-tone eye)
+  px('#3a5070', 96, 80, 6, 4);    // outer iris ring left
+  px('#3a5070', 158, 80, 6, 4);   // outer iris ring right
+  px('#5a7a98', 98, 81, 4, 2);    // mid iris
+  px('#5a7a98', 160, 81, 4, 2);
+  px('#000', 99, 82, 2, 2);        // pupil left
+  px('#000', 161, 82, 2, 2);       // pupil right
+  px('#fff', 99, 82, 1, 1);        // catchlight left
+  px('#fff', 161, 82, 1, 1);       // catchlight right
+
+  // Per-strand eyelashes (top + bottom)
+  for (let x = 88; x < 110; x += 2) px('#1a1008', x, 78, 1, 2);
+  for (let x = 152; x < 174; x += 2) px('#1a1008', x, 78, 1, 2);
+
+  // Hair strand-by-strand highlights (warmer browns)
+  for (let i = 0; i < 40; i++) {
+    const x = 60 + Math.floor(Math.random() * 140);
+    const y = 8 + Math.floor(Math.random() * 50);
+    px(HAIR_HI, x, y, 1, 1);
+  }
+  for (let i = 0; i < 30; i++) {
+    const x = 60 + Math.floor(Math.random() * 140);
+    const y = 8 + Math.floor(Math.random() * 50);
+    px('#1a0e06', x, y, 1, 1);
+  }
+
+  // Knit sweater texture — alternating purl rows
+  for (let y = 152; y < 200; y += 2) {
+    for (let x = 56; x < 200; x += 4) {
+      px(SWEATER_HI, x, y, 2, 1);
+      px(SWEATER_LO, x + 2, y, 2, 1);
+    }
+  }
+
+  // Sweater seam stitch line (shoulder)
+  for (let x = 50; x < 100; x += 3) px('#704a30', x, 142, 2, 1);
+  for (let x = 156; x < 206; x += 3) px('#704a30', x, 142, 2, 1);
+
+  // Detailed badge with "MERCY" text-suggestion
+  px('#fff', 142, 168, 24, 18);     // badge background
+  px('#3a2a08', 142, 168, 24, 1);   // top edge
+  px('#3a2a08', 142, 185, 24, 1);   // bottom edge
+  px('#3a2a08', 144, 172, 4, 1);    // M
+  px('#3a2a08', 150, 172, 4, 1);    // E
+  px('#3a2a08', 156, 172, 4, 1);    // R
+  px('#3a2a08', 162, 172, 4, 1);    // C
+  px('#3a2a08', 144, 178, 20, 1);   // sublabel line
+
+  // Pant crease shadow gradient
+  for (let y = 216; y < 248; y++) {
+    const a = (y - 216) / 32;
+    px(`rgba(8,8,18,${0.15 + a * 0.25})`, 76, y, 2, 1);
+    px(`rgba(8,8,18,${0.15 + a * 0.25})`, 180, y, 2, 1);
+  }
+
+  // Shoe laces and shine
+  px('#3a2818', 80, 248, 16, 1);
+  px('#3a2818', 84, 250, 12, 1);
+  px('#3a2818', 156, 248, 16, 1);
+  px('#3a2818', 160, 250, 12, 1);
+  px('rgba(255,255,255,0.15)', 80, 252, 14, 1);
+  px('rgba(255,255,255,0.15)', 156, 252, 14, 1);
+}
+
 // ---------- mount sprite comparison ----------
 function makeSpriteCard(label, density, drawFn, displaySize = 256) {
   const card = document.createElement('div');
@@ -245,6 +328,32 @@ const sprites = document.getElementById('sprites');
 sprites.appendChild(makeSpriteCard('32×32 — current production', 32, draw32));
 sprites.appendChild(makeSpriteCard('64×64 — 2× density (sketch)', 64, draw64));
 sprites.appendChild(makeSpriteCard('128×128 — 4× density (sketch)', 128, draw128));
+sprites.appendChild(makeSpriteCard('256×256 — 8× density (sketch ceiling)', 256, draw256));
+
+// ---------- raster art reference (cropped from page8.jpg) ----------
+function makeRasterCard(label, src, srcRect, displaySize = 256) {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = `
+    <div class="label">${label}</div>
+    <canvas width="${srcRect.w}" height="${srcRect.h}" style="width:${displaySize}px;height:${displaySize}px"></canvas>
+    <div class="meta">${srcRect.w}×${srcRect.h} crop · displayed at ${displaySize}×${displaySize}</div>
+  `;
+  const canvas = card.querySelector('canvas');
+  const ctx = canvas.getContext('2d');
+  const img = new Image();
+  img.onload = () => {
+    ctx.drawImage(img, srcRect.x, srcRect.y, srcRect.w, srcRect.h, 0, 0, srcRect.w, srcRect.h);
+  };
+  img.src = src;
+  return card;
+}
+// Page8 is 901×1125; Chloe's portrait roughly center-left
+sprites.appendChild(makeRasterCard(
+  'Hand-drawn raster (intro page8 crop)',
+  '/intro/page8.jpg',
+  { x: 220, y: 280, w: 360, h: 360 },
+));
 
 // ---------- canvas resolution comparison ----------
 function drawSceneMock(ctx, w, h) {
