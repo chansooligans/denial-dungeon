@@ -441,7 +441,7 @@ export class WaitingRoomScene extends Phaser.Scene {
     this.player = this.add.sprite(
       this.playerTileX * TILE + TILE / 2,
       (this.playerTileY + 1) * TILE,
-      'player_down_0'
+      'player_idle_down'
     ).setOrigin(0.5, 1).setDepth(10)
     this.playerFacing = 'down'
   }
@@ -687,7 +687,7 @@ export class WaitingRoomScene extends Phaser.Scene {
       this.tryMove(dx, dy)
     } else if (this.player.anims.isPlaying) {
       this.player.anims.stop()
-      this.player.setTexture(`player_${this.playerFacing}_0`)
+      this.player.setTexture(`player_idle_${this.playerFacing}`)
     }
 
     this.checkObstacleProximity()

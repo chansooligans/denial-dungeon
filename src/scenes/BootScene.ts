@@ -107,6 +107,10 @@ export class BootScene extends Phaser.Scene {
       for (let i = 0; i < 4; i++) {
         this.load.image(`player_${dir}_${i}`, `sprites/player/${dir}_walk_${i}.png`)
       }
+      // Per-direction idle pose (standing still). Used when the
+      // player isn't moving — looks better than freezing on walk
+      // frame 0 which is mid-stride.
+      this.load.image(`player_idle_${dir}`, `sprites/player/idle_${dir}.png`)
     }
 
     // NPC sprites — same LoRA pipeline as the player, mapped from
