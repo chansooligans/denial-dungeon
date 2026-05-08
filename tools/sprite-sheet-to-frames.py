@@ -28,20 +28,47 @@ from pathlib import Path
 from PIL import Image
 
 
-def remove_background(img: Image.Image, fuzz: int = 22) -> Image.Image:
-    """Sample the corner pixel as the background color and convert
-    matching pixels (within `fuzz` of each RGB channel) to alpha=0.
-    Keeps the character intact assuming the bg is uniform off-white
-    (which is what the LoRA outputs)."""
+def remove_background(img: Image.Image, fuzz: int = 35) -> Image.Image:
+    """Flood-fill from the four corners through any pixel within
+    `fuzz` RGB distance of the corner color, marking those pixels
+    alpha=0. Reaches the halo of near-cream pixels around character
+    outlines that a global fuzz-match would either miss (too tight)
+    or eat into the character (too loose). Pixels only become
+    transparent if they're reachable from outside via similarly-
+    colored neighbors — interior cream-ish pixels (skin highlights,
+    eye whites) stay opaque."""
     img = img.convert("RGBA")
     pixels = img.load()
-    bg_r, bg_g, bg_b, _ = pixels[0, 0]
     w, h = img.size
-    for y in range(h):
-        for x in range(w):
+
+    def matches_bg(x: int, y: int, ref: tuple[int, int, int]) -> bool:
+        r, g, b, _ = pixels[x, y]
+        return abs(r - ref[0]) <= fuzz and abs(g - ref[1]) <= fuzz and abs(b - ref[2]) <= fuzz
+
+    visited: set[tuple[int, int]] = set()
+    # Seed from all four corners — handles vignettes / non-uniform bg.
+    seeds = [(0, 0), (w - 1, 0), (0, h - 1), (w - 1, h - 1)]
+    for sx, sy in seeds:
+        if (sx, sy) in visited:
+            continue
+        sr, sg, sb, _ = pixels[sx, sy]
+        ref = (sr, sg, sb)
+        stack = [(sx, sy)]
+        while stack:
+            x, y = stack.pop()
+            if (x, y) in visited:
+                continue
+            if x < 0 or x >= w or y < 0 or y >= h:
+                continue
+            if not matches_bg(x, y, ref):
+                continue
+            visited.add((x, y))
             r, g, b, _ = pixels[x, y]
-            if abs(r - bg_r) <= fuzz and abs(g - bg_g) <= fuzz and abs(b - bg_b) <= fuzz:
-                pixels[x, y] = (r, g, b, 0)
+            pixels[x, y] = (r, g, b, 0)
+            stack.append((x + 1, y))
+            stack.append((x - 1, y))
+            stack.append((x, y + 1))
+            stack.append((x, y - 1))
     return img
 
 
