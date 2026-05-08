@@ -16,6 +16,7 @@ cd "$(dirname "$0")/.."
 
 SRC=sprite-source/chloe
 OUT=public/sprites/player
+SIZE="${SIZE:-64}"   # 64-px source preserves full LoRA detail
 
 run_sheet() {
   local input="$1" prefix="$2"
@@ -27,6 +28,7 @@ run_sheet() {
     --input "$input" \
     --frames 4 \
     --prefix "$prefix" \
+    --size "$SIZE" \
     --out "$OUT"
 }
 
