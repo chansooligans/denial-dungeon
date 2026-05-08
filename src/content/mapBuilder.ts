@@ -15,6 +15,11 @@ export interface MapDef {
     tileY: number
     /** If set, this placement is only used when `currentLevel` is in the list. */
     levels?: number[]
+    /** Ambient NPCs (background populace — janitors, visitors, etc.)
+     *  bypass the per-level `npcsActive` filter and appear regardless
+     *  of which level the player is on. Story-relevant NPCs leave
+     *  this unset so they're gated by `npcsActive`. */
+    ambient?: boolean
   }[]
   /** Optional room labels for the minimap. Drawn at the room center
    *  when at least one tile of the room has been seen.

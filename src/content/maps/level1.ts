@@ -375,5 +375,29 @@ export const LEVEL_1_MAP: MapDef = {
     { npcId: 'auditor_chen',   tileX: AUDIT.x + 13, tileY: AUDIT.y + 2, levels: [10] },
     { npcId: 'auditor_rivera', tileX: AUDIT.x + 19, tileY: AUDIT.y + 2, levels: [10] },
     { npcId: 'auditor_eddi',   tileX: AUDIT.x + 22, tileY: AUDIT.y + 2, levels: [10] },
+
+    // === Ambient populace — atmosphere NPCs spread across the
+    //     hospital. `ambient: true` bypasses the per-level
+    //     npcsActive filter so they appear at every level. Each
+    //     gets a single one-line dialogue (see `dialogue.ts`).
+    //     Positions chosen for thematic fit, not specific to any
+    //     case. Tweak as the world fills in. ===
+
+    // Lobby — entrance + waiting area
+    { npcId: 'walter',        tileX: LOBBY.x + 18, tileY: LOBBY.y + 5, ambient: true },
+    { npcId: 'noah',          tileX: LOBBY.x + 14, tileY: LOBBY.y + 7, ambient: true },
+    { npcId: 'officer_reyes', tileX: LOBBY.x + 22, tileY: LOBBY.y + 2, ambient: true },
+    { npcId: 'dev',           tileX: LOBBY.x + 5,  tileY: LOBBY.y + 8, ambient: true },
+
+    // Patient Services — clinical-adjacent staff
+    { npcId: 'liana',         tileX: PATIENT_SVC.x + 3, tileY: PATIENT_SVC.y + 5, ambient: true },
+
+    // Main Hub — physician floor (Martinez + Alex are here for
+    // story; ambient docs sit further into the room)
+    { npcId: 'dr_priya',      tileX: MAIN_HUB.x + 9,  tileY: MAIN_HUB.y + 6, ambient: true },
+    { npcId: 'dr_ethan',      tileX: MAIN_HUB.x + 14, tileY: MAIN_HUB.y + 8, ambient: true },
+
+    // Billing — back-office facilities
+    { npcId: 'joe',           tileX: BILLING.x + 5,  tileY: BILLING.y + 5, ambient: true },
   ],
 }

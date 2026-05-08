@@ -546,7 +546,9 @@ export class HospitalScene extends Phaser.Scene {
     for (const p of this.mapDef.npcPlacements) {
       if (placedSoFar.has(p.npcId)) continue
       if (p.levels && !p.levels.includes(state.currentLevel)) continue
-      if (!activeNpcs.includes(p.npcId)) continue
+      // Ambient NPCs (background populace) bypass the activeNpcs
+      // filter — they're scenery, not story.
+      if (!p.ambient && !activeNpcs.includes(p.npcId)) continue
       const npc = NPCS[p.npcId]
       if (!npc) continue
       placedSoFar.add(p.npcId)

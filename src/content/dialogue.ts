@@ -551,6 +551,50 @@ export const DIALOGUES: Record<string, DialogueNode> = {
     text: "...",
   },
 
+  // === Ambient populace — one-line atmospheric exchanges. None hand
+  //     off cases. Terminal nodes (no `next`, no `choices`) — the
+  //     dialogue scene shows them with a click-to-close prompt. ===
+  liana_intro: {
+    id: 'liana_intro',
+    speaker: 'Liana',
+    text: "Six discharges before lunch. Three of them still owe paperwork.",
+  },
+  dr_priya_intro: {
+    id: 'dr_priya_intro',
+    speaker: 'Dr. Priya',
+    text: "Tell coding the bowel obstruction was complete. Not partial. Different DRG.",
+  },
+  dev_intro: {
+    id: 'dev_intro',
+    speaker: 'Dev',
+    text: "Bed B is in the hallway because someone said C was contaminated. Nobody charted it.",
+  },
+  walter_intro: {
+    id: 'walter_intro',
+    speaker: 'Walter',
+    text: "Two hours. They said one. I'm not in a hurry. I just want to know.",
+  },
+  dr_ethan_intro: {
+    id: 'dr_ethan_intro',
+    speaker: 'Dr. Ethan',
+    text: "Discharge summary's on me. Don't bill until it's signed.",
+  },
+  officer_reyes_intro: {
+    id: 'officer_reyes_intro',
+    speaker: 'Officer Reyes',
+    text: "You new? You walk like you know where you're going. Most of them don't.",
+  },
+  joe_intro: {
+    id: 'joe_intro',
+    speaker: 'Joe',
+    text: "Watch your step. Floor's wet. Always.",
+  },
+  noah_intro: {
+    id: 'noah_intro',
+    speaker: 'Noah',
+    text: "Radiology. I know it's near the cafeteria. I keep ending up at the cafeteria.",
+  },
+
   dana_l10_intake_back: {
     id: 'dana_l10_intake_back',
     speaker: 'Dana',
