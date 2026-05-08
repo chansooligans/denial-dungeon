@@ -170,17 +170,30 @@
 <div id="grids"></div>
 
 <div class="section-header" id="objects">
-  <h1>Objects (planned)</h1>
-  <span class="section-meta">Phase 4-6 of art-direction-roadmap</span>
+  <h1>Objects</h1>
+  <span class="section-meta">5 LoRA sheets × 16 cells · 80 objects total · 64×64 each</span>
 </div>
-<p class="future-section">
-  Hospital tiles, Waiting Room tiles, document icons, and UI chrome.
-  Currently rendered procedurally in <code>BootScene</code> at 16×16.
-  When the LoRA pipeline ships object art, swap the textures here
-  the same way Chloe and the NPCs landed — 4-direction grids in
-  <code>npcs-raw/</code>-style staging, then canonical <code>h_*</code> /
-  <code>wr_*</code> keys after assignment.
+<p>
+  All 80 LoRA-generated object frames from <code>public/sprites/objects-raw/</code>.
+  Pick which slot maps to each canonical hospital / Waiting Room
+  texture key (replaces the procedural draw in <code>BootScene</code>) or
+  give it a new custom key. Choices saved to local storage; export
+  the JSON when done.
 </p>
+
+<div class="toolbar">
+  <button id="obj-show-export">Show object mapping</button>
+  <button id="obj-add-custom">+ Add custom object</button>
+  <button id="obj-auto-fill">Auto-fill suggestions</button>
+  <button id="obj-reset">Reset</button>
+  <span class="summary" id="obj-summary"></span>
+</div>
+
+<div class="export-wrap" id="obj-export-wrap" style="display:none">
+  <pre class="export" id="obj-export-out"></pre>
+</div>
+
+<div id="obj-grids"></div>
 
 <script>
 // ---------- Chloe (player) — 4 directions × 4 walk frames ----------
@@ -544,6 +557,332 @@ document.getElementById('reset').addEventListener('click', () => {
 refreshDropdowns();
 refreshRowLabels();
 refreshSummary();
+
+// ---------- Objects — pick canonical hospital/WR keys for each slot ----------
+const OBJ_CANONICAL = [
+  // Hospital tile bases (rare to replace, but possible)
+  { key: 'h_floor',     label: 'h_floor — hospital floor' },
+  { key: 'h_floor2',    label: 'h_floor2 — hospital floor variant' },
+  { key: 'h_carpet',    label: 'h_carpet — carpet tile' },
+  { key: 'h_wall',      label: 'h_wall — hospital wall' },
+  { key: 'h_door',      label: 'h_door — door' },
+  // Hospital placeable objects
+  { key: 'h_desk',      label: 'h_desk — desk with monitor' },
+  { key: 'h_chair',     label: 'h_chair — office chair' },
+  { key: 'h_equipment', label: 'h_equipment — vital monitor' },
+  { key: 'h_plant',     label: 'h_plant — potted plant' },
+  { key: 'h_water',     label: 'h_water — water cooler' },
+  { key: 'h_cabinet',   label: 'h_cabinet — filing cabinet' },
+  { key: 'h_whiteboard',label: 'h_whiteboard — whiteboard' },
+  { key: 'h_counter',   label: 'h_counter — reception counter' },
+  { key: 'h_vending',   label: 'h_vending — vending machine' },
+  { key: 'h_bulletin',  label: 'h_bulletin — bulletin board' },
+  { key: 'h_bed',       label: 'h_bed — hospital bed' },
+  { key: 'h_fax',       label: 'h_fax — fax machine' },
+  // Waiting Room
+  { key: 'wr_floor',    label: 'wr_floor — Waiting Room floor' },
+  { key: 'wr_wall',     label: 'wr_wall — Waiting Room wall' },
+  { key: 'wr_chair',    label: 'wr_chair — WR chair' },
+  { key: 'wr_counter',  label: 'wr_counter — WR ticket counter' },
+];
+
+// Per-slot suggestions for the "Auto-fill" button. Either:
+//   { canonical: 'h_desk' } — replaces a procedural BootScene key
+//   { custom: { key, label } } — registers a new key
+// Generated from visual inspection of each cell.
+const OBJ_SUGGESTIONS = {
+  // Sheet 1 — office / lobby
+  obj1_0_0: { canonical: 'h_counter' },
+  obj1_0_1: { canonical: 'h_desk' },
+  obj1_0_2: { canonical: 'h_chair' },
+  obj1_0_3: { canonical: 'h_cabinet' },
+  obj1_1_0: { canonical: 'h_bulletin' },
+  obj1_1_1: { canonical: 'h_plant' },
+  obj1_1_2: { custom: { key: 'h_computer',     label: 'h_computer — desktop PC' } },
+  obj1_1_3: { custom: { key: 'h_printer',      label: 'h_printer — printer/copier' } },
+  obj1_2_0: { custom: { key: 'h_box_stack',    label: 'h_box_stack — file boxes (stacked)' } },
+  obj1_2_1: { canonical: 'h_water' },
+  obj1_2_2: { canonical: 'h_vending' },
+  obj1_2_3: { custom: { key: 'h_armchair',     label: 'h_armchair — leather lobby chair' } },
+  obj1_3_0: { custom: { key: 'h_stanchion',    label: 'h_stanchion — rope barrier post' } },
+  obj1_3_1: { custom: { key: 'h_clock_wall',   label: 'h_clock_wall — round wall clock' } },
+  obj1_3_2: { custom: { key: 'h_supply_cart',  label: 'h_supply_cart — utility cart' } },
+  obj1_3_3: { custom: { key: 'h_kiosk',        label: 'h_kiosk — check-in / payment kiosk' } },
+
+  // Sheet 2 — waiting / lobby
+  obj2_0_0: { custom: { key: 'h_couch',        label: 'h_couch — blue padded couch' } },
+  obj2_0_1: { custom: { key: 'h_bench',        label: 'h_bench — multi-seat waiting bench' } },
+  obj2_0_2: { custom: { key: 'h_side_table',   label: 'h_side_table — small lobby table' } },
+  obj2_0_3: { custom: { key: 'h_brochure',     label: 'h_brochure — brochure rack' } },
+  obj2_1_0: { custom: { key: 'h_directory',    label: 'h_directory — wayfinding sign / digital directory' } },
+  obj2_1_1: { custom: { key: 'h_sanitizer',    label: 'h_sanitizer — hand-sanitizer station' } },
+  obj2_1_2: { custom: { key: 'h_coat_rack',    label: 'h_coat_rack — coat rack' } },
+  obj2_1_3: { custom: { key: 'h_trash',        label: 'h_trash — trash can' } },
+  obj2_2_0: { custom: { key: 'h_recycle',      label: 'h_recycle — recycling bin' } },
+  obj2_2_1: { custom: { key: 'h_plant_lobby',  label: 'h_plant_lobby — large lobby plant' } },
+  obj2_2_2: { custom: { key: 'h_reception_bell', label: 'h_reception_bell — small front-desk with bell' } },
+  obj2_2_3: { custom: { key: 'h_atm',          label: 'h_atm — ATM kiosk' } },
+  obj2_3_0: { custom: { key: 'h_monitor_wall', label: 'h_monitor_wall — wall-mounted TV' } },
+  obj2_3_1: { custom: { key: 'h_tablet',       label: 'h_tablet — flat tablet on stand' } },
+  obj2_3_2: { custom: { key: 'h_umbrella_stand', label: 'h_umbrella_stand — umbrella stand' } },
+  obj2_3_3: { custom: { key: 'h_signin',       label: 'h_signin — clipboard sign-in stand' } },
+
+  // Sheet 3 — clinical / medical
+  obj3_0_0: { canonical: 'h_bed' },
+  obj3_0_1: { custom: { key: 'h_exam_table',   label: 'h_exam_table — exam table' } },
+  obj3_0_2: { custom: { key: 'h_iv_stand',     label: 'h_iv_stand — IV pole' } },
+  obj3_0_3: { custom: { key: 'h_wheelchair',   label: 'h_wheelchair — wheelchair' } },
+  obj3_1_0: { custom: { key: 'h_stool',        label: 'h_stool — doctor\'s rolling stool' } },
+  obj3_1_1: { custom: { key: 'h_bedside',      label: 'h_bedside — bedside cabinet' } },
+  obj3_1_2: { custom: { key: 'h_screen',       label: 'h_screen — folding privacy screen' } },
+  obj3_1_3: { canonical: 'h_equipment' },
+  obj3_2_0: { custom: { key: 'h_med_cart',     label: 'h_med_cart — medication cart' } },
+  obj3_2_1: { custom: { key: 'h_crash_cart',   label: 'h_crash_cart — red crash cart' } },
+  obj3_2_2: { custom: { key: 'h_sink',         label: 'h_sink — clinical sink with mirror' } },
+  obj3_2_3: { custom: { key: 'h_biohazard',    label: 'h_biohazard — biohazard waste bin' } },
+  obj3_3_0: { custom: { key: 'h_linen_cart',   label: 'h_linen_cart — covered linen cart' } },
+  obj3_3_1: { custom: { key: 'h_step',         label: 'h_step — step stool' } },
+  obj3_3_2: { custom: { key: 'h_equip_cart',   label: 'h_equip_cart — equipment cart' } },
+  obj3_3_3: { custom: { key: 'h_gurney',       label: 'h_gurney — gurney / stretcher' } },
+
+  // Sheet 4 — facilities / safety
+  obj4_0_0: { custom: { key: 'h_cleaning_cart', label: 'h_cleaning_cart — cleaning cart' } },
+  obj4_0_1: { custom: { key: 'h_mop_bucket',   label: 'h_mop_bucket — mop & bucket' } },
+  obj4_0_2: { custom: { key: 'h_wet_floor',    label: 'h_wet_floor — wet-floor sign' } },
+  obj4_0_3: { custom: { key: 'h_bin_cart',     label: 'h_bin_cart — cart with bins' } },
+  obj4_1_0: { custom: { key: 'h_supply_cart_2', label: 'h_supply_cart_2 — supplies cart (alt)' } },
+  obj4_1_1: { custom: { key: 'h_bin_cart_full', label: 'h_bin_cart_full — full waste cart' } },
+  obj4_1_2: { custom: { key: 'h_biohazard_sm', label: 'h_biohazard_sm — small biohazard bin' } },
+  obj4_1_3: { custom: { key: 'h_linen_bin',    label: 'h_linen_bin — open linen bin' } },
+  obj4_2_0: { custom: { key: 'h_paper_towels', label: 'h_paper_towels — paper-towel dispenser' } },
+  obj4_2_1: { custom: { key: 'h_elevator',     label: 'h_elevator — elevator doors' } },
+  obj4_2_2: { custom: { key: 'h_drink_counter', label: 'h_drink_counter — coffee / drink counter' } },
+  obj4_2_3: { custom: { key: 'h_fountain',     label: 'h_fountain — drinking fountain' } },
+  obj4_3_0: { custom: { key: 'h_aed',          label: 'h_aed — AED defibrillator (wall-mounted)' } },
+  obj4_3_1: { custom: { key: 'h_payphone',     label: 'h_payphone — pay phone' } },
+  obj4_3_2: { custom: { key: 'h_arrow_sign',   label: 'h_arrow_sign — wayfinding arrow' } },
+  obj4_3_3: { custom: { key: 'h_clock_office', label: 'h_clock_office — office wall clock' } },
+
+  // Sheet 5 — admin / records
+  obj5_0_0: { custom: { key: 'h_bookshelf',    label: 'h_bookshelf — binder shelves' } },
+  obj5_0_1: { custom: { key: 'h_file_cart',    label: 'h_file_cart — wheeled file cart' } },
+  obj5_0_2: { custom: { key: 'h_cabinet_open', label: 'h_cabinet_open — cabinet with open drawer' } },
+  obj5_0_3: { custom: { key: 'h_lamp',         label: 'h_lamp — desk lamp' } },
+  obj5_1_0: { canonical: 'h_fax' },
+  obj5_1_1: { custom: { key: 'h_kiosk_admin',  label: 'h_kiosk_admin — admin kiosk' } },
+  obj5_1_2: { custom: { key: 'h_intercom',     label: 'h_intercom — wall intercom' } },
+  obj5_1_3: { custom: { key: 'h_pneumatic',    label: 'h_pneumatic — pneumatic-tube station' } },
+  obj5_2_0: { custom: { key: 'h_test_tubes',   label: 'h_test_tubes — test-tube rack' } },
+  obj5_2_1: { custom: { key: 'h_printer_lab',  label: 'h_printer_lab — lab printer/scanner' } },
+  obj5_2_2: { custom: { key: 'h_shredder',     label: 'h_shredder — paper shredder' } },
+  obj5_2_3: { custom: { key: 'h_cashbox',      label: 'h_cashbox — locking cash box' } },
+  obj5_3_0: { custom: { key: 'h_med_vending',  label: 'h_med_vending — medication vending machine' } },
+  obj5_3_1: { custom: { key: 'h_reception_admin', label: 'h_reception_admin — admin reception desk' } },
+  obj5_3_2: { custom: { key: 'h_ticker',       label: 'h_ticker — digital queue display' } },
+  obj5_3_3: { custom: { key: 'h_paper_stack',  label: 'h_paper_stack — stacked paper/folders' } },
+};
+
+const OBJ_SHEETS = [
+  { name: 'obj1', label: 'Sheet 1 — office / lobby (green key)' },
+  { name: 'obj2', label: 'Sheet 2 — waiting / lobby (magenta key)' },
+  { name: 'obj3', label: 'Sheet 3 — clinical / medical (cyan key)' },
+  { name: 'obj4', label: 'Sheet 4 — facilities / safety (yellow key)' },
+  { name: 'obj5', label: 'Sheet 5 — admin / records (blue key)' },
+];
+
+const OBJ_STORAGE = 'obj-mapping-v1';
+const OBJ_CUSTOM_STORAGE = 'obj-custom-v1';
+function objLoadMapping() {
+  try { return JSON.parse(localStorage.getItem(OBJ_STORAGE) || '{}'); }
+  catch { return {}; }
+}
+function objSaveMapping(m) { localStorage.setItem(OBJ_STORAGE, JSON.stringify(m)); }
+function objLoadCustom() {
+  try { return JSON.parse(localStorage.getItem(OBJ_CUSTOM_STORAGE) || '[]'); }
+  catch { return []; }
+}
+function objSaveCustom(c) { localStorage.setItem(OBJ_CUSTOM_STORAGE, JSON.stringify(c)); }
+
+let objMapping = objLoadMapping();   // slot ("obj1_0_1") → key ("h_desk" / "iv_stand" / etc.)
+let objCustom  = objLoadCustom();    // [{ key, label }]
+function objAllKeys() { return [...OBJ_CANONICAL, ...objCustom]; }
+
+function objRefreshSummary() {
+  const assigned = Object.values(objMapping).filter(Boolean);
+  const unique = new Set(assigned);
+  const dupes = assigned.length !== unique.size;
+  const canonAssigned = OBJ_CANONICAL.filter(n => unique.has(n.key)).length;
+  const customAssigned = objCustom.filter(n => unique.has(n.key)).length;
+  let text = `${canonAssigned}/${OBJ_CANONICAL.length} canonical mapped`;
+  if (objCustom.length) text += ` · ${customAssigned}/${objCustom.length} custom mapped`;
+  if (dupes) text += ` · ⚠ duplicate assignments`;
+  document.getElementById('obj-summary').textContent = text;
+}
+
+function objOptionHTML(currentValue) {
+  return `<option value="">— unassigned —</option>` +
+    `<optgroup label="Hospital">` +
+    OBJ_CANONICAL.filter(n => n.key.startsWith('h_'))
+      .map(n => `<option value="${n.key}"${n.key === currentValue ? ' selected' : ''}>${n.label}</option>`).join('') +
+    `</optgroup>` +
+    `<optgroup label="Waiting Room">` +
+    OBJ_CANONICAL.filter(n => n.key.startsWith('wr_'))
+      .map(n => `<option value="${n.key}"${n.key === currentValue ? ' selected' : ''}>${n.label}</option>`).join('') +
+    `</optgroup>` +
+    (objCustom.length
+      ? `<optgroup label="Custom">` +
+        objCustom.map(n => `<option value="${n.key}"${n.key === currentValue ? ' selected' : ''}>${n.label}</option>`).join('') +
+        `</optgroup>`
+      : '');
+}
+
+function objRefreshDropdowns() {
+  const taken = new Set(Object.values(objMapping).filter(Boolean));
+  for (const sel of document.querySelectorAll('select.obj-pick')) {
+    const slot = sel.dataset.slot;
+    const current = objMapping[slot] || '';
+    sel.innerHTML = objOptionHTML(current);
+    for (const opt of sel.options) {
+      if (!opt.value) continue;
+      opt.disabled = taken.has(opt.value) && opt.value !== current;
+    }
+  }
+}
+
+function objRebuildAll() {
+  objRefreshDropdowns();
+  objRefreshSummary();
+}
+
+const objRoot = document.getElementById('obj-grids');
+for (const s of OBJ_SHEETS) {
+  const h = document.createElement('h2');
+  h.textContent = s.label;
+  objRoot.appendChild(h);
+  const table = document.createElement('table');
+  const head = document.createElement('tr');
+  head.innerHTML = `<td class="lbl">slot</td>` +
+    [0,1,2,3].map(c => `<td class="lbl">col ${c}</td>`).join('');
+  table.appendChild(head);
+  for (let r = 0; r < 4; r++) {
+    const tr = document.createElement('tr');
+    const lblTd = document.createElement('td');
+    lblTd.className = 'lbl';
+    lblTd.style.minWidth = '220px';
+    lblTd.style.textAlign = 'left';
+    lblTd.innerHTML = `<div>row ${r}</div>`;
+    tr.appendChild(lblTd);
+
+    for (let c = 0; c < 4; c++) {
+      const slot = `${s.name}_${r}_${c}`;
+      const td = document.createElement('td');
+      td.style.minWidth = '120px';
+      const sel = document.createElement('select');
+      sel.className = 'obj-pick';
+      sel.dataset.slot = slot;
+      sel.innerHTML = objOptionHTML(objMapping[slot] || '');
+      sel.addEventListener('change', () => {
+        if (sel.value) objMapping[slot] = sel.value;
+        else delete objMapping[slot];
+        objSaveMapping(objMapping);
+        objRebuildAll();
+      });
+      td.innerHTML = `<img src="/sprites/objects-raw/${slot}.png" alt="${slot}"><div class="meta">${slot.split('_').slice(1).join('_')}</div>`;
+      td.appendChild(sel);
+      tr.appendChild(td);
+    }
+    table.appendChild(tr);
+  }
+  objRoot.appendChild(table);
+}
+
+document.getElementById('obj-show-export').addEventListener('click', () => {
+  // Group by canonical-first then custom, sorted by key family.
+  const sorted = {};
+  for (const n of [...OBJ_CANONICAL, ...objCustom]) {
+    const slot = Object.keys(objMapping).find(k => objMapping[k] === n.key);
+    if (slot) sorted[n.key] = slot;
+  }
+  document.getElementById('obj-export-out').textContent = JSON.stringify({
+    mapping: sorted,
+    custom: objCustom.length ? objCustom : undefined,
+  }, null, 2);
+  document.getElementById('obj-export-wrap').style.display = 'block';
+  document.getElementById('obj-export-wrap').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+});
+
+document.getElementById('obj-add-custom').addEventListener('click', () => {
+  const raw = prompt(
+    'Add a new object key. Format: key | label\n\n' +
+    'Examples:\n' +
+    '  h_iv_stand | IV stand (hospital)\n' +
+    '  h_wheelchair | Wheelchair\n' +
+    '  h_aed | AED defibrillator\n\n' +
+    'Convention: prefix h_ for hospital objects, wr_ for Waiting Room. Lowercase letters/digits/underscores only.'
+  );
+  if (!raw) return;
+  const [keyRaw, ...labelParts] = raw.split('|');
+  const key = (keyRaw || '').trim().toLowerCase().replace(/[^a-z0-9_]/g, '_');
+  const label = (labelParts.join('|').trim()) || key;
+  if (!key) { alert('Key is required.'); return; }
+  if ([...OBJ_CANONICAL, ...objCustom].some(n => n.key === key)) {
+    alert(`Key "${key}" is already used.`); return;
+  }
+  objCustom.push({ key, label });
+  objSaveCustom(objCustom);
+  objRebuildAll();
+});
+
+document.getElementById('obj-auto-fill').addEventListener('click', () => {
+  // Apply all OBJ_SUGGESTIONS for slots not already assigned. Custom
+  // suggestions register a new key (if not already taken) before
+  // assigning to the slot.
+  let added = 0, assigned = 0, skipped = 0;
+  const allKeys = new Set([...OBJ_CANONICAL.map(n => n.key), ...objCustom.map(n => n.key)]);
+  for (const [slot, sug] of Object.entries(OBJ_SUGGESTIONS)) {
+    if (objMapping[slot]) { skipped++; continue; }
+    let targetKey;
+    if (sug.canonical) {
+      // If canonical key is already taken by another slot, skip.
+      if (Object.values(objMapping).includes(sug.canonical)) { skipped++; continue; }
+      targetKey = sug.canonical;
+    } else if (sug.custom) {
+      if (!allKeys.has(sug.custom.key)) {
+        objCustom.push(sug.custom);
+        allKeys.add(sug.custom.key);
+        added++;
+      }
+      // If somehow already mapped, skip
+      if (Object.values(objMapping).includes(sug.custom.key)) { skipped++; continue; }
+      targetKey = sug.custom.key;
+    }
+    if (targetKey) {
+      objMapping[slot] = targetKey;
+      assigned++;
+    }
+  }
+  objSaveMapping(objMapping);
+  objSaveCustom(objCustom);
+  objRebuildAll();
+  alert(`Auto-fill: ${assigned} slots assigned, ${added} new custom keys added, ${skipped} skipped (already mapped or key taken).`);
+});
+
+document.getElementById('obj-reset').addEventListener('click', () => {
+  const includeCustom = objCustom.length
+    ? confirm('Clear all object assignments AND remove custom keys?\n\nOK = clear everything · Cancel = clear assignments only')
+    : false;
+  if (!includeCustom && !confirm('Clear all object assignments?')) return;
+  objMapping = {};
+  objSaveMapping(objMapping);
+  if (includeCustom) {
+    objCustom = [];
+    objSaveCustom(objCustom);
+  }
+  objRebuildAll();
+  document.getElementById('obj-export-wrap').style.display = 'none';
+});
+
+objRebuildAll();
 </script>
 
 </body>
