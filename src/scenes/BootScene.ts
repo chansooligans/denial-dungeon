@@ -25,6 +25,45 @@ function darken(hex: number, amt: number): number {
   )
 }
 
+/**
+ * Mapping from the canonical `npc_<id>` texture key the game uses
+ * to the source slot in `public/sprites/npcs-raw/`. The slot name
+ * encodes which LoRA-generated sheet + row the character was on
+ * (npc1..npc5 × rows 0..3). Front-facing pose is column 0; other
+ * columns (1=left, 2=right, 3=up) are wired to `npc_<id>_<dir>`
+ * keys for future directional rendering.
+ *
+ * 12 canonical NPCs (matched against `src/content/npcs.ts`) plus 8
+ * customs registered for future content slots — see the per-row
+ * picker on `/npcs-preview.html` for the assignment UI that
+ * produced this mapping.
+ */
+const NPC_SOURCES: Record<string, string> = {
+  // Canonical roster — drives existing dialogue + placement.
+  dana:     'npc5_1',
+  kim:      'npc3_1',
+  jordan:   'npc3_2',
+  pat:      'npc5_0',
+  alex:     'npc5_2',
+  sam:      'npc3_3',
+  martinez: 'npc1_0',
+  anjali:   'npc2_1',
+  carl:     'npc5_3',
+  chen:     'npc2_2',
+  rivera:   'npc3_0',
+  eddi:     'npc2_3',
+  // Custom NPCs — sprite registered for future placement; not yet
+  // referenced by gameplay content.
+  liana:         'npc1_1', // nurse (blue scrubs)
+  dr_priya:      'npc1_2', // surgeon (green scrubs)
+  dev:           'npc1_3', // orderly (teal scrubs)
+  walter:        'npc2_0', // elderly patient
+  dr_ethan:      'npc4_0', // physician (white coat)
+  officer_reyes: 'npc4_1', // security
+  joe:           'npc4_2', // janitor
+  noah:          'npc4_3', // visitor
+}
+
 export class BootScene extends Phaser.Scene {
   constructor() {
     super('Boot')
@@ -68,6 +107,25 @@ export class BootScene extends Phaser.Scene {
       for (let i = 0; i < 4; i++) {
         this.load.image(`player_${dir}_${i}`, `sprites/player/${dir}_walk_${i}.png`)
       }
+    }
+
+    // NPC sprites — same LoRA pipeline as the player, mapped from
+    // public/sprites/npcs-raw/<sheet>_<row>_<col>.png to the
+    // canonical `npc_<id>` texture key the rest of the game uses.
+    // The 4 columns per row are the directional poses
+    // (col 0 = front/down, col 1 = left, col 2 = right, col 3 = back/up).
+    // For now we wire the front-facing pose to `npc_<id>` (matching
+    // the existing procedural texture key) and ALSO load the other
+    // three directions to dedicated keys for future use when NPCs
+    // gain orientation. BootScene.makeNPCSprites checks for an
+    // existing texture and skips procedural generation per-key, so
+    // the LoRA art wins over the procedural fallback.
+    for (const [id, slot] of Object.entries(NPC_SOURCES)) {
+      this.load.image(`npc_${id}`,       `sprites/npcs-raw/${slot}_0.png`)
+      this.load.image(`npc_${id}_down`,  `sprites/npcs-raw/${slot}_0.png`)
+      this.load.image(`npc_${id}_left`,  `sprites/npcs-raw/${slot}_1.png`)
+      this.load.image(`npc_${id}_right`, `sprites/npcs-raw/${slot}_2.png`)
+      this.load.image(`npc_${id}_up`,    `sprites/npcs-raw/${slot}_3.png`)
     }
 
     // The Hospital ambient tracks (~12MB) and Waiting Room red-room
@@ -422,6 +480,10 @@ export class BootScene extends Phaser.Scene {
     ]
 
     for (const npc of npcs) {
+      // Skip procedural generation when a LoRA-loaded PNG already
+      // claimed this texture key in preload — the PNG is what we
+      // actually want to render. Procedural draws are fallback only.
+      if (this.textures.exists(npc.key)) continue
       const g = this.make.graphics({ x: 0, y: 0 })
       this.drawCharacter(g, npc.shirt, npc.hair, npc.skin)
       if (npc.accessory === 'glasses') {
