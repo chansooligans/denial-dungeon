@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>NPC sprite contact sheet</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <style>
+    body {
+      margin: 0; padding: 24px;
+      background: #0e1116; color: #d0d8e0;
+      font: 13px/1.5 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    }
+    h1 { color: #7ee2c1; font-size: 18px; margin: 0 0 4px; }
+    h2 { color: #f4d06f; font-size: 14px; margin: 24px 0 8px; }
+    p  { color: #8b95a5; max-width: 760px; margin: 4px 0 16px; }
+    table { border-collapse: collapse; margin-bottom: 24px; }
+    td {
+      padding: 8px;
+      text-align: center;
+      vertical-align: bottom;
+      background: #1a1e25;
+      border: 1px solid #2a323d;
+    }
+    td.lbl { color: #7ee2c1; font-size: 11px; padding: 4px 8px; }
+    img {
+      width: 96px; height: 96px;
+      image-rendering: pixelated;
+      background: #0a0e14;
+      display: block;
+    }
+    .meta { color: #5a6a7a; font-size: 10px; margin-top: 4px; }
+    td.lbl .assigned-name {
+      color: #f4d06f; font-size: 13px; font-weight: bold;
+      margin-bottom: 2px;
+    }
+    td.lbl .assigned-role {
+      color: #8b95a5; font-size: 11px; font-weight: normal;
+    }
+    select {
+      background: #0e1116; color: #e6edf3;
+      border: 1px solid #2a323d;
+      padding: 4px 6px;
+      font: inherit;
+      margin-top: 6px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .toolbar {
+      position: sticky; top: 0;
+      background: rgba(14,17,22,0.95);
+      backdrop-filter: blur(6px);
+      padding: 12px 0;
+      margin: 0 -24px 16px;
+      padding-left: 24px; padding-right: 24px;
+      border-bottom: 1px solid #2a323d;
+      display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+      z-index: 10;
+    }
+    button {
+      background: #1f262f; color: #7ee2c1;
+      border: 1px solid #2a323d; padding: 8px 14px;
+      font: inherit; cursor: pointer; border-radius: 4px;
+    }
+    button:hover { background: #2a323d; color: #fff; }
+    .summary {
+      color: #8b95a5; font-size: 12px;
+    }
+    pre.export {
+      background: #0a0e14; border: 1px solid #2a323d;
+      padding: 12px; border-radius: 4px;
+      max-width: 760px; overflow-x: auto;
+      color: #d0d8e0; font-size: 12px;
+      white-space: pre-wrap; word-break: break-all;
+    }
+    .export-wrap { margin: 16px 0; max-width: 800px; }
+  </style>
+</head>
+<body>
+
+<h1>NPC sprite contact sheet</h1>
+<p>
+  All 80 LoRA-generated NPC frames from <code>public/sprites/npcs-raw/</code>.
+  Pick which slot becomes which game NPC using the dropdowns under each
+  row. Choices are saved as you click (local storage). When you've assigned
+  every character you want, hit "Show mapping" to copy the JSON and paste
+  it back to Claude.
+</p>
+
+<div class="toolbar">
+  <button id="show-export">Show mapping</button>
+  <button id="add-custom">+ Add NPC</button>
+  <button id="auto-fill">Auto-fill remaining</button>
+  <button id="apply-names">Apply name suggestions</button>
+  <button id="reset">Reset all</button>
+  <span class="summary" id="summary"></span>
+</div>
+
+<div class="export-wrap" id="export-wrap" style="display:none">
+  <pre class="export" id="export-out"></pre>
+</div>
+
+<div id="grids"></div>
+
+<script>
+// Game NPCs available for mapping. Order matches reference/art-direction-roadmap.md.
+const GAME_NPCS = [
+  { key: 'dana',     label: 'Dana — mentor, revenue cycle' },
+  { key: 'kim',      label: 'Kim — registration' },
+  { key: 'jordan',   label: 'Jordan — PFS' },
+  { key: 'pat',      label: 'Pat — coding' },
+  { key: 'alex',     label: 'Alex — IT/EDI' },
+  { key: 'sam',      label: 'Sam — denials' },
+  { key: 'martinez', label: 'Dr. Martinez — physician' },
+  { key: 'anjali',   label: 'Anjali — patient' },
+  { key: 'carl',     label: 'Carl Westbrook — Senior Partner' },
+  { key: 'chen',     label: 'Wendy Chen — Data Analytics' },
+  { key: 'rivera',   label: 'Mira Rivera — Compliance' },
+  { key: 'eddi',     label: 'Eddi — Observer' },
+];
+
+const sheets = [
+  { name: 'npc1', rows: 4 },
+  { name: 'npc2', rows: 4 },
+  { name: 'npc3', rows: 4 },
+  { name: 'npc4', rows: 4 },
+  { name: 'npc5', rows: 4 },
+];
+
+// Per-slot suggested custom NPC for the "auto-fill remaining" button.
+// Each gets a character first-name (or "Dr. Lastname" for physicians)
+// with the role hint in the label. Used only for slots the user did
+// NOT already assign canonically. Names chosen to feel diverse and
+// non-overlapping with the canonical 12 (Dana/Kim/Jordan/Pat/Alex/Sam/
+// Anjali/Carl/Wendy/Mira/Eddi/Martinez).
+const SUGGESTED_CUSTOMS = {
+  'npc1_0': { key: 'dr_marcus',     label: 'Dr. Marcus — resident (white coat)' },
+  'npc1_1': { key: 'liana',         label: 'Liana — nurse (blue scrubs)' },
+  'npc1_2': { key: 'dr_priya',      label: 'Dr. Priya — surgeon (green scrubs)' },
+  'npc1_3': { key: 'dev',           label: 'Dev — orderly (teal scrubs)' },
+  'npc2_0': { key: 'walter',        label: 'Walter — elderly patient' },
+  'npc2_1': { key: 'tomas',         label: 'Tomas — visitor (green jacket)' },
+  'npc2_2': { key: 'luis',          label: 'Luis — visitor with coffee' },
+  'npc2_3': { key: 'theo',          label: 'Theo — younger visitor (hoodie)' },
+  'npc3_0': { key: 'vera',          label: 'Vera — administration (navy suit)' },
+  'npc3_1': { key: 'maya',          label: 'Maya — receptionist (front desk)' },
+  'npc3_2': { key: 'henry',         label: 'Henry — clerk (white shirt, glasses)' },
+  'npc3_3': { key: 'gloria',        label: 'Gloria — senior admin (gray suit)' },
+  'npc4_0': { key: 'dr_ethan',      label: 'Dr. Ethan — physician (white coat)' },
+  'npc4_1': { key: 'officer_reyes', label: 'Officer Reyes — security' },
+  'npc4_2': { key: 'joe',           label: 'Joe — janitor / facilities' },
+  'npc4_3': { key: 'noah',          label: 'Noah — visitor (blue stripes)' },
+  'npc5_0': { key: 'ravi',          label: 'Ravi — help desk staff' },
+  'npc5_1': { key: 'iris',          label: 'Iris — case manager (cardigan)' },
+  'npc5_2': { key: 'dr_finch',      label: 'Dr. Finch — lab tech (glasses)' },
+  'npc5_3': { key: 'dr_holloway',   label: 'Dr. Holloway — hospital exec (suit + red tie)' },
+};
+
+// Mapping: slot ("npc1_0") → game NPC key ("dana"), or unset
+const STORAGE_KEY = 'npc-mapping-v1';
+const CUSTOM_KEY = 'npc-custom-v1';
+function loadMapping() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
+  catch { return {}; }
+}
+function saveMapping(m) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(m));
+}
+function loadCustom() {
+  try { return JSON.parse(localStorage.getItem(CUSTOM_KEY) || '[]'); }
+  catch { return []; }
+}
+function saveCustom(c) {
+  localStorage.setItem(CUSTOM_KEY, JSON.stringify(c));
+}
+
+let mapping = loadMapping();
+let customNpcs = loadCustom(); // [{ key, label }, ...]
+function allNpcs() { return [...GAME_NPCS, ...customNpcs]; }
+
+function refreshSummary() {
+  const assigned = Object.values(mapping).filter(Boolean);
+  const unique = new Set(assigned);
+  const dupes = assigned.length !== unique.size;
+  // Required = the canonical 12. Customs are bonus.
+  const missing = GAME_NPCS.filter(n => !unique.has(n.key)).map(n => n.key);
+  const customAssigned = customNpcs.filter(n => unique.has(n.key)).length;
+  const sum = document.getElementById('summary');
+  const canonicalAssigned = GAME_NPCS.filter(n => unique.has(n.key)).length;
+  let text = `${canonicalAssigned}/${GAME_NPCS.length} canonical assigned`;
+  if (missing.length) text += ` · missing: ${missing.join(', ')}`;
+  else text += ` · canonical complete`;
+  if (customNpcs.length) text += ` · ${customAssigned}/${customNpcs.length} custom assigned`;
+  if (dupes) text += ` · ⚠ duplicate assignments`;
+  sum.textContent = text;
+}
+
+function optionHTMLFor(currentValue) {
+  return `<option value="">— unassigned —</option>` +
+    GAME_NPCS.map(n => `<option value="${n.key}"${n.key === currentValue ? ' selected' : ''}>${n.label}</option>`).join('') +
+    (customNpcs.length
+      ? '<option disabled>──── custom ────</option>' +
+        customNpcs.map(n => `<option value="${n.key}"${n.key === currentValue ? ' selected' : ''}>${n.label}</option>`).join('')
+      : '');
+}
+
+function rebuildAllDropdowns() {
+  for (const sel of document.querySelectorAll('select.npc-pick')) {
+    const slot = sel.dataset.slot;
+    const current = mapping[slot] || '';
+    sel.innerHTML = optionHTMLFor(current);
+  }
+  refreshDropdowns();
+  refreshRowLabels();
+}
+
+function refreshRowLabels() {
+  // Show the assigned character name + role front-and-center for each
+  // row. Falls back to the raw slot key when unassigned.
+  const lookup = new Map(allNpcs().map(n => [n.key, n]));
+  for (const wrap of document.querySelectorAll('.row-label-wrap')) {
+    const slot = wrap.dataset.slot;
+    const npc = lookup.get(mapping[slot]);
+    if (npc) {
+      // Split label on the first em-dash to separate name from role.
+      const idx = npc.label.indexOf('—');
+      const name = idx > -1 ? npc.label.slice(0, idx).trim() : npc.label;
+      const role = idx > -1 ? npc.label.slice(idx + 1).trim() : '';
+      wrap.innerHTML =
+        `<div class="assigned-name">${name}</div>` +
+        (role ? `<div class="assigned-role">${role}</div>` : '') +
+        `<div class="meta">${slot}</div>`;
+    } else {
+      wrap.innerHTML = `<div>row ${slot.split('_')[1]}</div><div class="meta">${slot}</div>`;
+    }
+  }
+}
+
+function refreshDropdowns() {
+  // Disable options that are already taken (except in the row that took them).
+  const taken = new Set(Object.values(mapping).filter(Boolean));
+  for (const sel of document.querySelectorAll('select.npc-pick')) {
+    const slot = sel.dataset.slot;
+    const current = mapping[slot] || '';
+    for (const opt of sel.options) {
+      if (!opt.value) continue;
+      opt.disabled = taken.has(opt.value) && opt.value !== current;
+    }
+  }
+}
+
+const root = document.getElementById('grids');
+for (const s of sheets) {
+  const h = document.createElement('h2');
+  h.textContent = s.name;
+  root.appendChild(h);
+
+  const table = document.createElement('table');
+  const head = document.createElement('tr');
+  head.innerHTML = `<td class="lbl">slot</td>` +
+    [0,1,2,3].map(c => `<td class="lbl">col ${c}</td>`).join('');
+  table.appendChild(head);
+
+  for (let r = 0; r < s.rows; r++) {
+    const slot = `${s.name}_${r}`;
+    const tr = document.createElement('tr');
+
+    // Slot label cell with dropdown. The label text is rendered into
+    // a child `.row-label-wrap` so refreshRowLabels() can update it
+    // in place when the assignment changes.
+    const lbl = document.createElement('td');
+    lbl.className = 'lbl';
+    lbl.style.minWidth = '210px';
+    lbl.style.textAlign = 'left';
+    const labelWrap = document.createElement('div');
+    labelWrap.className = 'row-label-wrap';
+    labelWrap.dataset.slot = slot;
+    labelWrap.innerHTML = `<div>row ${r}</div><div class="meta">${slot}</div>`;
+    lbl.appendChild(labelWrap);
+    const sel = document.createElement('select');
+    sel.className = 'npc-pick';
+    sel.dataset.slot = slot;
+    sel.innerHTML = optionHTMLFor(mapping[slot] || '');
+    sel.addEventListener('change', () => {
+      if (sel.value) mapping[slot] = sel.value;
+      else delete mapping[slot];
+      saveMapping(mapping);
+      refreshDropdowns();
+      refreshRowLabels();
+      refreshSummary();
+    });
+    lbl.appendChild(sel);
+    tr.appendChild(lbl);
+
+    // Sprite cells. Use appendChild rather than innerHTML+= because
+    // the latter would re-parse the whole row's HTML and rebuild the
+    // <select> from scratch — wiping the change listener attached above.
+    for (let c = 0; c < 4; c++) {
+      const td = document.createElement('td');
+      td.innerHTML = `<img src="/sprites/npcs-raw/${slot}_${c}.png" alt="${slot}_${c}"><div class="meta">${r}_${c}</div>`;
+      tr.appendChild(td);
+    }
+    table.appendChild(tr);
+  }
+  root.appendChild(table);
+}
+
+document.getElementById('show-export').addEventListener('click', () => {
+  const wrap = document.getElementById('export-wrap');
+  const out = document.getElementById('export-out');
+  // Canonical NPCs first (in roadmap order), then customs.
+  const sorted = {};
+  for (const n of [...GAME_NPCS, ...customNpcs]) {
+    const slot = Object.keys(mapping).find(k => mapping[k] === n.key);
+    if (slot) sorted[n.key] = slot;
+  }
+  // Include custom-NPC label dictionary so Claude knows what each key means.
+  const payload = {
+    mapping: sorted,
+    custom: customNpcs.length ? customNpcs : undefined,
+  };
+  out.textContent = JSON.stringify(payload, null, 2);
+  wrap.style.display = 'block';
+  out.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+});
+
+document.getElementById('add-custom').addEventListener('click', () => {
+  const raw = prompt(
+    'Add a new NPC option. Format: key | label\n\n' +
+    'Examples:\n' +
+    '  background_nurse_a | Background nurse (scrubs, female)\n' +
+    '  patient_elder | Elderly patient\n\n' +
+    'Key must be lowercase letters/digits/underscores; used as the texture-key suffix in code.'
+  );
+  if (!raw) return;
+  const [keyRaw, ...labelParts] = raw.split('|');
+  const key = (keyRaw || '').trim().toLowerCase().replace(/[^a-z0-9_]/g, '_');
+  const label = (labelParts.join('|').trim()) || key;
+  if (!key) { alert('Key is required.'); return; }
+  if (allNpcs().some(n => n.key === key)) { alert(`Key "${key}" is already used.`); return; }
+  customNpcs.push({ key, label });
+  saveCustom(customNpcs);
+  rebuildAllDropdowns();
+  refreshSummary();
+});
+
+document.getElementById('auto-fill').addEventListener('click', () => {
+  // For every slot without an assignment, register the suggested
+  // custom NPC (if its key isn't already in use) and assign it.
+  let added = 0, assigned = 0;
+  for (const s of sheets) {
+    for (let r = 0; r < s.rows; r++) {
+      const slot = `${s.name}_${r}`;
+      if (mapping[slot]) continue; // user already chose
+      const sug = SUGGESTED_CUSTOMS[slot];
+      if (!sug) continue;
+      // Skip if a canonical (or earlier custom) already uses this key.
+      const existing = allNpcs().find(n => n.key === sug.key);
+      if (!existing && !customNpcs.find(n => n.key === sug.key)) {
+        customNpcs.push(sug);
+        added++;
+      }
+      mapping[slot] = sug.key;
+      assigned++;
+    }
+  }
+  saveCustom(customNpcs);
+  saveMapping(mapping);
+  rebuildAllDropdowns();
+  refreshSummary();
+  alert(`Auto-fill: ${assigned} slots assigned, ${added} new custom NPCs added. Edit any names by removing them in the dropdown and using "+ Add NPC".`);
+});
+
+document.getElementById('apply-names').addEventListener('click', () => {
+  // For each slot whose current assignment is a custom NPC, swap to
+  // the SUGGESTED_CUSTOMS character-name version. Canonical
+  // assignments (dana, kim, etc.) are left untouched. Useful when
+  // you've auto-filled with the old role-descriptor names and want
+  // to upgrade them to character names without redoing canonicals.
+  const canonicalKeys = new Set(GAME_NPCS.map(n => n.key));
+  let renamed = 0;
+  const newCustoms = [];
+  // Track keys we keep so duplicates aren't created.
+  const kept = new Set();
+  for (const slot of Object.keys(mapping)) {
+    const current = mapping[slot];
+    if (canonicalKeys.has(current)) continue; // canonical — leave alone
+    const sug = SUGGESTED_CUSTOMS[slot];
+    if (!sug) continue;
+    mapping[slot] = sug.key;
+    if (!kept.has(sug.key)) {
+      newCustoms.push(sug);
+      kept.add(sug.key);
+    }
+    renamed++;
+  }
+  // Preserve any user-added customs that aren't in SUGGESTED_CUSTOMS
+  // (and which still have a slot pointing at them).
+  const stillUsed = new Set(Object.values(mapping));
+  for (const c of customNpcs) {
+    if (!kept.has(c.key) && stillUsed.has(c.key)) {
+      newCustoms.push(c);
+      kept.add(c.key);
+    }
+  }
+  customNpcs = newCustoms;
+  saveCustom(customNpcs);
+  saveMapping(mapping);
+  rebuildAllDropdowns();
+  refreshSummary();
+  alert(`Renamed ${renamed} custom slots to character-name suggestions.`);
+});
+
+document.getElementById('reset').addEventListener('click', () => {
+  const includeCustom = customNpcs.length
+    ? confirm('Clear all assignments AND remove custom NPCs?\n\nOK = clear everything · Cancel = clear assignments only')
+    : false;
+  if (!includeCustom && !confirm('Clear all assignments?')) return;
+  mapping = {};
+  saveMapping(mapping);
+  if (includeCustom) {
+    customNpcs = [];
+    saveCustom(customNpcs);
+  }
+  rebuildAllDropdowns();
+  refreshSummary();
+  document.getElementById('export-wrap').style.display = 'none';
+});
+
+refreshDropdowns();
+refreshRowLabels();
+refreshSummary();
+</script>
+
+</body>
+</html>
