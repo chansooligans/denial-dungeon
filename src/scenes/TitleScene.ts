@@ -137,29 +137,12 @@ export class TitleScene extends Phaser.Scene {
     if (existing && existing.isPlaying) return
     if (!this.cache.audio.exists('intro_song')) return
     const song = this.sound.add('intro_song', { volume: 0 })
-    const played = song.play()
-
-    const startFade = () => {
-      this.tweens.add({
-        targets: song,
-        volume: 0.35,
-        duration: 5000,
-      })
-    }
-
-    if (!played) {
-      // Mobile: AudioContext still suspended — retry once it unlocks.
-      const ctx = (this.sound as any).context as AudioContext | undefined
-      if (ctx && ctx.state === 'suspended') {
-        ctx.addEventListener('statechange', () => {
-          if (!this.scene.isActive()) return
-          song.play()
-          startFade()
-        }, { once: true })
-      }
-    } else {
-      startFade()
-    }
+    song.play()
+    this.tweens.add({
+      targets: song,
+      volume: 0.35,
+      duration: 5000,
+    })
   }
 
   /** The intro song persists from IntroScene into the title menu (it's

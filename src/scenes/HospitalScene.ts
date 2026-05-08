@@ -674,29 +674,12 @@ export class HospitalScene extends Phaser.Scene {
     const key = pickNextTrack('hospital', tracks)
     if (!this.cache.audio.exists(key)) return
     const ambient = this.sound.add(key, { volume: 0, loop: true })
-    const played = ambient.play()
-
-    const startFade = () => {
-      this.tweens.add({
-        targets: ambient,
-        volume: 0.35,
-        duration: 2500,
-      })
-    }
-
-    if (!played) {
-      // Mobile: AudioContext still suspended — retry once it unlocks.
-      const ctx = (this.sound as any).context as AudioContext | undefined
-      if (ctx && ctx.state === 'suspended') {
-        ctx.addEventListener('statechange', () => {
-          if (!this.scene.isActive()) return
-          ambient.play()
-          startFade()
-        }, { once: true })
-      }
-    } else {
-      startFade()
-    }
+    ambient.play()
+    this.tweens.add({
+      targets: ambient,
+      volume: 0.35,
+      duration: 2500,
+    })
   }
 
   /** Fade out any hospital_* ambience that's playing globally. Used
