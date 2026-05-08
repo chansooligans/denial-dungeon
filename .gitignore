@@ -22,3 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# LoRA / generated sprite-sheet sources are large and reproducible
+# from the LoRA + prompts. Only the 64×64 outputs in public/sprites/
+# are committed.
+sprite-source/**/*.png
+sprite-source/**/*.jpg
+sprite-source/**/*.jpeg
+sprite-source/**/*.webp
