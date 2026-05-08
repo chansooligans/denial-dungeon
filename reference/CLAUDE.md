@@ -45,7 +45,8 @@ reference/
 │   ├── 2026-05-04-build-plan.md
 │   ├── 2026-05-04-waiting-room-combat-foundation.md
 │   └── 2026-05-05-battle-mechanics-and-form-bridge.md
-└── aesthetic-inspirations.md
+├── aesthetic-inspirations.md   visual + audio mood board
+└── art-direction-roadmap.md    sprite-density / NPC / tile upgrade plan
 ```
 
 ## What's locked vs in flight
@@ -68,6 +69,7 @@ reference/
 - **"What does notebook page 6 say?"** → `narrative/notebook/pages.md`
 - **"How does a battle play today?"** → `puzzles/puzzles-current.md`
 - **"How could battles be reframed?"** → `puzzles/puzzles-draft.md`
+- **"What's the plan for upgrading the sprites?"** → `art-direction-roadmap.md`
 
 ## Authoring conventions
 
