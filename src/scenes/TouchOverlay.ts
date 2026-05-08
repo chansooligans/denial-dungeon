@@ -89,6 +89,7 @@ function ensureStyles() {
       position: fixed; inset: 0; pointer-events: none; z-index: 9000;
       font-family: monospace;
     }
+    #${ROOT_ID}.tc-hidden { display: none; }
     #${ROOT_ID} button {
       position: fixed; pointer-events: auto;
       background: rgba(14,17,22,0.55);
@@ -122,6 +123,16 @@ function ensureStyles() {
     }
   `
   document.head.appendChild(style)
+}
+
+/** Hide or show the entire touch overlay (d-pad + interact + ESC).
+ *  Used by full-screen modal scenes (Dialogue, Form) where the
+ *  controls would otherwise overlap the modal UI and aren't useful
+ *  anyway — those scenes are advanced by tapping the modal itself. */
+export function setTouchOverlayHidden(hidden: boolean) {
+  const root = document.getElementById(ROOT_ID)
+  if (!root) return
+  root.classList.toggle('tc-hidden', hidden)
 }
 
 function mountRoot(): HTMLDivElement {
