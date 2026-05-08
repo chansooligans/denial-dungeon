@@ -28,6 +28,72 @@ from pathlib import Path
 from PIL import Image
 
 
+def chroma_key_global_erase(img: Image.Image, ref: tuple[int, int, int], min_excess: int = 15) -> Image.Image:
+    """For chroma-key backgrounds (saturated neon), erase ANY pixel
+    that exhibits the *same channel-dominance pattern* as the chroma
+    color, regardless of brightness. Catches anti-aliased edge halos
+    (dark-green between green chroma and dark hair outline) that
+    absolute-distance fuzz misses because their brightness has fallen
+    but the green-tint is preserved.
+
+    Algorithm:
+      - Identify which channels of `ref` are dominant (each
+        dominant channel exceeds the average of the others by >50).
+      - For each pixel, compute the same per-channel excess.
+      - If pixel's excess matches ref's dominance pattern with at
+        least `min_excess` magnitude, the pixel is chroma-tinted.
+        Erase it.
+
+    Safe only when the character palette is far from the chroma
+    direction (no pure greens / pure magentas in the character),
+    which is the whole point of using chroma keys."""
+    img = img.convert("RGBA")
+    pixels = img.load()
+    w, h = img.size
+    bg_r, bg_g, bg_b = ref
+
+    # Which channels dominate the ref?
+    ref_r_excess = bg_r - (bg_g + bg_b) / 2
+    ref_g_excess = bg_g - (bg_r + bg_b) / 2
+    ref_b_excess = bg_b - (bg_r + bg_g) / 2
+    r_dom = ref_r_excess > 50
+    g_dom = ref_g_excess > 50
+    b_dom = ref_b_excess > 50
+
+    for y in range(h):
+        for x in range(w):
+            r, g, b, a = pixels[x, y]
+            if a == 0:
+                continue
+            r_excess = r - (g + b) / 2
+            g_excess = g - (r + b) / 2
+            b_excess = b - (r + g) / 2
+            # Pixel matches the ref's dominance pattern if every
+            # ref-dominant channel also dominates in the pixel by
+            # at least `min_excess`.
+            tinted = True
+            if r_dom and r_excess < min_excess: tinted = False
+            if g_dom and g_excess < min_excess: tinted = False
+            if b_dom and b_excess < min_excess: tinted = False
+            # If ref has no dominant channel (shouldn't happen for
+            # is_chroma_key=True, but defensive) skip.
+            if not (r_dom or g_dom or b_dom):
+                tinted = False
+            if tinted:
+                pixels[x, y] = (r, g, b, 0)
+    return img
+
+
+def is_chroma_key(ref: tuple[int, int, int], threshold: int = 150) -> bool:
+    """Detect a chroma-key background (saturated neon — green screen,
+    magenta screen, etc.) by checking how far the corner color is
+    from gray. A highly-saturated bg (e.g. (20, 240, 20) green or
+    (240, 12, 240) magenta) has channel range > 150. Cream/gray
+    backgrounds have very small channel range and fail this check."""
+    r, g, b = ref
+    return max(r, g, b) - min(r, g, b) > threshold
+
+
 def already_has_alpha(img: Image.Image) -> bool:
     """True if the input PNG already has real transparency at its
     corners — meaning some upstream tool (rembg / Photoshop /
@@ -49,10 +115,21 @@ def remove_background(img: Image.Image, fuzz: int = 35) -> tuple[Image.Image, tu
     or eat into the character (too loose). Pixels only become
     transparent if they're reachable from outside via similarly-
     colored neighbors — interior cream-ish pixels (skin highlights,
-    eye whites) stay opaque."""
+    eye whites) stay opaque.
+
+    Auto-detects chroma-key backgrounds (saturated neon green /
+    magenta etc.) and bumps fuzz to 90. The character's palette is
+    so far from these bgs that the wider tolerance is safe and
+    catches anti-aliased edges cleanly.
+    """
     img = img.convert("RGBA")
     pixels = img.load()
     w, h = img.size
+
+    # Auto-bump fuzz for chroma-key bgs based on the corner sample.
+    sr0, sg0, sb0, _ = pixels[0, 0]
+    if is_chroma_key((sr0, sg0, sb0)):
+        fuzz = max(fuzz, 90)
 
     def matches_bg(x: int, y: int, ref: tuple[int, int, int]) -> bool:
         r, g, b, _ = pixels[x, y]
@@ -185,11 +262,17 @@ def erode_halo(img: Image.Image, ref: tuple[int, int, int], halo_fuzz: int = 60,
     Position-aware: interior cream-adjacent pixels (skin highlights,
     light fabric folds) stay opaque because they don't touch the
     transparent boundary. Only the halo on the *outside* of the
-    character gets eaten."""
+    character gets eaten.
+
+    Auto-bumps halo_fuzz for chroma-key bgs (saturated neon) — the
+    anti-aliased ring is wider there but the gap to character colors
+    is also much wider, so wider tolerance is safe."""
     img = img.convert("RGBA")
     pixels = img.load()
     w, h = img.size
     bg_r, bg_g, bg_b = ref
+    if is_chroma_key(ref):
+        halo_fuzz = max(halo_fuzz, 130)
 
     for _ in range(passes):
         # Snapshot the current alpha mask so all edits this pass see
@@ -299,6 +382,11 @@ def main() -> None:
                 else:
                     cleaned, ref = remove_background(cell, fuzz=args.fuzz)
                     cleaned = erode_halo(cleaned, ref, halo_fuzz=args.halo_fuzz, passes=args.halo_passes)
+                    if is_chroma_key(ref):
+                        # Catch any chroma-tinted pixels enclosed inside
+                        # the silhouette (curls of hair, etc.) that
+                        # flood-fill couldn't reach.
+                        cleaned = chroma_key_global_erase(cleaned, ref)
                 cleaned = keep_largest_blob(cleaned, dilate_radius=args.dilate)
                 trimmed = trim_to_bbox(cleaned)
                 sized = fit_to_square(trimmed, args.size)
@@ -313,6 +401,8 @@ def main() -> None:
             else:
                 cleaned, ref = remove_background(frame, fuzz=args.fuzz)
                 cleaned = erode_halo(cleaned, ref, halo_fuzz=args.halo_fuzz, passes=args.halo_passes)
+                if is_chroma_key(ref):
+                    cleaned = chroma_key_global_erase(cleaned, ref)
             cleaned = keep_largest_blob(cleaned, dilate_radius=args.dilate)
             trimmed = trim_to_bbox(cleaned)
             sized = fit_to_square(trimmed, args.size)
