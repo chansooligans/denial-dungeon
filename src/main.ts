@@ -38,6 +38,36 @@ const config: Phaser.Types.Core.GameConfig = {
 const game = new Phaser.Game(config)
 ;(window as any).__PHASER_GAME__ = game
 
+// Mobile audio unlock — iOS Safari and Chrome on Android suspend the
+// Web Audio AudioContext until a user gesture. Phaser has its own
+// unlock mechanism, but it only listens on the canvas and can miss
+// taps on DOM overlays (skip button, touch controls, fullscreen/mute
+// buttons). This listener catches ANY first touch/click on the page
+// and explicitly resumes the AudioContext so subsequent play() calls
+// succeed. Runs once, then removes itself.
+function unlockMobileAudio() {
+  const sm = game.sound as any
+  const ctx: AudioContext | undefined = sm?.context
+  if (!ctx) return
+  if (ctx.state !== 'suspended') return
+  const resume = () => {
+    ctx.resume().then(() => {
+      // Poke Phaser's internal locked flag so queued sounds drain.
+      if (sm.locked !== undefined) sm.locked = false
+      if (typeof sm.unlock === 'function') sm.unlock()
+      debugEvent('audio-ctx-resumed')
+    })
+    document.removeEventListener('touchstart', resume, true)
+    document.removeEventListener('touchend', resume, true)
+    document.removeEventListener('click', resume, true)
+  }
+  // Use capture so we fire before any stopPropagation in the tree.
+  document.addEventListener('touchstart', resume, true)
+  document.addEventListener('touchend', resume, true)
+  document.addEventListener('click', resume, true)
+}
+game.events.once(Phaser.Core.Events.READY, unlockMobileAudio)
+
 installDevPanel()
 installDebugRibbon()
 // Fullscreen + mute are pure DOM globals — mount them once at game
