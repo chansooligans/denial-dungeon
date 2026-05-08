@@ -58,31 +58,51 @@ interface ObstacleMarker {
  *   Lobby          — no fights (the safe entry space)
  *   Prior Auth     — locked (post-L1)
  */
-// Lobby bounds (matches LOBBY in level1.ts: x:4, y:32, w:26, h:10).
-// The intro case is handed off in the lobby, so the WR session for
-// it is bounded to the parallel-lobby layer.
-const LOBBY_BOUNDS = { x: 4, y: 32, w: 26, h: 10 }
-// Main Hub room bounds (matches MAIN_HUB in level1.ts: x:20, y:3, w:18, h:10).
-const MAIN_HUB_BOUNDS = { x: 20, y: 3, w: 18, h: 10 }
+// Room bounds (mirror level1.ts) so each WR session is locked to the
+// parallel layer of the room where the player handed off the case.
+// The 'parallel room' framing is the whole point — solving the bundle
+// for Pat means descending into HIM's mirror, not wandering the
+// entire underworld map.
+const LOBBY_BOUNDS        = { x: 4,  y: 32, w: 26, h: 10 }
+const PATIENT_SVC_BOUNDS  = { x: 2,  y: 17, w: 12, h: 8  }
+const REGISTRATION_BOUNDS = { x: 15, y: 17, w: 22, h: 8  }
+const HIM_BOUNDS          = { x: 4,  y: 50, w: 14, h: 10 }
+const BILLING_BOUNDS      = { x: 22, y: 50, w: 14, h: 10 }
+const PFS_BOUNDS          = { x: 40, y: 50, w: 16, h: 10 }
+const AUDIT_BOUNDS        = { x: 18, y: 62, w: 28, h: 8  }
 
 const OBSTACLES: ObstacleMarker[] = [
-  // Intro — placed in the lobby's parallel layer at the same tile
-  // Anjali stands on in the Hospital. The player descends from her
-  // counter and the obstacle is right there, two tiles from where
-  // they landed. Bounded to the lobby so they can't wander.
-  { tileX: 14, tileY: 36, encounterId: 'intro_wrong_card', bounds: LOBBY_BOUNDS },
-  // Patient Services
-  { tileX: 8,  tileY: 21, encounterId: 'co_50' },          // Wraith
-  // Registration (two beats — Fog at the west end, Swarm at the east)
-  { tileX: 20, tileY: 21, encounterId: 'eligibility_fog' },
-  { tileX: 30, tileY: 21, encounterId: 'co_16_swarm' },     // Sprite Swarm
-  // Eligibility kiosk
-  { tileX: 29, tileY: 26, encounterId: 'co_197' },          // Gatekeeper
-  // Main Hub — the tribunal at the top of the map
-  { tileX: 25, tileY: 7,  encounterId: 'oa_23_hydra' },
-  { tileX: 32, tileY: 7,  encounterId: 'co_29_reaper' },
-  // Corridor — fights you encounter in transit
-  { tileX: 14, tileY: 16, encounterId: 'co_97' },           // Bundle
+  // Each obstacle is placed in the parallel layer of the room where
+  // its case-handing NPC stands in the Hospital — so descending lands
+  // the player roughly where they were. Bounds match the source room
+  // so the WR session can't drift across the underworld map.
+
+  // L1 — Anjali in the LOBBY.
+  { tileX: 14, tileY: 36, encounterId: 'intro_wrong_card',     bounds: LOBBY_BOUNDS },
+
+  // PATIENT SERVICES — Sam hands the wraith / gatekeeper / reaper.
+  { tileX: 5,  tileY: 21, encounterId: 'co_50',                bounds: PATIENT_SVC_BOUNDS },  // Wraith    (L5)
+  { tileX: 8,  tileY: 21, encounterId: 'co_197',               bounds: PATIENT_SVC_BOUNDS },  // Gatekeeper (L3)
+  { tileX: 11, tileY: 21, encounterId: 'co_29_reaper',         bounds: PATIENT_SVC_BOUNDS },  // Reaper    (L7)
+
+  // REGISTRATION — Kim hands the fog / hydra.
+  { tileX: 20, tileY: 21, encounterId: 'eligibility_fog',      bounds: REGISTRATION_BOUNDS }, // Fog       (L2)
+  { tileX: 32, tileY: 21, encounterId: 'oa_23_hydra',          bounds: REGISTRATION_BOUNDS }, // Hydra     (L9)
+
+  // HIM / Coding — Pat hands the bundle.
+  { tileX: 11, tileY: 55, encounterId: 'co_97',                bounds: HIM_BOUNDS },          // Bundle    (L4)
+
+  // BILLING — Alex hands the swarm.
+  { tileX: 29, tileY: 55, encounterId: 'co_16_swarm',          bounds: BILLING_BOUNDS },      // Swarm     (L6)
+
+  // PFS — Jordan hands the surprise bill.
+  { tileX: 48, tileY: 55, encounterId: 'surprise_bill_specter', bounds: PFS_BOUNDS },          // Specter   (L8)
+
+  // AUDIT — Dana hands the boss.
+  { tileX: 32, tileY: 65, encounterId: 'boss_audit',           bounds: AUDIT_BOUNDS },        // Boss      (L10)
+
+  // Doppelganger isn't currently wired to a level dialogue — left
+  // free-roam in the corridor as legacy / dev-panel-jump fodder.
   { tileX: 14, tileY: 22, encounterId: 'co_18_doppelganger' },
 ]
 
