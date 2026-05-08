@@ -28,7 +28,20 @@ from pathlib import Path
 from PIL import Image
 
 
-def remove_background(img: Image.Image, fuzz: int = 35) -> Image.Image:
+def already_has_alpha(img: Image.Image) -> bool:
+    """True if the input PNG already has real transparency at its
+    corners — meaning some upstream tool (rembg / Photoshop /
+    Photoroom) already produced an alpha channel. In that case we
+    skip the cream-bg-chasing flood-fill + halo eroder entirely;
+    the input is good as-is."""
+    if img.mode != "RGBA":
+        return False
+    p = img.load()
+    w, h = img.size
+    return all(p[c][3] == 0 for c in [(0, 0), (w - 1, 0), (0, h - 1), (w - 1, h - 1)])
+
+
+def remove_background(img: Image.Image, fuzz: int = 35) -> tuple[Image.Image, tuple[int, int, int]]:
     """Flood-fill from the four corners through any pixel within
     `fuzz` RGB distance of the corner color, marking those pixels
     alpha=0. Reaches the halo of near-cream pixels around character
@@ -46,8 +59,12 @@ def remove_background(img: Image.Image, fuzz: int = 35) -> Image.Image:
         return abs(r - ref[0]) <= fuzz and abs(g - ref[1]) <= fuzz and abs(b - ref[2]) <= fuzz
 
     visited: set[tuple[int, int]] = set()
-    # Seed from all four corners — handles vignettes / non-uniform bg.
-    seeds = [(0, 0), (w - 1, 0), (0, h - 1), (w - 1, h - 1)]
+    # Seed from the four corners only. With a uniform bg this is
+    # enough to cover the whole bg via flood propagation, and it
+    # doesn't risk bleeding into the character through near-bg-color
+    # interior pixels (white coats, skin highlights) the way dense
+    # edge seeding would.
+    seeds: list[tuple[int, int]] = [(0, 0), (w - 1, 0), (0, h - 1), (w - 1, h - 1)]
     for sx, sy in seeds:
         if (sx, sy) in visited:
             continue
@@ -69,6 +86,137 @@ def remove_background(img: Image.Image, fuzz: int = 35) -> Image.Image:
             stack.append((x - 1, y))
             stack.append((x, y + 1))
             stack.append((x, y - 1))
+    # Use the first corner sample as the canonical bg for downstream
+    # passes (erode_halo needs to know what color to chase).
+    sr, sg, sb, _ = pixels[0, 0]
+    return img, (sr, sg, sb)
+
+
+def keep_largest_blob(img: Image.Image, dilate_radius: int = 3) -> Image.Image:
+    """Connected-component prune that's tolerant of small gaps inside
+    a character. Procedure:
+
+      1. Build a dilated alpha mask — each opaque pixel "extends"
+         dilate_radius pixels into transparent neighbors. This lets
+         a slightly-disconnected arm or strand merge with the torso
+         component without bridging to a different character that's
+         dozens of pixels away in a neighbor cell.
+      2. Find connected components on the dilated mask.
+      3. Keep only pixels of the original image whose position is in
+         the largest dilated component.
+
+    Required because anti-aliased outlines can have 1-2px transparent
+    gaps that split a character into "torso" + "arm" + "hair" — naive
+    largest-blob throws away everything but torso, dropping arms.
+    """
+    img = img.convert("RGBA")
+    pixels = img.load()
+    w, h = img.size
+
+    # Step 1: dilated mask. dilated[x][y] = True iff any pixel within
+    # Chebyshev distance dilate_radius of (x,y) is opaque.
+    opaque = [[pixels[x, y][3] > 0 for y in range(h)] for x in range(w)]
+    if dilate_radius > 0:
+        dilated = [[False] * h for _ in range(w)]
+        r = dilate_radius
+        for x in range(w):
+            for y in range(h):
+                if not opaque[x][y]:
+                    continue
+                x0, x1 = max(0, x - r), min(w - 1, x + r)
+                y0, y1 = max(0, y - r), min(h - 1, y + r)
+                for dx in range(x0, x1 + 1):
+                    row = dilated[dx]
+                    for dy in range(y0, y1 + 1):
+                        row[dy] = True
+    else:
+        dilated = opaque
+
+    # Step 2: connected components on the dilated mask.
+    component_id = [[0] * h for _ in range(w)]
+    component_sizes: list[int] = [0]
+    next_id = 1
+    for sy in range(h):
+        for sx in range(w):
+            if not dilated[sx][sy] or component_id[sx][sy] != 0:
+                continue
+            stack = [(sx, sy)]
+            size = 0
+            while stack:
+                x, y = stack.pop()
+                if x < 0 or x >= w or y < 0 or y >= h:
+                    continue
+                if not dilated[x][y] or component_id[x][y] != 0:
+                    continue
+                component_id[x][y] = next_id
+                size += 1
+                stack.append((x + 1, y))
+                stack.append((x - 1, y))
+                stack.append((x, y + 1))
+                stack.append((x, y - 1))
+            component_sizes.append(size)
+            next_id += 1
+
+    if next_id <= 2:
+        return img
+
+    largest = max(range(1, next_id), key=lambda i: component_sizes[i])
+    # Step 3: erase original-image pixels NOT in the largest dilated
+    # component. Pixels in the gap-bridged region but originally
+    # transparent stay transparent (we only clear opaque pixels that
+    # were assigned to a smaller component).
+    for y in range(h):
+        for x in range(w):
+            if not opaque[x][y]:
+                continue
+            if component_id[x][y] != largest:
+                r, g, b, _ = pixels[x, y]
+                pixels[x, y] = (r, g, b, 0)
+    return img
+
+
+def erode_halo(img: Image.Image, ref: tuple[int, int, int], halo_fuzz: int = 60, passes: int = 3) -> Image.Image:
+    """Remove the cream halo of anti-aliased pixels that flood-fill
+    leaves around the character outline. Strategy: iteratively erase
+    any opaque edge pixel (4-neighbor of a transparent pixel) whose
+    color is within `halo_fuzz` of the background color. Multiple
+    passes catch the second/third layer of anti-aliasing rings.
+
+    Position-aware: interior cream-adjacent pixels (skin highlights,
+    light fabric folds) stay opaque because they don't touch the
+    transparent boundary. Only the halo on the *outside* of the
+    character gets eaten."""
+    img = img.convert("RGBA")
+    pixels = img.load()
+    w, h = img.size
+    bg_r, bg_g, bg_b = ref
+
+    for _ in range(passes):
+        # Snapshot the current alpha mask so all edits this pass see
+        # the same boundary; otherwise erosion runs away in raster
+        # order and eats further than 1 pixel per pass.
+        alpha = [[pixels[x, y][3] for y in range(h)] for x in range(w)]
+        changed = False
+        for y in range(h):
+            for x in range(w):
+                if alpha[x][y] == 0:
+                    continue
+                # Edge pixel? At least one 4-neighbor is transparent
+                # (or out of bounds — treat OOB as transparent).
+                edge = (
+                    x == 0 or alpha[x - 1][y] == 0 or
+                    x == w - 1 or alpha[x + 1][y] == 0 or
+                    y == 0 or alpha[x][y - 1] == 0 or
+                    y == h - 1 or alpha[x][y + 1] == 0
+                )
+                if not edge:
+                    continue
+                r, g, b, _ = pixels[x, y]
+                if abs(r - bg_r) <= halo_fuzz and abs(g - bg_g) <= halo_fuzz and abs(b - bg_b) <= halo_fuzz:
+                    pixels[x, y] = (r, g, b, 0)
+                    changed = True
+        if not changed:
+            break
     return img
 
 
@@ -110,14 +258,28 @@ def split_sheet(img: Image.Image, frames: int) -> list[Image.Image]:
     return [img.crop((i * frame_w, 0, (i + 1) * frame_w, h)) for i in range(frames)]
 
 
+def split_grid(img: Image.Image, rows: int, cols: int) -> list[list[Image.Image]]:
+    w, h = img.size
+    cell_w = w // cols
+    cell_h = h // rows
+    return [
+        [img.crop((c * cell_w, r * cell_h, (c + 1) * cell_w, (r + 1) * cell_h)) for c in range(cols)]
+        for r in range(rows)
+    ]
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--input", required=True, help="Path to sprite-sheet PNG/JPG")
-    p.add_argument("--frames", type=int, default=4, help="Number of frames in the sheet (default 4)")
-    p.add_argument("--prefix", required=True, help="Output filename prefix, e.g. side_walk")
+    p.add_argument("--frames", type=int, default=4, help="Number of frames per row (default 4)")
+    p.add_argument("--rows", type=int, default=1, help="Number of rows; >1 enables grid mode where each row = a separate character (default 1)")
+    p.add_argument("--prefix", required=True, help="Output filename prefix. In grid mode, output is <prefix>_<row>_<col>.png")
     p.add_argument("--out", default="public/sprites/player", help="Output directory")
     p.add_argument("--size", type=int, default=64, help="Output size in px (default 64)")
-    p.add_argument("--fuzz", type=int, default=22, help="Background-removal fuzz tolerance (default 22)")
+    p.add_argument("--fuzz", type=int, default=35, help="Flood-fill bg-removal fuzz tolerance (default 35)")
+    p.add_argument("--halo-fuzz", type=int, default=60, help="Edge-halo eroder fuzz tolerance (default 60)")
+    p.add_argument("--halo-passes", type=int, default=3, help="Halo eroder iterations; each pass eats 1 px ring (default 3)")
+    p.add_argument("--dilate", type=int, default=3, help="Connected-component dilation radius for blob filter; bigger = more tolerant of intra-character gaps but more risk of merging neighbor characters (default 3)")
     args = p.parse_args()
 
     input_path = Path(args.input)
@@ -128,14 +290,35 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     sheet = Image.open(input_path)
-    frames = split_sheet(sheet, args.frames)
-    for i, frame in enumerate(frames):
-        cleaned = remove_background(frame, fuzz=args.fuzz)
-        trimmed = trim_to_bbox(cleaned)
-        sized = fit_to_square(trimmed, args.size)
-        out_path = out_dir / f"{args.prefix}_{i}.png"
-        sized.save(out_path, "PNG")
-        print(f"wrote {out_path}  ({trimmed.size[0]}×{trimmed.size[1]} → {args.size}×{args.size})")
+    if args.rows > 1:
+        grid = split_grid(sheet, rows=args.rows, cols=args.frames)
+        for r, row in enumerate(grid):
+            for c, cell in enumerate(row):
+                if already_has_alpha(cell):
+                    cleaned = cell.convert("RGBA")
+                else:
+                    cleaned, ref = remove_background(cell, fuzz=args.fuzz)
+                    cleaned = erode_halo(cleaned, ref, halo_fuzz=args.halo_fuzz, passes=args.halo_passes)
+                cleaned = keep_largest_blob(cleaned, dilate_radius=args.dilate)
+                trimmed = trim_to_bbox(cleaned)
+                sized = fit_to_square(trimmed, args.size)
+                out_path = out_dir / f"{args.prefix}_{r}_{c}.png"
+                sized.save(out_path, "PNG")
+                print(f"wrote {out_path}  ({trimmed.size[0]}×{trimmed.size[1]} → {args.size}×{args.size})")
+    else:
+        frames = split_sheet(sheet, args.frames)
+        for i, frame in enumerate(frames):
+            if already_has_alpha(frame):
+                cleaned = frame.convert("RGBA")
+            else:
+                cleaned, ref = remove_background(frame, fuzz=args.fuzz)
+                cleaned = erode_halo(cleaned, ref, halo_fuzz=args.halo_fuzz, passes=args.halo_passes)
+            cleaned = keep_largest_blob(cleaned, dilate_radius=args.dilate)
+            trimmed = trim_to_bbox(cleaned)
+            sized = fit_to_square(trimmed, args.size)
+            out_path = out_dir / f"{args.prefix}_{i}.png"
+            sized.save(out_path, "PNG")
+            print(f"wrote {out_path}  ({trimmed.size[0]}×{trimmed.size[1]} → {args.size}×{args.size})")
 
 
 if __name__ == "__main__":
