@@ -511,7 +511,7 @@ export class IntroScene extends Phaser.Scene {
     ;(this.introSong as any).setVolume?.(0)
     this.tweens.add({
       targets: this.introSong,
-      volume: 0.03,
+      volume: 0.15,
       duration: 5000,
     })
   }
@@ -530,7 +530,7 @@ export class IntroScene extends Phaser.Scene {
     this.tweens.add({
       targets: this.introSong,
       volume: 0.5,
-      duration: 1500,
+      duration: 5000,
     })
   }
 
