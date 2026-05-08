@@ -4,6 +4,18 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Disable browser caching of this entry HTML so deploys are
+         picked up immediately. The Vite-built JS/CSS bundles already
+         have content-hashed filenames so they bust per-deploy on
+         their own; the only thing that needs this is index.html
+         itself (which references the latest hashed bundle names).
+         GitHub Pages serves with Cache-Control: max-age=600 by
+         default, so first-load after a deploy can still be stale
+         for up to 10min — these tags shorten that window once the
+         CDN edge node returns a fresh response. -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <title>The Waiting Room · a revenue-cycle roguelike</title>
     <meta name="description" content="Top-down action RPG roguelike teaching hospital revenue cycle through CARC denial codes, faction combat, and procedural dungeon runs." />
     <style>
