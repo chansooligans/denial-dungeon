@@ -704,13 +704,13 @@ export class WaitingRoomScene extends Phaser.Scene {
     }
     const sm = this.sound as Phaser.Sound.BaseSoundManager & { locked?: boolean; unlock?: () => void }
     if (sm.locked && typeof sm.unlock === 'function') {
-      // Mobile autoplay gate — Phaser stores a locked flag until any
-      // user input. By the time the player descends from Hospital,
-      // they've tapped enough times that this should already be
-      // unlocked. Call it defensively in case it's still gated.
       sm.unlock()
       debugEvent('wr:sm-unlock')
     }
+    // Also resume the AudioContext directly (mobile Safari / Chrome).
+    const ctx = (sm as any).context as AudioContext | undefined
+    if (ctx && ctx.state === 'suspended') ctx.resume()
+
     const key = pickNextTrack('redRoom', keys)
     if (!this.cache.audio.exists(key)) {
       debugEvent('wr:audio-missing ' + key)
@@ -719,11 +719,28 @@ export class WaitingRoomScene extends Phaser.Scene {
     const ambient = this.sound.add(key, { volume: 0, loop: true })
     const playResult = ambient.play()
     debugEvent(`wr:start ${key} play=${playResult} muted=${this.sound.mute}`)
-    this.tweens.add({
-      targets: ambient,
-      volume: 0.45,
-      duration: 2000,
-    })
+
+    const startFade = () => {
+      this.tweens.add({
+        targets: ambient,
+        volume: 0.45,
+        duration: 2000,
+      })
+    }
+
+    if (!playResult) {
+      // Retry once AudioContext resumes (mobile unlock in progress).
+      if (ctx && ctx.state === 'suspended') {
+        ctx.addEventListener('statechange', () => {
+          if (!this.scene.isActive()) return
+          ambient.play()
+          startFade()
+          debugEvent('wr:retry-play')
+        }, { once: true })
+      }
+    } else {
+      startFade()
+    }
   }
 
   /** Fade and stop any hospital-layer audio that might still be

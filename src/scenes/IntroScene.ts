@@ -507,13 +507,33 @@ export class IntroScene extends Phaser.Scene {
     // the default 1.0 volume — some audio backends ignore the
     // sound.add config until after the first playback tick.
     ;(this.introSong as any).setVolume?.(0)
-    this.introSong.play()
+    const played = this.introSong.play()
     ;(this.introSong as any).setVolume?.(0)
-    this.tweens.add({
-      targets: this.introSong,
-      volume: 0.03,
-      duration: 5000,
-    })
+
+    const startFade = () => {
+      this.tweens.add({
+        targets: this.introSong,
+        volume: 0.03,
+        duration: 5000,
+      })
+    }
+
+    if (!played) {
+      // Mobile: AudioContext still suspended — retry once it unlocks.
+      const ctx = (this.sound as any).context as AudioContext | undefined
+      if (ctx && ctx.state === 'suspended') {
+        const retry = () => {
+          if (this.done || !this.introSong) return
+          ;(this.introSong as any).setVolume?.(0)
+          this.introSong.play()
+          ;(this.introSong as any).setVolume?.(0)
+          startFade()
+        }
+        ctx.addEventListener('statechange', retry, { once: true })
+      }
+    } else {
+      startFade()
+    }
   }
 
   /** Bump the intro song from its quiet pre-narration level up to
@@ -912,10 +932,22 @@ export class IntroScene extends Phaser.Scene {
     const key = `intro_voice_${String(this.textBeatCounter).padStart(2, '0')}`
     if (!this.cache.audio.exists(key)) return
     this.currentVoice = this.sound.add(key)
-    this.currentVoice.play()
+    const played = this.currentVoice.play()
     // Bring the music bed up to its under-narration mix the moment
     // narration starts. Idempotent — only fires on the first VO beat.
     this.boostIntroSongForVoice()
+
+    if (!played) {
+      // Mobile: AudioContext still suspended — retry once it unlocks.
+      const voice = this.currentVoice
+      const ctx = (this.sound as any).context as AudioContext | undefined
+      if (ctx && ctx.state === 'suspended') {
+        ctx.addEventListener('statechange', () => {
+          if (this.done || this.currentVoice !== voice) return
+          voice.play()
+        }, { once: true })
+      }
+    }
   }
 
   private stopVoice() {
