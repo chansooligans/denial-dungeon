@@ -532,22 +532,22 @@ export const DIALOGUES: Record<string, DialogueNode> = {
   //     here to make the conference room feel like a deposition. ===
   auditor_carl_intro: {
     id: 'auditor_carl_intro',
-    speaker: 'Carl Westbrook',
+    speaker: 'Carl Westbrook — Senior Partner',
     text: "We've blocked off four hours for this. We'll need them.",
   },
   auditor_chen_intro: {
     id: 'auditor_chen_intro',
-    speaker: 'Wendy Chen',
+    speaker: 'Wendy Chen — Data Analytics',
     text: "Your CMI variance is in the 96th percentile. That's not a compliment.",
   },
   auditor_rivera_intro: {
     id: 'auditor_rivera_intro',
-    speaker: 'Mira Rivera',
+    speaker: 'Mira Rivera — Compliance',
     text: "We're not here to teach. We're here to find.",
   },
   auditor_eddi_intro: {
     id: 'auditor_eddi_intro',
-    speaker: 'Eddi',
+    speaker: 'Eddi — Observer',
     text: "...",
   },
 
