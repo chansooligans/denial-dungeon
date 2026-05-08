@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>NPC sprite contact sheet</title>
+  <title>Sprite library — The Waiting Room</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <style>
@@ -74,11 +74,78 @@
       white-space: pre-wrap; word-break: break-all;
     }
     .export-wrap { margin: 16px 0; max-width: 800px; }
+    .section-header {
+      display: flex; align-items: baseline; gap: 16px;
+      border-top: 1px solid #2a323d;
+      margin: 36px -24px 16px;
+      padding: 24px 24px 0;
+    }
+    .section-header h1 { margin: 0; font-size: 22px; }
+    .section-header .section-meta {
+      color: #5a6a7a; font-size: 11px;
+    }
+    .section-nav {
+      display: flex; gap: 16px; flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+    .section-nav a {
+      color: #7ee2c1; text-decoration: none;
+      border-bottom: 1px dotted #2a4a3d;
+    }
+    .section-nav a:hover { color: #fff; border-bottom-color: #7ee2c1; }
+    .frame-row {
+      display: flex; gap: 12px; flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .frame-row .frame {
+      background: #1a1e25; border: 1px solid #2a323d;
+      padding: 8px; border-radius: 4px;
+      text-align: center;
+    }
+    .frame-row .frame img {
+      width: 96px; height: 96px; image-rendering: pixelated;
+      background: #0a0e14;
+    }
+    .frame-row .frame .meta { font-size: 10px; color: #5a6a7a; }
+    .frame-row .frame .label {
+      color: #7ee2c1; font-size: 11px; margin-bottom: 4px;
+    }
+    .future-section {
+      color: #5a6a7a; font-size: 12px; font-style: italic;
+      max-width: 760px;
+    }
   </style>
 </head>
 <body>
 
-<h1>NPC sprite contact sheet</h1>
+<h1>Sprite library</h1>
+<p class="section-nav">
+  <a href="#chloe">Chloe (player)</a>
+  <a href="#npcs">NPCs</a>
+  <a href="#objects">Objects (planned)</a>
+</p>
+<p>
+  All sprite assets in one place. Each section pulls live PNGs from
+  <code>public/sprites/</code> so renders match exactly what the
+  game loads at runtime.
+</p>
+
+<div class="section-header" id="chloe">
+  <h1>Chloe — player</h1>
+  <span class="section-meta">4 directions × 4 walk frames · 64×64 each</span>
+</div>
+<p>
+  The player walk cycle. Source <code>public/sprites/player/&lt;dir&gt;_walk_&lt;0..3&gt;.png</code>.
+  Generated from chroma-key LoRA outputs via
+  <code>tools/process-chloe-sheets.sh</code>.
+</p>
+
+<div id="chloe-frames"></div>
+
+<div class="section-header" id="npcs">
+  <h1>NPCs</h1>
+  <span class="section-meta">5 LoRA sheets × 4 characters × 4 directions · 64×64 each</span>
+</div>
 <p>
   All 80 LoRA-generated NPC frames from <code>public/sprites/npcs-raw/</code>.
   Pick which slot becomes which game NPC using the dropdowns under each
@@ -102,7 +169,54 @@
 
 <div id="grids"></div>
 
+<div class="section-header" id="objects">
+  <h1>Objects (planned)</h1>
+  <span class="section-meta">Phase 4-6 of art-direction-roadmap</span>
+</div>
+<p class="future-section">
+  Hospital tiles, Waiting Room tiles, document icons, and UI chrome.
+  Currently rendered procedurally in <code>BootScene</code> at 16×16.
+  When the LoRA pipeline ships object art, swap the textures here
+  the same way Chloe and the NPCs landed — 4-direction grids in
+  <code>npcs-raw/</code>-style staging, then canonical <code>h_*</code> /
+  <code>wr_*</code> keys after assignment.
+</p>
+
 <script>
+// ---------- Chloe (player) — 4 directions × 4 walk frames ----------
+(function renderChloe() {
+  const root = document.getElementById('chloe-frames');
+  const dirs = [
+    { key: 'down',  label: 'Front (down)' },
+    { key: 'left',  label: 'Left' },
+    { key: 'right', label: 'Right' },
+    { key: 'up',    label: 'Back (up)' },
+  ];
+  for (const d of dirs) {
+    const dirHeader = document.createElement('div');
+    dirHeader.style.color = '#f4d06f';
+    dirHeader.style.fontSize = '12px';
+    dirHeader.style.margin = '12px 0 6px';
+    dirHeader.textContent = d.label;
+    root.appendChild(dirHeader);
+    const row = document.createElement('div');
+    row.className = 'frame-row';
+    for (let i = 0; i < 4; i++) {
+      const f = document.createElement('div');
+      f.className = 'frame';
+      f.innerHTML = `
+        <div class="label">frame ${i}</div>
+        <img src="/sprites/player/${d.key}_walk_${i}.png" alt="${d.key}_walk_${i}">
+        <div class="meta">${d.key}_walk_${i}</div>
+      `;
+      row.appendChild(f);
+    }
+    root.appendChild(row);
+  }
+})();
+
+// ---------- NPCs — picker + mapping (existing) ----------
+
 // Game NPCs available for mapping. Order matches reference/art-direction-roadmap.md.
 const GAME_NPCS = [
   { key: 'dana',     label: 'Dana — mentor, revenue cycle' },
