@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Density / resolution comparison — The Waiting Room</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body {
+      margin: 0; padding: 24px;
+      background: #0e1116; color: #d0d8e0;
+      font: 13px/1.5 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    }
+    h1 { color: #7ee2c1; font-size: 18px; margin: 0 0 4px; }
+    h2 { color: #f4d06f; font-size: 14px; margin: 32px 0 8px; }
+    p  { color: #8b95a5; margin: 4px 0 16px; max-width: 760px; }
+    .row { display: flex; gap: 32px; flex-wrap: wrap; align-items: flex-start; }
+    .card {
+      background: #1a1e25; border: 1px solid #2a323d; padding: 12px;
+      border-radius: 6px;
+    }
+    .card .label { color: #7ee2c1; font-size: 12px; margin-bottom: 6px; }
+    .card .meta  { color: #5a6a7a; font-size: 11px; margin-top: 6px; }
+    canvas {
+      image-rendering: pixelated;
+      background: #0a0e14;
+      display: block;
+    }
+    .canvas-frame {
+      display: inline-block; padding: 8px;
+      background: #1a1e25; border: 1px solid #2a323d; border-radius: 4px;
+    }
+    .canvas-frame canvas { image-rendering: auto; }
+  </style>
+</head>
+<body>
+
+<h1>Source-asset density / canvas resolution comparison</h1>
+<p>
+  All three sprites display at the same visual size (~256px tall) so the
+  comparison is purely about how many art-pixels go into the figure.
+  32×32 is the current production sprite, ported verbatim from
+  <code>BootScene.makePlayerDirection</code>. 64×64 and 128×128 are
+  sketches — same character, but with extra detail strokes that can only
+  exist at higher density. Real production assets would need a proper
+  pass; these are just to show the ceiling.
+</p>
+
+<div class="row" id="sprites"></div>
+
+<h2>Canvas resolution: 960×640 vs 1920×1280</h2>
+<p>
+  Both panels show the same logical scene (top-down hospital corridor
+  with player and an NPC). The 960×640 panel is the current canvas
+  resolution; 1920×1280 doubles it. Sprite scale unchanged in pixels,
+  so the larger canvas exposes more world per screen and finer
+  positional detail (and bigger text headroom). Each is shown at a
+  fixed CSS width, so the larger one is downscaled — meaning on a
+  retina screen, the 1920×1280 backing store gives crisper edges
+  even when the displayed size matches.
+</p>
+
+<div class="row" id="canvases"></div>
+
+<script>
+// ---------- shared palette ----------
+const HAIR    = '#2a1a0e';
+const HAIR_HI = '#3e2a1e';
+const HAIR_LO = '#1a1008';
+const SKIN    = '#f0d9be';
+const SKIN_LO = '#c8b29a';
+const SWEATER = '#5a4030';
+const SWEATER_HI = '#705440';
+const SWEATER_LO = '#402c20';
+const PANTS   = '#1a1a2e';
+const PANTS_LO = '#10101c';
+const SHOE    = '#1a1208';
+const EYE     = '#1a1a2e';
+const MOUTH   = '#6a3030';
+const BADGE   = '#f4d06f';
+const BADGE_LO = '#c0a040';
+
+// ---------- 32×32 (current production sprite, port of makePlayerDirection 'down') ----------
+function draw32(ctx, ox, oy, s) {
+  const px = (color, x, y, w, h) => { ctx.fillStyle = color; ctx.fillRect(ox + x*s, oy + y*s, w*s, h*s); };
+
+  // Bun
+  px(HAIR, 14, 0, 4, 2);
+  px(HAIR, 13, 1, 6, 1);
+  px(HAIR_HI, 15, 0, 2, 1);
+  px(HAIR_LO, 11, 1, 1, 2);
+  px(HAIR_LO, 20, 1, 1, 2);
+
+  // Hair cap
+  px(HAIR, 11, 2, 10, 2);
+  px(HAIR, 9, 3, 14, 2);
+  px(HAIR, 8, 4, 16, 4);
+  px(HAIR, 7, 5, 1, 7);
+  px(HAIR, 24, 5, 1, 7);
+  px(HAIR, 8, 7, 16, 1);
+  px(HAIR_LO, 8, 7, 16, 1);
+
+  // Face
+  px(SKIN, 9, 8, 14, 8);
+  px(SKIN_LO, 9, 14, 14, 1);
+  // Eyes
+  px('#fff', 11, 10, 3, 2);
+  px('#fff', 18, 10, 3, 2);
+  px(EYE, 12, 10, 2, 2);
+  px(EYE, 19, 10, 2, 2);
+  px('#fff', 12, 10, 1, 1);
+  px('#fff', 19, 10, 1, 1);
+  // Mouth
+  px(MOUTH, 14, 14, 4, 1);
+  // Neck
+  px(SKIN_LO, 13, 16, 6, 1);
+
+  // Sweater
+  px(SWEATER, 6, 17, 20, 9);
+  px(SWEATER_LO, 6, 17, 1, 9);
+  px(SWEATER_LO, 25, 17, 1, 9);
+  px(SWEATER_LO, 15, 17, 2, 2);
+  px(SKIN, 15, 17, 2, 1);
+  px(SWEATER_HI, 8, 18, 5, 4);
+  px(BADGE, 18, 21, 3, 3);
+  px(BADGE_LO, 18, 23, 3, 1);
+
+  // Arms / hands
+  px(SWEATER, 4, 17, 2, 8);
+  px(SWEATER, 26, 17, 2, 8);
+  px(SWEATER_LO, 4, 24, 2, 1);
+  px(SWEATER_LO, 26, 24, 2, 1);
+  px(SKIN, 4, 25, 2, 2);
+  px(SKIN, 26, 25, 2, 2);
+  px(SKIN_LO, 4, 26, 2, 1);
+  px(SKIN_LO, 26, 26, 2, 1);
+
+  // Pants + shoes
+  px(PANTS, 8, 26, 7, 5);
+  px(PANTS, 17, 26, 7, 5);
+  px(PANTS_LO, 8, 30, 7, 1);
+  px(PANTS_LO, 17, 30, 7, 1);
+  px(SHOE, 8, 31, 7, 1);
+  px(SHOE, 17, 31, 7, 1);
+}
+
+// ---------- 64×64 (32×32 doubled + a handful of extra detail strokes) ----------
+function draw64(ctx, ox, oy, s) {
+  const px = (color, x, y, w, h) => { ctx.fillStyle = color; ctx.fillRect(ox + x*s, oy + y*s, w*s, h*s); };
+  // Start with a 2× upscaling of the 32×32 layout (each unit = 2px now)
+  draw32(ctx, ox, oy, s * 2);
+
+  // Now add detail that only fits at 64px density.
+  // Eyebrows
+  px('#1a0e06', 22, 18, 6, 1);
+  px('#1a0e06', 36, 18, 6, 1);
+  // Nose shading (centerline)
+  px(SKIN_LO, 31, 22, 2, 4);
+  // Mouth corners
+  px('#4a2020', 28, 28, 1, 1);
+  px('#4a2020', 35, 28, 1, 1);
+  // Hair strand highlights
+  px(HAIR_HI, 18, 8, 4, 1);
+  px(HAIR_HI, 30, 8, 6, 1);
+  px(HAIR_HI, 42, 9, 4, 1);
+  // Sweater knit ribbing (vertical lines)
+  for (let x = 14; x < 50; x += 4) px(SWEATER_LO, x, 36, 1, 16);
+  // ID badge text hint
+  px('#3a2a08', 38, 44, 4, 1);
+  px('#3a2a08', 38, 47, 4, 1);
+  // Finger split on hands
+  px(SWEATER_LO, 9, 51, 1, 1);
+  px(SWEATER_LO, 53, 51, 1, 1);
+  // Shoe laces
+  px('#3a2818', 18, 62, 4, 1);
+  px('#3a2818', 36, 62, 4, 1);
+}
+
+// ---------- 128×128 (64×64 doubled + finer detail still) ----------
+function draw128(ctx, ox, oy, s) {
+  const px = (color, x, y, w, h) => { ctx.fillStyle = color; ctx.fillRect(ox + x*s, oy + y*s, w*s, h*s); };
+  draw64(ctx, ox, oy, s * 2);
+
+  // Sub-pixel detail enabled by 4× linear density.
+  // Eye iris highlight (tiny catchlight)
+  px('#a0c8e0', 50, 41, 1, 1);
+  px('#a0c8e0', 78, 41, 1, 1);
+  // Lower eyelid shading
+  px(SKIN_LO, 46, 44, 11, 1);
+  px(SKIN_LO, 74, 44, 11, 1);
+  // Eyelashes
+  px('#1a1008', 44, 39, 1, 1);
+  px('#1a1008', 56, 39, 1, 1);
+  px('#1a1008', 72, 39, 1, 1);
+  px('#1a1008', 84, 39, 1, 1);
+  // Nostril shadows
+  px('#a08070', 60, 52, 1, 1);
+  px('#a08070', 67, 52, 1, 1);
+  // Lip highlight + separation
+  px('#8a4040', 56, 60, 16, 1);
+  px('#3a1818', 56, 62, 16, 1);
+  // Hair flyaways
+  px(HAIR_LO, 26, 12, 1, 4);
+  px(HAIR_LO, 100, 12, 1, 4);
+  px(HAIR, 32, 4, 2, 1);
+  px(HAIR, 96, 4, 2, 1);
+  // Sweater fabric noise (knit dots)
+  for (let y = 76; y < 100; y += 3) {
+    for (let x = 28; x < 100; x += 4) {
+      px(SWEATER_HI, x, y, 1, 1);
+    }
+  }
+  // Visible badge "ID" letterforms
+  px('#3a2a08', 76, 88, 1, 4); // I
+  px('#3a2a08', 80, 88, 3, 1);
+  px('#3a2a08', 80, 90, 2, 1);
+  px('#3a2a08', 80, 92, 3, 1);
+  // Finger separation lines on hands
+  px(SWEATER_LO, 18, 102, 1, 4);
+  px(SWEATER_LO, 22, 102, 1, 4);
+  px(SWEATER_LO, 106, 102, 1, 4);
+  px(SWEATER_LO, 110, 102, 1, 4);
+  // Pant crease shadows
+  px(PANTS_LO, 38, 108, 1, 12);
+  px(PANTS_LO, 90, 108, 1, 12);
+  // Shoe shine
+  px('#3a2818', 38, 124, 12, 1);
+  px('#3a2818', 76, 124, 12, 1);
+}
+
+// ---------- mount sprite comparison ----------
+function makeSpriteCard(label, density, drawFn, displaySize = 256) {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = `
+    <div class="label">${label}</div>
+    <canvas width="${density}" height="${density}" style="width:${displaySize}px;height:${displaySize}px;image-rendering:pixelated"></canvas>
+    <div class="meta">${density}×${density} px source · displayed at ${displaySize}×${displaySize}</div>
+  `;
+  const ctx = card.querySelector('canvas').getContext('2d');
+  drawFn(ctx, 0, 0, 1);
+  return card;
+}
+
+const sprites = document.getElementById('sprites');
+sprites.appendChild(makeSpriteCard('32×32 — current production', 32, draw32));
+sprites.appendChild(makeSpriteCard('64×64 — 2× density (sketch)', 64, draw64));
+sprites.appendChild(makeSpriteCard('128×128 — 4× density (sketch)', 128, draw128));
+
+// ---------- canvas resolution comparison ----------
+function drawSceneMock(ctx, w, h) {
+  // Background floor
+  ctx.fillStyle = '#8a7e6e';
+  ctx.fillRect(0, 0, w, h);
+  // Floor grid (lino seams)
+  ctx.strokeStyle = '#7a7060';
+  ctx.lineWidth = 1;
+  const tile = Math.round(w / 32);
+  for (let x = 0; x < w; x += tile) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
+  for (let y = 0; y < h; y += tile) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+  // Walls top/bottom
+  ctx.fillStyle = '#98a0a8';
+  ctx.fillRect(0, 0, w, tile);
+  ctx.fillRect(0, h - tile, w, tile);
+  // Reception desk (right side)
+  ctx.fillStyle = '#6a5030';
+  ctx.fillRect(w * 0.62, h * 0.45, w * 0.22, h * 0.22);
+  // Plant
+  ctx.fillStyle = '#508040';
+  ctx.beginPath(); ctx.arc(w * 0.18, h * 0.33, tile * 1.2, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#8a5a30';
+  ctx.fillRect(w * 0.17, h * 0.36, tile * 1.5, tile * 1.5);
+
+  // Player (32×32 sprite scaled up to canvas-relative size; same world units in both)
+  const spriteW = tile * 2; // sprite is 2 tiles wide
+  const playerX = w * 0.30, playerY = h * 0.55;
+  drawTinyPlayer(ctx, playerX, playerY, spriteW / 32);
+  // NPC
+  drawTinyPlayer(ctx, w * 0.55, h * 0.40, spriteW / 32);
+
+  // HUD text top-left
+  ctx.fillStyle = '#0e1116';
+  ctx.fillRect(8, 8, w * 0.22, tile * 1.5);
+  ctx.fillStyle = '#7ee2c1';
+  ctx.font = `${Math.max(10, Math.round(tile * 0.6))}px ui-monospace, monospace`;
+  ctx.fillText('Hospital · Floor 1', 14, 8 + tile * 0.95);
+
+  // Resolution label bottom-right
+  ctx.fillStyle = '#f4d06f';
+  ctx.font = `${Math.max(11, Math.round(tile * 0.7))}px ui-monospace, monospace`;
+  ctx.fillText(`${w}×${h}`, w - tile * 4.5, h - tile * 0.5);
+}
+
+// Compact 32×32 player for the scene mock (uses draw32 at given scale)
+function drawTinyPlayer(ctx, ox, oy, s) {
+  draw32(ctx, ox, oy, s);
+}
+
+function makeCanvasCard(label, w, h, displayW) {
+  const card = document.createElement('div');
+  card.className = 'card';
+  const aspect = h / w;
+  const displayH = Math.round(displayW * aspect);
+  card.innerHTML = `
+    <div class="label">${label}</div>
+    <div class="canvas-frame">
+      <canvas width="${w}" height="${h}" style="width:${displayW}px;height:${displayH}px"></canvas>
+    </div>
+    <div class="meta">${w}×${h} backing store · displayed at ${displayW}×${displayH}</div>
+  `;
+  const ctx = card.querySelector('canvas').getContext('2d');
+  drawSceneMock(ctx, w, h);
+  return card;
+}
+
+const canvases = document.getElementById('canvases');
+canvases.appendChild(makeCanvasCard('960×640 — current', 960, 640, 480));
+canvases.appendChild(makeCanvasCard('1920×1280 — 2× resolution', 1920, 1280, 480));
+</script>
+
+</body>
+</html>
