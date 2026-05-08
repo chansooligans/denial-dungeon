@@ -367,5 +367,13 @@ export const LEVEL_1_MAP: MapDef = {
     // never moves out (the south wing all goes through her in
     // late-game too via Reaper).
     { npcId: 'sam', tileX: PATIENT_SVC.x + 9, tileY: PATIENT_SVC.y + 4 },
+
+    // L10 audit team — seated around the conference table on the
+    // north row of chairs (AUDIT interior dy=2, world y=64). Dana
+    // sits across the room near the south wall to hand off the case.
+    { npcId: 'auditor_carl',   tileX: AUDIT.x + 7,  tileY: AUDIT.y + 2, levels: [10] },
+    { npcId: 'auditor_chen',   tileX: AUDIT.x + 13, tileY: AUDIT.y + 2, levels: [10] },
+    { npcId: 'auditor_rivera', tileX: AUDIT.x + 19, tileY: AUDIT.y + 2, levels: [10] },
+    { npcId: 'auditor_eddi',   tileX: AUDIT.x + 22, tileY: AUDIT.y + 2, levels: [10] },
   ],
 }
