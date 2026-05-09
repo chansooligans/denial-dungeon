@@ -87,6 +87,13 @@ export default defineConfig({
         // or AMEND (concede + recoupment). Lives at
         // /audit-boss-prototype.html.
         auditBoss: resolve(__dirname, 'audit-boss-prototype.html'),
+        // Case Rate Specter: pricing-methodology sibling to the
+        // Specter. Same dragon (underpayment behind CO-45),
+        // different lever — the contract's case-rate / outlier-
+        // provision split rather than a stale fee table. Verbs:
+        // COMPARE-CONTRACT / REPRICE / APPEAL. Lives at
+        // /case-rate-specter-prototype.html.
+        caseRateSpecter: resolve(__dirname, 'case-rate-specter-prototype.html'),
         // Map editor: a dev-only authoring tool for level1's object
         // placement and orientation. Click any object to select it,
         // then rotate/flip via keyboard or drag to move. Outputs a
