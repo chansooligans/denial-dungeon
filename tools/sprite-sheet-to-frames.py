@@ -306,7 +306,12 @@ def erode_halo(img: Image.Image, ref: tuple[int, int, int], halo_fuzz: int = 60,
     if is_chroma_key(ref):
         if is_warm_chroma(ref):
             if not no_warm_bump:
-                halo_fuzz = max(halo_fuzz, 90)
+                # Warm cap = 85: empirically the sweet spot from the
+                # npc15 sweep. The eroder converges in 1 pass at
+                # this strength against orange (248,100,5); higher
+                # values either no-op (matching pixels already gone)
+                # or risk eating dark-skin edges (max-diff ~95).
+                halo_fuzz = max(halo_fuzz, 85)
         else:
             halo_fuzz = max(halo_fuzz, 130)
 
@@ -401,7 +406,7 @@ def main() -> None:
     p.add_argument("--dilate", type=int, default=3, help="Connected-component dilation radius for blob filter; bigger = more tolerant of intra-character gaps but more risk of merging neighbor characters (default 3)")
     p.add_argument("--no-warm-bump", action="store_true", help="Disable the warm-chroma auto-bump in remove_background and erode_halo. Use with --fuzz / --halo-fuzz to dial cleanup precisely (parameter sweeps).")
     p.add_argument("--no-global-erase", action="store_true", help="Skip chroma_key_global_erase entirely (the dominance-based pass that catches enclosed chroma pixels in hair). Useful for sweeps where the warm bg + skin overlap is the failure mode.")
-    p.add_argument("--warm-min-excess", type=int, default=100, help="min_excess threshold for chroma_key_global_erase on warm chromas. Higher = more conservative (less likely to eat skin). Skin r-excess ~60 across tones, so values >70 are safe; 100 is the production default. Cool chromas always use 15.")
+    p.add_argument("--warm-min-excess", type=int, default=120, help="min_excess threshold for chroma_key_global_erase on warm chromas. Higher = more conservative (less likely to eat skin). Skin r-excess ~60 across tones, so values >70 are safe; 120 is the production default (locked in via the npc15 sweep). Cool chromas always use 15.")
     args = p.parse_args()
 
     input_path = Path(args.input)
