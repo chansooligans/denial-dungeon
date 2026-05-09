@@ -29,6 +29,11 @@ import {
 
 const TILE = 24 // CSS px per tile in the editor view at zoom 1.0
 
+// Match HospitalScene.OBJECT_DISPLAY_MULT — keeps the editor's
+// box-sizing aligned with the in-game render. Bump in lockstep
+// with the scene constants if the visual budget changes.
+const OBJECT_DISPLAY_MULT = 1.5
+
 // All texture keys the editor can place. Procedural era — there are
 // no sprite PNGs; every entry in KEY_TO_COLOR_CSS renders as a
 // tinted box. Build the palette from this lookup so glyph-mapped
@@ -178,7 +183,7 @@ function render() {
   for (const [key, obj] of state.objects) {
     if (state.removed.has(key)) continue
     const sizeMult = obj.size ?? 1
-    const dispPx = TILE * 2 * sizeMult
+    const dispPx = TILE * OBJECT_DISPLAY_MULT * sizeMult
     const box = document.createElement('div')
     box.className = 'obj'
     box.style.left = `${(obj.x + 0.5) * TILE - dispPx / 2}px`

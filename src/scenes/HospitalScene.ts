@@ -31,6 +31,14 @@ const TILE = 64
 // produce uneven pixel mapping.
 const CHARACTER_SCALE = 2
 
+// Multiplier applied to TILE for placed-object sprites. 2 = "object
+// fills two tiles, overflows up into the tile above" (the original
+// look — beds/cabinets towering over chairs); 1.5 = compact, less
+// dominant; 1 = object fits cleanly in one tile. Chunky 16×16
+// procedural art looks crisper at smaller multipliers since less
+// nearest-neighbor scaling is involved.
+const OBJECT_DISPLAY_MULT = 1.5
+
 // 70s + David Lynch palette — applied as tints on top of existing
 // sprites. Reads warm but uncanny: cream-tan floors, walnut walls,
 // burnt-orange chairs, mustard counters, avocado plants. Cooler
@@ -410,12 +418,11 @@ export class HospitalScene extends Phaser.Scene {
         const meta = this.mapDef.tileMeta?.[`${x},${y}`]
         const objKey = meta?.sprite ?? tileDef.obj
         if (objKey) {
-          // Objects render at 2× scale by default, bottom-anchored
-          // at the tile's bottom edge — matches how characters render
-          // so beds / cabinets / vending machines overflow up into
-          // the tile above. `meta.size` scales that base.
+          // Objects render bottom-anchored at the tile's bottom edge.
+          // Base size is `TILE * OBJECT_DISPLAY_MULT`; `meta.size`
+          // scales further per-tile if a layout wants a hero piece.
           const sizeMult = meta?.size ?? 1
-          const dispSize = TILE * 2 * sizeMult
+          const dispSize = TILE * OBJECT_DISPLAY_MULT * sizeMult
           const objY = (y + 1) * TILE
           const obj = this.add.image(px, objY, objKey)
             .setOrigin(0.5, 1).setDepth(2).setAlpha(0)

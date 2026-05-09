@@ -17,6 +17,13 @@ const TILE = 64
 // See HospitalScene — keeps the 2-tiles-tall character feel.
 const CHARACTER_SCALE = 2
 
+// Mirror of HospitalScene.OBJECT_DISPLAY_MULT — objects render
+// 1.5× tile size by default. Kept as its own const here (rather
+// than imported) since the two scenes have independent visual
+// budgets and the WR red-room register might want a different
+// scale tomorrow.
+const OBJECT_DISPLAY_MULT = 1.5
+
 /**
  * The Waiting Room is a *parallel layer* — it shares the Hospital's
  * floor plan, transformed. Same walls, same doors, same rooms; the
@@ -397,7 +404,7 @@ export class WaitingRoomScene extends Phaser.Scene {
         const objKey = meta?.sprite ?? def.obj
         if (objKey) {
           const sizeMult = meta?.size ?? 1
-          const dispSize = TILE * 2 * sizeMult
+          const dispSize = TILE * OBJECT_DISPLAY_MULT * sizeMult
           const objY = y * TILE + TILE
           const obj = this.add.image(px, objY, objKey)
             .setOrigin(0.5, 1).setDisplaySize(dispSize, dispSize).setDepth(2)
