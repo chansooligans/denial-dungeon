@@ -54,10 +54,17 @@ Layout:
 - 4 rows × 4 columns. Each row is one character; each column is the
   same character in a different directional pose, in this exact
   order:
-    Col 0 — three-quarter front (facing camera, slightly turned)
-    Col 1 — left profile (character facing screen-left)
-    Col 2 — right profile (character facing screen-right)
-    Col 3 — back (character facing away from camera)
+    Col 0 — three-quarter FRONT (character facing the camera; you
+            see their face)
+    Col 1 — character facing the camera's LEFT (character's body and
+            face are turned toward the LEFT side of the canvas; you
+            see their RIGHT shoulder closest to camera)
+    Col 2 — character facing the camera's RIGHT (mirror image of
+            col 1; you see their LEFT shoulder closest to camera)
+    Col 3 — back (character facing AWAY from camera; you see the
+            back of their head and body)
+- DO NOT confuse "facing left" with "left side profile." We want
+  the character TURNED TOWARD the screen-left edge in col 1.
 - All cells must be the same height. Don't resize between poses.
 - Characters are full-body, standing, idle, arms relaxed.
 

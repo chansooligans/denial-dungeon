@@ -100,8 +100,16 @@ export class BootScene extends Phaser.Scene {
     for (const [id, slot] of Object.entries(NPC_SOURCES)) {
       this.load.image(`npc_${id}`,       `sprites/npcs-raw/${slot}_0.png`)
       this.load.image(`npc_${id}_down`,  `sprites/npcs-raw/${slot}_0.png`)
-      this.load.image(`npc_${id}_left`,  `sprites/npcs-raw/${slot}_1.png`)
-      this.load.image(`npc_${id}_right`, `sprites/npcs-raw/${slot}_2.png`)
+      // Cols 1 + 2 swapped vs the original convention — the LoRA
+      // sheets from ChatGPT label "left profile" as "view of the
+      // character's left side", which means the character is
+      // actually facing screen-RIGHT in that pose. Swap so the
+      // texture key `npc_<id>_left` actually shows the NPC facing
+      // left (toward screen-left) and `_right` shows them facing
+      // right. Keeps in-game logic semantic ("dx<0 → face 'left'"
+      // → loads the texture where they face screen-left).
+      this.load.image(`npc_${id}_left`,  `sprites/npcs-raw/${slot}_2.png`)
+      this.load.image(`npc_${id}_right`, `sprites/npcs-raw/${slot}_1.png`)
       this.load.image(`npc_${id}_up`,    `sprites/npcs-raw/${slot}_3.png`)
     }
 

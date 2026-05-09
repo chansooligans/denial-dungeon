@@ -106,12 +106,17 @@ interface PlacedNpc {
 }
 
 /** Facing → which directional column on the contact sheet renders
- *  it. Matches BootScene.preload's NPC loader: col 0 = front (down),
- *  1 = left profile, 2 = right profile, 3 = back (up). */
+ *  it. The LoRA sheets label cols 1+2 as "left profile" / "right
+ *  profile" but interpret those as "view of the character's left/
+ *  right SIDE" — so col 1 actually shows the character facing
+ *  screen-RIGHT, and col 2 shows them facing screen-LEFT. We keep
+ *  the user-facing labels semantic (`facing: 'left'` = facing
+ *  screen-left) and swap the column mapping here. Matches the
+ *  swap in BootScene.preload. */
 const FACING_TO_COL: Record<Facing, number> = {
   down: 0,
-  left: 1,
-  right: 2,
+  left: 2,
+  right: 1,
   up: 3,
 }
 const FACING_CYCLE: Facing[] = ['down', 'left', 'up', 'right']
