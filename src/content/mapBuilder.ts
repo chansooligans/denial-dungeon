@@ -2,12 +2,15 @@
 
 /** Per-tile orientation overrides keyed by `"x,y"` (world coords).
  *  Authors place items by character glyph and the renderer picks a
- *  texture per glyph; this sidecar lets a specific tile rotate or
- *  horizontally-flip its object sprite without changing the
- *  underlying layout. Built either by `buildMapLayout` (lifting
- *  per-item `rot` / `flipX` from `RoomItem`) or pasted in by hand
- *  from `/map-editor.html`. */
-export type TileMeta = Record<string, { rot?: number; flipX?: boolean }>
+ *  texture per glyph; this sidecar lets a specific tile horizontally-
+ *  flip its object sprite without changing the underlying layout.
+ *  Built either by `buildMapLayout` (lifting per-item `flipX` from
+ *  `RoomItem`) or pasted in by hand from `/map-editor.html`.
+ *
+ *  Rotation used to live here too but it produced odd-looking results
+ *  for isometric-perspective sprites — better to author rotated
+ *  variants in the source art than to CSS-rotate at render time. */
+export type TileMeta = Record<string, { flipX?: boolean }>
 
 export interface MapDef {
   width: number
@@ -68,13 +71,11 @@ export interface RoomItem {
   dx: number
   dy: number
   ch: string
-  /** Optional sprite rotation in degrees, clockwise. The LoRA art is
-   *  authored at 0° (3/4 isometric facing camera-right); set rot=90
-   *  to face down, 180 back, 270 left. Non-90 multiples work too —
-   *  90° increments just keep tiles axis-aligned. */
-  rot?: number
   /** Optional horizontal mirror — easiest way to make a side-facing
-   *  desk face the opposite direction without authoring new art. */
+   *  desk face the opposite direction without authoring new art. For
+   *  any other re-orientation, author a new sprite variant rather
+   *  than CSS-rotating at render time (rotation distorted the
+   *  isometric perspective). */
   flipX?: boolean
 }
 
@@ -235,11 +236,8 @@ function stampRoom(
     const iy = r.y + 1 + item.dy
     if (ix > r.x && ix < r.x + r.w - 1 && iy > r.y && iy < r.y + r.h - 1) {
       grid[iy][ix] = item.ch
-      if (item.rot !== undefined || item.flipX !== undefined) {
-        const meta: { rot?: number; flipX?: boolean } = {}
-        if (item.rot !== undefined) meta.rot = item.rot
-        if (item.flipX !== undefined) meta.flipX = item.flipX
-        tileMeta[`${ix},${iy}`] = meta
+      if (item.flipX !== undefined) {
+        tileMeta[`${ix},${iy}`] = { flipX: item.flipX }
       }
     }
   }

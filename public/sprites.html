@@ -114,6 +114,38 @@
       color: #5a6a7a; font-size: 12px; font-style: italic;
       max-width: 760px;
     }
+    .custom-list {
+      display: flex; flex-wrap: wrap; gap: 6px;
+      margin: 0 0 16px;
+      max-width: 1200px;
+    }
+    .custom-list .label {
+      color: #5a6a7a; font-size: 11px; align-self: center;
+      margin-right: 4px;
+    }
+    .custom-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #1a1e25; border: 1px solid #2a323d;
+      border-radius: 4px;
+      padding: 4px 6px 4px 10px;
+      font-size: 11px;
+      color: #d0d8e0;
+    }
+    .custom-chip .key {
+      color: #f4d06f; font-weight: bold;
+    }
+    .custom-chip .lbl {
+      color: #8b95a5;
+    }
+    .custom-chip button.del {
+      background: transparent; color: #ef5b7b;
+      border: none; padding: 0 4px;
+      font: inherit; cursor: pointer;
+      border-radius: 3px;
+    }
+    .custom-chip button.del:hover {
+      background: #ef5b7b; color: #0e1116;
+    }
   </style>
 </head>
 <body>
@@ -165,6 +197,9 @@
   <span class="summary" id="summary"></span>
 </div>
 
+<!-- Live list of custom NPCs with per-item delete buttons. Hidden when empty. -->
+<div class="custom-list" id="custom-list" style="display:none"></div>
+
 <div class="export-wrap" id="export-wrap" style="display:none">
   <pre class="export" id="export-out"></pre>
 </div>
@@ -190,6 +225,9 @@
   <button id="obj-reset">Reset</button>
   <span class="summary" id="obj-summary"></span>
 </div>
+
+<!-- Live list of custom object keys with per-item delete buttons. -->
+<div class="custom-list" id="obj-custom-list" style="display:none"></div>
 
 <div class="export-wrap" id="obj-export-wrap" style="display:none">
   <pre class="export" id="obj-export-out"></pre>
@@ -372,6 +410,49 @@ function rebuildAllDropdowns() {
   }
   refreshDropdowns();
   refreshRowLabels();
+  renderCustomNpcList();
+}
+
+/** Render the inline chip-list of custom NPCs so each one can be
+ *  deleted individually. Hidden when there are no customs. Deleting
+ *  also unmaps any slot currently assigned to that key — otherwise
+ *  the slot would point at a non-existent NPC. */
+function renderCustomNpcList() {
+  const root = document.getElementById('custom-list');
+  if (!customNpcs.length) {
+    root.style.display = 'none';
+    root.innerHTML = '';
+    return;
+  }
+  root.style.display = 'flex';
+  let html = '<span class="label">Custom NPCs:</span>';
+  for (const n of customNpcs) {
+    const safeKey = n.key.replace(/"/g, '&quot;');
+    html += `<span class="custom-chip">` +
+            `<span class="key">${n.key}</span>` +
+            (n.label && n.label !== n.key
+              ? `<span class="lbl">${n.label.replace(/</g, '&lt;')}</span>`
+              : '') +
+            `<button class="del" data-key="${safeKey}" title="Delete this custom NPC">×</button>` +
+            `</span>`;
+  }
+  root.innerHTML = html;
+  for (const btn of root.querySelectorAll('button.del')) {
+    btn.addEventListener('click', () => deleteCustomNpc(btn.dataset.key));
+  }
+}
+
+function deleteCustomNpc(key) {
+  if (!confirm(`Delete custom NPC "${key}"? Any slot assigned to this key will be unmapped.`)) return;
+  customNpcs = customNpcs.filter(n => n.key !== key);
+  saveCustom(customNpcs);
+  // Unmap any slot pointing at this key.
+  for (const slot of Object.keys(mapping)) {
+    if (mapping[slot] === key) delete mapping[slot];
+  }
+  saveMapping(mapping);
+  rebuildAllDropdowns();
+  refreshSummary();
 }
 
 function refreshRowLabels() {
@@ -590,6 +671,7 @@ document.getElementById('reset').addEventListener('click', () => {
 refreshDropdowns();
 refreshRowLabels();
 refreshSummary();
+renderCustomNpcList();
 
 // ---------- Objects — pick canonical hospital/WR keys for each slot ----------
 const OBJ_CANONICAL = [
@@ -785,6 +867,46 @@ function objRefreshDropdowns() {
 function objRebuildAll() {
   objRefreshDropdowns();
   objRefreshSummary();
+  renderCustomObjList();
+}
+
+/** Inline chip-list of custom object keys with delete buttons. Same
+ *  pattern as the NPC list above; deleting a key unmaps every slot
+ *  currently pointing at it so the dropdowns don't show ghosts. */
+function renderCustomObjList() {
+  const root = document.getElementById('obj-custom-list');
+  if (!objCustom.length) {
+    root.style.display = 'none';
+    root.innerHTML = '';
+    return;
+  }
+  root.style.display = 'flex';
+  let html = '<span class="label">Custom objects:</span>';
+  for (const n of objCustom) {
+    const safeKey = n.key.replace(/"/g, '&quot;');
+    html += `<span class="custom-chip">` +
+            `<span class="key">${n.key}</span>` +
+            (n.label && n.label !== n.key
+              ? `<span class="lbl">${n.label.replace(/</g, '&lt;')}</span>`
+              : '') +
+            `<button class="del" data-key="${safeKey}" title="Delete this custom object">×</button>` +
+            `</span>`;
+  }
+  root.innerHTML = html;
+  for (const btn of root.querySelectorAll('button.del')) {
+    btn.addEventListener('click', () => deleteCustomObj(btn.dataset.key));
+  }
+}
+
+function deleteCustomObj(key) {
+  if (!confirm(`Delete custom object "${key}"? Any slot assigned to this key will be unmapped.`)) return;
+  objCustom = objCustom.filter(n => n.key !== key);
+  objSaveCustom(objCustom);
+  for (const slot of Object.keys(objMapping)) {
+    if (objMapping[slot] === key) delete objMapping[slot];
+  }
+  objSaveMapping(objMapping);
+  objRebuildAll();
 }
 
 const objRoot = document.getElementById('obj-grids');

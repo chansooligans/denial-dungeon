@@ -3,25 +3,31 @@
 // What this tool is:
 //   - A standalone Vite page (mounted at /map-editor.html) that loads
 //     the live LEVEL_1_MAP and renders a top-down view of every tile.
-//   - Each object tile draws the actual sprite PNG, tinted/rotated/
-//     flipped exactly as it would appear in HospitalScene.
-//   - You can click any object to select it, then rotate it (Q / E /
-//     R / Shift+R / 0 keys) or flip it (F), and drag it to a new tile.
+//   - Each object tile draws the actual sprite PNG, flipped exactly
+//     as it would appear in HospitalScene.
+//   - You can click any object to select it, flip it horizontally
+//     (F), drag it to a new tile, or delete it (Del).
 //   - The right panel shows a "paste-back" snippet of `tileMeta` and
 //     `tileOverrides` — copy that back into level1.ts to commit the
 //     edits.
 //
 // Why a separate tool:
 //   The room-relative items[] arrays in level1.ts work great for
-//   describing the rough layout, but tweaking individual rotations
-//   (face this desk left, mirror that chair) is awkward in code.
-//   This editor lets you do it visually and outputs a sidecar that
-//   the renderer applies on top of the procedural layout.
+//   describing the rough layout, but tweaking individual placements
+//   visually is awkward in code. This editor lets you do it on the
+//   rendered map and outputs a sidecar that the renderer applies on
+//   top of the procedural layout.
+//
+// Note on rotation: an earlier version of this editor exposed
+// rotation controls (Q/E/R) but rotating isometric-perspective
+// sprites distorted their look. Rotation was removed; if you need a
+// piece facing a different direction, author a rotated variant in
+// the source art instead.
 //
 // Output sidecars (round-trip into level1.ts):
-//   - tileMeta:      Record<"x,y", {rot?: number; flipX?: boolean}>
-//                    Already wired into MapDef. Drives setAngle /
-//                    setFlipX in HospitalScene + WaitingRoomScene.
+//   - tileMeta:      Record<"x,y", {flipX?: boolean}>
+//                    Already wired into MapDef. Drives setFlipX in
+//                    HospitalScene + WaitingRoomScene.
 //   - tileOverrides: Array<{x, y, ch}> — "place glyph ch at world
 //                    (x,y), replacing whatever glyph was there."
 //                    Empty `ch` means "remove the object, keep
@@ -45,7 +51,6 @@ interface PlacedObj {
    *  changes go into the `tileOverrides` sidecar instead so we can
    *  emit a clean diff at export time. */
   ch: string
-  rot?: number
   flipX?: boolean
 }
 
@@ -68,7 +73,7 @@ const state: EditorState = {
 
 /** Load the layout into state.objects, applying any tileMeta from
  *  level1.ts so we open the editor mid-edit-friendly (you see your
- *  previous rotations). */
+ *  previous flips). */
 function bootstrap() {
   const { layout, width: mw, height: mh, tileMeta } = LEVEL_1_MAP
   for (let y = 0; y < mh; y++) {
@@ -78,7 +83,7 @@ function bootstrap() {
       if (!ch || !(ch in GLYPH_TO_OBJ_KEY)) continue
       const key = `${x},${y}`
       const meta = tileMeta?.[key]
-      state.objects.set(key, { x, y, ch, rot: meta?.rot, flipX: meta?.flipX })
+      state.objects.set(key, { x, y, ch, flipX: meta?.flipX })
     }
   }
 }
@@ -135,11 +140,10 @@ function render() {
     img.style.height = `${TILE * 2}px`
     img.dataset.x = String(obj.x)
     img.dataset.y = String(obj.y)
-    const transforms: string[] = []
-    if (obj.rot !== undefined) transforms.push(`rotate(${obj.rot}deg)`)
-    if (obj.flipX) transforms.push('scaleX(-1)')
-    if (transforms.length) img.style.transform = transforms.join(' ')
-    img.style.transformOrigin = '50% 75%' // approximately the bottom-anchor
+    if (obj.flipX) {
+      img.style.transform = 'scaleX(-1)'
+      img.style.transformOrigin = '50% 75%' // approximately the bottom-anchor
+    }
     if (state.selectedKey === key) img.classList.add('selected')
     img.addEventListener('mousedown', onObjMouseDown)
     canvas.appendChild(img)
@@ -165,14 +169,13 @@ function render() {
 
 function updateStatus() {
   if (!state.selectedKey) {
-    statusLine.textContent = 'Click an object to select. Drag to move. Q/E rotate ±90, R rotates +15, Shift+R rotates -15, F flips, 0 clears, Del removes. Click empty floor + palette to add.'
+    statusLine.textContent = 'Click an object to select. Drag to move. F flips, 0 clears, Del removes. Click empty floor + palette to add.'
     return
   }
   const obj = state.objects.get(state.selectedKey)!
   const label = GLYPH_LABEL[obj.ch] || obj.ch
-  const rot = obj.rot !== undefined ? `${obj.rot}°` : '0°'
-  const flip = obj.flipX ? ', flipX' : ''
-  statusLine.textContent = `Selected: ${label} '${obj.ch}' at (${obj.x},${obj.y}) — rot ${rot}${flip}`
+  const flip = obj.flipX ? ' (flipX)' : ''
+  statusLine.textContent = `Selected: ${label} '${obj.ch}' at (${obj.x},${obj.y})${flip}`
 }
 
 // ===== Input =============================================================
@@ -254,15 +257,7 @@ window.addEventListener('keydown', (e) => {
   const obj = state.objects.get(state.selectedKey)
   if (!obj) return
   let dirty = false
-  if (e.key === 'q' || e.key === 'Q') { obj.rot = ((obj.rot ?? 0) - 90 + 360) % 360; dirty = true }
-  else if (e.key === 'e' || e.key === 'E') { obj.rot = ((obj.rot ?? 0) + 90) % 360; dirty = true }
-  else if (e.key === 'r') {
-    if (e.shiftKey) obj.rot = ((obj.rot ?? 0) - 15 + 360) % 360
-    else            obj.rot = ((obj.rot ?? 0) + 15) % 360
-    dirty = true
-  }
-  else if (e.key === 'R') { obj.rot = ((obj.rot ?? 0) - 15 + 360) % 360; dirty = true }
-  else if (e.key === '0') { obj.rot = undefined; obj.flipX = undefined; dirty = true }
+  if (e.key === '0') { obj.flipX = undefined; dirty = true }
   else if (e.key === 'f' || e.key === 'F') { obj.flipX = !obj.flipX; dirty = true }
   else if (e.key === 'Delete' || e.key === 'Backspace') {
     state.removed.add(state.selectedKey)
@@ -317,14 +312,11 @@ document.addEventListener('mousedown', (e) => {
 // ===== Export ============================================================
 
 function updateExport() {
-  // tileMeta: only objects whose rot/flipX differ from default.
-  const meta: Record<string, { rot?: number; flipX?: boolean }> = {}
+  // tileMeta: only objects whose flipX differs from default.
+  const meta: Record<string, { flipX?: boolean }> = {}
   for (const [key, obj] of state.objects) {
     if (state.removed.has(key)) continue
-    const m: { rot?: number; flipX?: boolean } = {}
-    if (obj.rot !== undefined && obj.rot !== 0) m.rot = obj.rot
-    if (obj.flipX) m.flipX = true
-    if (Object.keys(m).length > 0) meta[key] = m
+    if (obj.flipX) meta[key] = { flipX: true }
   }
 
   // tileOverrides: positional changes vs the layout from buildMap.
@@ -345,7 +337,6 @@ function updateExport() {
 
   const metaLines = Object.entries(meta).map(([k, v]) => {
     const parts: string[] = []
-    if (v.rot !== undefined) parts.push(`rot: ${v.rot}`)
     if (v.flipX) parts.push('flipX: true')
     return `    '${k}': { ${parts.join(', ')} },`
   })

@@ -450,12 +450,13 @@ export class HospitalScene extends Phaser.Scene {
           obj.setDisplaySize(TILE * 2, TILE * 2)
           if (tileDef.objTint !== undefined) obj.setTint(tileDef.objTint)
           // Per-tile orientation overrides — `tileMeta` is built by
-          // mapBuilder from any `rot` / `flipX` on a RoomItem, or
-          // produced by /map-editor.html and pasted into the map.
-          // Drives one-off rotations (face a desk left, mirror a
-          // chair, etc.) without authoring new sprite art.
+          // mapBuilder from any `flipX` on a RoomItem, or produced by
+          // /map-editor.html and pasted into the map. Mirrors a
+          // sprite horizontally (e.g. face a side-view chair the
+          // other way). Rotation isn't supported — author rotated
+          // variants in source art instead, since CSS-rotating
+          // isometric sprites distorts their perspective.
           const meta = this.mapDef.tileMeta?.[`${x},${y}`]
-          if (meta?.rot !== undefined) obj.setAngle(meta.rot)
           if (meta?.flipX) obj.setFlipX(true)
           this.tileObjSprites[y][x] = obj
         }

@@ -396,10 +396,9 @@ export class WaitingRoomScene extends Phaser.Scene {
             .setOrigin(0.5, 1).setDisplaySize(TILE * 2, TILE * 2).setDepth(2)
           if (def.objTint !== undefined) obj.setTint(def.objTint)
           // Per-tile orientation overrides — same source-of-truth
-          // (mapDef.tileMeta) as HospitalScene so a desk rotated in
+          // (mapDef.tileMeta) as HospitalScene so a desk flipped in
           // the editor reads the same in both worlds.
           const meta = this.mapDef.tileMeta?.[`${x},${y}`]
-          if (meta?.rot !== undefined) obj.setAngle(meta.rot)
           if (meta?.flipX) obj.setFlipX(true)
         }
 
