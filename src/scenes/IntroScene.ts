@@ -370,59 +370,42 @@ export class IntroScene extends Phaser.Scene {
     })
   }
 
-  /** Wall-clock ms by which the song's start has been pushed back
-   *  to compensate for content cut from the cinematic — currently
-   *  the removed "That's not a typo." beat (~570ms typing) plus its
-   *  trailing 2500ms wait beat. Keeping this as a named constant so
-   *  any future cut/insert can adjust it without surgery in the
-   *  fade logic below. */
-  private readonly INTRO_SONG_START_DELAY_MS = 3000
-
   /** Fade the intro song in. Two-stage: first ramp to a quiet bed
    *  level (0.15) over 5s — that's the pre-narration hold, where the
    *  song would otherwise feel too loud sitting alone. Once the first
    *  voiceover beat fires, `boostIntroSongForVoice` bumps it up to
-   *  the under-narration level (0.35). The actual play() is delayed
-   *  by INTRO_SONG_START_DELAY_MS so the song's arrival lands on the
-   *  same later beat it used to before content was cut. */
+   *  the under-narration level (0.5).
+   *
+   *  Note on song-start vs cinematic-edits: when content was cut
+   *  from the cinematic ("That's not a typo." plus its 2500ms wait,
+   *  ~3s wall-clock total), we keep the song firing at the same
+   *  trigger-point in the cinematic but trimmed 3000ms off the
+   *  *front of the audio file* (intro_song.mp3) so the music's
+   *  internal phrasing still lands on the same later beats. That's
+   *  better than delaying play() — a delayed play() would leave the
+   *  pre-narration hold silent. */
   private fadeInIntroSong() {
     if (!this.cache.audio.exists('intro_song')) return
-    this.time.delayedCall(this.INTRO_SONG_START_DELAY_MS, () => {
-      if (this.done) return
-      this.introSong = this.sound.add('intro_song')
-      // Force volume to 0 BEFORE play() so the song never bursts at
-      // the default 1.0 volume — some audio backends ignore the
-      // sound.add config until after the first playback tick.
-      ;(this.introSong as any).setVolume?.(0)
-      this.introSong.play()
-      ;(this.introSong as any).setVolume?.(0)
-      // If a VO already started while we were waiting on the delay,
-      // skip the pre-narration bed level (0.15) and ramp straight to
-      // the under-narration mix (0.5). boostIntroSongForVoice already
-      // set introSongBoosted = true even though the song wasn't ready
-      // when it fired.
-      const target = this.introSongBoosted ? 0.5 : 0.15
-      this.tweens.add({
-        targets: this.introSong,
-        volume: target,
-        duration: 5000,
-      })
+    this.introSong = this.sound.add('intro_song')
+    // Force volume to 0 BEFORE play() so the song never bursts at
+    // the default 1.0 volume — some audio backends ignore the
+    // sound.add config until after the first playback tick.
+    ;(this.introSong as any).setVolume?.(0)
+    this.introSong.play()
+    ;(this.introSong as any).setVolume?.(0)
+    this.tweens.add({
+      targets: this.introSong,
+      volume: 0.15,
+      duration: 5000,
     })
   }
 
   /** Bump the intro song from its quiet pre-narration level up to
-   *  the under-narration mix (0.35). Called once when the first
+   *  the under-narration mix (0.5). Called once when the first
    *  voiceover beat plays. Subsequent calls are no-ops. */
   private boostIntroSongForVoice() {
-    if (this.introSongBoosted) return
+    if (!this.introSong || this.introSongBoosted) return
     this.introSongBoosted = true
-    // The song's start is delayed (INTRO_SONG_START_DELAY_MS) to
-    // compensate for content cut from the cinematic, so the first VO
-    // beat may fire before the song exists. In that case just flip
-    // the boosted flag — fadeInIntroSong's delayedCall reads it and
-    // ramps straight to the under-narration target instead of the
-    // pre-narration bed.
-    if (!this.introSong) return
     // Kill the still-running 5s pre-VO fade-in tween before pushing
     // up to the under-narration mix. Otherwise the older tween keeps
     // overwriting `volume` back toward its target and the boost
