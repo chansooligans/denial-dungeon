@@ -1,9 +1,21 @@
 // Map types and structured map builder.
 
+/** Per-tile orientation overrides keyed by `"x,y"` (world coords).
+ *  Authors place items by character glyph and the renderer picks a
+ *  texture per glyph; this sidecar lets a specific tile rotate or
+ *  horizontally-flip its object sprite without changing the
+ *  underlying layout. Built either by `buildMapLayout` (lifting
+ *  per-item `rot` / `flipX` from `RoomItem`) or pasted in by hand
+ *  from `/map-editor.html`. */
+export type TileMeta = Record<string, { rot?: number; flipX?: boolean }>
+
 export interface MapDef {
   width: number
   height: number
   layout: string[]
+  /** Optional per-tile orientation overrides — `undefined` means
+   *  every object renders at its authored 0° angle (current default). */
+  tileMeta?: TileMeta
   playerStart: { x: number; y: number }
   /** NPC placements. Each placement is a single position; if the same
    *  NPC needs to be in different rooms across levels, supply multiple
@@ -56,6 +68,14 @@ export interface RoomItem {
   dx: number
   dy: number
   ch: string
+  /** Optional sprite rotation in degrees, clockwise. The LoRA art is
+   *  authored at 0° (3/4 isometric facing camera-right); set rot=90
+   *  to face down, 180 back, 270 left. Non-90 multiples work too —
+   *  90° increments just keep tiles axis-aligned. */
+  rot?: number
+  /** Optional horizontal mirror — easiest way to make a side-facing
+   *  desk face the opposite direction without authoring new art. */
+  flipX?: boolean
 }
 
 export interface RoomDef {
@@ -106,12 +126,23 @@ export interface MapSpec {
  *   6. Force the outermost map border to 'W'.
  */
 export function buildMapLayout(spec: MapSpec): string[] {
+  return buildMap(spec).layout
+}
+
+/**
+ * Like `buildMapLayout` but also returns the per-tile orientation
+ * sidecar lifted from any `rot` / `flipX` fields on `RoomItem`. Use
+ * this when the level needs rotated objects; legacy levels can keep
+ * calling `buildMapLayout` and ignore the meta.
+ */
+export function buildMap(spec: MapSpec): { layout: string[]; tileMeta: TileMeta } {
   const { width, height } = spec
   const bg = spec.background ?? 'W'
   const grid: string[][] = []
   for (let y = 0; y < height; y++) {
     grid.push(new Array(width).fill(bg))
   }
+  const tileMeta: TileMeta = {}
 
   // 2. Carve corridors
   for (const c of spec.corridors ?? []) {
@@ -120,7 +151,7 @@ export function buildMapLayout(spec: MapSpec): string[] {
 
   // 3-5. Stamp rooms
   for (const r of spec.rooms) {
-    stampRoom(grid, r, width, height)
+    stampRoom(grid, r, width, height, tileMeta)
   }
 
   // 6. Outer border
@@ -133,7 +164,7 @@ export function buildMapLayout(spec: MapSpec): string[] {
     grid[y][width - 1] = 'W'
   }
 
-  return grid.map(row => row.join(''))
+  return { layout: grid.map(row => row.join('')), tileMeta }
 }
 
 function carveCorridor(
@@ -177,7 +208,8 @@ function stampRoom(
   grid: string[][],
   r: RoomDef,
   width: number,
-  height: number
+  height: number,
+  tileMeta: TileMeta
 ) {
   if (r.w < 3 || r.h < 3) {
     throw new Error(`Room ${r.id ?? '?'} too small (${r.w}×${r.h}); need 3×3 minimum`)
@@ -203,8 +235,35 @@ function stampRoom(
     const iy = r.y + 1 + item.dy
     if (ix > r.x && ix < r.x + r.w - 1 && iy > r.y && iy < r.y + r.h - 1) {
       grid[iy][ix] = item.ch
+      if (item.rot !== undefined || item.flipX !== undefined) {
+        const meta: { rot?: number; flipX?: boolean } = {}
+        if (item.rot !== undefined) meta.rot = item.rot
+        if (item.flipX !== undefined) meta.flipX = item.flipX
+        tileMeta[`${ix},${iy}`] = meta
+      }
     }
   }
+}
+
+/**
+ * Apply post-build tile overrides emitted by `/map-editor.html`.
+ * Each entry sets the glyph at `(x, y)`; an empty `ch` reverts the
+ * tile to plain floor (`.`). Useful for visually moved/added/removed
+ * objects whose changes don't fit neatly back into a room's items[]
+ * (e.g. moved a chair across a corridor, added a kiosk to a hallway).
+ */
+export function applyTileOverrides(
+  layout: string[],
+  overrides: Array<{ x: number; y: number; ch: string }>
+): string[] {
+  if (overrides.length === 0) return layout
+  const grid = layout.map(row => row.split(''))
+  for (const o of overrides) {
+    if (o.y < 0 || o.y >= grid.length) continue
+    if (o.x < 0 || o.x >= grid[o.y].length) continue
+    grid[o.y][o.x] = o.ch === '' ? '.' : o.ch
+  }
+  return grid.map(row => row.join(''))
 }
 
 function doorWorldPos(r: RoomDef, d: DoorDef): [number, number] {
