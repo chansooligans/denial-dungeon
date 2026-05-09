@@ -129,13 +129,13 @@
   </p>
 
   <div class="legend">
-    <h2>Variants — round 3 (halo sweep, global fixed at 120)</h2>
+    <h2>Variants — round 4 (halo 85 → 105, global fixed at 120)</h2>
     <dl>
-      <dt>A</dt><dd>halo 70 × 2 passes, global min_excess 120.</dd>
-      <dt>B</dt><dd>halo 75 × 2 passes, global 120.</dd>
-      <dt>C</dt><dd>halo 80 × 2 passes, global 120 — round-2 pick (anchor).</dd>
-      <dt>D</dt><dd>halo 80 × 3 passes, global 120 — extra pass.</dd>
-      <dt>E</dt><dd>halo 85 × 2 passes, global 120 — wider halo.</dd>
+      <dt>A</dt><dd>halo 85 × 2 passes, global 120 — round-3 pick (anchor).</dd>
+      <dt>B</dt><dd>halo 90 × 2 passes, global 120.</dd>
+      <dt>C</dt><dd>halo 95 × 2 passes, global 120.</dd>
+      <dt>D</dt><dd>halo 100 × 2 passes, global 120 — at dark-skin max-diff (~95); risk of edge erosion on darker characters.</dd>
+      <dt>E</dt><dd>halo 105 × 2 passes, global 120 — likely over the line for dark skin.</dd>
     </dl>
   </div>
 
@@ -152,11 +152,11 @@
       { col: 3, label: 'Back' },
     ];
     const VARIANTS = [
-      { id: 'A', desc: 'halo 70×2 · g120' },
-      { id: 'B', desc: 'halo 75×2 · g120' },
-      { id: 'C', desc: 'halo 80×2 · g120 (anchor)' },
-      { id: 'D', desc: 'halo 80×3 · g120' },
-      { id: 'E', desc: 'halo 85×2 · g120' },
+      { id: 'A', desc: 'halo 85×2 · g120 (anchor)' },
+      { id: 'B', desc: 'halo 90×2 · g120' },
+      { id: 'C', desc: 'halo 95×2 · g120' },
+      { id: 'D', desc: 'halo 100×2 · g120' },
+      { id: 'E', desc: 'halo 105×2 · g120' },
     ];
     // Friendly labels for each row (order matches npc15 cells).
     const ROW_LABELS = [

@@ -45,42 +45,49 @@ run_variant() {
   echo
 }
 
-# Round-3 variants — global erase fixed at min_excess 120 (per user
-# preference); only halo_fuzz and halo_passes vary. C from round 2
-# (halo 80 × 2) was the closest pick; this sweep brackets it.
+# Round-4 variants — keep going aggressive on halo. User picked
+# round-3 E (halo 85 × 2) as best so far; sweep continues 85 → 105
+# in 5-unit steps. global erase still locked at min_excess 120.
+#
+# Skin safety check: halo eroder requires ALL three channels within
+# halo_fuzz of the bg (~248,100,5). Light skin max-diff vs bg ~135,
+# dark skin max-diff ~95. Above 95 we risk eating dark-skin edges,
+# which is why the gradient stops at 105 — but the only dark-skin
+# character on npc15 is Andre (row 3), worth eyeballing carefully
+# at the 100/105 column.
 
-# A — slightly less halo (70 vs 80) but otherwise C's params.
-run_variant A "halo 70 × 2, global 120" \
-  --fuzz 60 \
-  --halo-fuzz 70 \
-  --halo-passes 2 \
-  --warm-min-excess 120
-
-# B — between A and C.
-run_variant B "halo 75 × 2, global 120" \
-  --fuzz 60 \
-  --halo-fuzz 75 \
-  --halo-passes 2 \
-  --warm-min-excess 120
-
-# C — round-2 C, the current pick (anchor).
-run_variant C "anchor — halo 80 × 2, global 120 (current pick)" \
-  --fuzz 60 \
-  --halo-fuzz 80 \
-  --halo-passes 2 \
-  --warm-min-excess 120
-
-# D — same halo as C, one more pass (more aggressive depth-wise).
-run_variant D "halo 80 × 3, global 120" \
-  --fuzz 60 \
-  --halo-fuzz 80 \
-  --halo-passes 3 \
-  --warm-min-excess 120
-
-# E — wider halo (85), still 2 passes (more aggressive width-wise).
-run_variant E "halo 85 × 2, global 120" \
+# A — round-3 E, the new anchor.
+run_variant A "anchor — halo 85 × 2, global 120 (round-3 E)" \
   --fuzz 60 \
   --halo-fuzz 85 \
+  --halo-passes 2 \
+  --warm-min-excess 120
+
+# B — halo 90.
+run_variant B "halo 90 × 2, global 120" \
+  --fuzz 60 \
+  --halo-fuzz 90 \
+  --halo-passes 2 \
+  --warm-min-excess 120
+
+# C — halo 95 (approaching dark-skin edge limit).
+run_variant C "halo 95 × 2, global 120" \
+  --fuzz 60 \
+  --halo-fuzz 95 \
+  --halo-passes 2 \
+  --warm-min-excess 120
+
+# D — halo 100 (at dark-skin max-diff; risk of eating edges).
+run_variant D "halo 100 × 2, global 120 (dark-skin edge risk)" \
+  --fuzz 60 \
+  --halo-fuzz 100 \
+  --halo-passes 2 \
+  --warm-min-excess 120
+
+# E — halo 105 (over dark-skin max-diff; almost certainly eats some).
+run_variant E "halo 105 × 2, global 120 (likely over the line)" \
+  --fuzz 60 \
+  --halo-fuzz 105 \
   --halo-passes 2 \
   --warm-min-excess 120
 
