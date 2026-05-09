@@ -583,9 +583,12 @@ const ACTIVE_NPC_KEYS = new Set([
   'dana', 'kim', 'jordan', 'pat', 'alex', 'sam', 'martinez', 'anjali',
   // Audit boss room
   'carl', 'chen', 'rivera', 'eddi',
-  // Ambient populace
+  // Ambient populace — round 1 (npc1–5 sheets)
   'walter', 'noah', 'officer_reyes', 'dev', 'liana', 'dr_priya',
   'dr_ethan', 'joe',
+  // Ambient populace — round 2 (npc6–15 sheets, May-2026 batch)
+  'rad_tech', 'records_clerk', 'payer_rep', 'payer_supervisor',
+  'compliance_officer', 'smoker_visitor',
 ]);
 
 /** Return 'active' | 'inactive' | 'future' for an object texture key. */
@@ -656,6 +659,18 @@ const sheets = [
   { name: 'npc3', rows: 4 },
   { name: 'npc4', rows: 4 },
   { name: 'npc5', rows: 4 },
+  // Round 2 — May-2026 batch. First five new sheets are 4-row
+  // (matching the existing format); last five are 5-row.
+  { name: 'npc6',  rows: 4 },
+  { name: 'npc7',  rows: 4 },
+  { name: 'npc8',  rows: 4 },
+  { name: 'npc9',  rows: 4 },
+  { name: 'npc10', rows: 4 },
+  { name: 'npc11', rows: 5 },
+  { name: 'npc12', rows: 5 },
+  { name: 'npc13', rows: 5 },
+  { name: 'npc14', rows: 5 },
+  { name: 'npc15', rows: 5 },
 ];
 
 // Per-slot suggested custom NPC for the "auto-fill remaining" button.
@@ -685,11 +700,91 @@ const SUGGESTED_CUSTOMS = {
   'npc5_1': { key: 'iris',          label: 'Iris — case manager (cardigan)' },
   'npc5_2': { key: 'dr_finch',      label: 'Dr. Finch — lab tech (glasses)' },
   'npc5_3': { key: 'dr_holloway',   label: 'Dr. Holloway — hospital exec (suit + red tie)' },
+
+  // === Round 2 — npc6.png … npc15.png. Six slots are cast (matching
+  //     the keys registered in BootScene.NPC_SOURCES); the rest are
+  //     placeholders for future casting. Names are first-name-only +
+  //     a role hint so auto-fill produces something legible.
+  // ===
+
+  // npc6 (4 rows)
+  'npc6_0': { key: 'nadia',         label: 'Nadia — nurse (blue scrubs, bun)' },
+  'npc6_1': { key: 'dr_okafor',     label: 'Dr. Okafor — physician (white coat, curly)' },
+  'npc6_2': { key: 'celine',        label: 'Celine — admin (dark coat over blouse)' },
+  'npc6_3': { key: 'omar',          label: 'Omar — staff (navy polo + tan slacks)' },
+
+  // npc7 (4 rows)
+  'npc7_0': { key: 'rad_tech',      label: 'Adaeze — radiology tech (white coat, pony-tail)' },
+  'npc7_1': { key: 'dr_park',       label: 'Dr. Park — physician (white coat, glasses)' },
+  'npc7_2': { key: 'esme',          label: 'Esmé — nurse (dark scrubs, pony-tail)' },
+  'npc7_3': { key: 'caleb',         label: 'Caleb — tech (teal scrubs, curly)' },
+
+  // npc8 (4 rows)
+  'npc8_0': { key: 'rosa',          label: 'Rosa — clerk (tan jacket + ID)' },
+  'npc8_1': { key: 'dr_haddad',     label: 'Dr. Haddad — physician (white coat, glasses)' },
+  'npc8_2': { key: 'priya_admin',   label: 'Priya — admin (navy blazer)' },
+  'npc8_3': { key: 'imani',         label: 'Imani — admin (olive jacket + skirt)' },
+
+  // npc9 (4 rows) — facilities-heavy sheet
+  'npc9_0': { key: 'janitor_b',     label: 'Janitor (mop + bucket, alt)' },
+  'npc9_1': { key: 'security_b',    label: 'Security guard (police-style cap, alt)' },
+  'npc9_2': { key: 'maintenance',   label: 'Maintenance — toolbox' },
+  'npc9_3': { key: 'cafeteria',     label: 'Cafeteria worker (white apron + cap)' },
+
+  // npc10 (4 rows)
+  'npc10_0': { key: 'naomi',        label: 'Naomi — clerk (blue + ID lanyard)' },
+  'npc10_1': { key: 'pharm_b',      label: 'Pharmacist B — green apron' },
+  'npc10_2': { key: 'lab_tech',     label: 'Lab tech (dark scrubs, glasses)' },
+  'npc10_3': { key: 'lena',         label: 'Lena — exec (dark blazer)' },
+
+  // npc11 (5 rows)
+  'npc11_0': { key: 'records_clerk',label: 'Marisol — records clerk (tan jacket)' },
+  'npc11_1': { key: 'dr_grant',     label: 'Dr. Grant — physician (glasses, dark sweater)' },
+  'npc11_2': { key: 'helena',       label: 'Helena — admin (badge, navy)' },
+  'npc11_3': { key: 'compliance_officer', label: 'Theo — Privacy Officer (silver-haired exec)' },
+  'npc11_4': { key: 'amaya',        label: 'Amaya — patient/visitor (curly, casual)' },
+
+  // npc12 (5 rows)
+  'npc12_0': { key: 'tech_isaac',   label: 'Isaac — IT/EDI tech (glasses, blue)' },
+  'npc12_1': { key: 'jamal',        label: 'Jamal — staff (bearded, blue)' },
+  'npc12_2': { key: 'delivery',     label: 'Delivery — courier with box' },
+  'npc12_3': { key: 'jada',         label: 'Jada — clerk (green polo, pony-tail)' },
+  'npc12_4': { key: 'orderly_b',    label: 'Orderly — clipboard (curly)' },
+
+  // npc13 (5 rows)
+  'npc13_0': { key: 'janitor_c',    label: 'Janitor — cleaning trolley (alt)' },
+  'npc13_1': { key: 'cashier',      label: 'Cashier — apron + register' },
+  'npc13_2': { key: 'mrs_holloway', label: 'Mrs. Holloway — senior patient (purple, glasses)' },
+  'npc13_3': { key: 'florist',      label: 'Florist/volunteer (potted plant, bun)' },
+  'npc13_4': { key: 'server',       label: 'Server — waiter vest' },
+
+  // npc14 (5 rows)
+  'npc14_0': { key: 'security_c',   label: 'Officer Bell — security (alt)' },
+  'npc14_1': { key: 'admin_papers', label: 'Admin — navy + papers (pony-tail)' },
+  'npc14_2': { key: 'mr_okonkwo',   label: 'Mr. Okonkwo — exec (beige professional)' },
+  'npc14_3': { key: 'payer_supervisor', label: 'Diane — senior payer rep (navy + bun)' },
+  'npc14_4': { key: 'smoker_visitor',   label: 'Earl — visitor on smoke break (bearded, cap)' },
+
+  // npc15 (5 rows)
+  'npc15_0': { key: 'sloane',       label: 'Sloane — exec (dark blazer + skirt)' },
+  'npc15_1': { key: 'dr_alvarez',   label: 'Dr. Alvarez — exec/physician (glasses, blazer)' },
+  'npc15_2': { key: 'beatrice',     label: 'Beatrice — clerk (tan top, bun)' },
+  'npc15_3': { key: 'andre',        label: 'Andre — admin (blue button-down)' },
+  'npc15_4': { key: 'payer_rep',    label: 'Theresa — payer rep (headset, phone-bank)' },
 };
 
 // Mapping: slot ("npc1_0") → game NPC key ("dana"), or unset
 const STORAGE_KEY = 'npc-mapping-v1';
 const CUSTOM_KEY = 'npc-custom-v1';
+
+// Note: no v2 migration needed for the May-2026 npc6 … npc15
+// expansion — the new sheets only ADD slots (npc1–5 stay
+// unchanged). Existing v1 mappings remain valid; new slots
+// default to unmapped and the auto-fill button can populate them
+// from SUGGESTED_CUSTOMS. Bump only if SUGGESTED_CUSTOMS labels
+// for *existing* slots change shape, which would leave stale
+// labels in user-cached mappings.
+
 function loadMapping() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
   catch { return {}; }
