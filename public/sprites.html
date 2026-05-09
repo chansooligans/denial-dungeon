@@ -449,7 +449,13 @@
   const VALID = new Set(['chloe', 'npcs', 'objects']);
   function activate(name) {
     if (!VALID.has(name)) name = 'chloe';
-    for (const btn of document.querySelectorAll('nav.tabs button')) {
+    // Scope to #tabs (top nav) only — `nav.tabs.subtabs` inside the
+    // Objects section also has `nav.tabs` class but isn't a top-tab
+    // controller. A loose `nav.tabs button` selector here used to
+    // shove subtab clicks (Admin / Clinical / …) into this branch
+    // with `dataset.tab === undefined`, dropping the user back on
+    // Chloe.
+    for (const btn of document.querySelectorAll('#tabs button')) {
       btn.classList.toggle('active', btn.dataset.tab === name);
     }
     for (const sec of document.querySelectorAll('section.tab-section')) {
@@ -459,7 +465,7 @@
       history.replaceState(null, '', '#' + name);
     }
   }
-  for (const btn of document.querySelectorAll('nav.tabs button')) {
+  for (const btn of document.querySelectorAll('#tabs button')) {
     btn.addEventListener('click', () => activate(btn.dataset.tab));
   }
   window.addEventListener('hashchange', () => {
