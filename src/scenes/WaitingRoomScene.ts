@@ -82,7 +82,10 @@ const REGISTRATION_BOUNDS = { x: 15, y: 17, w: 22, h: 8  }
 const HIM_BOUNDS          = { x: 4,  y: 50, w: 14, h: 10 }
 const BILLING_BOUNDS      = { x: 22, y: 50, w: 14, h: 10 }
 const PFS_BOUNDS          = { x: 40, y: 50, w: 16, h: 10 }
-const AUDIT_BOUNDS        = { x: 18, y: 62, w: 28, h: 8  }
+// AUDIT relocated to second floor (y=100..110). The WR session for the
+// boss is bounded to AUDIT's new mirror; the WR layer auto-mirrors the
+// hospital's tilemap, so this is just a coord update.
+const AUDIT_BOUNDS        = { x: 4,  y: 100, w: 28, h: 10 }
 
 const OBSTACLES: ObstacleMarker[] = [
   // Each obstacle is placed in the parallel layer of the room where
@@ -111,8 +114,9 @@ const OBSTACLES: ObstacleMarker[] = [
   // PFS — Jordan hands the surprise bill.
   { tileX: 48, tileY: 55, encounterId: 'surprise_bill_specter', bounds: PFS_BOUNDS },          // Specter   (L8)
 
-  // AUDIT — Dana hands the boss.
-  { tileX: 32, tileY: 65, encounterId: 'boss_audit',           bounds: AUDIT_BOUNDS },        // Boss      (L10)
+  // AUDIT — Dana hands the boss. Audit moved to second floor; the
+  // boss obstacle moves with it so the WR mirror lines up.
+  { tileX: 18, tileY: 105, encounterId: 'boss_audit',          bounds: AUDIT_BOUNDS },        // Boss      (L10)
 
   // Doppelganger isn't currently wired to a level dialogue — left
   // free-roam in the corridor as legacy / dev-panel-jump fodder.
@@ -170,6 +174,13 @@ const WR_TILES: Record<string, WrTileDef> = {
   'H': { sprite: 'wr_floor', tint: 0xd8cfc4, solid: true,  obj: 'h_bed',        objTint: 0x4a0608 },
   'X': { sprite: 'wr_floor', tint: 0xd8cfc4, solid: false, obj: 'h_fax',        objTint: 0xff3050, glow: 0xff3050 }, // CRT terminal
   'E': { sprite: 'wr_floor', tint: 0xd8cfc4, solid: false, obj: 'h_equipment',  objTint: 0x2a0608 },
+  // Stair / outdoor-exit teleport tiles. WR sessions are bounded to a
+  // single hospital room so these aren't actually traversable inside
+  // the WR — they only render as floor tiles. Kept as their own entries
+  // (vs. falling through to '.') so the WR's parallel-layer reading is
+  // visually consistent if the player is ever near them.
+  'S': { sprite: 'wr_floor', tint: 0x2a0608, solid: false, glow: 0xff3050 }, // stair landing — burgundy with red neon
+  'O': { sprite: 'wr_floor', tint: 0x141014, solid: false }, // outdoor exit reads as void in WR
 }
 
 function tileForChar(ch: string): WrTileDef {
