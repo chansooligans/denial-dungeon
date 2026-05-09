@@ -177,6 +177,9 @@ export default defineConfig({
         // Credentialing Lattice: provider-side eligibility gap.
         // Verbs: VERIFY-NETWORK / ENROLL / BACKDATE.
         credentialingLattice: resolve(__dirname, 'credentialing-lattice-prototype.html'),
+        // HIPAA Spider: privacy breach response. Verbs: ASSESS /
+        // CONTAIN / NOTIFY.
+        hipaaSpider: resolve(__dirname, 'hipaa-spider-prototype.html'),
         // Map editor: a dev-only authoring tool for level1's object
         // placement and orientation. Click any object to select it,
         // then rotate/flip via keyboard or drag to move. Outputs a
