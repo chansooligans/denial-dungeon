@@ -18,13 +18,20 @@
 //     - PFS (Patient Financial Services / phone bank)
 //     - AUDIT CONFERENCE ROOM (the boss room — taller than the others)
 //
+//   EAST WING (atmosphere — explorable rooms, no level-specific cases)
+//     - RADIOLOGY (imaging — referenced in some L4+ dialogue)
+//     - PHARMACY  (formulary / dispense)
+//     - MEDICAL RECORDS (chart room — overflow from HIM)
+//   The east wing is reached via Registration's east door and a short
+//   corridor to a vertical trunk that runs the length of the wing.
+//
 // All wings share a single map so the player feels the hospital as one
 // place. Per-level NPC placements (`levels` filter) put the right
 // staffer in the right room for each level.
 
 import { buildMap, type MapDef } from '../mapBuilder'
 
-const WIDTH = 60
+const WIDTH = 66 // bumped from 60 to fit the east wing
 const HEIGHT = 72  // bumped from 46 to fit the south wing
 
 // === North wing — level 1-3 ===
@@ -39,6 +46,14 @@ const ELIGIBILITY  = { x: 24, y: 24, w: 10, h: 6  } // hangs off Registration's 
 // The corridor still lands at x=14, so the door offset of 10 keeps
 // the geometry connected.
 const LOBBY        = { x: 4,  y: 32, w: 26, h: 10 }
+
+// === East wing — atmosphere rooms ===
+// Three rooms stacked vertically east of Registration. Each opens west
+// onto a single trunk corridor at x=50; the trunk connects to
+// Registration's east wall via a short east-running spur.
+const RADIOLOGY   = { x: 51, y: 15, w: 14, h: 10 } // imaging suite
+const PHARMACY    = { x: 51, y: 27, w: 14, h: 8  } // dispense / formulary
+const MED_RECORDS = { x: 51, y: 37, w: 14, h: 10 } // chart room
 
 // === South wing — level 4-10 ===
 const HIM      = { x: 4,  y: 50, w: 14, h: 10 } // coding / CDI floor
@@ -109,6 +124,7 @@ const { layout, tileMeta } = buildMap({
       doors: [
         { side: 'W', offset: 3 },                                                  // west into corridor
         { side: 'S', offset: ELIGIBILITY.x + 4 - REGISTRATION.x },                 // south into Eligibility
+        { side: 'E', offset: 4 },                                                  // east into the east-wing spur corridor
       ],
       items: [
         { dx: 1, dy: 1, ch: 'R' }, { dx: 2, dy: 1, ch: 'R' }, { dx: 3, dy: 1, ch: 'R' },
@@ -129,6 +145,64 @@ const { layout, tileMeta } = buildMap({
         { dx: 6, dy: 3, ch: 'F' },
       ],
     },
+    // ===== East wing =====
+    {
+      id: 'radiology',
+      ...RADIOLOGY,
+      // West door at world y = 15+6 = 21, aligned with the spur corridor
+      // running east from Registration's east door.
+      doors: [{ side: 'W', offset: 6 }],
+      // Imaging suite: a couple of read-stations (desk + chair),
+      // file cabinets for film jackets, a hospital bed for patient
+      // hand-off, plus plants for that "waiting just outside the
+      // scanner" feel. (No imaging-specific glyphs exist; reusing the
+      // 12 procedural keys.)
+      items: [
+        { dx: 1, dy: 1, ch: 'c' }, { dx: 1, dy: 2, ch: 'h' }, // read-station 1
+        { dx: 4, dy: 1, ch: 'c' }, { dx: 4, dy: 2, ch: 'h' }, // read-station 2
+        { dx: 8, dy: 1, ch: 'B' },                            // light-board / monitor
+        { dx: 1, dy: 6, ch: 'F' }, { dx: 4, dy: 6, ch: 'F' }, // film cabinets
+        { dx: 8, dy: 6, ch: 'H' },                            // exam bed (patient hand-off)
+        { dx: 11, dy: 1, ch: 'P' },
+        { dx: 11, dy: 7, ch: 'P' },
+      ],
+    },
+    {
+      id: 'pharmacy',
+      ...PHARMACY,
+      // West door at world y = 27+3 = 30.
+      doors: [{ side: 'W', offset: 3 }],
+      // Dispense window + shelves of binders (formulary stand-in).
+      items: [
+        { dx: 1, dy: 1, ch: 'R' }, { dx: 2, dy: 1, ch: 'R' }, { dx: 3, dy: 1, ch: 'R' }, // dispense counter
+        { dx: 5, dy: 1, ch: 'B' },                                                       // formulary board
+        { dx: 1, dy: 5, ch: 'F' }, { dx: 4, dy: 5, ch: 'F' }, { dx: 7, dy: 5, ch: 'F' }, // shelves
+        { dx: 11, dy: 1, ch: 'c' }, { dx: 11, dy: 2, ch: 'h' },                          // pharmacist desk
+        { dx: 11, dy: 5, ch: 'P' },
+      ],
+    },
+    {
+      id: 'medRecords',
+      ...MED_RECORDS,
+      // West door at world y = 37+5 = 42.
+      doors: [{ side: 'W', offset: 5 }],
+      // Chart room — the wall-of-binders look. Two desks for staff
+      // pulling charts, otherwise dense rows of file cabinets.
+      items: [
+        { dx: 1, dy: 1, ch: 'F' }, { dx: 2, dy: 1, ch: 'F' }, { dx: 3, dy: 1, ch: 'F' },
+        { dx: 4, dy: 1, ch: 'F' }, { dx: 5, dy: 1, ch: 'F' }, { dx: 6, dy: 1, ch: 'F' },
+        { dx: 8, dy: 1, ch: 'F' }, { dx: 9, dy: 1, ch: 'F' }, { dx: 10, dy: 1, ch: 'F' },
+        { dx: 11, dy: 1, ch: 'F' }, { dx: 12, dy: 1, ch: 'F' },
+        { dx: 1, dy: 7, ch: 'F' }, { dx: 2, dy: 7, ch: 'F' }, { dx: 3, dy: 7, ch: 'F' },
+        { dx: 4, dy: 7, ch: 'F' }, { dx: 5, dy: 7, ch: 'F' }, { dx: 6, dy: 7, ch: 'F' },
+        { dx: 8, dy: 7, ch: 'F' }, { dx: 9, dy: 7, ch: 'F' }, { dx: 10, dy: 7, ch: 'F' },
+        { dx: 11, dy: 7, ch: 'F' }, { dx: 12, dy: 7, ch: 'F' },
+        { dx: 4, dy: 4, ch: 'c' }, { dx: 4, dy: 5, ch: 'h' },
+        { dx: 9, dy: 4, ch: 'c' }, { dx: 9, dy: 5, ch: 'h' },
+        { dx: 12, dy: 4, ch: 'X' }, // fax / records terminal
+      ],
+    },
+
     {
       id: 'lobby',
       ...LOBBY,
@@ -298,6 +372,25 @@ const { layout, tileMeta } = buildMap({
       ],
       width: 1,
     },
+    // East-wing spur: from Registration's east door east to the trunk.
+    // Registration east door world coords: (REGISTRATION.x + REGISTRATION.w - 1,
+    // REGISTRATION.y + 4) = (37, 21). Trunk is at x=50.
+    {
+      points: [
+        [REGISTRATION.x + REGISTRATION.w, REGISTRATION.y + 4], // (37, 21) — just east of door
+        [RADIOLOGY.x - 1,                 REGISTRATION.y + 4], // (50, 21) — junction with trunk
+      ],
+      width: 1,
+    },
+    // East-wing trunk: vertical corridor at x=50 connecting all three
+    // east-wing rooms' west doors.
+    {
+      points: [
+        [RADIOLOGY.x - 1,   RADIOLOGY.y + 6],   // (50, 21) — radiology door row
+        [MED_RECORDS.x - 1, MED_RECORDS.y + 5], // (50, 42) — med-records door row
+      ],
+      width: 1,
+    },
   ],
 })
 
@@ -320,6 +413,9 @@ export const LEVEL_1_MAP: MapDef = {
     { name: 'BILLING',          shortName: 'BIL',  ...BILLING },
     { name: 'PFS / PHONES',     shortName: 'PFS',  ...PFS },
     { name: 'AUDIT CONFERENCE', shortName: 'AUD',  ...AUDIT },
+    { name: 'RADIOLOGY',        shortName: 'RAD',  ...RADIOLOGY },
+    { name: 'PHARMACY',         shortName: 'PHA',  ...PHARMACY },
+    { name: 'MEDICAL RECORDS',  shortName: 'REC',  ...MED_RECORDS },
   ],
   npcPlacements: [
     // === Always-present (level-agnostic) placements ===
