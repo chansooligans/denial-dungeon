@@ -62,6 +62,41 @@ const TILE_TEXTURES: Record<string, { floor: string; obj?: string; solid?: boole
   'b': { floor: 'h_floor', obj: 'h_bulletin',   solid: true, floorTint: TINT.floor, objTint: TINT.bulletin },
   'H': { floor: 'h_floor', obj: 'h_bed',        solid: true, floorTint: TINT.floor, objTint: TINT.bed },
   'X': { floor: 'h_floor', obj: 'h_fax',        floorTint: TINT.floor, objTint: TINT.fax },
+
+  // ===== Phase-C upgrades — new LoRA-only objects (no procedural
+  // fallback). These chars don't exist in any earlier map; layouts
+  // can opt-in by adding the char in their `items`. Untinted by
+  // default since the LoRA art has its own palette and the prior
+  // tints were tuned for the procedural-fallback color scheme. =====
+
+  // Lobby / public-facing
+  'A': { floor: 'h_floor', obj: 'h_aed',         solid: true, floorTint: TINT.floor }, // wall AED
+  'a': { floor: 'h_floor', obj: 'h_sanitizer',   solid: true, floorTint: TINT.floor }, // hand-sanitizer station
+  'C': { floor: 'h_floor', obj: 'h_couch',       solid: true, floorTint: TINT.floor }, // padded lobby couch
+  'd': { floor: 'h_floor', obj: 'h_bench',       solid: true, floorTint: TINT.floor }, // multi-seat waiting bench
+  'r': { floor: 'h_floor', obj: 'h_brochure',    solid: true, floorTint: TINT.floor }, // brochure rack
+  'i': { floor: 'h_floor', obj: 'h_signin',      solid: true, floorTint: TINT.floor }, // sign-in clipboard stand
+  'p': { floor: 'h_floor', obj: 'h_payphone',    solid: true, floorTint: TINT.floor }, // pay phone
+  '>': { floor: 'h_floor', obj: 'h_arrow_sign',  solid: true, floorTint: TINT.floor }, // wayfinding arrow
+  'T': { floor: 'h_floor', obj: 'h_trash',       solid: true, floorTint: TINT.floor }, // trash can
+
+  // Clinical
+  'I': { floor: 'h_floor', obj: 'h_iv_stand',    solid: true, floorTint: TINT.floor }, // IV stand
+  'y': { floor: 'h_floor', obj: 'h_wheelchair',  solid: true, floorTint: TINT.floor }, // wheelchair
+  'g': { floor: 'h_floor', obj: 'h_gurney',      solid: true, floorTint: TINT.floor }, // gurney / stretcher
+
+  // Admin / records
+  'K': { floor: 'h_floor', obj: 'h_bookshelf',   solid: true, floorTint: TINT.floor }, // binder shelves
+  's': { floor: 'h_floor', obj: 'h_shredder',    solid: true, floorTint: TINT.floor }, // paper shredder
+  'k': { floor: 'h_floor', obj: 'h_kiosk',       solid: true, floorTint: TINT.floor }, // check-in / payment kiosk
+  '#': { floor: 'h_floor', obj: 'h_directory',   solid: true, floorTint: TINT.floor }, // directory sign
+  '%': { floor: 'h_floor', obj: 'h_pneumatic',   solid: true, floorTint: TINT.floor }, // pneumatic tube station
+
+  // Facilities
+  'e': { floor: 'h_floor', obj: 'h_elevator',    solid: true, floorTint: TINT.floor }, // elevator doors
+  'f': { floor: 'h_floor', obj: 'h_fountain',    solid: true, floorTint: TINT.floor }, // drinking fountain
+  '!': { floor: 'h_floor', obj: 'h_wet_floor',                  floorTint: TINT.floor }, // wet floor sign — passable
+  'M': { floor: 'h_floor', obj: 'h_mop_bucket',  solid: true, floorTint: TINT.floor }, // mop bucket
 }
 
 // Tiles that act as room boundaries for flood-fill: walls and doors.
