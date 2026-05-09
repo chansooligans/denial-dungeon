@@ -19,18 +19,20 @@ export class TitleScene extends Phaser.Scene {
     // menu still has a music bed.
     this.maybeStartIntroSong()
 
-    // Floating papers in background
+    // Floating papers in background.
+    // All hardcoded sizes/offsets here are 2× the original values to
+    // match the canvas-resolution upgrade (960×640 → 1920×1280).
     for (let i = 0; i < 12; i++) {
       const paper = this.add.image(
-        Phaser.Math.Between(50, width - 50),
-        Phaser.Math.Between(50, height - 50),
+        Phaser.Math.Between(100, width - 100),
+        Phaser.Math.Between(100, height - 100),
         'wr_paper'
-      ).setScale(Phaser.Math.FloatBetween(1.5, 3)).setAlpha(0.1)
+      ).setScale(Phaser.Math.FloatBetween(3, 6)).setAlpha(0.1)
 
       this.tweens.add({
         targets: paper,
-        y: paper.y - 10,
-        x: paper.x + Phaser.Math.Between(-8, 8),
+        y: paper.y - 20,
+        x: paper.x + Phaser.Math.Between(-16, 16),
         duration: Phaser.Math.Between(3000, 5000),
         yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
         delay: i * 400,
@@ -38,13 +40,13 @@ export class TitleScene extends Phaser.Scene {
     }
 
     // Title
-    this.add.text(width / 2, 120, 'THE WAITING ROOM', {
-      fontSize: '32px', fontFamily: 'monospace', color: '#ef5b7b',
+    this.add.text(width / 2, 240, 'THE WAITING ROOM', {
+      fontSize: '64px', fontFamily: 'monospace', color: '#ef5b7b',
       fontStyle: 'bold',
     }).setOrigin(0.5)
 
-    this.add.text(width / 2, 155, 'a revenue cycle RPG', {
-      fontSize: '13px', fontFamily: 'monospace', color: '#8b95a5',
+    this.add.text(width / 2, 310, 'a revenue cycle RPG', {
+      fontSize: '26px', fontFamily: 'monospace', color: '#8b95a5',
     }).setOrigin(0.5)
 
     // Menu options. CONTINUE only shows when a save exists — on a
@@ -57,9 +59,9 @@ export class TitleScene extends Phaser.Scene {
     menuItems.push({ label: 'REPLAY INTRO', action: () => this.replayIntro() })
 
     menuItems.forEach((item, i) => {
-      const y = 260 + i * 50
+      const y = 520 + i * 100
       const btn = this.add.text(width / 2, y, `[ ${item.label} ]`, {
-        fontSize: '16px', fontFamily: 'monospace', color: '#7ee2c1',
+        fontSize: '32px', fontFamily: 'monospace', color: '#7ee2c1',
       }).setOrigin(0.5).setInteractive({ useHandCursor: true })
 
       btn.on('pointerover', () => btn.setColor('#ffffff'))
@@ -68,13 +70,13 @@ export class TitleScene extends Phaser.Scene {
     })
 
     // Flavor text
-    this.add.text(width / 2, height - 80, 'Chase a lost claim through The Waiting Room.\nLearn how healthcare billing actually works.', {
-      fontSize: '11px', fontFamily: 'monospace', color: '#3a4a5d',
+    this.add.text(width / 2, height - 160, 'Chase a lost claim through The Waiting Room.\nLearn how healthcare billing actually works.', {
+      fontSize: '22px', fontFamily: 'monospace', color: '#3a4a5d',
       align: 'center',
     }).setOrigin(0.5)
 
-    this.add.text(width / 2, height - 30, 'An open-source educational game', {
-      fontSize: '10px', fontFamily: 'monospace', color: '#2a323d',
+    this.add.text(width / 2, height - 60, 'An open-source educational game', {
+      fontSize: '20px', fontFamily: 'monospace', color: '#2a323d',
     }).setOrigin(0.5)
 
     // Keyboard nav. Numbering shifts when CONTINUE is shown so 1
