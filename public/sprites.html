@@ -1019,31 +1019,128 @@ refreshSummary();
 renderCustomNpcList();
 
 // ---------- Objects — pick canonical hospital/WR keys for each slot ----------
+// Mirror of src/scenes/BootScene.ts OBJECT_SOURCES — the canonical
+// {textureKey: slot} mapping that the running game actually loads.
+// Keep in sync with the source. Used as the source-of-truth for the
+// Mapped Objects card grid; localStorage `objMapping` (set by the
+// per-card "change cell…" dropdown or the source-sheet pickers) is
+// a *user override* layer on top of these defaults.
+const BOOT_OBJECT_SOURCES = {
+  // Canonical hospital + waiting-room object textures
+  h_counter:         'office_4_0',
+  h_desk:            'desks_0_2',
+  h_chair:           'office_4_2',
+  h_cabinet:         'office_4_3',
+  h_bulletin:        'office_4_4',
+  h_plant:           'plants_1_3',
+  h_water:           'office_5_2',
+  h_vending:         'office_5_3',
+  h_bed:             'clinical_0_0',
+  h_equipment:       'clinical_0_4',
+  h_fax:             'admin_0_4',
+  // Office / front-of-house
+  h_computer:        'office_5_0',
+  h_printer:         'office_5_1',
+  h_armchair:        'office_5_4',
+  h_kiosk:           'office_2_3',
+  h_couch:           'office_0_0',
+  h_bench:           'office_0_1',
+  h_side_table:      'office_0_2',
+  h_brochure:        'office_0_3',
+  h_directory:       'office_1_0',
+  h_sanitizer:       'office_1_1',
+  h_coat_rack:       'office_1_2',
+  h_trash:           'office_1_3',
+  h_recycle:         'office_2_0',
+  h_plant_lobby:     'office_2_1',
+  h_reception_bell:  'office_2_2',
+  h_atm:             'office_2_3',
+  h_monitor_wall:    'office_3_0',
+  h_umbrella_stand:  'office_3_2',
+  h_signin:          'office_3_3',
+  // Legacy fallbacks (no clean new-sheet match)
+  h_box_stack:       'obj1_2_0',
+  h_stanchion:       'obj1_3_0',
+  h_clock_wall:      'obj1_3_1',
+  h_tablet:          'obj2_3_1',
+  // Clinical
+  h_exam_table:      'clinical_0_1',
+  h_iv_stand:        'clinical_0_2',
+  h_wheelchair:      'clinical_0_3',
+  h_stool:           'clinical_1_0',
+  h_bedside:         'clinical_1_1',
+  h_screen:          'clinical_1_2',
+  h_supply_cart:     'clinical_1_3',
+  h_crash_cart:      'clinical_1_4',
+  h_med_cart:        'clinical_2_0',
+  h_sink:            'clinical_2_1',
+  h_biohazard:       'clinical_2_3',
+  h_linen_cart:      'clinical_2_4',
+  h_step:            'clinical_3_0',
+  h_gurney:          'clinical_3_2',
+  h_equip_cart:      'obj3_3_2',
+  // Facilities
+  h_cleaning_cart:   'facilities_0_0',
+  h_mop_bucket:      'facilities_0_1',
+  h_wet_floor:       'facilities_0_2',
+  h_bin_cart:        'facilities_0_3',
+  h_paper_towels:    'facilities_0_4',
+  h_supply_cart_2:   'facilities_1_0',
+  h_bin_cart_full:   'facilities_1_1',
+  h_biohazard_sm:    'facilities_1_2',
+  h_linen_bin:       'facilities_1_3',
+  h_elevator:        'facilities_1_4',
+  h_aed:             'facilities_2_0',
+  h_payphone:        'facilities_2_1',
+  h_drink_counter:   'facilities_2_2',
+  h_fountain:        'facilities_2_4',
+  h_arrow_sign:      'facilities_3_0',
+  h_clock_office:    'facilities_3_1',
+  // Admin / records
+  h_bookshelf:       'admin_0_0',
+  h_file_cart:       'admin_0_1',
+  h_cabinet_open:    'admin_0_2',
+  h_lamp:            'admin_0_3',
+  h_kiosk_admin:     'admin_1_0',
+  h_intercom:        'admin_1_1',
+  h_pneumatic:       'admin_1_2',
+  h_test_tubes:      'admin_1_3',
+  h_printer_lab:     'admin_1_4',
+  h_med_vending:     'admin_2_0',
+  h_reception_admin: 'admin_2_1',
+  h_ticker:          'admin_2_2',
+  h_paper_stack:     'admin_2_3',
+  h_shredder:        'obj5_2_2',
+  h_cashbox:         'obj5_2_3',
+};
+// Variant texture keys (h_desk_1..12, h_plant_1..20) — generated
+// programmatically below since they follow a simple row-major rule.
+for (let i = 1; i <= 12; i++) {
+  const r = Math.floor((i - 1) / 3), c = (i - 1) % 3;
+  BOOT_OBJECT_SOURCES[`h_desk_${i}`] = `desks_${r}_${c}`;
+}
+for (let i = 1; i <= 20; i++) {
+  const r = Math.floor((i - 1) / 5), c = (i - 1) % 5;
+  BOOT_OBJECT_SOURCES[`h_plant_${i}`] = `plants_${r}_${c}`;
+}
+
+// Tile keys that exist as Phaser textures but aren't in the object
+// sheets (they're floor / wall / door / WR-tile bases). Listed here
+// so they appear in the dropdown options for completeness, even
+// though they don't render as a sprite cell.
+const NON_OBJ_TILE_KEYS = [
+  'h_floor', 'h_floor2', 'h_carpet', 'h_wall', 'h_door',
+  'h_whiteboard',
+  'wr_floor', 'wr_wall', 'wr_chair', 'wr_counter',
+];
+
+// OBJ_CANONICAL is auto-derived: every key from BOOT_OBJECT_SOURCES
+// plus the non-object tile keys. Labels default to the bare key
+// (the previous hand-curated labels weren't shown anywhere visible
+// outside the dropdown — a cleaner machine-readable label is fine).
 const OBJ_CANONICAL = [
-  // Hospital tile bases (rare to replace, but possible)
-  { key: 'h_floor',     label: 'h_floor — hospital floor' },
-  { key: 'h_floor2',    label: 'h_floor2 — hospital floor variant' },
-  { key: 'h_carpet',    label: 'h_carpet — carpet tile' },
-  { key: 'h_wall',      label: 'h_wall — hospital wall' },
-  { key: 'h_door',      label: 'h_door — door' },
-  // Hospital placeable objects
-  { key: 'h_desk',      label: 'h_desk — desk with monitor' },
-  { key: 'h_chair',     label: 'h_chair — office chair' },
-  { key: 'h_equipment', label: 'h_equipment — vital monitor' },
-  { key: 'h_plant',     label: 'h_plant — potted plant' },
-  { key: 'h_water',     label: 'h_water — water cooler' },
-  { key: 'h_cabinet',   label: 'h_cabinet — filing cabinet' },
-  { key: 'h_whiteboard',label: 'h_whiteboard — whiteboard' },
-  { key: 'h_counter',   label: 'h_counter — reception counter' },
-  { key: 'h_vending',   label: 'h_vending — vending machine' },
-  { key: 'h_bulletin',  label: 'h_bulletin — bulletin board' },
-  { key: 'h_bed',       label: 'h_bed — hospital bed' },
-  { key: 'h_fax',       label: 'h_fax — fax machine' },
-  // Waiting Room
-  { key: 'wr_floor',    label: 'wr_floor — Waiting Room floor' },
-  { key: 'wr_wall',     label: 'wr_wall — Waiting Room wall' },
-  { key: 'wr_chair',    label: 'wr_chair — WR chair' },
-  { key: 'wr_counter',  label: 'wr_counter — WR ticket counter' },
+  ...NON_OBJ_TILE_KEYS.map(key => ({ key, label: key })),
+  ...Object.keys(BOOT_OBJECT_SOURCES).map(key => ({ key, label: key })),
 ];
 
 // Per-slot suggestions for the "Auto-fill" button. Either:
@@ -1152,6 +1249,26 @@ const OBJ_SHEETS = [
 
 const OBJ_STORAGE = 'obj-mapping-v1';
 const OBJ_CUSTOM_STORAGE = 'obj-custom-v1';
+
+// Schema version. Bump when the canonical BOOT_OBJECT_SOURCES
+// changes shape (slot names rotated, sheet structure changed) so
+// stale per-user localStorage entries from before the change get
+// wiped on next page load — without that, the user still sees old
+// obj1..obj5 art for keys that have moved to themed sheets, since
+// localStorage overrides win in renderObjMappedGrid.
+//
+// v2 = themed-sheet refactor (clinical / facilities / admin / office).
+const OBJ_MAPPING_VERSION_KEY = 'obj-mapping-version';
+const CURRENT_OBJ_MAPPING_VERSION = '2';
+(function migrateObjMapping() {
+  try {
+    const stored = localStorage.getItem(OBJ_MAPPING_VERSION_KEY);
+    if (stored !== CURRENT_OBJ_MAPPING_VERSION) {
+      localStorage.removeItem(OBJ_STORAGE);
+      localStorage.setItem(OBJ_MAPPING_VERSION_KEY, CURRENT_OBJ_MAPPING_VERSION);
+    }
+  } catch {}
+})();
 function objLoadMapping() {
   try { return JSON.parse(localStorage.getItem(OBJ_STORAGE) || '{}'); }
   catch { return {}; }
@@ -1256,30 +1373,37 @@ const ALL_OBJECT_SLOTS = (() => {
 function renderObjMappedGrid() {
   const root = document.getElementById('obj-mapped-grid');
   if (!root) return;
-  const keyToSlot = {};
+  // Source-of-truth: BOOT_OBJECT_SOURCES (the canonical mapping that
+  // ships with the game). User customizations from localStorage
+  // overlay on top — that way someone with stale localStorage from
+  // the previous obj1..obj5 era still sees the new themed sheets,
+  // and customs only override where the user explicitly set them.
+  const keyToSlot = { ...BOOT_OBJECT_SOURCES };
+  const overriddenKeys = new Set();
   for (const [slot, key] of Object.entries(objMapping)) {
-    if (key) keyToSlot[key] = slot;
+    if (!key) continue;
+    if (keyToSlot[key] !== slot) overriddenKeys.add(key);
+    keyToSlot[key] = slot;
   }
-  // Build entries: canonical + custom + desk variants + plant variants.
+
+  // Build entries: every known canonical key, plus customs the user
+  // has slot-bound. Tile-only keys (h_floor / h_wall / wr_floor / …)
+  // are skipped since they don't render as a sprite cell.
   const entries = [];
   for (const n of OBJ_CANONICAL) {
+    if (NON_OBJ_TILE_KEYS.includes(n.key)) continue;
     const slot = keyToSlot[n.key];
-    if (slot) entries.push({ key: n.key, label: n.label, slot, custom: false });
+    if (slot) entries.push({
+      key: n.key, label: n.label, slot, custom: false,
+      override: overriddenKeys.has(n.key),
+    });
   }
   for (const n of objCustom) {
     const slot = keyToSlot[n.key];
-    if (slot) entries.push({ key: n.key, label: n.label, slot, custom: true });
-  }
-  // Desk variants — sourced from BootScene.OBJECT_SOURCES, hardcoded
-  // here since this is a static page. Keep in sync if the variant
-  // count changes.
-  for (let i = 1; i <= 12; i++) {
-    const r = Math.floor((i - 1) / 3), c = (i - 1) % 3;
-    entries.push({ key: `h_desk_${i}`, label: `Desk variant #${i}`, slot: `desks_${r}_${c}`, custom: false, builtin: true });
-  }
-  for (let i = 1; i <= 20; i++) {
-    const r = Math.floor((i - 1) / 5), c = (i - 1) % 5;
-    entries.push({ key: `h_plant_${i}`, label: `Plant variant #${i}`, slot: `plants_${r}_${c}`, custom: false, builtin: true });
+    if (slot) entries.push({
+      key: n.key, label: n.label, slot, custom: true,
+      override: overriddenKeys.has(n.key),
+    });
   }
   // Filter by active sub-tab.
   const subtab = activeObjSubtab;
@@ -1307,18 +1431,17 @@ function renderObjMappedGrid() {
     card.className = 'obj-mapped-card';
     card.title = e.slot;
     card.dataset.key = e.key;
+    const metaTag = e.custom ? ' · custom' : '';
+    const overrideTag = e.override
+      ? ` <span style="color:#f4d06f">· override</span>`
+      : '';
     card.innerHTML =
       `<span class="badge ${status}">${status}</span>` +
       `<img src="/sprites/objects-raw/${e.slot}.png" alt="${e.slot}" />` +
       `<div class="key">${e.key}</div>` +
       `<div class="label">${labelText}</div>` +
-      `<div class="meta">${e.slot}${e.custom ? ' · custom' : e.builtin ? ' · variant' : ''}</div>` +
-      // Built-in desk/plant variants don't have an entry in objMapping —
-      // they're hardcoded in BootScene — so the remap button is hidden.
-      // For everything else, expose a "remap" toggle.
-      (e.builtin
-        ? ''
-        : `<button class="remap-toggle" data-key="${e.key}">change cell…</button>`);
+      `<div class="meta">${e.slot}${metaTag}${overrideTag}</div>` +
+      `<button class="remap-toggle" data-key="${e.key}">change cell…</button>`;
     root.appendChild(card);
   }
   // Wire up remap toggles. Click → swap the toggle for an inline
