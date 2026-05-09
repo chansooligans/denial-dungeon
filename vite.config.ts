@@ -160,6 +160,10 @@ export default defineConfig({
         // ITEMIZE / INVOICE-MATCH / APPEND. Lives at
         // /implant-carveout-specter-prototype.html.
         implantCarveoutSpecter: resolve(__dirname, 'implant-carveout-specter-prototype.html'),
+        // Stoploss Reckoner: math-heavy charge-threshold trip;
+        // payment converts from case rate to 65% of charges. Verbs:
+        // TRIP / RECALCULATE / APPEAL.
+        stoplossReckoner: resolve(__dirname, 'stoploss-reckoner-prototype.html'),
         // Map editor: a dev-only authoring tool for level1's object
         // placement and orientation. Click any object to select it,
         // then rotate/flip via keyboard or drag to move. Outputs a
