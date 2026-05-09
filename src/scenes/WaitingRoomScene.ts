@@ -596,10 +596,10 @@ export class WaitingRoomScene extends Phaser.Scene {
       })
 
       const labelText = enc.archetype ?? enc.title
-      const label = this.add.text(px, py - 36, labelText, {
-        fontSize: '16px', fontFamily: 'monospace', color: '#ff8090',
-        backgroundColor: '#1a0608cc', padding: { x: 8, y: 4 },
-        stroke: '#0e1116', strokeThickness: 2,
+      const label = this.add.text(px, py - 48, labelText, {
+        fontSize: '24px', fontFamily: 'monospace', color: '#ff8090',
+        backgroundColor: '#1a0608cc', padding: { x: 12, y: 6 },
+        stroke: '#0e1116', strokeThickness: 3,
       }).setOrigin(0.5).setDepth(5)
 
       this.obstacleSprites.push({ marker, graphics: g, label })
