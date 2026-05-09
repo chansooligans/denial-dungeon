@@ -1,7 +1,7 @@
 import Phaser from 'phaser'
 import { addFullscreenButton } from './fullscreenButton'
 import { addMuteButton } from './muteButton'
-import { BEATS, type SceneActionId } from './introBeats'
+import { BEATS, SCENE_OBJECTS, type SceneActionId } from './introBeats'
 
 export class IntroScene extends Phaser.Scene {
   private currentBeat = 0
@@ -556,7 +556,10 @@ export class IntroScene extends Phaser.Scene {
 
     // Draw a simple hospital corridor.
     // Each tile drawn at 32×32 to fill the doubled 1920×1280 canvas
-    // (60 cols * 32 = 1920, 40 rows * 32 = 1280).
+    // (60 cols * 32 = 1920, 40 rows * 32 = 1280). The wall/floor
+    // pattern stays procedural (boundary rectangle) — only the
+    // decorative objects on top come from SCENE_OBJECTS.hospitalPan,
+    // edited via /intro-editor.html.
     for (let x = 0; x < 60; x++) {
       for (let y = 0; y < 40; y++) {
         const isWall = y < 8 || y > 32 || x < 2 || x > 57
@@ -569,16 +572,18 @@ export class IntroScene extends Phaser.Scene {
       }
     }
 
-    // Some desks scattered
-    const deskPositions = [[10, 15], [20, 20], [30, 14], [40, 22], [50, 18]]
-    for (const [dx, dy] of deskPositions) {
-      // Doubled positions for canvas-resolution upgrade. setDisplaySize
-      // works regardless of whether h_desk is the 16×16 procedural
-      // fallback or the 64×64 LoRA-loaded texture.
-      const desk = this.add.image(dx * 32, dy * 32, 'h_desk')
-        .setDisplaySize(64, 64).setAlpha(0)
-      this.sceneContainer.add(desk)
-      this.tweens.add({ targets: desk, alpha: 0.5, duration: 800, delay: 500 })
+    // Decorative sprites (desks, plants, anything else added via the
+    // editor). Position is in tile-grid coords; world pixels are
+    // `x * gridSize`. setDisplaySize handles both the 16×16 procedural
+    // fallback and the 64×64 LoRA-loaded textures uniformly.
+    const cfg = SCENE_OBJECTS.hospitalPan
+    for (const o of cfg.objects) {
+      const obj = this.add.image(o.x * cfg.gridSize, o.y * cfg.gridSize, o.sprite)
+        .setDisplaySize(o.size ?? 64, o.size ?? 64).setAlpha(0)
+      this.sceneContainer.add(obj)
+      this.tweens.add({
+        targets: obj, alpha: o.alpha ?? 0.5, duration: 800, delay: 500,
+      })
     }
 
     // Slow camera pan

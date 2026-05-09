@@ -24,7 +24,24 @@
 // declaration in src/scenes/introBeats.ts. The editor preserves
 // trailing commas and indentation to mirror the existing style.
 
-import { BEATS, type Beat, type SceneActionId } from '../scenes/introBeats'
+import {
+  BEATS,
+  SCENE_OBJECTS,
+  type Beat,
+  type SceneActionId,
+  type SceneObject,
+  type SceneObjects,
+} from '../scenes/introBeats'
+import { OBJ_KEY_TO_SRC, VARIANT_KEY_TO_SRC } from '../map-editor/data'
+
+// Combined sprite-key → public path lookup. The composition canvas
+// uses this to render each placed object as its real PNG. Variants
+// (desks_1..12, plants_1..20) come from the map-editor's table so
+// the two editors stay aligned on what art is available.
+const ALL_SPRITES: Record<string, string> = {
+  ...OBJ_KEY_TO_SRC,
+  ...VARIANT_KEY_TO_SRC,
+}
 
 // All cover/backdrop comic-page images currently shipped with the
 // game. Hardcoded because browsers can't list `/public/intro/`
@@ -55,7 +72,24 @@ const beats: Beat[] = BEATS.map(b => ({
   lines: b.lines ? [...b.lines] : undefined,
 }))
 
+// Working copy of per-scene composition data (object placements).
+// Mutated via the composition-canvas drag/select/palette UI;
+// serialized into the export pane alongside BEATS.
+const sceneObjects: SceneObjects = JSON.parse(JSON.stringify(SCENE_OBJECTS))
+
 let selectedIdx = 0
+// Selected object index inside the active scene's objects[] array.
+// Null when nothing's picked or the selected beat doesn't have a
+// supported scene composition.
+let selectedObjIdx: number | null = null
+// Live drag state for the composition canvas. offsetX/Y are the
+// cursor's distance from the object's center in canvas pixels at
+// drag-start, so movement tracks the cursor exactly.
+let dragState: { idx: number; offsetX: number; offsetY: number } | null = null
+// Set to a canvas-pixel position when the user clicks empty space
+// in the composition canvas — the palette popup uses this to know
+// where to put the new object after the user picks a sprite.
+let pendingAddCanvasPos: { x: number; y: number } | null = null
 
 // ===== Voice index ========================================================
 
@@ -92,6 +126,13 @@ const audioEl = document.getElementById('voice-audio') as HTMLAudioElement
 function render() {
   renderTimeline()
   renderEditor()
+  // Composition canvas paints into a div the editor pane just
+  // emitted, so it has to run after renderEditor(). Pulls the right
+  // action id from the selected beat (covers both 'scene' beats and
+  // text beats with a concurrent sceneActionId).
+  const b = beats[selectedIdx]
+  const action = b?.type === 'scene' ? b.actionId : b?.sceneActionId
+  renderComposition(action)
   renderExport()
   renderSummary()
 }
@@ -123,6 +164,8 @@ function renderTimeline() {
 
     card.addEventListener('click', () => {
       selectedIdx = i
+      // Reset composition selection — different beat, different objects.
+      selectedObjIdx = null
       render()
       // Auto-load the matching voiceover so the Play button is ready.
       const v = voiceIdx[i]
@@ -189,13 +232,15 @@ function renderEditor() {
             `<input id="f-color" type="text" value="${escapeAttr(b.color ?? '#e6edf3')}" />` +
             `<label><input id="f-silent" type="checkbox" ${b.silent ? 'checked' : ''} /> silent (play VO without showing typed text)</label>` +
             `<label>Concurrent scene action (optional)</label>` +
-            sceneActionSelect(b.sceneActionId, 'f-sceneAction')
+            sceneActionSelect(b.sceneActionId, 'f-sceneAction') +
+            renderCompositionSection(b.sceneActionId)
   } else if (b.type === 'wait') {
     html += `<label>Duration (ms)</label>` +
             `<input id="f-duration" type="number" min="0" step="50" value="${b.duration ?? 0}" />`
   } else if (b.type === 'scene') {
     html += `<label>Scene action</label>` +
-            sceneActionSelect(b.actionId, 'f-action')
+            sceneActionSelect(b.actionId, 'f-action') +
+            renderCompositionSection(b.actionId)
   } else if (b.type === 'cover' || b.type === 'backdrop') {
     const currentSrc = b.key
       ? imageOverrides.get(b.key) ?? pathForKey(b.key)
@@ -255,6 +300,240 @@ function sceneActionSelect(current: SceneActionId | undefined, id: string): stri
     ids.map(a => `<option value="${a}"${a === current ? ' selected' : ''}>${a}</option>`).join('') +
     `</select>`
 }
+
+// ===== Scene composition canvas ===========================================
+//
+// Visual editor for the placed objects in a scene action's
+// SCENE_OBJECTS entry. Renders the world at COMPOSITION_SCALE so the
+// 1920×1280 viewport fits in the editor pane. Drag any object to
+// move (snaps to scene grid), click to select, Del to remove, click
+// empty canvas → palette popup → click sprite to add.
+//
+// To support a new scene: add an `if (action === 'showFoo') { ... }`
+// block to the helpers below, returning that scene's gridSize +
+// objects array. The renderer is otherwise generic.
+
+const WORLD_W = 1920
+const WORLD_H = 1280
+const COMPOSITION_SCALE = 1 / 4 // 480×320 canvas
+
+/** Resolve the working-copy objects array + tile grid size for the
+ *  given scene action, or null if that action doesn't have a
+ *  composition extracted yet. */
+function getComposition(action: SceneActionId | undefined): {
+  objects: SceneObject[]
+  gridSize: number
+} | null {
+  if (action === 'showHospitalPan') {
+    return { objects: sceneObjects.hospitalPan.objects, gridSize: sceneObjects.hospitalPan.gridSize }
+  }
+  return null
+}
+
+function renderCompositionSection(action: SceneActionId | undefined): string {
+  const comp = getComposition(action)
+  if (!comp) return ''
+  return `<div class="comp-wrap">` +
+    `<div class="comp-head">Scene composition · ${action}</div>` +
+    `<div class="comp-help">Drag to move (snaps to ${comp.gridSize}px grid). Click empty space to add. Del to remove the selected object.</div>` +
+    `<div id="comp-canvas" class="comp-canvas" tabindex="0"></div>` +
+    `<div id="comp-palette" class="comp-palette"></div>` +
+    `</div>`
+}
+
+/** After the editor pane re-renders, paint the composition canvas:
+ *  hospital corridor backdrop, every placed object as its real PNG,
+ *  selection ring on the picked one. */
+function renderComposition(action: SceneActionId | undefined) {
+  const comp = getComposition(action)
+  const canvas = document.getElementById('comp-canvas')
+  if (!comp || !canvas) return
+
+  const W = WORLD_W * COMPOSITION_SCALE
+  const H = WORLD_H * COMPOSITION_SCALE
+  canvas.style.width = `${W}px`
+  canvas.style.height = `${H}px`
+  canvas.innerHTML = ''
+
+  // Backdrop: corridor walls (perimeter) on dark, floor in middle.
+  // Gives placement context without re-implementing the full tile
+  // grid. Same wall test as IntroScene.showHospitalPan.
+  const cellW = comp.gridSize * COMPOSITION_SCALE
+  const tilesX = Math.round(WORLD_W / comp.gridSize)
+  const tilesY = Math.round(WORLD_H / comp.gridSize)
+  for (let ty = 0; ty < tilesY; ty++) {
+    for (let tx = 0; tx < tilesX; tx++) {
+      const isWall = ty < 8 || ty > 32 || tx < 2 || tx > 57
+      const tile = document.createElement('div')
+      tile.className = isWall ? 'comp-wall' : 'comp-floor'
+      tile.style.left = `${tx * cellW}px`
+      tile.style.top = `${ty * cellW}px`
+      tile.style.width = `${cellW}px`
+      tile.style.height = `${cellW}px`
+      canvas.appendChild(tile)
+    }
+  }
+
+  // Objects on top.
+  comp.objects.forEach((o, i) => {
+    const src = ALL_SPRITES[o.sprite]
+    if (!src) return // unknown texture — silently skip rather than crash
+    const size = (o.size ?? 64) * COMPOSITION_SCALE
+    const px = o.x * comp.gridSize * COMPOSITION_SCALE
+    const py = o.y * comp.gridSize * COMPOSITION_SCALE
+    const img = document.createElement('img')
+    img.className = 'comp-obj' + (i === selectedObjIdx ? ' selected' : '')
+    img.src = `${import.meta.env.BASE_URL}${src}`
+    // The procedural draw uses center origin; mirror it here so
+    // dragging visually tracks where the sprite would actually sit.
+    img.style.left = `${px - size / 2}px`
+    img.style.top = `${py - size / 2}px`
+    img.style.width = `${size}px`
+    img.style.height = `${size}px`
+    img.style.opacity = String(o.alpha ?? 0.5)
+    img.dataset.idx = String(i)
+    img.addEventListener('mousedown', onCompObjMouseDown)
+    canvas.appendChild(img)
+  })
+
+  // Click empty canvas → open palette.
+  canvas.addEventListener('mousedown', onCompCanvasMouseDown)
+}
+
+function onCompObjMouseDown(e: MouseEvent) {
+  e.stopPropagation()
+  const img = e.currentTarget as HTMLElement
+  const idx = Number(img.dataset.idx)
+  selectedObjIdx = idx
+  const canvas = document.getElementById('comp-canvas')!
+  const rect = canvas.getBoundingClientRect()
+  const beat = beats[selectedIdx]
+  const action = beat.type === 'scene' ? beat.actionId : beat.sceneActionId
+  const comp = getComposition(action)
+  if (!comp) return
+  const o = comp.objects[idx]
+  const cx = o.x * comp.gridSize * COMPOSITION_SCALE
+  const cy = o.y * comp.gridSize * COMPOSITION_SCALE
+  dragState = {
+    idx,
+    offsetX: e.clientX - rect.left - cx,
+    offsetY: e.clientY - rect.top - cy,
+  }
+  // Focus the canvas so the keyboard handler can catch Del without
+  // requiring an extra click.
+  canvas.focus()
+  renderComposition(action)
+}
+
+function onCompCanvasMouseDown(e: MouseEvent) {
+  // Only fire for clicks on empty canvas (not on object children).
+  if ((e.target as HTMLElement).id !== 'comp-canvas') return
+  const beat = beats[selectedIdx]
+  const action = beat.type === 'scene' ? beat.actionId : beat.sceneActionId
+  const comp = getComposition(action)
+  if (!comp) return
+  const canvas = e.currentTarget as HTMLElement
+  const rect = canvas.getBoundingClientRect()
+  pendingAddCanvasPos = {
+    x: e.clientX - rect.left,
+    y: e.clientY - rect.top,
+  }
+  showCompositionPalette(e.clientX, e.clientY)
+}
+
+function showCompositionPalette(clientX: number, clientY: number) {
+  const palette = document.getElementById('comp-palette') as HTMLDivElement | null
+  if (!palette) return
+  palette.innerHTML = ''
+  palette.style.left = `${clientX + 8}px`
+  palette.style.top = `${clientY + 8}px`
+  palette.style.display = 'grid'
+  for (const [key, src] of Object.entries(ALL_SPRITES)) {
+    const cell = document.createElement('div')
+    cell.className = 'comp-palette-cell'
+    cell.title = key
+    cell.innerHTML = `<img src="${import.meta.env.BASE_URL}${src}" /><span>${key}</span>`
+    cell.addEventListener('click', () => addObjFromPalette(key))
+    palette.appendChild(cell)
+  }
+}
+
+function addObjFromPalette(sprite: string) {
+  if (!pendingAddCanvasPos) return
+  const beat = beats[selectedIdx]
+  const action = beat.type === 'scene' ? beat.actionId : beat.sceneActionId
+  const comp = getComposition(action)
+  if (!comp) return
+  // Convert canvas-pixel position back to scene-grid coords.
+  const gx = Math.round(pendingAddCanvasPos.x / COMPOSITION_SCALE / comp.gridSize)
+  const gy = Math.round(pendingAddCanvasPos.y / COMPOSITION_SCALE / comp.gridSize)
+  comp.objects.push({ sprite, x: gx, y: gy })
+  selectedObjIdx = comp.objects.length - 1
+  pendingAddCanvasPos = null
+  hideCompositionPalette()
+  renderComposition(action)
+  renderExport()
+}
+
+function hideCompositionPalette() {
+  const palette = document.getElementById('comp-palette')
+  if (palette) palette.style.display = 'none'
+}
+
+// Global mousemove during drag — translates cursor → scene-grid
+// coords and updates the working object in place. snaps to integer
+// grid cells so positions match the IntroScene math exactly.
+window.addEventListener('mousemove', e => {
+  if (!dragState) return
+  const beat = beats[selectedIdx]
+  const action = beat.type === 'scene' ? beat.actionId : beat.sceneActionId
+  const comp = getComposition(action)
+  if (!comp) return
+  const canvas = document.getElementById('comp-canvas')
+  if (!canvas) return
+  const rect = canvas.getBoundingClientRect()
+  const cx = e.clientX - rect.left - dragState.offsetX
+  const cy = e.clientY - rect.top - dragState.offsetY
+  const gx = Math.round(cx / COMPOSITION_SCALE / comp.gridSize)
+  const gy = Math.round(cy / COMPOSITION_SCALE / comp.gridSize)
+  const o = comp.objects[dragState.idx]
+  if (o.x === gx && o.y === gy) return
+  o.x = gx
+  o.y = gy
+  renderComposition(action)
+  renderExport()
+})
+window.addEventListener('mouseup', () => { dragState = null })
+
+window.addEventListener('keydown', e => {
+  // Composition canvas is focusable; only treat Del as object-delete
+  // when it was the last thing focused.
+  const focused = document.activeElement
+  if (focused?.id !== 'comp-canvas') return
+  if (e.key !== 'Delete' && e.key !== 'Backspace') return
+  if (selectedObjIdx === null) return
+  const beat = beats[selectedIdx]
+  const action = beat.type === 'scene' ? beat.actionId : beat.sceneActionId
+  const comp = getComposition(action)
+  if (!comp) return
+  comp.objects.splice(selectedObjIdx, 1)
+  selectedObjIdx = null
+  e.preventDefault()
+  renderComposition(action)
+  renderExport()
+})
+
+// Click outside the palette closes it. Listener attached at
+// document level so it catches clicks on the timeline / export pane.
+document.addEventListener('mousedown', e => {
+  const palette = document.getElementById('comp-palette')
+  if (palette && palette.style.display === 'grid' &&
+      !palette.contains(e.target as Node) &&
+      (e.target as HTMLElement).id !== 'comp-canvas') {
+    hideCompositionPalette()
+    pendingAddCanvasPos = null
+  }
+})
 
 function wireEditorInputs() {
   const b = beats[selectedIdx]
@@ -373,7 +652,18 @@ function renderSummary() {
 
 function renderExport() {
   const lines: string[] = []
-  lines.push('// Paste into src/scenes/introBeats.ts replacing the BEATS array body.')
+  lines.push('// Paste into src/scenes/introBeats.ts.')
+  lines.push('// Two declarations — replace the existing SCENE_OBJECTS and')
+  lines.push('// BEATS in that file with the blocks below.')
+  lines.push('')
+  lines.push('export const SCENE_OBJECTS: SceneObjects = ' +
+    JSON.stringify(sceneObjects, null, 2)
+      // Quote-strip object keys so the export reads like the
+      // hand-authored TS source (single-quoted string values stay
+      // double-quoted from JSON.stringify; that's an acceptable
+      // mismatch — TS accepts either).
+      .replace(/^( *)"([a-zA-Z_$][\w$]*)":/gm, '$1$2:'))
+  lines.push('')
   lines.push('export const BEATS: Beat[] = [')
   for (const b of beats) {
     lines.push('  ' + serializeBeat(b) + ',')

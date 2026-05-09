@@ -41,6 +41,65 @@ export interface Beat {
   voice?: boolean
 }
 
+// ===== Scene objects ======================================================
+//
+// Per-scene placement data. Each `show<Name>()` method that's been
+// converted reads its decorative-object list from SCENE_OBJECTS.<name>
+// instead of hardcoding `add.image(...)` calls in source. The
+// /intro-editor.html "Scene composition" panel scrubs these arrays
+// visually (drag to move, click+Del to remove, palette to add) and
+// emits a paste-back snippet.
+//
+// Tile grids (walls/floors), procedural primitives (rectangles, text),
+// and per-object tweens stay inline in IntroScene — only the
+// placeable image/sprite objects move into data.
+//
+// Currently extracted: showHospitalPan. Convert other show* methods
+// using the same pattern: pull the static `add.image(...)` calls into
+// a typed array here, replace them with a `for` loop in the method.
+
+export interface SceneObject {
+  /** Phaser texture key — must be registered in BootScene. */
+  sprite: string
+  /** Tile-grid position; world-pixel coords are `x * GRID, y * GRID`
+   *  where GRID is the scene's tile size (32 px for showHospitalPan). */
+  x: number
+  y: number
+  /** Square display size in world pixels. Defaults to 64. */
+  size?: number
+  /** Final alpha after fade-in. Defaults to 0.5. */
+  alpha?: number
+}
+
+export interface HospitalPanObjects {
+  /** Tile size used to convert grid (x,y) → world pixels. The editor
+   *  needs this number to render objects at the right position. */
+  gridSize: number
+  /** Decorative objects layered on top of the procedural wall/floor
+   *  grid. Order doesn't matter — every object fades in at the same
+   *  delay. Add/remove freely. */
+  objects: SceneObject[]
+}
+
+export interface SceneObjects {
+  hospitalPan: HospitalPanObjects
+}
+
+export const SCENE_OBJECTS: SceneObjects = {
+  hospitalPan: {
+    gridSize: 32,
+    objects: [
+      { sprite: 'h_desk', x: 10, y: 15 },
+      { sprite: 'h_desk', x: 20, y: 20 },
+      { sprite: 'h_desk', x: 30, y: 14 },
+      { sprite: 'h_desk', x: 40, y: 22 },
+      { sprite: 'h_desk', x: 50, y: 18 },
+    ],
+  },
+}
+
+// ===== Beats ==============================================================
+
 export const BEATS: Beat[] = [
   // Cover splash — full-bleed title page art before narration begins.
   { type: 'cover', key: 'intro_cover', duration: 3200 },
