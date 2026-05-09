@@ -6,47 +6,48 @@
 // sits with the chargemaster open in one window and twelve months
 // of claims open in another, and assembles the MRF row by row.
 //
-// The lever is *which source of truth to pull from per service*.
-//   - HARD-CODED services (room/board, surgical case rates, fixed
-//     CDM lines that all payers pay near the same number) come
-//     straight off the chargemaster — one rate per service.
-//   - SOFT-CODED services (lab/imaging panels, supplies, PT, drugs)
-//     don't have a stable code-rate pair; the chargemaster price
-//     bears no relationship to what payers actually pay. The
-//     truth is in the claim history, aggregated correctly.
+// === Update — May 2026 ===
+// Earlier draft conflated "hard-coded" / "soft-coded" with rate
+// stability. The terms have specific RCM meanings (see Chemo
+// Bundle Specter @ #200) — they describe *who assigns the CPT*,
+// not whether the rate is stable. This version teaches both
+// axes properly:
+//
+//   1. CODING — hard-coded (CDM auto-assigns CPT/HCPCS at charge
+//      drop; most outpatient ancillaries) vs soft-coded (HIM coder
+//      reviews the chart and assigns codes manually after the
+//      encounter; most inpatient stays + complex procedures).
+//      This is *who* codes the service.
+//
+//   2. RATE SOURCE — CDM/fee schedule (when payer rates are
+//      stable across the contracted population) vs claim history
+//      (when per-payer rates vary enough that the published
+//      number has to come from observed adjudications). This is
+//      *where* the published rate comes from.
+//
+// The two axes are correlated but independent. A service can be
+// hard-coded with a stable rate (X-ray), hard-coded with a
+// variable rate (CMP lab, IV saline), or soft-coded with a stable
+// rate (DRG case rate — the contract sets one number per DRG once
+// HIM assigns the grouping).
 //
 // Verbs:
-//   - MAP: classify each service hard-coded or soft-coded.
-//   - ESTIMATE: for soft-coded services, pick the right statistic
-//     to summarize the claim history (median per payer, NOT mean,
-//     NOT max, NOT chargemaster).
-//   - RECONCILE: submit the MRF batch and let the schema validator
-//     check that hard-coded rows came from CDM and soft-coded rows
-//     came from claims.
+//   - CLASSIFY: 4 services; mark each hard-coded or soft-coded.
+//   - SOURCE: 4 services; pick CDM or claim history per service.
+//   - AGGREGATE: for claim-priced services, pick the right
+//     summary statistic (median per payer).
 //
-// Demonstrates: pricing transparency is real RCM work, the
-// chargemaster is not the truth, and "what to publish" is a
-// classification puzzle.
-//
-// Author: May 2026. Modeled on Swarm (queue) + Case Rate Specter
-// (apply/reject decision lattice).
+// Author: May 2026.
 import { BASE_CSS, districtVars, escape } from '../shared/prototype-base'
 
 // ===== Domain types =====
 
-type ServiceKind = 'hard' | 'soft'
-
-interface CdmEntry {
-  /** Chargemaster gross charge — the rack-rate sticker price. */
-  charge: number
-}
+type CodingMode = 'hard' | 'soft'
+type RateSource = 'cdm' | 'claims'
 
 interface ClaimSample {
-  /** Payer name shown in the historical-claims table. */
   payer: string
-  /** What the payer's contract pays per unit/encounter. */
   rate: number
-  /** How many of those claims appear in the 12-month sample. */
   count: number
 }
 
@@ -56,24 +57,27 @@ interface Service {
   code: string
   /** Plain-English service description. */
   label: string
-  /** Pedagogical hint about the service's pricing shape. */
+  /** Hint about how the service is coded + priced (shown on row). */
   shape: string
-  /** True kind. Player has to discover this; UI hides it until classified. */
-  kind: ServiceKind
-  /** Why this service is hard-coded or soft-coded; shown post-classify. */
-  kindReason: string
-  /** Chargemaster line item (always present — but for soft-coded this is the wrong source). */
-  cdm: CdmEntry
-  /** 12-month claim sample. Empty for hard-coded services where claim variance is below the rounding floor. */
+  /** True coding mode (hard = CDM auto-assigns; soft = HIM reviews). */
+  coding: CodingMode
+  /** Why the coding mode is what it is — shown after correct classify. */
+  codingReason: string
+  /** True MRF rate source (CDM or claim history). */
+  rateSource: RateSource
+  /** Why this rate source is correct — shown after correct source pick. */
+  sourceReason: string
+  /** Chargemaster gross charge (always present). */
+  cdmCharge: number
+  /** 12-month claim sample. Only meaningful for claim-priced services. */
   claims: ClaimSample[]
-  /** The correct rate to publish for this service. */
+  /** The correct rate to publish on the MRF. */
   correctRate: number
 }
 
 interface AggregationOption {
   id: string
   label: string
-  /** What it computes against the CMP claim sample. */
   amount: number
   correct: boolean
   feedback: string
@@ -83,13 +87,10 @@ interface Issue {
   id: string
   label: string
   recap: string
-  verb: 'map' | 'estimate' | 'reconcile'
+  verb: 'classify' | 'source' | 'aggregate'
 }
 
-interface GlossaryEntry {
-  term: string
-  plain: string
-}
+interface GlossaryEntry { term: string; plain: string }
 
 // ===== Encounter data =====
 
@@ -98,10 +99,12 @@ const services: Service[] = [
     id: 'xray-skull',
     code: '70250',
     label: 'X-ray, skull, complete (4+ views)',
-    shape: 'Imaging — single fixed CDM rate; payer variance < 3%.',
-    kind: 'hard',
-    kindReason: "Fixed rate per study. Every payer pays close to the CDM line; the variance is below the MRF's rounding floor. Pull from CDM.",
-    cdm: { charge: 185 },
+    shape: 'Imaging — CDM auto-assigns; rates stable across payers.',
+    coding: 'hard',
+    codingReason: "Hard-coded. The CDM drops 70250 + Rev 0320 every time radiology orders the study; no human reviews the code per encounter. Standard outpatient ancillary.",
+    rateSource: 'cdm',
+    sourceReason: "CDM is the source of truth. Imaging studies typically have payer variance under the MRF rounding floor — every payer pays close to the same number. CDM-pull is correct AND simple here.",
+    cdmCharge: 185,
     claims: [],
     correctRate: 185,
   },
@@ -109,10 +112,12 @@ const services: Service[] = [
     id: 'cmp-lab',
     code: '80053',
     label: 'Comprehensive metabolic panel',
-    shape: 'Lab panel — heavily negotiated; CDM is fiction.',
-    kind: 'soft',
-    kindReason: "CDM says $48; no commercial payer pays $48. Lab CPTs are negotiated case-by-case per payer; the truth is the median rate per payer in the claim history.",
-    cdm: { charge: 48 },
+    shape: 'Lab — CDM auto-assigns; per-payer rates vary widely.',
+    coding: 'hard',
+    codingReason: "Hard-coded. CDM drops 80053 + Rev 0301 every time the lab runs a CMP order. The coder doesn't review each panel; the chargemaster handles it. Standard outpatient ancillary, same as imaging.",
+    rateSource: 'claims',
+    sourceReason: "Hard-coded BUT claim-priced. CDM says $48; payers actually pay $8-22. Hard-coding gives you a reliable code, not a reliable rate. The MRF requires per-payer negotiated rates — pull them from claim history, not CDM.",
+    cdmCharge: 48,
     claims: [
       { payer: 'Anthem PPO',    rate: 16, count: 142 },
       { payer: 'BCBS HMO',      rate: 14, count: 88  },
@@ -122,18 +127,18 @@ const services: Service[] = [
       { payer: 'Medicare Adv',  rate: 12, count: 41  },
       { payer: 'Medicaid MCO',  rate: 8,  count: 29  },
     ],
-    // The "median" answer: median of the per-payer rates is $16
-    // (sorted: 8, 12, 14, 16, 18, 20, 22 → middle = 16).
-    correctRate: 16,
+    correctRate: 16,  // median per-payer rate
   },
   {
     id: 'drg-470',
     code: 'DRG 470',
     label: 'Major joint replacement, lower extremity, no MCC',
-    shape: 'Inpatient case rate — fixed per payer per DRG.',
-    kind: 'hard',
-    kindReason: "Inpatient DRGs price at a contractually fixed case rate per payer. The CDM carries the standard charge; the contract carries the case rate. Either way it's hard-coded — there's no statistical aggregation to do.",
-    cdm: { charge: 14_000 },
+    shape: 'Inpatient stay — HIM reviews chart + assigns DRG.',
+    coding: 'soft',
+    codingReason: "Soft-coded. The DRG isn't on a charge entry — a HIM coder reviews the chart after discharge, codes principal + secondary diagnoses + procedures, and runs the grouper to assign the DRG. Manual review per encounter is the soft-coding signature.",
+    rateSource: 'cdm',
+    sourceReason: "Soft-coded BUT CDM-priced (in the contract sense). Once HIM assigns DRG 470, the case rate is contractually fixed per payer per DRG — the MRF rate comes from the fee-schedule appendix, not from claim variance. Soft-coding doesn't automatically mean claim-priced.",
+    cdmCharge: 14_000,
     claims: [],
     correctRate: 14_000,
   },
@@ -141,136 +146,141 @@ const services: Service[] = [
     id: 'iv-saline',
     code: 'J7030',
     label: 'Saline infusion solution, 1000mL (per dose)',
-    shape: 'Drug/supply — per-unit pricing; payer rates wander.',
-    kind: 'soft',
-    kindReason: "Drugs and supplies bill as separate units; payers price them differently and most pay below CDM. Soft-coded — pick from claim history, not CDM.",
-    cdm: { charge: 32 },
+    shape: 'Drug/supply — CDM auto-assigns; per-payer rates wander.',
+    coding: 'hard',
+    codingReason: "Hard-coded. CDM drops J7030 every time pharmacy administers a 1000mL saline bag. Standard outpatient supply line; no chart review per dose.",
+    rateSource: 'claims',
+    sourceReason: "Hard-coded AND claim-priced. CDM says $32; payers pay $4-8. Same shape as the CMP lab — the chargemaster gets you the code, but the rate has to come from observed adjudications because per-payer pricing on supplies wanders.",
+    cdmCharge: 32,
     claims: [
-      { payer: 'Anthem PPO',    rate: 6,  count: 220 },
-      { payer: 'BCBS HMO',      rate: 5,  count: 150 },
-      { payer: 'Aetna',         rate: 7,  count: 110 },
-      { payer: 'UHC',           rate: 8,  count: 95  },
-      { payer: 'Medicare Adv',  rate: 4,  count: 80  },
+      { payer: 'Anthem PPO',    rate: 6, count: 220 },
+      { payer: 'BCBS HMO',      rate: 5, count: 150 },
+      { payer: 'Aetna',         rate: 7, count: 110 },
+      { payer: 'UHC',           rate: 8, count: 95  },
+      { payer: 'Medicare Adv',  rate: 4, count: 80  },
     ],
-    // Median per-payer rate: sorted 4, 5, 6, 7, 8 → 6.
-    correctRate: 6,
+    correctRate: 6,  // median per-payer rate
   },
 ]
 
-// Aggregation options shown when player drills into a soft-coded
-// service to pick the right statistic. These are computed against
-// the CMP sample (the encounter's "anchor" soft-coded service);
-// the player makes one pick and that pick locks in the method
-// across all soft-coded services for the encounter.
-const cmpAggregations: AggregationOption[] = [
+// Aggregation options — same as before; player makes one pick that
+// applies across all claim-priced services.
+const aggregations: AggregationOption[] = [
   {
     id: 'cdm-charge',
-    label: 'Chargemaster charge ($48)',
+    label: 'Chargemaster charge — publish the CDM line as the negotiated rate',
     amount: 48,
     correct: false,
-    feedback: 'CDM is the rack rate. Publishing CDM as the negotiated rate misrepresents the contract — the MRF is supposed to show what payers actually pay, not what the hospital wishes it could collect.',
+    feedback: 'CDM is the rack rate. Publishing CDM as the negotiated rate misrepresents the contract — the MRF is supposed to show what payers actually pay. This is exactly what got Mercy flagged in the first place.',
   },
   {
     id: 'mean',
-    label: 'Mean of all sample claims (charge-weighted) ≈ $16.0',
+    label: 'Mean of all sample claims (charge-weighted)',
     amount: 16.0,
     correct: false,
-    feedback: 'Mean of charges is dominated by the highest-volume payers. CMS guidance asks for the per-payer negotiated rate, which means a representative central tendency *per payer* — not a weighted average across them.',
+    feedback: 'Mean of charges is dominated by the highest-volume payers. CMS guidance asks for the per-payer negotiated rate, summarized as a representative central tendency *per payer* — not a weighted average across them.',
   },
   {
     id: 'max',
-    label: 'Max negotiated rate ($22)',
+    label: 'Max negotiated rate',
     amount: 22,
     correct: false,
     feedback: "Max overstates and benefits the hospital at the patient's expense. The MRF is a transparency document, not a bargaining tool. Wrong direction.",
   },
   {
     id: 'mode',
-    label: 'Mode (most-paid contract level) — none repeated, no stable mode',
+    label: 'Mode (most-paid contract level)',
     amount: 16,
     correct: false,
     feedback: "Mode requires repeated values across payers. Each payer here pays a different number; mode collapses to undefined. Median is the right summary.",
   },
   {
     id: 'median',
-    label: 'Median of per-payer negotiated rates ($16)',
+    label: 'Median of per-payer negotiated rates',
     amount: 16,
     correct: true,
-    feedback: 'Right. Median per payer is robust to outliers, matches the CMS hospital-price-transparency guidance for "estimated allowed amount," and is what every other transparency vendor publishes. Lock this method across the soft-coded rows.',
+    feedback: 'Right. Median per payer is robust to outliers, matches the CMS hospital-price-transparency guidance for "estimated allowed amount," and is what every other transparency vendor publishes. Lock this method across the claim-priced rows.',
   },
 ]
 
 const issues: Issue[] = [
   {
     id: 'classify',
-    label: 'Classify each service hard-coded (CDM is truth) or soft-coded (claims are truth).',
-    recap: `You sorted four services. Two are hard-coded: imaging studies with payer variance under the rounding floor, and the inpatient DRG case rate that's contractually fixed per payer. Two are soft-coded: a lab panel and a supply line, both with CDM prices that bear no relation to what payers actually pay.`,
-    verb: 'map',
+    label: 'Classify each service hard-coded (CDM auto-assigns CPT) or soft-coded (HIM reviews chart).',
+    recap: `You sorted four services by coding mode. Three are hard-coded (X-ray, CMP lab, IV saline — outpatient ancillaries the CDM auto-assigns at charge drop). One is soft-coded (DRG 470 — HIM coder reviews chart, codes diagnoses + procedures, runs grouper). Soft-coding is rare in any given encounter; most volume is hard-coded. Coding mode is one axis; rate source is a *separate* axis.`,
+    verb: 'classify',
   },
   {
-    id: 'estimate',
-    label: 'For soft-coded services, pick the right statistic from claim history.',
-    recap: `You picked median per payer. Robust to outliers, matches CMS guidance, and applies the same way to the CMP lab line ($16) and the IV saline line ($6). Locked across soft-coded rows.`,
-    verb: 'estimate',
+    id: 'source',
+    label: 'Source: pick CDM/fee schedule or claim history per service.',
+    recap: `Two services pull from CDM (X-ray's stable rate; DRG's contractually fixed case rate). Two pull from claim history (CMP lab and IV saline — both hard-coded but with per-payer rate variance). Coding mode and rate source aren't the same axis: hard-coded services can be claim-priced, soft-coded services can be CDM-priced.`,
+    verb: 'source',
   },
   {
-    id: 'reconcile',
-    label: 'Reconcile and publish the MRF batch.',
-    recap: `Four rows submitted. Hard-coded rows pulled from CDM ($185, $14,000); soft-coded rows pulled from the claim-history median ($16, $6). Schema validates. CMS deadline cleared.`,
-    verb: 'reconcile',
+    id: 'aggregate',
+    label: 'Aggregate: for claim-priced services, pick the right statistic.',
+    recap: `Median per payer locked across claim-priced rows. CMP → $16, IV saline → $6. Robust to outliers, matches CMS guidance.`,
+    verb: 'aggregate',
   },
 ]
 
 const glossary: Record<string, GlossaryEntry> = {
   'MRF': {
     term: 'MRF (Machine-Readable File)',
-    plain: "A standardized file every hospital must publish under the federal Hospital Price Transparency rule (45 CFR 180.50). One row per service per payer per plan, listing gross charge, discounted-cash price, payer-specific negotiated rates, and de-identified min/max. Updated at least monthly. CMS audits compliance; recent fines have hit seven figures per hospital.",
+    plain: "Standardized file every hospital must publish under the federal Hospital Price Transparency rule (45 CFR 180.50). One row per service per payer per plan, listing gross charge, discounted-cash price, payer-specific negotiated rates, and de-identified min/max. Updated at least monthly. CMS audits compliance; recent fines have hit seven figures per hospital.",
   },
   'CDM': {
     term: 'CDM (Chargemaster)',
-    plain: "The hospital's master price list. Every billable service has a CDM line with a gross charge — the 'sticker price.' The CDM is the source of truth for fixed-rate services (imaging, room/board) but is mostly fiction for soft-coded ones; payers negotiate the actual price down to a fraction of CDM. The CDM is what shows up on a self-pay bill before discounts.",
+    plain: "Hospital master price list and code-mapping table. For hard-coded services, the CDM auto-assigns CPT/HCPCS + revenue code + gross charge at the moment a charge drops. For soft-coded services, the CDM doesn't drive coding — HIM does — but it still carries the gross charge per service. The CDM is half source-of-truth (for codes + rack rates) and half configuration table (for billing rules).",
   },
   'hard-coded': {
-    term: 'Hard-coded service',
-    plain: "A service whose price is the same number across all payers, give or take rounding. Imaging studies, room/board per-diems, surgical case rates by DRG. The CDM (or the contracted case rate) is the source of truth. Hard-coded services bypass the claim-aggregation step in MRF generation.",
+    term: 'Hard-coded service (RCM context)',
+    plain: "A service whose CPT/HCPCS code is auto-assigned by the chargemaster when the charge drops — no per-encounter human review. Most outpatient ancillaries (lab, radiology, pharmacy, supplies) are hard-coded because their service-to-code mapping is stable. Hard-coding is about *who codes*, not whether the rate is stable. See Chemo Bundle Specter (PR #200) for the chargemaster-rule-update version of this concept.",
   },
   'soft-coded': {
-    term: 'Soft-coded service',
-    plain: "A service whose price varies by payer, often dramatically. Lab panels, supplies, drugs (J-codes), therapy units. The CDM rate is rarely meaningful; the truth lives in the claim history, summarized as the median negotiated rate per payer. Most of the action in MRF generation is figuring out which services are soft-coded and pulling their rates from claims.",
+    term: 'Soft-coded service (RCM context)',
+    plain: "A service whose codes are assigned by a HIM (Health Information Management) coder after the encounter, reviewing the chart manually. Used for inpatient stays (DRG assignment), complex outpatient surgeries, and any encounter where the codes can't be reliably auto-derived from the charge entry. Slower and more expensive than hard-coding; necessary when documentation drives coding rather than the other way around. Distinct from rate source — soft-coded services often have stable rates (case rates per DRG).",
+  },
+  'rate source': {
+    term: 'MRF rate source (CDM vs claim history)',
+    plain: "Where a published MRF rate comes from. CDM-pull works when the contract sets a stable rate per service per payer (most fixed-fee schedules, DRG case rates, inpatient per-diems). Claim-history-pull is required when per-payer rates vary enough that no single posted number is honest — most lab panels, supplies, and pharmacy lines, even though they're hard-coded. The rate-source decision is *separate* from the hard/soft coding decision.",
   },
   'CMS': {
     term: 'CMS (Centers for Medicare & Medicaid Services)',
-    plain: "The federal agency that runs Medicare and oversees Medicaid. Issues the rules every hospital and payer follows: the MRF schema, NCCI edits, the OPPS/IPPS payment systems, the CARC/RARC code list. When CMS publishes a rule, hospitals comply or face penalties.",
+    plain: "Federal agency that runs Medicare and oversees Medicaid. Issues the rules every hospital + payer follows: the MRF schema, NCCI edits, OPPS/IPPS payment systems, the CARC/RARC list. When CMS publishes a rule, hospitals comply or face penalties.",
   },
   'price transparency': {
     term: 'Hospital price transparency',
-    plain: "The federal rule (effective 2021, sharpened 2024) requiring hospitals to publish a machine-readable file of standard charges plus a consumer-friendly display of 300 shoppable services. The intent: let patients compare prices. The reality: most files are inconsistently formatted, and most patients don't read them. Compliance is the floor, not the ceiling.",
+    plain: "Federal rule (effective 2021, sharpened 2024) requiring hospitals to publish a machine-readable file of standard charges plus a consumer-friendly display of 300 shoppable services. The intent: let patients compare prices. The reality: most files are inconsistently formatted; most patients don't read them. Compliance is the floor.",
   },
   'median per payer': {
     term: 'Median per payer',
-    plain: "The right central-tendency for soft-coded MRF rows. For each unique payer in the claim history, take the rate they paid; sort the per-payer rates; pick the middle one. Robust to high-volume single-payer outliers (which would skew a charge-weighted mean) and to single-claim oddities (which would skew a max or min).",
+    plain: "Right central-tendency for claim-priced MRF rows. For each unique payer in the claim history, take the rate they paid; sort the per-payer rates; pick the middle one. Robust to high-volume single-payer outliers (which would skew a charge-weighted mean) and to single-claim oddities (which would skew a max or min).",
   },
-  'soft-coded vs hard-coded': {
-    term: 'Soft-coded vs hard-coded (in CDM context)',
-    plain: "The CDM has two kinds of lines. Hard-coded lines have a fixed rate that all payers pay near (the variance is below the MRF rounding floor). Soft-coded lines have a CDM rate that's mostly aspirational; payers pay a small fraction. Knowing which is which is the entire MRF generation puzzle — pull the right number from the right source.",
+  'HIM': {
+    term: 'HIM (Health Information Management)',
+    plain: "Hospital department that owns medical records + post-discharge coding. HIM coders are the humans who do soft-coding — review the chart, assign ICD-10 / CPT / HCPCS, run the DRG grouper for inpatient stays. Distinct from the billing/AR side; both are downstream of HIM's coding output.",
+  },
+  'DRG grouper': {
+    term: 'DRG grouper',
+    plain: "Software that takes a coded inpatient encounter (principal diagnosis, secondary diagnoses, procedures, discharge status) and outputs one MS-DRG. The grouper is deterministic; the codes that feed it come from soft-coding. Once the DRG is set, the contracted case rate per payer applies — that's why soft-coded services can still be CDM-priced for MRF purposes.",
   },
 }
 
 // ===== Runtime state =====
 
 interface ServiceState {
-  /** Player's classification — null if not yet sorted. */
-  classification: ServiceKind | null
-  /** Player attempted classify; if wrong, log here for transient feedback. */
-  lastWrong: ServiceKind | null
+  /** Player's hard/soft classification — null if not yet set. */
+  coding: CodingMode | null
+  /** Player's CDM/claims source pick — null if not yet set. */
+  rateSource: RateSource | null
 }
 
 const state = {
   briefingDone: false,
   briefingOpen: false,
-  /** Per-service classification + feedback. */
-  serviceStates: services.reduce((m, s) => { m[s.id] = { classification: null, lastWrong: null }; return m }, {} as Record<string, ServiceState>),
-  /** Service the player is currently inspecting (for the soft-coded estimate panel). */
+  serviceStates: services.reduce((m, s) => { m[s.id] = { coding: null, rateSource: null }; return m }, {} as Record<string, ServiceState>),
+  /** Service the player is inspecting for the aggregation panel. */
   inspectingId: null as string | null,
   /** The aggregation method the player picked; locks once set. */
   appliedAggregationId: null as string | null,
@@ -282,18 +292,22 @@ const state = {
 }
 
 function isClassifyDone(): boolean {
-  return services.every(s => state.serviceStates[s.id].classification === s.kind)
+  return services.every(s => state.serviceStates[s.id].coding === s.coding)
 }
-function isEstimateDone(): boolean {
+function isSourceDone(): boolean {
   if (!isClassifyDone()) return false
-  const f = cmpAggregations.find(a => a.id === state.appliedAggregationId)
+  return services.every(s => state.serviceStates[s.id].rateSource === s.rateSource)
+}
+function isAggregateDone(): boolean {
+  if (!isSourceDone()) return false
+  const f = aggregations.find(a => a.id === state.appliedAggregationId)
   return !!f && f.correct
 }
-function softCodedServices(): Service[] {
-  return services.filter(s => s.kind === 'soft')
+function claimPricedServices(): Service[] {
+  return services.filter(s => s.rateSource === 'claims')
 }
 
-// ===== Render =====
+// ===== Render helpers =====
 
 function term(termId: string, displayText?: string): string {
   const entry = glossary[termId]
@@ -315,7 +329,8 @@ function render(): string {
     ${renderHospitalIntro()}
     ${!state.briefingDone ? renderBriefingInline() : `
       ${renderClassifyPanel()}
-      ${renderEstimatePanel()}
+      ${renderSourcePanel()}
+      ${renderAggregatePanel()}
       ${renderInspector()}
       ${renderPublishPanel()}
       ${renderChecklist()}
@@ -333,7 +348,7 @@ function renderHeader(): string {
   return `
     <header class="page-h">
       <div class="title-row">
-        <h1>MRF Cartographer <span class="muted">@ L8 — first sketch</span></h1>
+        <h1>MRF Cartographer <span class="muted">@ L8 — first sketch (revised)</span></h1>
         <div class="header-actions">
           ${recallBtn}
           <a class="back-link" href="./prototypes.html">← back to catalog</a>
@@ -342,14 +357,15 @@ function renderHeader(): string {
       ${state.briefingDone ? '' : `
         <p class="lede">
           A pricing-transparency Case. Mercy's
-          ${term('MRF')} refresh is due in seven days; the
-          ${term('CDM')} sits open in one window and twelve
-          months of claims sit open in another. The puzzle is
-          which source of truth to pull from per service —
-          ${term('hard-coded')} services come from CDM, but
-          ${term('soft-coded')} ones come from the claim
-          history, summarized correctly. New verbs: MAP,
-          ESTIMATE, RECONCILE. See the
+          ${term('MRF')} refresh is due in seven days. Two axes
+          at once: classify each service ${term('hard-coded')} (CDM
+          auto-assigns) or ${term('soft-coded')} (HIM reviews chart),
+          then *separately* pick the ${term('rate source')} —
+          CDM/fee-schedule or claim history. The axes are
+          correlated but distinct (see also
+          <a href="./chemo-bundle-specter-prototype.html">Chemo Bundle Specter</a>
+          for the chargemaster side of hard-coding). New verbs:
+          CLASSIFY, SOURCE, AGGREGATE. See the
           <a href="#design-notes">design notes</a>.
         </p>
       `}
@@ -369,16 +385,17 @@ function renderHospitalIntro(): string {
       </p>
       <p>
         Behind him on a second monitor: the ${term('CDM')} on the left, the
-        12-month claims warehouse on the right. "Some of these you can
-        pull straight off the chargemaster. Some of them — don't. Pulling
-        CDM for a soft-coded line is exactly how this got flagged in the
-        first place."
+        12-month claims warehouse on the right. "Two questions per row.
+        First — is the service ${term('hard-coded', 'hard')} or
+        ${term('soft-coded', 'soft')} on the chargemaster side? Second —
+        for the published rate, do we pull from CDM or from claims?
+        Don't conflate them; that\'s how this got flagged."
       </p>
       <div class="register-flip">
         <div class="ripple"></div>
         <em>— and the lights flicker, bluish. The CDM and the claims
-        slide a half-pixel left, then settle. The four services sit
-        in a queue, waiting for you to map them.</em>
+        slide a half-pixel left, then settle. Four services sit in
+        a queue, each waiting for two answers.</em>
       </div>
       <div class="register waiting-room">WAITING ROOM · now</div>
     </section>
@@ -400,45 +417,59 @@ function briefingContent(): string {
   return `
     <div class="briefing-h">
       <span class="briefing-tag">DANA, IN YOUR EAR</span>
-      <span class="briefing-sub">${state.briefingDone ? 'Re-reading her note.' : 'A non-claim Case. Different muscle.'}</span>
+      <span class="briefing-sub">${state.briefingDone ? 'Re-reading her note.' : 'Two axes. Don\'t conflate them.'}</span>
     </div>
     <div class="briefing-body">
       <p>
-        "${term('MRF')} day. The deliverable isn't a packet — it's a regulatory
-        file. CMS reads it; patients read it (some of them); plaintiffs'
-        attorneys definitely read it. We have to publish what payers
-        actually pay, not what the ${term('CDM')} pretends they do."
+        "${term('MRF')} day. The deliverable is a regulatory
+        file — CMS reads it, patients read it (some), plaintiffs'
+        attorneys definitely do. We have to publish per-payer
+        rates that match what payers actually pay, not what the
+        ${term('CDM')} pretends they do."
       </p>
       <p>
-        "Three issues:"
+        "Important update from the
+        <a href="./chemo-bundle-specter-prototype.html">Chemo Bundle Specter</a>
+        work — the terms ${term('hard-coded')} and ${term('soft-coded')}
+        are about *who assigns the CPT*, not whether the rate is
+        stable. Don't conflate them. Hard-coded services can have
+        wildly variable rates (CMP lab, IV saline). Soft-coded
+        services can have rock-stable rates (DRG case rates).
+        Two axes."
       </p>
+      <p>"Three issues:"</p>
       <ul>
         <li>
-          <strong>Classify.</strong> ${term('hard-coded')} or
-          ${term('soft-coded')}? Hard-coded lines (imaging, DRG case
-          rates) come straight off the CDM — one number, all payers.
-          Soft-coded lines (labs, supplies, drugs, therapy) — CDM is
-          fiction. Pull the truth from the claims. <em>New verb: MAP.</em>
+          <strong>Classify.</strong> For each of 4 services, mark
+          ${term('hard-coded')} (CDM auto-drops the code at charge
+          time — most outpatient ancillaries) or ${term('soft-coded')}
+          (HIM coder reviews the chart and runs the
+          ${term('DRG grouper')} after discharge — most inpatient
+          stays + complex cases). <em>New verb: CLASSIFY.</em>
         </li>
         <li>
-          <strong>Estimate.</strong> For the soft-coded ones, pick a
-          summary statistic. Mean is wrong (charge-weighted skew),
-          mode is wrong (no stable repeat), max is wrong (overstates),
-          chargemaster is wrong (the whole reason we're in compliance
-          for). One right answer. <em>New verb: ESTIMATE.</em>
+          <strong>Source.</strong> *Separately* pick the
+          ${term('rate source')} — CDM/fee-schedule (rates stable
+          per payer) or claim history (rates wander per payer).
+          Hard-coded services can be either; soft-coded services
+          can be either. The axes correlate; they aren't identical.
+          <em>New verb: SOURCE.</em>
         </li>
         <li>
-          <strong>Reconcile.</strong> Submit the MRF batch. The schema
-          validator double-checks that hard-coded rows came from CDM
-          and soft-coded rows came from the median. Wrong source = the
-          row gets rejected and you publish stale data."
+          <strong>Aggregate.</strong> For claim-sourced rows, pick
+          the right summary statistic. Mean, mode, max, CDM are
+          all wrong; ${term('median per payer')} is what CMS expects
+          and what every transparency vendor publishes. One pick
+          locks across all claim-sourced rows. <em>New verb: AGGREGATE.</em>"
         </li>
       </ul>
       <p>
-        "The sneaky part: the CDM <em>looks</em> authoritative. It's
-        the master price list. It's just not the master <em>paid</em>
-        list. Most rookies pull CDM for everything; that's exactly
-        the audit finding we're refreshing for."
+        "The sneaky part: most rookies think 'soft-coded' = 'pull
+        from claims' because soft-coding implies ambiguity. It
+        doesn't. The DRG case rate is contractually fixed once
+        ${term('HIM')} assigns the grouping; CDM-pull is right
+        even though the service is soft-coded. Read both axes
+        carefully."
       </p>
       <p class="briefing-sign">"Don't be most people. — D."</p>
     </div>
@@ -463,10 +494,10 @@ function renderClassifyPanel(): string {
   return `
     <section class="classify-panel ${done ? 'done' : ''}">
       <div class="cp-h">
-        <span class="cp-tag">SERVICE QUEUE · 4 rows for the ${term('MRF')}</span>
+        <span class="cp-tag">AXIS 1 · CODING MODE · 4 services</span>
         <span class="cp-sub">${done
-          ? 'All four classified. Two hard-coded (CDM), two soft-coded (claim median).'
-          : 'For each row, decide whether the chargemaster line is the source of truth or whether the claim history is.'}</span>
+          ? 'Sorted. Three hard-coded (CDM auto-assigns CPT); one soft-coded (HIM reviews chart).'
+          : `For each service, mark whether the chargemaster auto-assigns the CPT (${term('hard-coded')}) or whether ${term('HIM')} reviews the chart and assigns codes manually (${term('soft-coded')}).`}</span>
       </div>
       <table class="svc-table">
         <thead>
@@ -475,14 +506,14 @@ function renderClassifyPanel(): string {
             <th>Service</th>
             <th>Pricing shape (hint)</th>
             <th class="right">CDM</th>
-            <th>Classify</th>
+            <th>Coding mode</th>
           </tr>
         </thead>
         <tbody>
-          ${services.map(s => renderServiceRow(s)).join('')}
+          ${services.map(s => renderClassifyRow(s)).join('')}
         </tbody>
       </table>
-      ${state.transientFeedback && services.some(s => s.id === state.transientFeedback!.id)
+      ${state.transientFeedback && services.some(s => `coding-${s.id}` === state.transientFeedback!.id)
         ? `<div class="feedback fb-${state.transientFeedback.kind}">${escape(state.transientFeedback.message)}</div>`
         : ''}
       ${done ? renderRecap('classify') : ''}
@@ -490,37 +521,109 @@ function renderClassifyPanel(): string {
   `
 }
 
-function renderServiceRow(s: Service): string {
+function renderClassifyRow(s: Service): string {
   const ss = state.serviceStates[s.id]
-  const classified = ss.classification !== null
+  const decided = ss.coding !== null
+  const correct = decided && ss.coding === s.coding
   return `
-    <tr class="svc-row ${classified ? 'classified ' + ss.classification : ''}">
+    <tr class="svc-row ${correct ? 'classified ' + ss.coding : ''}">
       <td><code>${escape(s.code)}</code></td>
       <td>${escape(s.label)}</td>
       <td class="muted-cell">${escape(s.shape)}</td>
-      <td class="right">${money(s.cdm.charge)}</td>
+      <td class="right">${money(s.cdmCharge)}</td>
       <td class="classify-cell">
-        ${classified ? `
-          <span class="kind-badge ${ss.classification}">${ss.classification === 'hard' ? 'HARD-CODED · pull CDM' : 'SOFT-CODED · pull claims'}</span>
-          <button class="btn ghost small" data-action="reset-classification" data-id="${s.id}">↺ undo</button>
+        ${correct ? `
+          <span class="kind-badge ${ss.coding}">${ss.coding === 'hard' ? 'HARD-CODED · CDM auto-assigns' : 'SOFT-CODED · HIM reviews'}</span>
+          <button class="btn ghost small" data-action="reset-coding" data-id="${s.id}">↺ undo</button>
         ` : `
-          <button class="btn small ghost" data-action="classify" data-id="${s.id}" data-kind="hard">Hard-coded</button>
-          <button class="btn small ghost" data-action="classify" data-id="${s.id}" data-kind="soft">Soft-coded</button>
+          <button class="btn small ghost" data-action="classify" data-id="${s.id}" data-coding="hard">Hard-coded</button>
+          <button class="btn small ghost" data-action="classify" data-id="${s.id}" data-coding="soft">Soft-coded</button>
         `}
       </td>
     </tr>
   `
 }
 
-function renderEstimatePanel(): string {
+function renderSourcePanel(): string {
   const unlocked = state.resolvedIssues.has('classify')
-  const done = state.resolvedIssues.has('estimate')
+  const done = state.resolvedIssues.has('source')
+  if (!unlocked) {
+    return `
+      <section class="source-panel locked">
+        <div class="sp-h">
+          <span class="sp-tag idle">AXIS 2 · MRF RATE SOURCE</span>
+          <span class="sp-sub">Locked until coding-mode classification is done.</span>
+        </div>
+      </section>
+    `
+  }
+  return `
+    <section class="source-panel ${done ? 'done' : 'active'}">
+      <div class="sp-h">
+        <span class="sp-tag ${done ? 'done' : 'active'}">AXIS 2 · MRF RATE SOURCE · 4 services</span>
+        <span class="sp-sub">${done
+          ? 'Two pull from CDM (X-ray stable rate; DRG contractually fixed case rate). Two pull from claim history (CMP and IV saline — hard-coded but rate-variable).'
+          : `For each service, pick the ${term('rate source')}. Hard-coded ≠ CDM-source; soft-coded ≠ claim-source. Read each row\'s rate behavior, not its coding mode.`}</span>
+      </div>
+      <table class="svc-table">
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Service</th>
+            <th>Coding mode</th>
+            <th class="right">CDM</th>
+            <th class="right">Claim sample</th>
+            <th>Rate source</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${services.map(s => renderSourceRow(s)).join('')}
+        </tbody>
+      </table>
+      ${state.transientFeedback && services.some(s => `source-${s.id}` === state.transientFeedback!.id)
+        ? `<div class="feedback fb-${state.transientFeedback.kind}">${escape(state.transientFeedback.message)}</div>`
+        : ''}
+      ${done ? renderRecap('source') : ''}
+    </section>
+  `
+}
+
+function renderSourceRow(s: Service): string {
+  const ss = state.serviceStates[s.id]
+  const decided = ss.rateSource !== null
+  const correct = decided && ss.rateSource === s.rateSource
+  const claimsBlurb = s.claims.length > 0
+    ? `${s.claims.length} payers, $${Math.min(...s.claims.map(c => c.rate))}–$${Math.max(...s.claims.map(c => c.rate))}`
+    : '(no variance)'
+  return `
+    <tr class="svc-row ${correct ? 'sourced ' + ss.rateSource : ''}">
+      <td><code>${escape(s.code)}</code></td>
+      <td>${escape(s.label)}</td>
+      <td class="muted-cell"><span class="kind-badge-mini ${s.coding}">${s.coding === 'hard' ? 'HARD' : 'SOFT'}</span></td>
+      <td class="right">${money(s.cdmCharge)}</td>
+      <td class="right muted-cell">${claimsBlurb}</td>
+      <td class="classify-cell">
+        ${correct ? `
+          <span class="src-badge ${ss.rateSource}">${ss.rateSource === 'cdm' ? 'CDM · pull fee schedule' : 'CLAIMS · pull median'}</span>
+          <button class="btn ghost small" data-action="reset-source" data-id="${s.id}">↺ undo</button>
+        ` : `
+          <button class="btn small ghost" data-action="source" data-id="${s.id}" data-source="cdm">CDM</button>
+          <button class="btn small ghost" data-action="source" data-id="${s.id}" data-source="claims">Claims</button>
+        `}
+      </td>
+    </tr>
+  `
+}
+
+function renderAggregatePanel(): string {
+  const unlocked = state.resolvedIssues.has('source')
+  const done = state.resolvedIssues.has('aggregate')
   if (!unlocked) {
     return `
       <section class="estimate-panel locked">
         <div class="ep-h">
-          <span class="ep-tag idle">ESTIMATE WORKBENCH</span>
-          <span class="ep-sub">Locked until every service is classified. Sort the four rows above first.</span>
+          <span class="ep-tag idle">AGGREGATION METHOD</span>
+          <span class="ep-sub">Locked until rate-source decisions are done.</span>
         </div>
       </section>
     `
@@ -529,11 +632,11 @@ function renderEstimatePanel(): string {
     return `
       <section class="estimate-panel active">
         <div class="ep-h">
-          <span class="ep-tag active">ESTIMATE WORKBENCH</span>
-          <span class="ep-sub">Two soft-coded services need rates. Open one to pick the aggregation method — your pick locks across both.</span>
+          <span class="ep-tag active">AGGREGATION METHOD · 2 claim-priced rows</span>
+          <span class="ep-sub">Both claim-priced services use the same statistic. Open one to see the claim history and pick.</span>
         </div>
         <div class="ep-soft-list">
-          ${softCodedServices().map(s => `
+          ${claimPricedServices().map(s => `
             <button class="soft-svc-card ${state.inspectingId === s.id ? 'inspecting' : ''}" data-action="inspect" data-id="${s.id}">
               <span class="ssc-code"><code>${escape(s.code)}</code></span>
               <span class="ssc-label">${escape(s.label)}</span>
@@ -547,25 +650,25 @@ function renderEstimatePanel(): string {
   return `
     <section class="estimate-panel done">
       <div class="ep-h">
-        <span class="ep-tag done">ESTIMATE WORKBENCH</span>
-        <span class="ep-sub">Median per payer locked across soft-coded rows. CMP → ${money(16)}. IV saline → ${money(6)}.</span>
+        <span class="ep-tag done">AGGREGATION METHOD</span>
+        <span class="ep-sub">Median per payer locked across claim-priced rows. CMP → ${money(16)}. IV saline → ${money(6)}.</span>
       </div>
-      ${renderRecap('estimate')}
+      ${renderRecap('aggregate')}
     </section>
   `
 }
 
 function renderInspector(): string {
-  if (!state.resolvedIssues.has('classify')) return ''
+  if (!state.resolvedIssues.has('source')) return ''
   if (state.appliedAggregationId !== null) return ''
   if (!state.inspectingId) return ''
   const s = services.find(x => x.id === state.inspectingId)
-  if (!s || s.kind !== 'soft') return ''
+  if (!s || s.rateSource !== 'claims') return ''
   return `
     <section class="inspector-panel">
       <div class="ip-h">
         <span class="ip-tag">CLAIM HISTORY · ${escape(s.code)} — ${escape(s.label)}</span>
-        <span class="ip-sub">12-month sample. CDM line says ${money(s.cdm.charge)}; payers actually paid the rates below.</span>
+        <span class="ip-sub">12-month sample. CDM line says ${money(s.cdmCharge)}; payers actually paid the rates below.</span>
       </div>
       <table class="claim-history">
         <thead>
@@ -582,11 +685,11 @@ function renderInspector(): string {
         </tbody>
       </table>
       <div class="ip-aggregations">
-        <p class="ip-prompt">Pick the right aggregation. Locks across all soft-coded rows for this MRF batch.</p>
+        <p class="ip-prompt">Pick the right aggregation. Locks across all claim-priced rows.</p>
         <ul class="agg-list">
-          ${cmpAggregations.map(a => renderAggregation(a)).join('')}
+          ${aggregations.map(a => renderAggregation(a)).join('')}
         </ul>
-        ${state.transientFeedback && cmpAggregations.some(a => a.id === state.transientFeedback!.id)
+        ${state.transientFeedback && aggregations.some(a => a.id === state.transientFeedback!.id)
           ? `<div class="feedback fb-${state.transientFeedback.kind}">${escape(state.transientFeedback.message)}</div>`
           : ''}
       </div>
@@ -605,18 +708,18 @@ function renderAggregation(a: AggregationOption): string {
 }
 
 function renderPublishPanel(): string {
-  const ready = state.resolvedIssues.has('classify') && state.resolvedIssues.has('estimate')
-  const done = state.resolvedIssues.has('reconcile')
+  const ready = isAggregateDone()
+  const done = state.resolvedIssues.has('aggregate') && state.packetSubmitted
   const cls = !ready ? 'idle' : (done ? 'done' : 'active')
   return `
     <section class="publish-panel ${cls}">
       <div class="pp-h">
-        <span class="pp-tag">${done ? 'MRF PUBLISHED' : 'PUBLISH MRF BATCH'}</span>
+        <span class="pp-tag">${done ? 'MRF PUBLISHED' : 'PREVIEW MRF BATCH'}</span>
         <span class="pp-sub">${done
           ? 'Four rows submitted. Schema validates. CMS deadline cleared.'
           : !ready
-            ? 'Locked until classification + estimation are both done.'
-            : 'Review the four rows. Hard-coded → CDM rate; soft-coded → median per payer. Click publish.'}</span>
+            ? 'Locked until both axes + aggregation are done.'
+            : 'Hard-coded vs soft-coded on one axis; CDM-source vs claim-source on the other. Click publish.'}</span>
       </div>
       ${ready ? `
         <table class="mrf-preview">
@@ -624,6 +727,7 @@ function renderPublishPanel(): string {
             <tr>
               <th>Code</th>
               <th>Service</th>
+              <th>Coding</th>
               <th>Source</th>
               <th class="right">Published rate</th>
             </tr>
@@ -633,14 +737,14 @@ function renderPublishPanel(): string {
               <tr>
                 <td><code>${escape(s.code)}</code></td>
                 <td>${escape(s.label)}</td>
-                <td>${s.kind === 'hard' ? 'CDM (fixed)' : 'Claim history (median per payer)'}</td>
+                <td><span class="kind-badge-mini ${s.coding}">${s.coding === 'hard' ? 'HARD' : 'SOFT'}</span></td>
+                <td>${s.rateSource === 'cdm' ? 'CDM · fee schedule' : 'Claim history · median'}</td>
                 <td class="right">${money(s.correctRate)}</td>
               </tr>
             `).join('')}
           </tbody>
         </table>
       ` : ''}
-      ${done ? renderRecap('reconcile') : ''}
     </section>
   `
 }
@@ -705,27 +809,25 @@ function renderVictory(): string {
       <div class="register waiting-room">MRF PUBLISHED</div>
       <h2>Four rows shipped. CMS deadline cleared.</h2>
       <p>
-        Hard-coded rows pulled from the chargemaster. Soft-coded rows
-        pulled from the median per-payer rate across twelve months of
-        claims. Schema validator returned clean. The price-transparency
-        page on the public site refreshes overnight.
+        Each row carries two axes: coding mode (hard/soft) and rate
+        source (CDM/claims). X-ray pulled from CDM. CMP pulled from
+        claim history despite being hard-coded. DRG pulled from CDM
+        despite being soft-coded. IV saline pulled from claim history.
+        Schema validator returned clean.
       </p>
       <p class="muted">
-        The trick wasn't the math — it was knowing which source to
-        use. The CDM looks authoritative because it <em>is</em>, just
-        not for soft-coded services. Most hospitals publish CDM
-        across the board because that's the default; that's also
-        why most ${term('MRF')} files are technically compliant and
-        practically useless. Yours isn't.
+        The trick wasn't the math — it was reading the two axes
+        independently. Most ${term('MRF')} files are wrong because
+        teams treat hard/soft coding and rate source as a single
+        decision; they aren't. Yours isn't.
       </p>
       <div class="register hospital">HOSPITAL · later that morning</div>
       <p>
         Theo drops the CMS clearance letter on your desk. "Audit
-        passes. They'll check us again next quarter; same drill,
-        new rows." He slides you the next docket. "${escape("Aetna's")} GFE
-        rules just changed; we're going to need to publish good-faith
-        estimates against this MRF. Different file, same source-of-
-        truth puzzle."
+        passes. Same drill next quarter — different rows, same
+        two-axis logic." He slides you the next docket. "Aetna's GFE
+        rules are next; same source-of-truth puzzle, different
+        deliverable."
       </p>
       <button class="btn primary" data-action="reset">Run it again</button>
       <a class="back-link inline" href="./prototypes.html">← back to catalog</a>
@@ -741,38 +843,57 @@ function renderDesignNotes(): string {
         <div>
           <h3>What this Case tests</h3>
           <ul>
-            <li><strong>Three new verbs:</strong> MAP (classify),
-            ESTIMATE (pick the right statistic), RECONCILE (submit).
-            All three feed each other in sequence — gating the
-            second on the first prevents the player from publishing
-            the wrong source.</li>
-            <li><strong>The chargemaster is not the truth.</strong>
-            For soft-coded services, the CDM is fiction; the truth
-            lives in the claim history. Knowing which is which is
-            the entire puzzle.</li>
-            <li><strong>The deliverable is regulatory,</strong> not
-            a claim packet. First Case where the output is a file
-            CMS reads, not a payer reads.</li>
-            <li><strong>Median per payer beats mean.</strong>
-            Charge-weighted means skew toward the high-volume
-            payers; mode collapses without repeats; max overstates;
-            CDM is what got Mercy flagged in the first place.</li>
+            <li><strong>Three new verbs:</strong> CLASSIFY (coding
+            mode — hard vs soft), SOURCE (rate source — CDM vs
+            claims), AGGREGATE (median per payer).</li>
+            <li><strong>Two axes, not one.</strong> Hard/soft
+            coding and CDM/claims source are correlated but
+            independent. Hard-coded services can be claim-priced
+            (CMP, IV saline). Soft-coded services can be CDM-priced
+            (DRG case rate, contractually fixed once HIM assigns).</li>
+            <li><strong>Coding mode is about *who*; rate source
+            is about *where*.</strong> ${term('hard-coded', 'Hard-coding')}
+            answers "who assigns the CPT" — the chargemaster, at
+            charge drop, no human review. ${term('soft-coded', 'Soft-coding')}
+            answers the same question with "the HIM coder, after
+            discharge, reviewing the chart." Neither tells you
+            where the published MRF rate comes from.</li>
+            <li><strong>The deliverable is regulatory.</strong>
+            CMS reads it. Patient experience is downstream of
+            getting the published rates honest.</li>
           </ul>
         </div>
         <div>
           <h3>Sibling shape</h3>
           <ul>
-            <li>Builds toward <strong>GFE Oracle</strong> @ L8 —
-            same source-of-truth puzzle, different deliverable
-            (Good Faith Estimate to a self-pay patient, not the
-            published MRF).</li>
-            <li>Reuses the queue-of-services pattern from
-            <a href="./swarm-prototype.html">Swarm</a>; reuses the
-            apply/reject decision lattice from
-            <a href="./case-rate-specter-prototype.html">Case Rate Specter</a>.</li>
-            <li>The classification-then-estimate gate is reusable
-            for any "pick the source, then pick the value" Case.</li>
+            <li>Tightly paired with
+            <a href="./chemo-bundle-specter-prototype.html">Chemo Bundle Specter</a>
+            — that Case introduced the proper RCM definition of
+            hard-coding (chargemaster auto-mapping that fails when
+            contract bundling rules don't flow through). This
+            Case extends it: classification + rate-source as
+            separate axes for the MRF deliverable.</li>
+            <li>Cousin to
+            <a href="./gfe-oracle-prototype.html">GFE Oracle</a> —
+            same source-of-truth muscle for a different
+            deliverable (Good Faith Estimate to a self-pay
+            patient).</li>
+            <li>Cousin to
+            <a href="./case-rate-specter-prototype.html">Case Rate Specter</a> —
+            the contract-clause-as-lever theme.</li>
           </ul>
+          <h3>What changed from v1</h3>
+          <p style="font-size: 12.5px; color: var(--ink-dim); line-height: 1.55;">
+            The earlier draft labeled rate-stable services
+            "hard-coded" and rate-variable services "soft-coded."
+            That conflated coding-mode with rate source. After the
+            Chemo Bundle Specter work landed proper definitions,
+            this Case was rewritten as two axes. The puzzle gained
+            a step (classify + source instead of just classify),
+            and the cross-cases (hard-coded + claim-priced;
+            soft-coded + CDM-priced) became the actual teaching
+            beat.
+          </p>
         </div>
       </div>
       <p class="notes-cta">
@@ -791,33 +912,53 @@ function closeBriefing() { state.briefingOpen = false }
 function openTerm(termId: string) { state.openTermId = termId }
 function closeTerm() { state.openTermId = null }
 
-function classifyService(id: string, kind: ServiceKind) {
+function classifyCoding(id: string, coding: CodingMode) {
   const s = services.find(x => x.id === id)
   if (!s) return
   const ss = state.serviceStates[id]
   state.transientFeedback = null
-  if (s.kind === kind) {
-    ss.classification = kind
-    ss.lastWrong = null
-    state.transientFeedback = { id, message: s.kindReason, kind: 'good' }
+  if (s.coding === coding) {
+    ss.coding = coding
+    state.transientFeedback = { id: `coding-${id}`, message: s.codingReason, kind: 'good' }
     if (isClassifyDone()) state.resolvedIssues.add('classify')
   } else {
     state.failedAttempts++
-    ss.lastWrong = kind
-    state.transientFeedback = { id, message: s.kindReason, kind: 'bad' }
+    state.transientFeedback = { id: `coding-${id}`, message: s.codingReason, kind: 'bad' }
   }
 }
 
-function resetClassification(id: string) {
+function resetCoding(id: string) {
   const ss = state.serviceStates[id]
   if (!ss) return
-  ss.classification = null
-  ss.lastWrong = null
+  ss.coding = null
+  ss.rateSource = null
   state.resolvedIssues.delete('classify')
-  // If estimation was done it's only valid contingent on classification —
-  // re-resolution rebuilds the gate when player re-classifies.
-  state.resolvedIssues.delete('estimate')
-  state.resolvedIssues.delete('reconcile')
+  state.resolvedIssues.delete('source')
+  state.resolvedIssues.delete('aggregate')
+  state.transientFeedback = null
+}
+
+function pickSource(id: string, src: RateSource) {
+  const s = services.find(x => x.id === id)
+  if (!s) return
+  const ss = state.serviceStates[id]
+  state.transientFeedback = null
+  if (s.rateSource === src) {
+    ss.rateSource = src
+    state.transientFeedback = { id: `source-${id}`, message: s.sourceReason, kind: 'good' }
+    if (isSourceDone()) state.resolvedIssues.add('source')
+  } else {
+    state.failedAttempts++
+    state.transientFeedback = { id: `source-${id}`, message: s.sourceReason, kind: 'bad' }
+  }
+}
+
+function resetSource(id: string) {
+  const ss = state.serviceStates[id]
+  if (!ss) return
+  ss.rateSource = null
+  state.resolvedIssues.delete('source')
+  state.resolvedIssues.delete('aggregate')
   state.transientFeedback = null
 }
 
@@ -827,12 +968,12 @@ function inspect(id: string) {
 }
 
 function applyAggregation(id: string) {
-  const a = cmpAggregations.find(x => x.id === id)
+  const a = aggregations.find(x => x.id === id)
   if (!a) return
   state.transientFeedback = null
   if (a.correct) {
     state.appliedAggregationId = id
-    state.resolvedIssues.add('estimate')
+    state.resolvedIssues.add('aggregate')
     state.transientFeedback = { id, message: a.feedback, kind: 'good' }
     state.inspectingId = null
   } else {
@@ -842,8 +983,7 @@ function applyAggregation(id: string) {
 }
 
 function attemptSubmit() {
-  if (state.resolvedIssues.has('classify') && state.resolvedIssues.has('estimate')) {
-    state.resolvedIssues.add('reconcile')
+  if (issues.every(i => state.resolvedIssues.has(i.id))) {
     state.packetSubmitted = true
   }
 }
@@ -852,7 +992,7 @@ function reset() {
   state.briefingDone = false
   state.briefingOpen = false
   for (const id in state.serviceStates) {
-    state.serviceStates[id] = { classification: null, lastWrong: null }
+    state.serviceStates[id] = { coding: null, rateSource: null }
   }
   state.inspectingId = null
   state.appliedAggregationId = null
@@ -876,10 +1016,16 @@ function handleClick(e: MouseEvent) {
   const action = el.dataset.action
   switch (action) {
     case 'classify':
-      if (el.dataset.id && el.dataset.kind) classifyService(el.dataset.id, el.dataset.kind as ServiceKind)
+      if (el.dataset.id && el.dataset.coding) classifyCoding(el.dataset.id, el.dataset.coding as CodingMode)
       break
-    case 'reset-classification':
-      if (el.dataset.id) resetClassification(el.dataset.id)
+    case 'reset-coding':
+      if (el.dataset.id) resetCoding(el.dataset.id)
+      break
+    case 'source':
+      if (el.dataset.id && el.dataset.source) pickSource(el.dataset.id, el.dataset.source as RateSource)
+      break
+    case 'reset-source':
+      if (el.dataset.id) resetSource(el.dataset.id)
       break
     case 'inspect':
       if (el.dataset.id) inspect(el.dataset.id)
@@ -902,12 +1048,23 @@ function handleClick(e: MouseEvent) {
 // ===== Per-prototype CSS =====
 
 const css = districtVars('billing') + BASE_CSS + `
-  /* Classify panel */
+  /* Classify panel — axis 1 (coding mode). Mint accent. */
   .classify-panel { background: var(--panel); border: 1px solid #232a36; border-left: 4px solid var(--accent); border-radius: 8px; padding: 16px 18px; margin-bottom: 22px; }
   .classify-panel.done { border-left-color: var(--good); }
   .cp-h { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
   .cp-tag { font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
   .cp-sub { font-size: 12px; color: var(--ink-dim); font-style: italic; }
+
+  /* Source panel — axis 2 (CDM vs claims). Lavender accent to visually distinguish. */
+  .source-panel { background: var(--panel); border: 1px solid #232a36; border-left: 4px solid #c8b6e0; border-radius: 8px; padding: 16px 18px; margin-bottom: 22px; }
+  .source-panel.locked { opacity: 0.55; border-left-color: #2a3142; }
+  .source-panel.done { border-left-color: var(--good); }
+  .sp-h { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+  .sp-tag { font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #c8b6e0; }
+  .sp-tag.idle { color: var(--ink-dim); }
+  .sp-tag.done { color: var(--good); }
+  .sp-sub { font-size: 12px; color: var(--ink-dim); font-style: italic; }
+
   .svc-table { width: 100%; border-collapse: collapse; font-size: 13px; }
   .svc-table th, .svc-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #232a36; vertical-align: middle; }
   .svc-table th { font-size: 10.5px; color: var(--ink-dim); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; }
@@ -915,13 +1072,21 @@ const css = districtVars('billing') + BASE_CSS + `
   .muted-cell { color: var(--ink-dim); font-size: 12px; }
   .svc-row.classified.hard td { background: rgba(126, 226, 193, 0.04); }
   .svc-row.classified.soft td { background: rgba(177, 139, 214, 0.04); }
+  .svc-row.sourced.cdm td { background: rgba(126, 226, 193, 0.04); }
+  .svc-row.sourced.claims td { background: rgba(240, 168, 104, 0.04); }
   .classify-cell { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
   .kind-badge { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; padding: 3px 8px; border-radius: 3px; font-weight: 700; }
   .kind-badge.hard { background: rgba(126, 226, 193, 0.15); color: var(--good); border: 1px solid #2c5547; }
   .kind-badge.soft { background: rgba(177, 139, 214, 0.15); color: #c8b6e0; border: 1px solid #3a324a; }
+  .kind-badge-mini { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 3px; letter-spacing: 0.04em; }
+  .kind-badge-mini.hard { background: rgba(126, 226, 193, 0.12); color: var(--good); border: 1px solid #2c5547; }
+  .kind-badge-mini.soft { background: rgba(177, 139, 214, 0.12); color: #c8b6e0; border: 1px solid #3a324a; }
+  .src-badge { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; padding: 3px 8px; border-radius: 3px; font-weight: 700; }
+  .src-badge.cdm { background: rgba(126, 226, 193, 0.15); color: var(--good); border: 1px solid #2c5547; }
+  .src-badge.claims { background: rgba(240, 168, 104, 0.15); color: var(--accent-2); border: 1px solid #4a3a2a; }
   .btn.small { padding: 4px 10px; font-size: 11.5px; }
 
-  /* Estimate panel */
+  /* Estimate panel — same shape as v1. */
   .estimate-panel { background: var(--panel); border: 1px solid #232a36; border-left: 4px solid var(--accent-2); border-radius: 8px; padding: 16px 18px; margin-bottom: 22px; }
   .estimate-panel.locked { opacity: 0.55; border-left-color: #2a3142; }
   .estimate-panel.done   { border-left-color: var(--good); }
@@ -970,7 +1135,7 @@ const css = districtVars('billing') + BASE_CSS + `
   .mrf-preview th { font-size: 10.5px; color: var(--ink-dim); text-transform: uppercase; letter-spacing: 0.06em; }
   .mrf-preview th.right, .mrf-preview td.right { text-align: right; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
 
-  /* Recap uses good-color since success-feedback. */
+  /* Recap green */
   .recap { background: rgba(126, 226, 193, 0.06); border-color: #2c5547; }
   .recap-h { color: var(--good); }
 `
