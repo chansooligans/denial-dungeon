@@ -567,34 +567,36 @@ export class IntroScene extends Phaser.Scene {
     this.sceneContainer.add(bg)
 
     // ----- Phase 1: filler network ---------------------------------
-    const FILLER_COUNT = 60
+    const FILLER_COUNT = 100
     const filler: Phaser.GameObjects.Arc[] = []
     for (let i = 0; i < FILLER_COUNT; i++) {
       // 80px inset so nodes never sit flush against the viewport edge.
       const x = Phaser.Math.Between(80, width - 80)
       const y = Phaser.Math.Between(80, height - 80)
-      const r = Phaser.Math.Between(3, 5)
-      const node = this.add.circle(x, y, r, 0x5a6a7a, 0)
+      const r = Phaser.Math.Between(3, 6)
+      const node = this.add.circle(x, y, r, 0x8b95a5, 0)
       this.sceneContainer.add(node)
       filler.push(node)
       // Power-curve delay so density visibly accelerates: most nodes
       // arrive in the back half of the spawn window.
       this.tweens.add({
         targets: node,
-        alpha: Phaser.Math.FloatBetween(0.18, 0.35),
+        alpha: Phaser.Math.FloatBetween(0.30, 0.55),
         duration: 700,
         delay: Math.pow(Math.random(), 1.5) * 5000,
       })
     }
 
     // Edges between nearby filler-node pairs. Drawn into a single
-    // graphics object (one draw call beats 100 line objects) and
+    // graphics object (one draw call beats 150 line objects) and
     // alpha-tweened in over 3s starting at t=2s so the eye sees
-    // nodes-first → connections-next.
+    // nodes-first → connections-next. Endpoint pairs also stashed
+    // separately so the random "firing" effect below can pick one
+    // to flash without re-rolling the whole graph.
+    const edgePairs: Array<[Phaser.GameObjects.Arc, Phaser.GameObjects.Arc]> = []
     const edges = this.add.graphics().setAlpha(0)
-    edges.lineStyle(1, 0x5a6a7a, 1)
-    let edgeCount = 0
-    for (let i = 0; i < 200 && edgeCount < 90; i++) {
+    edges.lineStyle(1, 0x8b95a5, 1)
+    for (let i = 0; i < 400 && edgePairs.length < 150; i++) {
       const a = filler[Phaser.Math.Between(0, filler.length - 1)]
       const b = filler[Phaser.Math.Between(0, filler.length - 1)]
       if (a === b) continue
@@ -603,10 +605,35 @@ export class IntroScene extends Phaser.Scene {
       const dx = a.x - b.x, dy = a.y - b.y
       if (dx * dx + dy * dy > 360_000) continue
       edges.lineBetween(a.x, a.y, b.x, b.y)
-      edgeCount += 1
+      edgePairs.push([a, b])
     }
     this.sceneContainer.add(edges)
-    this.tweens.add({ targets: edges, alpha: 0.18, duration: 3000, delay: 2000 })
+    this.tweens.add({ targets: edges, alpha: 0.30, duration: 3000, delay: 2000 })
+
+    // Random edge "firings" — every so often a single edge brightens
+    // briefly, like a neuron pulse. Adds a layer of background
+    // activity so the network reads as live rather than statically
+    // painted. Each firing is its own short-lived graphics object;
+    // counts/duration are tuned so it never feels busy.
+    for (let f = 0; f < 36; f++) {
+      const fireDelay = 4500 + Math.random() * 13000
+      this.time.delayedCall(fireDelay, () => {
+        if (!edgePairs.length) return
+        const [a, b] = edgePairs[Phaser.Math.Between(0, edgePairs.length - 1)]
+        const fire = this.add.graphics()
+        fire.lineStyle(2, 0xc9d1d9, 1)
+        fire.lineBetween(a.x, a.y, b.x, b.y)
+        this.sceneContainer.add(fire)
+        fire.setAlpha(0.7)
+        this.tweens.add({
+          targets: fire,
+          alpha: 0,
+          duration: 450,
+          ease: 'Sine.easeOut',
+          onComplete: () => fire.destroy(),
+        })
+      })
+    }
 
     // ----- Phase 2: 5 role anchor nodes ----------------------------
     // Curated zigzag positions across the canvas. Order = the
@@ -637,49 +664,88 @@ export class IntroScene extends Phaser.Scene {
         delay: 1500 + Math.random() * 2500,
       })
     }
-    // Sequential brighten + scale + ring-pulse. The ring is a
-    // stroked circle expanding outward; gives each anchor node a
-    // beat of its own as the narration names that role.
+    // Sequential brighten + scale + double ring-pulse + white burst.
+    // Three layered effects per anchor:
+    //   1. The node itself scales 2× and reaches full alpha.
+    //   2. A white burst circle pops + fades — the visual "punch".
+    //   3. A teal ring expands outward, slower and wider — the echo.
     for (let i = 0; i < roleSprites.length; i++) {
       const t0 = PHASE2_START_MS + i * PHASE2_INTERVAL_MS
       this.tweens.add({
         targets: roleSprites[i],
         alpha: 1,
-        scale: 1.8,
+        scale: 2.0,
         duration: 350,
         delay: t0,
         ease: 'Sine.easeOut',
       })
+      // White burst — short, bright, fast.
+      const burst = this.add.circle(roleNodes[i].x, roleNodes[i].y, 12, 0xffffff, 0)
+      this.sceneContainer.add(burst)
+      this.tweens.add({
+        targets: burst,
+        scale: 3,
+        alpha: 0,
+        duration: 350,
+        delay: t0,
+        ease: 'Sine.easeOut',
+        onStart: () => burst.setAlpha(0.95),
+        onComplete: () => burst.destroy(),
+      })
+      // Teal echo ring — slower, wider, hangs in the air longer.
       const ring = this.add.circle(roleNodes[i].x, roleNodes[i].y, 8, 0xe6edf3, 0)
-        .setStrokeStyle(2, 0x7ee2c1)
+        .setStrokeStyle(3, 0x7ee2c1)
         .setAlpha(0)
       this.sceneContainer.add(ring)
       this.tweens.add({
         targets: ring,
-        scale: 4.5,
+        scale: 6.5,
         alpha: 0,
-        duration: 900,
+        duration: 1100,
         delay: t0,
         ease: 'Sine.easeOut',
-        onStart: () => ring.setAlpha(0.9),
+        onStart: () => ring.setAlpha(0.85),
       })
     }
     // Path through the 5 nodes — drawn after all five have lit up so
-    // the chain only appears once every link is established. Slightly
-    // brighter than filler edges so it reads as the real route.
+    // the chain only appears once every link is established. Brighter
+    // and thicker than filler edges so it reads as the real route.
     const path = this.add.graphics().setAlpha(0)
-    path.lineStyle(2, 0x7ee2c1, 1)
+    path.lineStyle(3, 0x7ee2c1, 1)
     for (let i = 0; i < roleNodes.length - 1; i++) {
       path.lineBetween(roleNodes[i].x, roleNodes[i].y,
                         roleNodes[i + 1].x, roleNodes[i + 1].y)
     }
     this.sceneContainer.add(path)
+    const pathAppear = PHASE2_START_MS + roleSprites.length * PHASE2_INTERVAL_MS
     this.tweens.add({
       targets: path,
-      alpha: 0.5,
-      duration: 1500,
-      delay: PHASE2_START_MS + roleSprites.length * PHASE2_INTERVAL_MS,
+      alpha: 0.75,
+      duration: 800,
+      delay: pathAppear,
     })
+
+    // Scout claim — a single bright dot that races the entire chain
+    // immediately after the path appears, tracing the route in ~1s.
+    // Bridges Phase 2 → Phase 3 visually: the path lights up, a
+    // claim proves it works, then Phase 3 floods it with traffic.
+    const scoutDelay = pathAppear + 200
+    const scout = this.add.circle(roleNodes[0].x, roleNodes[0].y, 7, 0xffffff, 0)
+    this.sceneContainer.add(scout)
+    this.tweens.add({ targets: scout, alpha: 1, duration: 150, delay: scoutDelay })
+    let scoutT = scoutDelay + 150
+    for (let n = 1; n < roleNodes.length; n++) {
+      this.tweens.add({
+        targets: scout,
+        x: roleNodes[n].x,
+        y: roleNodes[n].y,
+        duration: 350,
+        delay: scoutT,
+        ease: 'Sine.easeInOut',
+      })
+      scoutT += 350
+    }
+    this.tweens.add({ targets: scout, alpha: 0, duration: 250, delay: scoutT })
 
     // ----- Phase 3: claims travel + some get lost ------------------
     // Claim dots spawn at the Doctor node and tween segment-by-
@@ -687,15 +753,15 @@ export class IntroScene extends Phaser.Scene {
     // intermediate segment, recolor red and fade-to-zero mid-tween
     // instead of arriving at the next node.
     const PHASE3_START_MS = 15000
-    const CLAIM_COUNT = 9
+    const CLAIM_COUNT = 16
     const SEGMENT_MS = 700
     for (let i = 0; i < CLAIM_COUNT; i++) {
-      const dot = this.add.circle(roleNodes[0].x, roleNodes[0].y, 4, 0xf4d06f, 0)
+      const dot = this.add.circle(roleNodes[0].x, roleNodes[0].y, 5, 0xf4d06f, 0)
       this.sceneContainer.add(dot)
-      const startDelay = PHASE3_START_MS + i * 350
-      this.tweens.add({ targets: dot, alpha: 0.95, duration: 200, delay: startDelay })
+      const startDelay = PHASE3_START_MS + i * 220
+      this.tweens.add({ targets: dot, alpha: 1, duration: 200, delay: startDelay })
 
-      const lostAt = Math.random() < 0.4
+      const lostAt = Math.random() < 0.45
         ? Phaser.Math.Between(1, roleNodes.length - 1)
         : -1
 
@@ -710,18 +776,37 @@ export class IntroScene extends Phaser.Scene {
           ease: 'Sine.easeInOut',
         })
         if (lostAt === n) {
-          // Mid-segment: recolor red and fade-to-zero. The dot keeps
-          // moving toward the destination during the fade, so the
-          // visual reads as "it was on its way and then disappeared
-          // between nodes" — which is exactly the narration phrase.
+          // Mid-segment: recolor red, scale up briefly, then fade.
+          // A small red ring pops at the dot's position the moment
+          // it dies — a visible "loss event" the eye can latch onto
+          // even at low density.
           this.time.delayedCall(segStart + 350, () => {
             dot.setFillStyle(0xef5b7b)
+            const lossRing = this.add.circle(dot.x, dot.y, 5, 0xef5b7b, 0)
+              .setStrokeStyle(2, 0xef5b7b)
+            this.sceneContainer.add(lossRing)
+            lossRing.setAlpha(0.9)
+            this.tweens.add({
+              targets: lossRing,
+              scale: 5,
+              alpha: 0,
+              duration: 600,
+              ease: 'Sine.easeOut',
+              onComplete: () => lossRing.destroy(),
+            })
+          })
+          this.tweens.add({
+            targets: dot,
+            scale: 1.6,
+            duration: 150,
+            delay: segStart + 350,
+            yoyo: true,
           })
           this.tweens.add({
             targets: dot,
             alpha: 0,
-            duration: 350,
-            delay: segStart + 400,
+            duration: 400,
+            delay: segStart + 450,
           })
           break
         }
