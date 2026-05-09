@@ -60,6 +60,15 @@ export interface MapDef {
    *  - `shortName` (optional) is the compact abbreviation shown by
    *    default. If omitted, the full name is used in both states. */
   rooms?: { name: string; shortName?: string; x: number; y: number; w: number; h: number }[]
+  /** Optional teleport pairs. When the player ends a move on a `from`
+   *  tile, the scene fades and snaps them to the corresponding `to`
+   *  tile. Symmetric — each entry is one-way; pair them up in source
+   *  for round-trips. Used for stairs (between floors) and exits
+   *  (lobby ↔ outdoor parking lot) so we can keep one big tilemap
+   *  instead of juggling separate scenes per area.
+   *  `label` is rendered as a floating text widget over the source
+   *  tile so the player knows where it leads ("↑ 2F", "EXIT"). */
+  stairs?: { from: { x: number; y: number }; to: { x: number; y: number }; label?: string }[]
 }
 
 // ---------------------------------------------------------------------------

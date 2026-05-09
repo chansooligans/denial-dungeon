@@ -83,6 +83,11 @@ const TILE_TEXTURES: Record<string, { floor: string; obj?: string; solid?: boole
   'b': { floor: 'h_floor', obj: 'h_bulletin',   solid: true, floorTint: TINT.floor, objTint: TINT.bulletin },
   'H': { floor: 'h_floor', obj: 'h_bed',        solid: true, floorTint: TINT.floor, objTint: TINT.bed },
   'X': { floor: 'h_floor', obj: 'h_fax',        floorTint: TINT.floor, objTint: TINT.fax },
+  // Teleport tiles. Visually a tinted floor; their behavior (fade-and-
+  // snap to a paired tile) is wired in tryMove via the MapDef.stairs
+  // sidecar. Floating labels are drawn on top in placeStairLabels().
+  'S': { floor: 'h_floor', floorTint: 0x9a6a3a }, // stair landing — brass tint
+  'O': { floor: 'h_floor', floorTint: 0x6a8848 }, // outdoor exit mat — moss-green
 }
 
 // Tiles that act as room boundaries for flood-fill: walls and doors.
@@ -219,6 +224,7 @@ export class HospitalScene extends Phaser.Scene {
 
     this.buildMap()
     this.applyAmbientPulse()
+    this.placeStairLabels()
     this.placePlayer()
     this.placeNPCs()
     this.setupInput()
@@ -1211,6 +1217,51 @@ export class HospitalScene extends Phaser.Scene {
     return def?.solid === true
   }
 
+  /** Look up a stair entry whose `from` matches the given tile. */
+  private findStair(x: number, y: number): { from: { x: number; y: number }; to: { x: number; y: number }; label?: string } | null {
+    for (const s of this.mapDef.stairs ?? []) {
+      if (s.from.x === x && s.from.y === y) return s
+    }
+    return null
+  }
+
+  /** Fade out, snap player + camera to the destination tile, fade in.
+   *  Reuses HospitalScene's existing tile/room visibility plumbing —
+   *  enterRoomAt() reveals whatever room contains the destination. */
+  private runStairTeleport(to: { x: number; y: number }) {
+    const cam = this.cameras.main
+    const destX = to.x * TILE + TILE / 2
+    const destY = (to.y + 1) * TILE
+    cam.fadeOut(280, 0, 0, 0)
+    cam.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+      this.playerTileX = to.x
+      this.playerTileY = to.y
+      this.player.setPosition(destX, destY)
+      this.enterRoomAt(to.x, to.y)
+      this.updateMiniMapPlayer()
+      cam.fadeIn(320, 0, 0, 0)
+      cam.once(Phaser.Cameras.Scene2D.Events.FADE_IN_COMPLETE, () => {
+        this.canMove = true
+      })
+    })
+  }
+
+  /** Render a small floating text widget over each stair source so the
+   *  player knows the tile teleports somewhere ("↑ 2F", "EXIT"). Called
+   *  once during create() after the tilemap has been built. */
+  private placeStairLabels() {
+    for (const s of this.mapDef.stairs ?? []) {
+      const label = s.label
+      if (!label) continue
+      const px = s.from.x * TILE + TILE / 2
+      const py = s.from.y * TILE + TILE / 2 - 4
+      this.add.text(px, py, label, {
+        fontSize: '14px', fontFamily: 'monospace', color: '#f4d06f',
+        stroke: '#0e1116', strokeThickness: 3,
+      }).setOrigin(0.5).setDepth(5)
+    }
+  }
+
   private tryMove(dx: number, dy: number) {
     const newX = this.playerTileX + dx
     const newY = this.playerTileY + dy
@@ -1233,6 +1284,14 @@ export class HospitalScene extends Phaser.Scene {
     this.playerTileX = newX
     this.playerTileY = newY
 
+    // Stair / outdoor-exit teleport. If the new tile is a registered
+    // stair source, finish the walk-step tween and then fade-and-snap
+    // the player to the paired destination instead of letting them
+    // continue normal movement. Keeps everything inside the same scene
+    // (no cross-scene plumbing) at the cost of one big tilemap that
+    // bundles all "areas" (ground floor, second floor, outdoor).
+    const stair = this.findStair(newX, newY)
+
     this.canMove = false
     const targetX = newX * TILE + TILE / 2
     const targetY = (newY + 1) * TILE
@@ -1243,7 +1302,13 @@ export class HospitalScene extends Phaser.Scene {
       y: targetY,
       duration: 120,
       ease: 'Linear',
-      onComplete: () => { this.canMove = true },
+      onComplete: () => {
+        if (stair) {
+          this.runStairTeleport(stair.to)
+        } else {
+          this.canMove = true
+        }
+      },
     })
     // Walking bob — scaleY squashes 1.0 → 0.92 → 1.0 over the
     // duration of the move so the character has a hint of weight
