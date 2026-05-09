@@ -228,23 +228,12 @@ export class IntroScene extends Phaser.Scene {
     this.currentVoice = undefined
     this.introSong = undefined
 
-    // The intro cinematic was authored against the original 960×640
-    // canvas — typed-text fontSizes, sprite scales, sticky-note
-    // offsets, etc. all assume that resolution. After the canvas
-    // bumped to 1920×1280 (TILE-resolution upgrade), every hardcoded
-    // pixel value would render at half its intended size on screen.
-    // Counteract by zooming the intro camera 2× so the design-space
-    // matches what was authored. showCover and setBackdrop divide
-    // their fit-scale by this zoom so full-bleed images still cover
-    // the canvas without cropping.
-    this.cameras.main.setZoom(2)
-
     const { width, height } = this.scale
 
     this.sceneContainer = this.add.container(0, 0)
 
     this.skipText = this.add.text(width - 16, height - 16, '⏭ skip intro', {
-      fontSize: '14px', fontFamily: 'monospace', color: '#7ee2c1',
+      fontSize: '28px', fontFamily: 'monospace', color: '#7ee2c1',
       backgroundColor: '#0e1116cc',
       padding: { left: 10, right: 10, top: 6, bottom: 6 },
     }).setOrigin(1, 1).setDepth(1100).setInteractive({ useHandCursor: true })
@@ -263,8 +252,8 @@ export class IntroScene extends Phaser.Scene {
       width / 2, height - 30,
       '▼  click or SPACE to continue',
       {
-        fontSize: '12px', fontFamily: 'monospace', color: '#7ee2c1',
-        stroke: '#05070a', strokeThickness: 2,
+        fontSize: '24px', fontFamily: 'monospace', color: '#7ee2c1',
+        stroke: '#05070a', strokeThickness: 4,
       }
     ).setOrigin(0.5).setDepth(110).setAlpha(0)
 
@@ -454,10 +443,7 @@ export class IntroScene extends Phaser.Scene {
       .setDepth(75).setAlpha(0)
 
     const tex = this.textures.get(key).getSourceImage() as HTMLImageElement
-    // Divide by camera zoom so the cover still fits the full canvas
-    // after the 2× zoom we apply in create() to honor the intro's
-    // 960×640 design space.
-    const scale = Math.min(width / tex.width, height / tex.height) / this.cameras.main.zoom
+    const scale = Math.min(width / tex.width, height / tex.height)
 
     const image = this.add.image(width / 2, height / 2, key)
       .setScale(scale).setAlpha(0).setDepth(80)
@@ -567,9 +553,7 @@ export class IntroScene extends Phaser.Scene {
 
     const tex = this.textures.get(key).getSourceImage() as HTMLImageElement
     // Cover-fit so the image fills the viewport (some cropping is ok).
-    // Divide by camera zoom — see showCover for the design-space
-    // rationale.
-    const scale = Math.max(width / tex.width, height / tex.height) / this.cameras.main.zoom
+    const scale = Math.max(width / tex.width, height / tex.height)
 
     this.backdrop = this.add.image(width / 2, height / 2, key)
       .setScale(scale).setAlpha(0).setDepth(-10)
@@ -622,7 +606,11 @@ export class IntroScene extends Phaser.Scene {
     this.isTyping = true
 
     const { width, height } = this.scale
-    const lineHeight = 28
+    // Doubled from 28 to match the canvas-resolution upgrade (960×640
+    // → 1920×1280). Same goes for fontSize / padding / strokeThickness
+    // below — keeps the on-screen visual size consistent with what
+    // the cinematic was authored against.
+    const lineHeight = 56
     const startY = height / 2 - (lines.length * lineHeight) / 2
 
     const charDelay = 30
@@ -631,14 +619,14 @@ export class IntroScene extends Phaser.Scene {
 
     lines.forEach((line, i) => {
       const t = this.add.text(width / 2, startY + i * lineHeight, '', {
-        fontSize: '20px', fontFamily: 'monospace', color,
+        fontSize: '40px', fontFamily: 'monospace', color,
         align: 'center',
         // Dark band + dark stroke keep text legible regardless of what
         // procedural visuals or comic art might be drawing behind it.
         backgroundColor: '#0e1116',
-        padding: { x: 10, y: 4 },
+        padding: { x: 20, y: 8 },
         stroke: '#05070a',
-        strokeThickness: 3,
+        strokeThickness: 6,
       }).setOrigin(0.5).setDepth(50)
 
       let charIndex = 0
@@ -674,14 +662,16 @@ export class IntroScene extends Phaser.Scene {
     this.sceneContainer.removeAll(true)
     const { width, height } = this.scale
 
-    // Draw a simple hospital corridor
+    // Draw a simple hospital corridor.
+    // Each tile drawn at 32×32 to fill the doubled 1920×1280 canvas
+    // (60 cols * 32 = 1920, 40 rows * 32 = 1280).
     for (let x = 0; x < 60; x++) {
       for (let y = 0; y < 40; y++) {
         const isWall = y < 8 || y > 32 || x < 2 || x > 57
         const tile = this.add.image(
-          x * 16 + 8, y * 16 + 8,
+          x * 32 + 16, y * 32 + 16,
           isWall ? 'h_wall' : 'h_floor'
-        ).setAlpha(0)
+        ).setDisplaySize(32, 32).setAlpha(0)
         this.sceneContainer.add(tile)
         this.tweens.add({ targets: tile, alpha: isWall ? 0.6 : 0.3, duration: 1000, delay: x * 10 })
       }
@@ -690,13 +680,17 @@ export class IntroScene extends Phaser.Scene {
     // Some desks scattered
     const deskPositions = [[10, 15], [20, 20], [30, 14], [40, 22], [50, 18]]
     for (const [dx, dy] of deskPositions) {
-      const desk = this.add.image(dx * 16, dy * 16, 'h_desk').setScale(2).setAlpha(0)
+      // Doubled positions for canvas-resolution upgrade. setDisplaySize
+      // works regardless of whether h_desk is the 16×16 procedural
+      // fallback or the 64×64 LoRA-loaded texture.
+      const desk = this.add.image(dx * 32, dy * 32, 'h_desk')
+        .setDisplaySize(64, 64).setAlpha(0)
       this.sceneContainer.add(desk)
       this.tweens.add({ targets: desk, alpha: 0.5, duration: 800, delay: 500 })
     }
 
     // Slow camera pan
-    this.cameras.main.setBounds(0, 0, 960, 640)
+    this.cameras.main.setBounds(0, 0, 1920, 1280)
   }
 
   showDesk() {
@@ -705,22 +699,27 @@ export class IntroScene extends Phaser.Scene {
 
     // Anchor the desk grouping in the lower third of the screen so it sits
     // below the centered narration text instead of crowding it.
-    const deskY = height / 2 + 130
+    const deskY = height / 2 + 260
 
-    const desk = this.add.image(width / 2, deskY, 'h_desk').setScale(6).setAlpha(0)
+    // setDisplaySize fits regardless of source resolution — the
+    // h_desk / h_chair textures are 16×16 procedural OR 64×64 LoRA
+    // depending on which loaded.
+    const desk = this.add.image(width / 2, deskY, 'h_desk')
+      .setDisplaySize(192, 192).setAlpha(0)
     this.sceneContainer.add(desk)
 
-    const chair = this.add.image(width / 2, deskY + 50, 'h_chair').setScale(4).setAlpha(0)
+    const chair = this.add.image(width / 2, deskY + 100, 'h_chair')
+      .setDisplaySize(128, 128).setAlpha(0)
     this.sceneContainer.add(chair)
 
     // Monitor glow over the desk
-    const glow = this.add.rectangle(width / 2 - 10, deskY - 25, 40, 30, 0x7ee2c1, 0.15).setAlpha(0)
+    const glow = this.add.rectangle(width / 2 - 20, deskY - 50, 80, 60, 0x7ee2c1, 0.15).setAlpha(0)
     this.sceneContainer.add(glow)
 
     // Sticky note beside the monitor
-    const sticky = this.add.text(width / 2 + 50, deskY - 50, '835 DOESN\'T\nMATCH — CHECK\nMONDAY', {
-      fontSize: '7px', fontFamily: 'monospace', color: '#2a2a2a',
-      backgroundColor: '#f4d06f', padding: { x: 4, y: 3 },
+    const sticky = this.add.text(width / 2 + 100, deskY - 100, '835 DOESN\'T\nMATCH — CHECK\nMONDAY', {
+      fontSize: '14px', fontFamily: 'monospace', color: '#2a2a2a',
+      backgroundColor: '#f4d06f', padding: { x: 8, y: 6 },
     }).setAlpha(0).setAngle(-5)
     this.sceneContainer.add(sticky)
 
@@ -731,8 +730,8 @@ export class IntroScene extends Phaser.Scene {
     const { width, height } = this.scale
 
     // Show a claim number that blinks and vanishes
-    const claimText = this.add.text(width / 2, height / 2 - 80, 'CLM-2026-04-28-00847', {
-      fontSize: '14px', fontFamily: 'monospace', color: '#7ee2c1',
+    const claimText = this.add.text(width / 2, height / 2 - 160, 'CLM-2026-04-28-00847', {
+      fontSize: '28px', fontFamily: 'monospace', color: '#7ee2c1',
     }).setOrigin(0.5).setDepth(60)
 
     this.sceneContainer.add(claimText)
@@ -818,7 +817,7 @@ export class IntroScene extends Phaser.Scene {
 
     // Player falls vertically from above, accelerates down, exits past the
     // bottom of the viewport (gravity feel).
-    const player = this.add.image(width / 2, -40, 'player').setScale(4).setAlpha(0)
+    const player = this.add.image(width / 2, -80, 'player').setScale(8).setAlpha(0)
     this.sceneContainer.add(player)
     // Quick fade-in so the character is visible during the drop.
     this.tweens.add({
@@ -826,7 +825,7 @@ export class IntroScene extends Phaser.Scene {
     })
     // Drop straight down past the bottom of the screen.
     this.tweens.add({
-      targets: player, y: height + 80,
+      targets: player, y: height + 160,
       duration: 3200, ease: 'Sine.easeIn',
     })
     // Slight fade near the very end as the character disappears off-screen.
@@ -839,18 +838,18 @@ export class IntroScene extends Phaser.Scene {
     const docTypes = ['doc_cms1500', 'doc_ub04', 'doc_835', 'doc_eob']
     for (let i = 0; i < 20; i++) {
       const doc = this.add.image(
-        Phaser.Math.Between(50, width - 50),
-        height + 20,
+        Phaser.Math.Between(100, width - 100),
+        height + 40,
         Phaser.Math.RND.pick(docTypes)
-      ).setScale(Phaser.Math.FloatBetween(2, 4))
+      ).setScale(Phaser.Math.FloatBetween(4, 8))
         .setAlpha(Phaser.Math.FloatBetween(0.2, 0.6))
         .setAngle(Phaser.Math.Between(-30, 30))
 
       this.sceneContainer.add(doc)
       this.tweens.add({
         targets: doc,
-        y: -30,
-        x: doc.x + Phaser.Math.Between(-40, 40),
+        y: -60,
+        x: doc.x + Phaser.Math.Between(-80, 80),
         angle: doc.angle + Phaser.Math.Between(-20, 20),
         duration: Phaser.Math.Between(2000, 4000),
         delay: Phaser.Math.Between(0, 2500),
@@ -869,11 +868,11 @@ export class IntroScene extends Phaser.Scene {
 
     // Rows of chairs fading into distance
     for (let row = 0; row < 8; row++) {
-      const y = 200 + row * 50
+      const y = 400 + row * 100
       const alpha = 0.6 - row * 0.07
-      const scale = 2 - row * 0.15
+      const scale = 4 - row * 0.3
       for (let col = 0; col < 14; col++) {
-        const x = 30 + col * 70 + (row % 2 ? 35 : 0)
+        const x = 60 + col * 140 + (row % 2 ? 70 : 0)
         const chair = this.add.image(x, y, 'wr_chair')
           .setScale(scale).setAlpha(0)
         this.sceneContainer.add(chair)
@@ -884,13 +883,13 @@ export class IntroScene extends Phaser.Scene {
     }
 
     // Ticket counter at far end
-    const counter = this.add.image(width / 2, 120, 'wr_counter').setScale(5).setAlpha(0)
+    const counter = this.add.image(width / 2, 240, 'wr_counter').setScale(10).setAlpha(0)
     this.sceneContainer.add(counter)
     this.tweens.add({ targets: counter, alpha: 0.7, duration: 1000, delay: 500 })
 
     // Number display — frozen
-    const numberText = this.add.text(width / 2, 115, 'NOW SERVING: 00000', {
-      fontSize: '12px', fontFamily: 'monospace', color: '#ef5b7b',
+    const numberText = this.add.text(width / 2, 230, 'NOW SERVING: 00000', {
+      fontSize: '24px', fontFamily: 'monospace', color: '#ef5b7b',
     }).setOrigin(0.5).setAlpha(0).setDepth(51)
     this.sceneContainer.add(numberText)
     this.tweens.add({ targets: numberText, alpha: 0.8, duration: 1000, delay: 800 })
@@ -898,16 +897,16 @@ export class IntroScene extends Phaser.Scene {
     // Floating papers
     for (let i = 0; i < 8; i++) {
       const paper = this.add.image(
-        Phaser.Math.Between(50, width - 50),
-        Phaser.Math.Between(100, height - 100),
+        Phaser.Math.Between(100, width - 100),
+        Phaser.Math.Between(200, height - 200),
         'wr_paper'
-      ).setScale(2).setAlpha(0)
+      ).setScale(4).setAlpha(0)
       this.sceneContainer.add(paper)
 
       this.tweens.add({ targets: paper, alpha: 0.3, duration: 500, delay: 1000 + i * 200 })
       this.tweens.add({
         targets: paper,
-        y: paper.y - 15,
+        y: paper.y - 30,
         duration: Phaser.Math.Between(2000, 4000),
         yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
         delay: i * 300,
