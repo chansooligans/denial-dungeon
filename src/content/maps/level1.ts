@@ -606,11 +606,8 @@ export const LEVEL_1_MAP: MapDef = {
     // `facing` defaults to 'down' (front-facing toward the camera)
     // when omitted. We avoid 'up' (back-of-head) on placement —
     // back-facing reads weird unless an NPC is genuinely working
-    // at a wall-mounted thing, which none currently are.
-    // Patient Services NPCs intentionally stay at default 'down'
-    // because PS is enrolled in HospitalScene.DYNAMIC_FACING_ROOMS:
-    // the resting pose only shows when the player is in the
-    // corridor, and we want them visibly facing the camera there.
+    // at a wall-mounted thing, which none currently are. Facing
+    // is static — applied once at spawn from this field.
 
     // === Always-present (level-agnostic) placements ===
     // Anjali walks in during the level-1 opening sequence and lands
@@ -629,8 +626,6 @@ export const LEVEL_1_MAP: MapDef = {
     // Dana — Patient Services (L1-9) at the west side of the room
     // near the door + intake desks; Audit conference room (L10),
     // south of the table looking west toward the rest of the team.
-    // PS is a dynamic-facing room, so she'll swivel to face the
-    // player when Chloe enters.
     { npcId: 'dana', tileX: PATIENT_SVC.x + 3, tileY: PATIENT_SVC.y + 4,
       levels: [1, 2, 3, 4, 5, 6, 7, 8, 9] },
     { npcId: 'dana', tileX: AUDIT.x + 14, tileY: AUDIT.y + 5, facing: 'left',

@@ -53,13 +53,12 @@ export interface MapDef {
      *  of which level the player is on. Story-relevant NPCs leave
      *  this unset so they're gated by `npcsActive`. */
     ambient?: boolean
-    /** Default direction the NPC faces. Used as the resting pose when
-     *  the player isn't in the same room — rooms enrolled in
-     *  HospitalScene.DYNAMIC_FACING_ROOMS swap to face-the-player while
-     *  she's inside the room and revert to this `facing` value on exit.
-     *  Defaults to 'down' (front-facing toward the camera) if
-     *  unspecified. Authored via the map editor (R-cycle on selected
-     *  NPC) and persisted in the npcPlacements export. */
+    /** Direction the NPC faces. Static — applied once when the NPC
+     *  spawns (HospitalScene.placeNPCs reads this and sets the
+     *  matching directional texture). Defaults to 'down' (front-
+     *  facing toward the camera) if unspecified. Authored via the
+     *  map editor (R-cycle on selected NPC) and persisted in the
+     *  npcPlacements export. */
     facing?: 'down' | 'up' | 'left' | 'right'
   }[]
   /** Optional room labels for the minimap. Drawn at the room center
