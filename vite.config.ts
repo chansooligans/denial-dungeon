@@ -180,6 +180,9 @@ export default defineConfig({
         // HIPAA Spider: privacy breach response. Verbs: ASSESS /
         // CONTAIN / NOTIFY.
         hipaaSpider: resolve(__dirname, 'hipaa-spider-prototype.html'),
+        // No-Show Bill: mid-game release-valve (Lighthouse companion).
+        // Verbs: LISTEN / INVESTIGATE / WAIVE.
+        noShowBill: resolve(__dirname, 'no-show-bill-prototype.html'),
         // Map editor: a dev-only authoring tool for level1's object
         // placement and orientation. Click any object to select it,
         // then rotate/flip via keyboard or drag to move. Outputs a
