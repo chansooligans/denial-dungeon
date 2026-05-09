@@ -1,7 +1,7 @@
 import Phaser from 'phaser'
 import { addFullscreenButton } from './fullscreenButton'
 import { addMuteButton } from './muteButton'
-import { BEATS, type SceneActionId } from './introBeats'
+import { BEATS, SCENE_PARAMS, type SceneActionId } from './introBeats'
 
 export class IntroScene extends Phaser.Scene {
   private currentBeat = 0
@@ -700,6 +700,12 @@ export class IntroScene extends Phaser.Scene {
   }
 
   showFall() {
+    // All tweakable numbers live in SCENE_PARAMS.fall (defined in
+    // introBeats.ts). The /intro-editor.html "Scene params" panel
+    // scrubs these directly and exports a paste-back snippet. Don't
+    // hardcode literals here; route every knob through `p` instead.
+    const p = SCENE_PARAMS.fall
+
     this.sceneContainer.removeAll(true)
     const { width, height } = this.scale
 
@@ -709,7 +715,7 @@ export class IntroScene extends Phaser.Scene {
 
     // Player falls vertically from above, accelerates down, exits past the
     // bottom of the viewport (gravity feel).
-    const player = this.add.image(width / 2, -80, 'player').setScale(8).setAlpha(0)
+    const player = this.add.image(width / 2, -80, 'player').setScale(p.playerScale).setAlpha(0)
     this.sceneContainer.add(player)
     // Quick fade-in so the character is visible during the drop.
     this.tweens.add({
@@ -718,23 +724,23 @@ export class IntroScene extends Phaser.Scene {
     // Drop straight down past the bottom of the screen.
     this.tweens.add({
       targets: player, y: height + 160,
-      duration: 3200, ease: 'Sine.easeIn',
+      duration: p.playerFallDuration, ease: 'Sine.easeIn',
     })
     // Slight fade near the very end as the character disappears off-screen.
     this.tweens.add({
       targets: player, alpha: 0,
-      duration: 400, delay: 2850,
+      duration: 400, delay: Math.max(0, p.playerFallDuration - 350),
     })
 
     // Floating documents passing by
     const docTypes = ['doc_cms1500', 'doc_ub04', 'doc_835', 'doc_eob']
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < p.documentCount; i++) {
       const doc = this.add.image(
         Phaser.Math.Between(100, width - 100),
         height + 40,
         Phaser.Math.RND.pick(docTypes)
-      ).setScale(Phaser.Math.FloatBetween(4, 8))
-        .setAlpha(Phaser.Math.FloatBetween(0.2, 0.6))
+      ).setScale(Phaser.Math.FloatBetween(p.documentScaleMin, p.documentScaleMax))
+        .setAlpha(Phaser.Math.FloatBetween(p.documentAlphaMin, p.documentAlphaMax))
         .setAngle(Phaser.Math.Between(-30, 30))
 
       this.sceneContainer.add(doc)
@@ -743,7 +749,7 @@ export class IntroScene extends Phaser.Scene {
         y: -60,
         x: doc.x + Phaser.Math.Between(-80, 80),
         angle: doc.angle + Phaser.Math.Between(-20, 20),
-        duration: Phaser.Math.Between(2000, 4000),
+        duration: Phaser.Math.Between(p.documentDurationMin, p.documentDurationMax),
         delay: Phaser.Math.Between(0, 2500),
         ease: 'Sine.easeInOut',
       })
