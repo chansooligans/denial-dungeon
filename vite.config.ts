@@ -142,6 +142,18 @@ export default defineConfig({
         // PRICE / CONVERT / APPEAL. Lives at
         // /asp-wac-apothecary-prototype.html.
         aspWacApothecary: resolve(__dirname, 'asp-wac-apothecary-prototype.html'),
+        // Chemo Bundle Specter: OP Surg Group / UHC Case. Chemo
+        // admin (CPT 96413) + Rev 0335 triggers a chemo case
+        // rate that bundles the drug J-codes — but the
+        // chargemaster is hard-coded to drop the drugs as
+        // separate billable lines. UHC denies the J-codes
+        // CO-234 (correctly). The fix is upstream: update the
+        // CDM to suppress the J-code drops on UHC chemo
+        // sessions. Verbs: READ-CLAUSE / EXAMINE-CDM /
+        // HARD-CODE. First Case where the bug is in the
+        // chargemaster, not the claim. Lives at
+        // /chemo-bundle-specter-prototype.html.
+        chemoBundleSpecter: resolve(__dirname, 'chemo-bundle-specter-prototype.html'),
         // Map editor: a dev-only authoring tool for level1's object
         // placement and orientation. Click any object to select it,
         // then rotate/flip via keyboard or drag to move. Outputs a

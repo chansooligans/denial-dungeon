@@ -410,6 +410,21 @@ const prototypes: Prototype[] = [
   },
 
   {
+    id: 'chemo-bundle-specter',
+    title: 'Chemo Bundle Specter',
+    subtitle: '@ L6 — OP Surg Group / UHC; case rate bundles drug, CDM doesn\'t know',
+    archetype: 'Specter',
+    carc: 'CO-234 (correctly bundled — fix is upstream)',
+    level: 6,
+    status: 'shipped',
+    verbs: 'READ-CLAUSE + EXAMINE-CDM + HARD-CODE',
+    testing: 'Sarah Khan\'s chemo session at the OP Surg Group came back with two CO-234 denials on the J-code drugs (paclitaxel, carboplatin). Looks like an underpayment, isn\'t — UHC\'s contract section 8.3(c) bundles the drug into a chemo case rate when CPT 96413 + Rev 0335 are present. The bug is in the chargemaster: it hard-codes the drugs as separate billable lines instead of folding them into a bundled case-rate charge entry. Player walks 4 contract clauses (only 8.3(c) governs), inspects 4 chargemaster entries (3 misconfigured, 1 right), and picks the right resolution from 5 paths (only "update CDM, suppress J-code drops on UHC chemo" is correct). First Case where the bug is in the chargemaster, not the claim. Demonstrates: most underpayments AR analysts chase are upstream config, not downstream adjudication.',
+    href: './chemo-bundle-specter-prototype.html',
+    district: 'billing',
+    accent: '#ef5b7b',
+  },
+
+  {
     id: 'implant-carveout-specter',
     title: 'Implant Carve-out Specter',
     subtitle: 'TBD — high-cost implant outside the case rate',
