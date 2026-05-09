@@ -228,6 +228,17 @@ export class IntroScene extends Phaser.Scene {
     this.currentVoice = undefined
     this.introSong = undefined
 
+    // The intro cinematic was authored against the original 960×640
+    // canvas — typed-text fontSizes, sprite scales, sticky-note
+    // offsets, etc. all assume that resolution. After the canvas
+    // bumped to 1920×1280 (TILE-resolution upgrade), every hardcoded
+    // pixel value would render at half its intended size on screen.
+    // Counteract by zooming the intro camera 2× so the design-space
+    // matches what was authored. showCover and setBackdrop divide
+    // their fit-scale by this zoom so full-bleed images still cover
+    // the canvas without cropping.
+    this.cameras.main.setZoom(2)
+
     const { width, height } = this.scale
 
     this.sceneContainer = this.add.container(0, 0)
@@ -443,7 +454,10 @@ export class IntroScene extends Phaser.Scene {
       .setDepth(75).setAlpha(0)
 
     const tex = this.textures.get(key).getSourceImage() as HTMLImageElement
-    const scale = Math.min(width / tex.width, height / tex.height)
+    // Divide by camera zoom so the cover still fits the full canvas
+    // after the 2× zoom we apply in create() to honor the intro's
+    // 960×640 design space.
+    const scale = Math.min(width / tex.width, height / tex.height) / this.cameras.main.zoom
 
     const image = this.add.image(width / 2, height / 2, key)
       .setScale(scale).setAlpha(0).setDepth(80)
@@ -553,7 +567,9 @@ export class IntroScene extends Phaser.Scene {
 
     const tex = this.textures.get(key).getSourceImage() as HTMLImageElement
     // Cover-fit so the image fills the viewport (some cropping is ok).
-    const scale = Math.max(width / tex.width, height / tex.height)
+    // Divide by camera zoom — see showCover for the design-space
+    // rationale.
+    const scale = Math.max(width / tex.width, height / tex.height) / this.cameras.main.zoom
 
     this.backdrop = this.add.image(width / 2, height / 2, key)
       .setScale(scale).setAlpha(0).setDepth(-10)

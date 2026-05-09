@@ -27,13 +27,13 @@ function ensureStyle() {
       transform: translateX(-50%);
       z-index: 650;
       box-sizing: border-box;
-      max-width: min(720px, calc(100vw - 24px));
-      width: calc(100vw - 24px);
-      padding: 14px 22px;
+      max-width: min(960px, calc(100vw - 32px));
+      width: calc(100vw - 32px);
+      padding: 18px 28px;
       background: rgba(14, 17, 22, 0.92);
       border: 1px solid #2a323d;
       color: #e6edf3;
-      font: 13px/1.4 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      font: 17px/1.4 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
       text-align: center;
       cursor: pointer;
       opacity: 1;
@@ -42,16 +42,16 @@ function ensureStyle() {
     }
     @media (pointer: coarse) {
       #${OVERLAY_ID} {
-        font-size: 17px;
-        padding: 18px 24px;
-        bottom: 32px;
+        font-size: 21px;
+        padding: 22px 28px;
+        bottom: 40px;
       }
     }
     #${OVERLAY_ID}.fading { opacity: 0; }
     #${OVERLAY_ID} .hint {
       display: block;
-      margin-top: 8px;
-      font-size: 10px;
+      margin-top: 10px;
+      font-size: 12px;
       color: #5a6a7a;
       letter-spacing: 0.08em;
       opacity: 0;

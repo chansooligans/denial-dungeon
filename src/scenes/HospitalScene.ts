@@ -16,7 +16,20 @@ import { showClaimPreview } from './claimPreview'
 import { debugStatus, debugEvent } from './debugRibbon'
 import type { NPC } from '../types'
 
-const TILE = 32
+// Tile size in game pixels. Bumped from 32 to 64 so the 64×64 LoRA
+// art (player / NPCs / objects) renders at native resolution instead
+// of being downsampled. Field of view at the same canvas pixel count
+// halves; main.ts compensates by bumping the Phaser canvas from
+// 960×640 to 1280×800. See journal/2026-05-08 + PR #151 preview.
+const TILE = 64
+
+// Pixel-doubling for character sprites so they read 2 tiles tall —
+// matches the original visual ratio (when TILE=32 the 64-px sprites
+// were also 2 tiles tall). Without this, characters at native 64
+// would only fill 1 tile and look small relative to doors/walls.
+// Scale 2 is a clean integer multiple, so nearest-neighbor doesn't
+// produce uneven pixel mapping.
+const CHARACTER_SCALE = 2
 
 // 70s + David Lynch palette — applied as tints on top of existing
 // sprites. Reads warm but uncanny: cream-tan floors, walnut walls,
@@ -414,18 +427,27 @@ export class HospitalScene extends Phaser.Scene {
         const py = y * TILE + TILE / 2
         const tileDef = TILE_TEXTURES[ch] || TILE_TEXTURES['.']
 
-        const floor = this.add.image(px, py, tileDef.floor).setScale(2).setAlpha(0)
+        const floor = this.add.image(px, py, tileDef.floor).setAlpha(0)
+        // setDisplaySize handles both 16×16 procedural and any future
+        // higher-res floor PNGs (which would land at 64×64). Replaces
+        // the prior setScale(2) which only worked for 16-px source.
+        floor.setDisplaySize(TILE, TILE)
         if (tileDef.floorTint !== undefined) floor.setTint(tileDef.floorTint)
         this.tileFloorSprites[y][x] = floor
 
         if (tileDef.obj) {
-          // setDisplaySize fits the sprite into one tile regardless
-          // of source resolution: 16×16 procedural fallback OR 64×64
-          // LoRA art (loaded as PNG override in BootScene). Replaces
-          // the prior setScale(2) which only worked for 16×16.
-          const obj = this.add.image(px, py, tileDef.obj)
-            .setDepth(2).setAlpha(0)
-          obj.setDisplaySize(TILE, TILE)
+          // Objects render at 2× scale, bottom-anchored at the tile's
+          // bottom edge — matches how characters render so beds /
+          // cabinets / vending machines overflow up into the tile
+          // above (visually 2 tiles tall) instead of being squished
+          // into one tile. The placement still occupies one logical
+          // tile for collision; the sprite is just visually taller.
+          // Procedural-fallback 16×16 textures are first scaled to
+          // TILE via setDisplaySize so the 2× then renders at 2 tiles.
+          const objY = (y + 1) * TILE
+          const obj = this.add.image(px, objY, tileDef.obj)
+            .setOrigin(0.5, 1).setDepth(2).setAlpha(0)
+          obj.setDisplaySize(TILE * 2, TILE * 2)
           if (tileDef.objTint !== undefined) obj.setTint(tileDef.objTint)
           this.tileObjSprites[y][x] = obj
         }
@@ -563,7 +585,7 @@ export class HospitalScene extends Phaser.Scene {
       this.playerTileX * TILE + TILE / 2,
       (this.playerTileY + 1) * TILE,
       'player_idle_down'
-    ).setOrigin(0.5, 1).setDepth(10)
+    ).setOrigin(0.5, 1).setDepth(10).setScale(CHARACTER_SCALE)
     this.playerFacing = 'down'
   }
 
@@ -602,11 +624,12 @@ export class HospitalScene extends Phaser.Scene {
       // body extending up from there). Mirrors player placement.
       const spriteY = (p.tileY + 1) * TILE
       const sprite = this.add.image(px, spriteY, npc.spriteKey)
-        .setOrigin(0.5, 1).setDepth(5).setAlpha(0)
+        .setOrigin(0.5, 1).setDepth(5).setAlpha(0).setScale(CHARACTER_SCALE)
 
       // Label sits above the sprite — taller offset for the upgraded
-      // art so it doesn't overlap the head.
-      const labelY = spriteY - sprite.height - 4
+      // art so it doesn't overlap the head. displayHeight accounts
+      // for setScale so the offset works at any character scale.
+      const labelY = spriteY - sprite.displayHeight - 4
       const label = this.add.text(px, labelY, npc.name, {
         fontSize: '8px', fontFamily: 'monospace', color: '#7ee2c1',
       }).setOrigin(0.5).setDepth(6).setAlpha(0)
@@ -656,8 +679,9 @@ export class HospitalScene extends Phaser.Scene {
       // y=32 (LOBBY's top edge).
       const startX = this.mapDef.playerStart.x * TILE + TILE / 2
       const startY = (32 + 1) * TILE  // bottom of tile y=32
-      // Label sits above the sprite by sprite.height + 4px.
-      const labelOffset = anjali.sprite.height + 4
+      // Label sits above the sprite by sprite displayHeight + 4px.
+      // displayHeight reflects setScale so it works at any character scale.
+      const labelOffset = anjali.sprite.displayHeight + 4
       anjali.sprite.setPosition(startX, startY)
       anjali.label.setPosition(startX, startY - labelOffset)
       anjali.sprite.setVisible(true).setAlpha(0)
@@ -1235,7 +1259,9 @@ export class HospitalScene extends Phaser.Scene {
     // without becoming cartoony.
     this.tweens.add({
       targets: this.player,
-      scaleY: 0.92, // 8% squash from base 1
+      // 8% squash from CHARACTER_SCALE base. Tween-target is absolute
+      // scaleY, so the value has to be the absolute height we want.
+      scaleY: CHARACTER_SCALE * 0.92,
       duration: 60,
       yoyo: true,
       ease: 'Sine.easeInOut',
@@ -1388,7 +1414,7 @@ export class HospitalScene extends Phaser.Scene {
     if (closest) {
       // Sprite origin is (0.5, 1), so sprite.y is the bottom edge.
       // Prompt sits a fixed gap above the top of the sprite.
-      this.interactPrompt.setPosition(closest.sprite.x, closest.sprite.y - closest.sprite.height - 8)
+      this.interactPrompt.setPosition(closest.sprite.x, closest.sprite.y - closest.sprite.displayHeight - 8)
     }
   }
 

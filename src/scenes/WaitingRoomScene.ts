@@ -9,7 +9,13 @@ import { debugEvent } from './debugRibbon'
 import { pickNextTrack } from './musicShuffle'
 import type { MapDef } from '../content/maps'
 
-const TILE = 32
+// Tile size in game pixels — see HospitalScene for the full
+// rationale on the 32→64 bump. The Waiting Room is a parallel
+// layer on the same map, so it needs to match.
+const TILE = 64
+
+// See HospitalScene — keeps the 2-tiles-tall character feel.
+const CHARACTER_SCALE = 2
 
 /**
  * The Waiting Room is a *parallel layer* — it shares the Hospital's
@@ -289,10 +295,12 @@ export class WaitingRoomScene extends Phaser.Scene {
       delay: 350,
       ease: 'Sine.easeOut',
     })
-    this.player.setScale(1, 0.5)
+    // Squash on landing — base x-scale stays at CHARACTER_SCALE, y
+    // squashes to half height, then springs back.
+    this.player.setScale(CHARACTER_SCALE, CHARACTER_SCALE * 0.5)
     this.tweens.add({
       targets: this.player,
-      scaleY: 1,
+      scaleY: CHARACTER_SCALE,
       duration: 280,
       ease: 'Back.easeOut',
       delay: 900,
@@ -363,7 +371,7 @@ export class WaitingRoomScene extends Phaser.Scene {
         const def = tileForChar(ch)
 
         // Floor / base tile
-        const floor = this.add.image(px, py, def.sprite).setScale(2)
+        const floor = this.add.image(px, py, def.sprite).setDisplaySize(TILE, TILE)
         // Chevron checkerboard for floors: alternate bone-white + ink-black
         // on every other tile. Walls + furniture get their fixed tints.
         if (ch === '.' || ch === 'h' || ch === 'c' || ch === 'P' || ch === 'w' ||
@@ -382,7 +390,10 @@ export class WaitingRoomScene extends Phaser.Scene {
 
         // Object on top (furniture, monitor, counter, etc.)
         if (def.obj) {
-          const obj = this.add.image(px, py, def.obj).setScale(2).setDepth(2)
+          // Match HospitalScene: 2× scale, bottom-anchored.
+          const objY = y * TILE + TILE
+          const obj = this.add.image(px, objY, def.obj)
+            .setOrigin(0.5, 1).setDisplaySize(TILE * 2, TILE * 2).setDepth(2)
           if (def.objTint !== undefined) obj.setTint(def.objTint)
         }
 
@@ -442,7 +453,7 @@ export class WaitingRoomScene extends Phaser.Scene {
       this.playerTileX * TILE + TILE / 2,
       (this.playerTileY + 1) * TILE,
       'player_idle_down'
-    ).setOrigin(0.5, 1).setDepth(10)
+    ).setOrigin(0.5, 1).setDepth(10).setScale(CHARACTER_SCALE)
     this.playerFacing = 'down'
   }
 
@@ -815,7 +826,8 @@ export class WaitingRoomScene extends Phaser.Scene {
     // present in both layers.
     this.tweens.add({
       targets: this.player,
-      scaleY: 0.92, // 8% squash from base 1
+      // 8% squash from CHARACTER_SCALE base.
+      scaleY: CHARACTER_SCALE * 0.92,
       duration: 70, yoyo: true, ease: 'Sine.easeInOut',
     })
   }
