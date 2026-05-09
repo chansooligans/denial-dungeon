@@ -110,15 +110,6 @@ const TILE_TEXTURES: Record<string, { floor: string; obj?: string; solid?: boole
   'f': { floor: 'h_floor', obj: 'h_fountain',    solid: true, floorTint: TINT.floor }, // drinking fountain
   '!': { floor: 'h_floor', obj: 'h_wet_floor',                  floorTint: TINT.floor }, // wet floor sign — passable
   'M': { floor: 'h_floor', obj: 'h_mop_bucket',  solid: true, floorTint: TINT.floor }, // mop bucket
-
-  // Lobby / front-of-house — added in the lobby reorg pass when the
-  // new themed sheets shipped. All solid so they read as furniture
-  // rather than passable floor decals.
-  'o': { floor: 'h_floor', obj: 'h_clock_office', solid: true, floorTint: TINT.floor }, // wall clock
-  'O': { floor: 'h_floor', obj: 'h_coat_rack',    solid: true, floorTint: TINT.floor }, // coat rack
-  'm': { floor: 'h_floor', obj: 'h_armchair',     solid: true, floorTint: TINT.floor }, // padded blue armchair
-  'Q': { floor: 'h_floor', obj: 'h_plant_lobby',  solid: true, floorTint: TINT.floor }, // large lobby plant
-  'q': { floor: 'h_floor', obj: 'h_recycle',      solid: true, floorTint: TINT.floor }, // blue recycling bin
 }
 
 // Tiles that act as room boundaries for flood-fill: walls and doors.

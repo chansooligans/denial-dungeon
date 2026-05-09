@@ -1,15 +1,14 @@
 // Editor-side mirror of the two mapping tables that drive in-game
-// rendering. Duplicated rather than imported from the scene modules
-// because the editor doesn't have a Phaser context — we only need
-// the static "glyph → texture key → sprite PNG" lookups and labels.
-//
-// Keep in sync with:
-//   - HospitalScene.TILE_TEXTURES (glyph → object texture key)
-//   - BootScene.OBJECT_SOURCES    (texture key → /sprites/objects-raw slot)
-// If a new glyph or object key is added there, add it here too or
-// the editor will render that tile as "missing".
+// rendering. Glyph→key duplicates HospitalScene.TILE_TEXTURES (kept
+// here because the Phaser-laden scene module would bloat the editor
+// bundle). Key→sprite-path is now derived from the canonical
+// `OBJECT_SOURCES` table in `../scenes/objectSources`, so the editor
+// and BootScene can't drift on which slot backs each texture key.
 
-/** Map glyph → object texture key (matches HospitalScene). */
+import { OBJECT_SOURCES } from '../scenes/objectSources'
+
+/** Map glyph → object texture key (matches HospitalScene.TILE_TEXTURES).
+ *  Keep in sync if a new glyph or object key is added there. */
 export const GLYPH_TO_OBJ_KEY: Record<string, string> = {
   c: 'h_desk',
   h: 'h_chair',
@@ -45,12 +44,6 @@ export const GLYPH_TO_OBJ_KEY: Record<string, string> = {
   f: 'h_fountain',
   '!': 'h_wet_floor',
   M: 'h_mop_bucket',
-  // Lobby reorg additions
-  o: 'h_clock_office',
-  O: 'h_coat_rack',
-  m: 'h_armchair',
-  Q: 'h_plant_lobby',
-  q: 'h_recycle',
 }
 
 /** Reverse — used by the palette. */
@@ -58,68 +51,25 @@ export const OBJ_KEY_TO_GLYPH: Record<string, string> = Object.fromEntries(
   Object.entries(GLYPH_TO_OBJ_KEY).map(([g, k]) => [k, g])
 )
 
-/** Map object texture key → relative sprite path under /public/.
- *  Mirrors BootScene.OBJECT_SOURCES (only the keys reachable via a
- *  glyph; ambient/unused keys omitted). */
-export const OBJ_KEY_TO_SRC: Record<string, string> = {
-  h_counter: 'sprites/objects-raw/obj1_0_0.png',
-  h_desk: 'sprites/objects-raw/desks_0_2.png', // canonical desk: row-1 col-3 of desks.png
-  h_chair: 'sprites/objects-raw/obj1_0_2.png',
-  h_cabinet: 'sprites/objects-raw/obj1_0_3.png',
-  h_bulletin: 'sprites/objects-raw/obj1_1_0.png',
-  h_plant: 'sprites/objects-raw/obj1_1_1.png',
-  h_water: 'sprites/objects-raw/obj1_2_1.png',
-  h_vending: 'sprites/objects-raw/obj1_2_2.png',
-  h_bed: 'sprites/objects-raw/obj3_0_0.png',
-  h_equipment: 'sprites/objects-raw/obj3_1_3.png',
-  h_fax: 'sprites/objects-raw/obj5_1_0.png',
-  // Phase-C — these texture keys exist in BootScene's OBJECT_SOURCES
-  // but the renderer falls back to a blank silhouette if missing.
-  h_aed: 'sprites/objects-raw/obj4_3_0.png',
-  h_sanitizer: 'sprites/objects-raw/obj2_1_1.png',
-  h_couch: 'sprites/objects-raw/obj2_0_0.png',
-  h_bench: 'sprites/objects-raw/obj2_0_1.png',
-  h_brochure: 'sprites/objects-raw/obj2_0_3.png',
-  h_signin: 'sprites/objects-raw/obj2_3_3.png',
-  h_payphone: 'sprites/objects-raw/obj4_3_1.png',
-  h_arrow_sign: 'sprites/objects-raw/obj4_3_2.png',
-  h_trash: 'sprites/objects-raw/obj2_1_3.png',
-  h_iv_stand: 'sprites/objects-raw/obj3_0_2.png',
-  h_wheelchair: 'sprites/objects-raw/obj3_0_3.png',
-  h_gurney: 'sprites/objects-raw/obj3_3_3.png',
-  h_bookshelf: 'sprites/objects-raw/obj5_0_0.png',
-  h_shredder: 'sprites/objects-raw/obj5_2_2.png',
-  h_kiosk: 'sprites/objects-raw/obj1_3_3.png',
-  h_directory: 'sprites/objects-raw/obj2_1_0.png',
-  h_pneumatic: 'sprites/objects-raw/obj5_1_3.png',
-  h_elevator: 'sprites/objects-raw/obj4_2_1.png',
-  h_fountain: 'sprites/objects-raw/obj4_2_3.png',
-  h_wet_floor: 'sprites/objects-raw/obj4_0_2.png',
-  h_mop_bucket: 'sprites/objects-raw/obj4_0_1.png',
-  h_whiteboard: 'sprites/objects-raw/obj1_3_1.png', // fallback (no exact whiteboard sheet)
-}
+/** Map object texture key → relative sprite path under `/public/`.
+ *  Auto-derived from the canonical OBJECT_SOURCES so the editor
+ *  always renders whatever cell BootScene is currently loading.
+ *  Includes the 12 desk variants + 20 plant variants since
+ *  OBJECT_SOURCES merges those in. */
+export const OBJ_KEY_TO_SRC: Record<string, string> = Object.fromEntries(
+  Object.entries(OBJECT_SOURCES).map(([key, slot]) =>
+    [key, `sprites/objects-raw/${slot}.png`]
+  )
+)
 
-/** Variant texture keys (desks_1..12, plants_1..20) registered in
- *  BootScene.OBJECT_SOURCES. Not glyph-addressable in the current
- *  TILE_TEXTURES, but listed here so the map-editor palette can
- *  preview them — switching a tile to one would require adding a
- *  new glyph mapping in HospitalScene. */
-export const VARIANT_KEY_TO_SRC: Record<string, string> = {
-  ...Object.fromEntries(
-    Array.from({ length: 12 }, (_, i) => {
-      const r = Math.floor(i / 3)
-      const c = i % 3
-      return [`h_desk_${i + 1}`, `sprites/objects-raw/desks_${r}_${c}.png`]
-    })
-  ),
-  ...Object.fromEntries(
-    Array.from({ length: 20 }, (_, i) => {
-      const r = Math.floor(i / 5)
-      const c = i % 5
-      return [`h_plant_${i + 1}`, `sprites/objects-raw/plants_${r}_${c}.png`]
-    })
-  ),
-}
+/** Variant-only keys (h_desk_1..12, h_plant_1..20). Subset of
+ *  OBJ_KEY_TO_SRC, exposed separately for the variant browsers in
+ *  the intro / map editors that want them grouped. */
+export const VARIANT_KEY_TO_SRC: Record<string, string> = Object.fromEntries(
+  Object.entries(OBJ_KEY_TO_SRC).filter(([key]) =>
+    /^h_(desk|plant)_\d+$/.test(key)
+  )
+)
 
 /** Human label per glyph for the palette / status line. */
 export const GLYPH_LABEL: Record<string, string> = {
@@ -156,9 +106,4 @@ export const GLYPH_LABEL: Record<string, string> = {
   f: 'Fountain',
   '!': 'Wet floor',
   M: 'Mop bucket',
-  o: 'Wall clock',
-  O: 'Coat rack',
-  m: 'Armchair',
-  Q: 'Lobby plant',
-  q: 'Recycle bin',
 }
