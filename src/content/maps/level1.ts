@@ -15,6 +15,8 @@
 //     - HIM (Health Information Mgmt / coding)
 //     - BILLING (claim queue / clearinghouse)
 //     - PFS (Patient Financial Services / phone bank)
+//     - LAB (pathology / micro — clinical-support overflow at the SE
+//             corner; reached via the SW trough extended east past PFS)
 //   (AUDIT used to live here — moved up to the second floor as part
 //   of the "summoned to the top" reading: above = decisions, ground =
 //   labor, below = where things go to die.)
@@ -38,6 +40,9 @@
 //             translate. Billers submit. Payers decide. Patients pay.")
 //     - COMPLIANCE (placeholder; HIPAA / audit binders / dragon at the
 //             top of the tower)
+//     - LOUNGE_2F (staff break room east of Payer; mirrors the LAB's
+//             placement on 1F and gives the upstairs staff somewhere
+//             to take ten minutes without going downstairs)
 //   Reached via 'S' teleport in Main Hub. Floor 2 is laid out as a
 //   separate region of the same big tilemap; teleport-tile pairs in
 //   MapDef.stairs handle the fade-and-snap.
@@ -77,6 +82,11 @@ const MED_RECORDS = { x: 51, y: 37, w: 14, h: 10 } // chart room
 const HIM      = { x: 4,  y: 50, w: 14, h: 10 } // coding / CDI floor
 const BILLING  = { x: 22, y: 50, w: 14, h: 10 } // clearinghouse / claim queue
 const PFS      = { x: 40, y: 50, w: 16, h: 10 } // patient financial services / phones
+// Lab is the SE corner of the south wing — reads as "clinical-support
+// overflow" alongside the east-wing diagnostics (radiology / pharmacy /
+// records). Adjacent to PFS on its east wall; reached via the SW
+// trough corridor extended east past PFS.
+const LAB      = { x: 56, y: 50, w: 12, h: 8  } // pathology / micro lab
 
 // === West wing — north of Patient Services, west of MAIN_HUB.
 //     Reached by extending the main north-south corridor past the
@@ -112,6 +122,11 @@ const STAIRWELL_1F = { x: 16, y: 4,  w: 5,  h: 6  } // 1F stair annex
 const LANDING_2F  = { x: 30, y: 94,  w: 8,  h: 5  } // small stair foyer
 const AUDIT       = { x: 4,  y: 100, w: 28, h: 10 } // relocated from y=62
 const PAYER       = { x: 36, y: 100, w: 18, h: 10 } // Aetna/Anthem-equivalent office
+// Second staff lounge — for the upstairs admin / payer / compliance
+// crowd, who otherwise had nowhere to take a break without going
+// downstairs. Sits east of PAYER along the same y as AUDIT/PAYER and
+// hooks into the 2F east-west trunk extended east past PAYER.
+const LOUNGE_2F   = { x: 56, y: 100, w: 12, h: 8  } // 2F staff lounge
 const COMPLIANCE  = { x: 18, y: 113, w: 28, h: 10 } // HIPAA / binders / boss-prep
 
 // Door world-coords (used to plan corridor endpoints).
@@ -465,6 +480,35 @@ const { layout, tileMeta } = buildMap({
         { dx: 13, dy: 7, ch: 'P' },
       ],
     },
+    {
+      id: 'lab',
+      ...LAB,
+      // North door at offset 4 → world (60, 50). Opens onto the SW
+      // trough corridor at y=49 (extended east past PFS to reach
+      // this room).
+      doors: [{ side: 'N', offset: 4 }],
+      // Pathology / microbiology: bench counter on the north wall
+      // (broken at the door entry), three microscope work-stations
+      // in the middle, sample cabinets + a fax for results
+      // turn-around on the south wall. Interior 10×6; valid item
+      // dx 0..9, dy 0..5. Door entry at interior dx=3 dy=0 stays
+      // open so the player can walk straight through.
+      items: [
+        // North bench counter (skip dx=3 for door entry).
+        { dx: 0, dy: 0, ch: 'R' }, { dx: 1, dy: 0, ch: 'R' }, { dx: 2, dy: 0, ch: 'R' },
+        { dx: 5, dy: 0, ch: 'F' }, // sample binders
+        { dx: 7, dy: 0, ch: 'B' }, // results / accession board
+        { dx: 9, dy: 0, ch: 'P' },
+        // Microscope desks — three pairs across the middle row.
+        { dx: 1, dy: 2, ch: 'c' }, { dx: 1, dy: 3, ch: 'h' },
+        { dx: 4, dy: 2, ch: 'c' }, { dx: 4, dy: 3, ch: 'h' },
+        { dx: 8, dy: 2, ch: 'c' }, { dx: 8, dy: 3, ch: 'h' },
+        // South wall — cabinets + fax for outgoing pathology
+        // reports.
+        { dx: 1, dy: 5, ch: 'F' }, { dx: 4, dy: 5, ch: 'F' }, { dx: 9, dy: 5, ch: 'F' },
+        { dx: 7, dy: 5, ch: 'X' },
+      ],
+    },
     // ===== Outdoor — parking lot =====
     {
       id: 'outdoor',
@@ -568,6 +612,36 @@ const { layout, tileMeta } = buildMap({
       ],
     },
     {
+      id: 'lounge2F',
+      ...LOUNGE_2F,
+      // North door at offset 4 → world (60, 100). Opens onto the
+      // 2F trunk corridor extended east past PAYER.
+      doors: [{ side: 'N', offset: 4 }],
+      // Staff break room for the upstairs crowd. Couches arranged
+      // around a coffee table, vending + water cooler on the east
+      // wall, TV-style whiteboard on the north, plants in the
+      // corners. Interior 10×6; valid dx 0..9, dy 0..5.
+      items: [
+        // North wall: TV (whiteboard glyph) + flanking plants;
+        // dx=3 left open for door entry.
+        { dx: 1, dy: 0, ch: 'P' },
+        { dx: 6, dy: 0, ch: 'B' },
+        { dx: 9, dy: 0, ch: 'P' },
+        // U-shaped seating around a coffee table (interior west
+        // half). 'h' = upholstered chair / couch stand-in, 'c' =
+        // low table.
+        { dx: 2, dy: 2, ch: 'h' }, { dx: 3, dy: 2, ch: 'h' }, { dx: 4, dy: 2, ch: 'h' },
+        { dx: 3, dy: 3, ch: 'c' },
+        { dx: 2, dy: 4, ch: 'h' }, { dx: 3, dy: 4, ch: 'h' }, { dx: 4, dy: 4, ch: 'h' },
+        // East cluster: vending + water cooler.
+        { dx: 8, dy: 2, ch: 'V' },
+        { dx: 8, dy: 4, ch: 'w' },
+        // South corners.
+        { dx: 1, dy: 5, ch: 'P' },
+        { dx: 9, dy: 5, ch: 'P' },
+      ],
+    },
+    {
       id: 'compliance',
       ...COMPLIANCE,
       // North door at offset 16 onto a vertical stub from the 2F
@@ -613,7 +687,7 @@ const { layout, tileMeta } = buildMap({
     {
       points: [
         [HIM.x + 7, SW_TROUGH_Y], // east-west cross-corridor, anchored to HIM's door col
-        [PFS.x + 8, SW_TROUGH_Y], // ... extends to PFS's door col
+        [LAB.x + 4, SW_TROUGH_Y], // ... extends past PFS to the LAB's N door col (60, 49)
       ],
       width: 1,
     },
@@ -672,11 +746,14 @@ const { layout, tileMeta } = buildMap({
       ],
       width: 1,
     },
-    // East-west trunk on 2F at y=99 connecting AUDIT-N + PAYER-N doors.
+    // East-west trunk on 2F at y=99 connecting AUDIT-N + PAYER-N +
+    // LOUNGE_2F-N doors. Extended east past PAYER to reach the new
+    // staff lounge (mirrors the SW-trough extension on 1F that
+    // reaches the LAB).
     {
       points: [
-        [AUDIT.x + 22, AUDIT.y - 1],   // (26, 99)
-        [PAYER.x + 4,  PAYER.y - 1],   // (40, 99)
+        [AUDIT.x + 22,     AUDIT.y - 1],     // (26, 99)
+        [LOUNGE_2F.x + 4,  LOUNGE_2F.y - 1], // (60, 99)
       ],
       width: 1,
     },
@@ -729,6 +806,7 @@ export const LEVEL_1_MAP: MapDef = {
     { name: 'HIM / CODING',     shortName: 'HIM',  ...HIM },
     { name: 'BILLING',          shortName: 'BIL',  ...BILLING },
     { name: 'PFS / PHONES',     shortName: 'PFS',  ...PFS },
+    { name: 'LAB',              shortName: 'LAB',  ...LAB },
     { name: 'RADIOLOGY',        shortName: 'RAD',  ...RADIOLOGY },
     { name: 'PHARMACY',         shortName: 'PHA',  ...PHARMACY },
     { name: 'MEDICAL RECORDS',  shortName: 'REC',  ...MED_RECORDS },
@@ -738,6 +816,7 @@ export const LEVEL_1_MAP: MapDef = {
     { name: '2F LANDING',       shortName: '2F',   ...LANDING_2F },
     { name: 'AUDIT CONFERENCE', shortName: 'AUD',  ...AUDIT },
     { name: 'PAYER OFFICE',     shortName: 'PAY',  ...PAYER },
+    { name: 'STAFF LOUNGE 2F',  shortName: 'LN2',  ...LOUNGE_2F },
     { name: 'COMPLIANCE',       shortName: 'CMP',  ...COMPLIANCE },
   ],
   stairs: [
@@ -885,10 +964,13 @@ export const LEVEL_1_MAP: MapDef = {
     { npcId: 'cashier',          tileX: CAFETERIA.x + 9, tileY: CAFETERIA.y + 2, facing: 'left', ambient: true },
     { npcId: 'server',           tileX: CAFETERIA.x + 7, tileY: CAFETERIA.y + 5, ambient: true },
 
-    // (Kitchen + Lounge are unpopulated for now — small rooms,
-    // saving for a future cast. Roni / lab_tech is still defined
-    // in npcSources + npcs.ts but unplaced; relocate her when a
-    // future room fits.)
+    // Lab — Roni runs the bench. She's standing between the second
+    // and third microscope desks (interior dx=5, dy=2 — clear floor
+    // tile), facing 'right' toward the desk + sample binders.
+    { npcId: 'lab_tech', tileX: LAB.x + 6, tileY: LAB.y + 3, facing: 'right', ambient: true },
+
+    // (Kitchen + Lounge / Lounge 2F are unpopulated for now — small
+    // rooms saved for a future cast pass.)
 
     // Main Hub — extra hospitalist, joins the existing physician
     // crowd. Faces 'right' toward the hub bulletin / colleagues.
