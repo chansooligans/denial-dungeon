@@ -1191,14 +1191,68 @@ export class HospitalScene extends Phaser.Scene {
 
   /** Press-E examine: look up the tile in front of the player and
    *  show its flavor text if any. "In front" is determined by the
-   *  player's current facing texture. */
+   *  player's current facing texture. Also handles the chart-pull
+   *  interaction when the facing tile is an 'F' cabinet inside
+   *  Medical Records — sets `state.chartsPulled[encounterId]` for
+   *  the current level's gated case so the player can subsequently
+   *  return to the case-handing NPC and choose the descent option. */
   private examineFacingTile() {
     const dir = this.facingDelta()
     const tx = this.playerTileX + dir.dx
     const ty = this.playerTileY + dir.dy
     const ch = this.mapDef.layout[ty]?.[tx]
+    if (this.tryChartPull(ch, tx, ty)) return
     const flavor = ch ? flavorForTile(ch, tx, ty) : undefined
     if (flavor) this.flashFlavorToast(flavor)
+  }
+
+  /** Chart-pull check. Returns true if the tile + level + state
+   *  combination triggers a chart pull (which sets the flag, saves,
+   *  and toasts the matching narration); false otherwise. The caller
+   *  falls through to normal flavor-text examination on false. */
+  private tryChartPull(ch: string | undefined, tx: number, ty: number): boolean {
+    if (ch !== 'F') return false
+    // MedRecords room bounds (mirror level1.ts MED_RECORDS).
+    const inMedRecords =
+      tx >= 51 && tx < 51 + 14 && ty >= 37 && ty < 37 + 10
+    if (!inMedRecords) return false
+    // Map current level → encounterId whose chart this pull resolves.
+    // Two cases gate descent on a chart pull right now (Pat L4 bundle,
+    // Sam L5 wraith); add new entries as more cases need the detour.
+    const lvl = getState().currentLevel
+    const PULL_BY_LEVEL: Record<number, { encounterId: string; toast: string }> = {
+      4: {
+        encounterId: 'co_97',
+        toast:
+          "You pull Sarah Kim's chart.\n" +
+          "Op-note clear: separate visit, modifier-25 was just never appended.",
+      },
+      5: {
+        encounterId: 'co_50',
+        toast:
+          "You pull Mr. Walker's chart.\n" +
+          "Echo report: LVEF 28%. Right there in black ink.",
+      },
+    }
+    const target = PULL_BY_LEVEL[lvl]
+    if (!target) {
+      // Player is poking binders on a non-gated level — show flavor
+      // but don't set any flag.
+      this.flashFlavorToast("Old binders. They smell like lawyers.")
+      return true
+    }
+    const state = getState()
+    state.chartsPulled ??= {}
+    if (state.chartsPulled[target.encounterId]) {
+      // Idempotent — show a different toast on re-pull so the player
+      // gets feedback that they've already done this.
+      this.flashFlavorToast("You already pulled this one.\nIt's in your bag.")
+      return true
+    }
+    state.chartsPulled[target.encounterId] = true
+    saveGame()
+    this.flashFlavorToast(target.toast)
+    return true
   }
 
   private facingDelta(): { dx: number; dy: number } {

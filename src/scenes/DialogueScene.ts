@@ -113,8 +113,13 @@ export class DialogueScene extends Phaser.Scene {
     const choiceStep = m ? 88 : 30
     const choiceTopOffset = m ? 340 : 100
 
-    if (node.choices && node.choices.length > 0) {
-      node.choices.forEach((choice, i) => {
+    // Filter choices by their `condition` against game state (e.g. a
+    // descent option that should only appear once the relevant chart
+    // has been pulled from Medical Records).
+    const visibleChoices = (node.choices ?? []).filter(c => this.choiceVisible(c))
+
+    if (visibleChoices.length > 0) {
+      visibleChoices.forEach((choice, i) => {
         const y = height - choiceTopOffset + i * choiceStep
         const ct = this.add.text(60, y, `> ${choice.text}`, {
           fontSize: `${choiceSize}px`, fontFamily: 'monospace', color: '#f4d06f',
@@ -177,6 +182,19 @@ export class DialogueScene extends Phaser.Scene {
       window.addEventListener('keydown', onKey)
       this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => window.removeEventListener('keydown', onKey))
     }
+  }
+
+  /** Evaluate a DialogueChoice's `condition` against current game
+   *  state. Returns true if the choice should be visible. Currently
+   *  supports chartPulled / chartNotPulled gates; add new condition
+   *  kinds here as they appear in design. */
+  private choiceVisible(choice: DialogueChoice): boolean {
+    const cond = choice.condition
+    if (!cond) return true
+    const charts = getState().chartsPulled ?? {}
+    if (cond.chartPulled && !charts[cond.chartPulled]) return false
+    if (cond.chartNotPulled && charts[cond.chartNotPulled]) return false
+    return true
   }
 
   private selectChoice(choice: DialogueChoice) {

@@ -377,11 +377,26 @@ export const DIALOGUES: Record<string, DialogueNode> = {
     id: 'pat_l4_intake_2',
     speaker: 'Pat',
     text: "Quick fix if you know where to put it. Care to give it a swing?",
+    // Three branches gated on chart state:
+    //  - chart not yet pulled: "I'll grab the op-note first" + decline
+    //  - chart pulled: descend immediately
+    // The chart-pull is a tile interaction inside Medical Records (any
+    // 'F' cabinet on L4); see HospitalScene.tryChartPull.
     choices: [
+      { text: '(Pull the op-note first.)',
+        next: 'pat_l4_chart_hint',
+        condition: { chartNotPulled: 'co_97' } },
       { text: '(Sit down and code it.)',
-        effect: { triggerDescent: { encounterId: 'co_97' } } },
+        effect: { triggerDescent: { encounterId: 'co_97' } },
+        condition: { chartPulled: 'co_97' } },
       { text: 'In a bit.', next: 'pat_l4_intake_back' },
     ],
+  },
+  pat_l4_chart_hint: {
+    id: 'pat_l4_chart_hint',
+    speaker: 'Pat',
+    text: "Right. Op-note's in Medical Records — east wing, third room down. The binders by the desk. Won't make sense without it.",
+    choices: [{ text: '(Step away.)' }],
   },
   pat_l4_intake_back: {
     id: 'pat_l4_intake_back',
@@ -401,11 +416,23 @@ export const DIALOGUES: Record<string, DialogueNode> = {
     id: 'sam_l5_intake_2',
     speaker: 'Sam',
     text: "Wraiths feed on missing pages. Bring the evidence and it dissolves. Try?",
+    // Same chart-gating pattern as Pat L4: descent only available
+    // after the player has pulled Walker's echo from Medical Records.
     choices: [
-      { text: '(Pull the chart.)',
-        effect: { triggerDescent: { encounterId: 'co_50' } } },
+      { text: '(Get the echo report from Records first.)',
+        next: 'sam_l5_chart_hint',
+        condition: { chartNotPulled: 'co_50' } },
+      { text: '(Bring the echo to the wraith.)',
+        effect: { triggerDescent: { encounterId: 'co_50' } },
+        condition: { chartPulled: 'co_50' } },
       { text: 'Later.', next: 'sam_l5_intake_back' },
     ],
+  },
+  sam_l5_chart_hint: {
+    id: 'sam_l5_chart_hint',
+    speaker: 'Sam',
+    text: "Walker. Echo dated 09/14. Medical Records — east wing — bottom shelf. Without the LVEF the LCD doesn't apply. Don't go down empty-handed.",
+    choices: [{ text: '(Step away.)' }],
   },
   sam_l5_intake_back: {
     id: 'sam_l5_intake_back',

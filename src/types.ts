@@ -148,6 +148,20 @@ export interface DialogueChoice {
   text: string
   next?: string
   effect?: DialogueEffect
+  /**
+   * Optional gate on choice visibility. Evaluated at render time
+   * against game state — choices whose condition isn't satisfied are
+   * filtered out before the player sees them. Used to gate descent on
+   * a chart having been pulled (or not yet pulled, for the "you need
+   * to go grab it first" branch). Add new fields here as new gating
+   * mechanics appear.
+   */
+  condition?: {
+    /** Show only if `state.chartsPulled[encounterId]` is true. */
+    chartPulled?: string
+    /** Show only if `state.chartsPulled[encounterId]` is NOT true. */
+    chartNotPulled?: string
+  }
 }
 
 export interface DialogueEffect {
@@ -443,6 +457,16 @@ export interface GameState {
    *  create() to play a blur-to-unblur "wake-up" transition with a
    *  CLAIM SUBMITTED indicator before the thanks dialogue fires. */
   pendingClaimSubmitted?: { encounterId: string; claimId: string | null } | null
+  /**
+   * Encounter ids the player has pulled the chart for. Some cases gate
+   * descent on having pulled the relevant chart from Medical Records
+   * (op-note, echo report, etc.) so the appeal has documentation
+   * grounding. The chart-pull is a tile interaction inside MedRecords
+   * (any 'F' cabinet when the current level matches a gated case);
+   * the dialogue choice that triggers descent reads this map via a
+   * DialogueChoice.condition.
+   */
+  chartsPulled?: Record<string, boolean>
 }
 
 export interface Decision {
