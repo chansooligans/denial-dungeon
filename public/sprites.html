@@ -710,6 +710,16 @@ const sheets = [
   { name: 'npc18', rows: 4 },
   { name: 'npc19', rows: 4 },
   { name: 'npc20', rows: 4 },
+  // Round 6 — single-character sheets (May-2026 batch 3). Each
+  // sheet holds one character; the build script normalizes both 4×1
+  // strips and 2×2 grids into the canonical `npc<N>_0_<dir>.png`
+  // shape, so from the library's perspective they're 1-row sheets.
+  { name: 'npc21', rows: 1 }, // Chansoo
+  { name: 'npc22', rows: 1 }, // Nicole
+  { name: 'npc23', rows: 1 }, // Nick
+  { name: 'npc24', rows: 1 }, // Monika
+  { name: 'npc25', rows: 1 }, // Chris
+  { name: 'npc26', rows: 1 }, // Adam
 ];
 
 // Per-slot suggested custom NPC for the "auto-fill remaining" button.
