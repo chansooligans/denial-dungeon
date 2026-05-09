@@ -619,7 +619,8 @@ export class HospitalScene extends Phaser.Scene {
       // for setScale so the offset works at any character scale.
       const labelY = spriteY - sprite.displayHeight - 4
       const label = this.add.text(px, labelY, npc.name, {
-        fontSize: '8px', fontFamily: 'monospace', color: '#7ee2c1',
+        fontSize: '14px', fontFamily: 'monospace', color: '#7ee2c1',
+        stroke: '#0e1116', strokeThickness: 3,
       }).setOrigin(0.5).setDepth(6).setAlpha(0)
 
       this.npcSprites.push({ sprite, npc, label, tileX: p.tileX, tileY: p.tileY })
