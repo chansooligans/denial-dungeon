@@ -112,12 +112,15 @@ npx tsc --noEmit     # Type-check
 
 ## Dev Tools
 
-Authoring + diagnostic pages ship alongside the game (Vite multi-entry build, all on the same GitHub Pages deploy):
+**Single index page: [`/dev.html`](https://chansooligans.github.io/the-waiting-room/dev.html)** — one card per tool, with descriptions. Bookmark it.
 
-- **`/sprites.html`** — Sprite library + mapping UI. Tabs for Chloe / NPCs / Objects with sub-tabs by category, active-in-game badges, and per-card cell-remap dropdowns.
-- **`/map-editor.html`** — Visual editor for `level1.ts`'s placed objects. Drag-and-drop placement, resize, flip, zoom controls, palette of every available sprite. Outputs a paste-back `tileMeta` + `tileOverrides` snippet.
-- **`/intro-editor.html`** — Beat-by-beat intro cinematic editor. Timeline of every beat, voiceover audio scrubber per text beat, drag-and-drop replacement for cover art, "open game at this beat" deep-link, paste-back TS export.
-- **`/prototypes.html`** — Catalog of encounter-redesign prototypes (one HTML per archetype: Wraith, Bundle, Reaper, Gatekeeper, Fog, Hydra, Swarm, Specter, Doppelgänger, Lighthouse, Surprise Bill, Audit Boss).
+Everything ships alongside the game on the same Vite + GitHub Pages deploy:
+
+- **`/map-editor.html`** — Visual editor for `level1.ts`'s placed objects + NPCs. Drag to move, F flips an object, R cycles an NPC's facing. Outputs paste-back `tileMeta` + `tileOverrides` + `npcPlacements`.
+- **`/intro-editor.html`** — Beat-by-beat intro cinematic editor. Voiceover scrubber per text beat, drag-and-drop cover art, "open game at this beat" deep-link, paste-back TS export.
+- **`/sprites.html`** — Sprite library + mapping UI. NPC tab grouped by character type (Doctors, Nurses & Techs, etc.) with active-in-game badges and per-cell remap dropdowns.
+- **`/prototypes.html`** — Catalog of encounter-redesign prototypes (one HTML per archetype).
+- **In-game dev panel** — backtick (`~`) in any scene. Save presets per level, jump-to-room teleports, chart-pull toggles, copy/paste/clear save. Auto-on in `npm run dev`; append `?dev=1` on the deployed site if you need it.
 
 URL deep-link: `/?introBeat=N` jumps the cinematic to beat `N` (used by the intro editor's "open at this beat" button).
 

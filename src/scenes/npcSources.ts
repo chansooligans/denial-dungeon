@@ -54,4 +54,10 @@ export const NPC_SOURCES: Record<string, string> = {
   paramedic:          'npc19_1', // Outdoor: female EMT with EMS bag
   flower_visitor:     'npc17_1', // Lobby: visitor with bouquet
   elder_patient:      'npc20_3', // Lobby: elderly bearded man with cane
+  // Round 4 — Cafeteria + a few back-fills from the uncast pool.
+  cafeteria_worker:   'npc9_3',  // white apron + cap (cook)
+  cashier:            'npc13_1', // apron, runs the register
+  server:             'npc13_4', // waiter vest
+  bike_emt:           'npc17_2', // Outdoor (alt EMT, helmet + green jacket)
+  dr_park:            'npc7_1',  // Main Hub: physician with glasses, white coat
 }

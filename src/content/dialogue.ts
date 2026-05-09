@@ -677,6 +677,33 @@ export const DIALOGUES: Record<string, DialogueNode> = {
     text: "Sign says cardiology that way. Or it says cafeteria. Hard to tell. The arrow's at an angle.",
   },
 
+  // Round 4 — cafeteria staff + a couple of pool back-fills.
+  cafeteria_worker_intro: {
+    id: 'cafeteria_worker_intro',
+    speaker: 'Manny',
+    text: "We had meatloaf today. We always have meatloaf today. They like the consistency.",
+  },
+  cashier_intro: {
+    id: 'cashier_intro',
+    speaker: 'Yvette',
+    text: "Visitor or staff? Doesn't matter, same price. I just like to know which line you cut.",
+  },
+  server_intro: {
+    id: 'server_intro',
+    speaker: 'Reggie',
+    text: "Tray here, tray there. Don't sit at the corner table — leg's loose, swore I told them last week.",
+  },
+  bike_emt_intro: {
+    id: 'bike_emt_intro',
+    speaker: 'Chase',
+    text: "Three miles in eight minutes. The rig was still on the freeway. They paid me less than the rig made waiting.",
+  },
+  dr_park_intro: {
+    id: 'dr_park_intro',
+    speaker: 'Dr. Park',
+    text: "I rounded twenty-two patients before the auditor's email. I'm not reading it until the cafeteria runs out of coffee.",
+  },
+
   dana_l10_intake_back: {
     id: 'dana_l10_intake_back',
     speaker: 'Dana',

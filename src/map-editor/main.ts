@@ -244,6 +244,8 @@ function render() {
       // Color by glyph type — quick visual cue, not pixel-accurate.
       if (ch === 'W') cell.classList.add('wall')
       else if (ch === 'D' || ch === 'L') cell.classList.add('door')
+      else if (ch === 'S') cell.classList.add('stair')
+      else if (ch === 'O') cell.classList.add('exit')
       else cell.classList.add('floor')
       cell.addEventListener('mousedown', onCellMouseDown)
       canvas.appendChild(cell)
@@ -349,6 +351,23 @@ function render() {
     label.style.top = `${cy}px`
     label.textContent = room.name
     canvas.appendChild(label)
+  }
+
+  // Stair/exit teleport labels — one badge per `from` tile,
+  // showing the stair's label (e.g. "↑ 2F", "← EXIT"). Pulls
+  // from LEVEL_1_MAP.stairs so the editor reflects the same
+  // teleport graph the game uses.
+  for (const s of LEVEL_1_MAP.stairs ?? []) {
+    if (!s.label) continue
+    const px = (s.from.x + 0.5) * TILE
+    const py = (s.from.y + 0.5) * TILE
+    const badge = document.createElement('div')
+    badge.className = 'stair-label'
+    badge.style.left = `${px}px`
+    badge.style.top = `${py}px`
+    badge.textContent = s.label
+    badge.title = `${s.label}: (${s.from.x},${s.from.y}) → (${s.to.x},${s.to.y})`
+    canvas.appendChild(badge)
   }
 
   // Selection ring on the underlying tile (works for both objects
