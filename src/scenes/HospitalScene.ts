@@ -435,28 +435,33 @@ export class HospitalScene extends Phaser.Scene {
         if (tileDef.floorTint !== undefined) floor.setTint(tileDef.floorTint)
         this.tileFloorSprites[y][x] = floor
 
-        if (tileDef.obj) {
-          // Objects render at 2× scale, bottom-anchored at the tile's
-          // bottom edge — matches how characters render so beds /
-          // cabinets / vending machines overflow up into the tile
-          // above (visually 2 tiles tall) instead of being squished
-          // into one tile. The placement still occupies one logical
-          // tile for collision; the sprite is just visually taller.
-          // Procedural-fallback 16×16 textures are first scaled to
-          // TILE via setDisplaySize so the 2× then renders at 2 tiles.
+        // Per-tile overrides — `tileMeta` is built by mapBuilder from
+        // RoomItem fields, or produced by /map-editor.html and
+        // pasted in by hand. Drives sprite swap, size multiplier,
+        // and horizontal flip. A tile renders an obj when EITHER
+        // the glyph has a default `tileDef.obj` OR `meta.sprite`
+        // is set — letting authors place inactive (no-glyph) textures
+        // directly via the editor.
+        const meta = this.mapDef.tileMeta?.[`${x},${y}`]
+        const objKey = meta?.sprite ?? tileDef.obj
+        if (objKey) {
+          // Objects render at 2× scale by default, bottom-anchored
+          // at the tile's bottom edge — matches how characters render
+          // so beds / cabinets / vending machines overflow up into
+          // the tile above. `meta.size` scales that base.
+          const sizeMult = meta?.size ?? 1
+          const dispSize = TILE * 2 * sizeMult
           const objY = (y + 1) * TILE
-          const obj = this.add.image(px, objY, tileDef.obj)
+          const obj = this.add.image(px, objY, objKey)
             .setOrigin(0.5, 1).setDepth(2).setAlpha(0)
-          obj.setDisplaySize(TILE * 2, TILE * 2)
-          if (tileDef.objTint !== undefined) obj.setTint(tileDef.objTint)
-          // Per-tile orientation overrides — `tileMeta` is built by
-          // mapBuilder from any `flipX` on a RoomItem, or produced by
-          // /map-editor.html and pasted into the map. Mirrors a
-          // sprite horizontally (e.g. face a side-view chair the
-          // other way). Rotation isn't supported — author rotated
-          // variants in source art instead, since CSS-rotating
-          // isometric sprites distorts their perspective.
-          const meta = this.mapDef.tileMeta?.[`${x},${y}`]
+          obj.setDisplaySize(dispSize, dispSize)
+          // Default tint applies only when the renderer is using the
+          // glyph's default obj. If the user overrode the sprite via
+          // tileMeta, the tint (which was tuned for the default art)
+          // would be wrong, so leave the override sprite untinted.
+          if (!meta?.sprite && tileDef.objTint !== undefined) {
+            obj.setTint(tileDef.objTint)
+          }
           if (meta?.flipX) obj.setFlipX(true)
           this.tileObjSprites[y][x] = obj
         }

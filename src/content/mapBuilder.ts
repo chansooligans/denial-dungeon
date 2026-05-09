@@ -1,16 +1,34 @@
 // Map types and structured map builder.
 
-/** Per-tile orientation overrides keyed by `"x,y"` (world coords).
+/** Per-tile object overrides keyed by `"x,y"` (world coords).
  *  Authors place items by character glyph and the renderer picks a
- *  texture per glyph; this sidecar lets a specific tile horizontally-
- *  flip its object sprite without changing the underlying layout.
- *  Built either by `buildMapLayout` (lifting per-item `flipX` from
+ *  default texture per glyph; this sidecar lets specific tiles
+ *  override the sprite, scale, or mirror it horizontally — without
+ *  changing the underlying layout grid.
+ *
+ *  Built either by `buildMapLayout` (lifting per-item fields from
  *  `RoomItem`) or pasted in by hand from `/map-editor.html`.
  *
- *  Rotation used to live here too but it produced odd-looking results
- *  for isometric-perspective sprites — better to author rotated
- *  variants in the source art than to CSS-rotate at render time. */
-export type TileMeta = Record<string, { flipX?: boolean }>
+ *  Fields:
+ *    - `sprite` — texture key to render INSTEAD of the glyph's
+ *      default. Lets you place objects whose texture key isn't yet
+ *      reachable from any glyph in `TILE_TEXTURES` (e.g. a future-
+ *      tier h_pneumatic on a regular floor tile). The tile's floor
+ *      still comes from its glyph; only the obj layer is swapped.
+ *    - `size` — display-size multiplier. Default 1.0 (= 2× tile,
+ *      the standard "object overflows up into the tile above" look).
+ *      0.5 makes a half-size sprite, 1.5 a hero-size piece.
+ *    - `flipX` — horizontal mirror, for facing a side-view sprite
+ *      the other direction without authoring a new variant.
+ *
+ *  Rotation isn't supported — CSS-rotating isometric sprites
+ *  distorts their perspective. Author rotated variants in source
+ *  art instead. */
+export type TileMeta = Record<string, {
+  flipX?: boolean
+  sprite?: string
+  size?: number
+}>
 
 export interface MapDef {
   width: number
@@ -77,6 +95,15 @@ export interface RoomItem {
    *  than CSS-rotating at render time (rotation distorted the
    *  isometric perspective). */
   flipX?: boolean
+  /** Optional sprite-key override — render this specific texture
+   *  here instead of the glyph's default obj. Use to place objects
+   *  whose texture key isn't yet bound to a glyph in `TILE_TEXTURES`
+   *  (e.g. an inactive h_pneumatic placed on a plain floor tile). */
+  sprite?: string
+  /** Optional display-size multiplier (default 1.0 = 2 tiles tall,
+   *  the standard look). Useful for highlighting a hero object or
+   *  shrinking a detail prop. */
+  size?: number
 }
 
 export interface RoomDef {
@@ -236,8 +263,14 @@ function stampRoom(
     const iy = r.y + 1 + item.dy
     if (ix > r.x && ix < r.x + r.w - 1 && iy > r.y && iy < r.y + r.h - 1) {
       grid[iy][ix] = item.ch
-      if (item.flipX !== undefined) {
-        tileMeta[`${ix},${iy}`] = { flipX: item.flipX }
+      // Lift any per-item visual overrides into the world-coord
+      // tileMeta sidecar so they survive the buildMap → render hop.
+      if (item.flipX !== undefined || item.sprite !== undefined || item.size !== undefined) {
+        const m: { flipX?: boolean; sprite?: string; size?: number } = {}
+        if (item.flipX !== undefined) m.flipX = item.flipX
+        if (item.sprite !== undefined) m.sprite = item.sprite
+        if (item.size !== undefined) m.size = item.size
+        tileMeta[`${ix},${iy}`] = m
       }
     }
   }
