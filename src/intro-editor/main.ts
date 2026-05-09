@@ -24,13 +24,7 @@
 // declaration in src/scenes/introBeats.ts. The editor preserves
 // trailing commas and indentation to mirror the existing style.
 
-import {
-  BEATS,
-  SCENE_PARAMS,
-  type Beat,
-  type SceneActionId,
-  type SceneParams,
-} from '../scenes/introBeats'
+import { BEATS, type Beat, type SceneActionId } from '../scenes/introBeats'
 
 // All cover/backdrop comic-page images currently shipped with the
 // game. Hardcoded because browsers can't list `/public/intro/`
@@ -60,12 +54,6 @@ const beats: Beat[] = BEATS.map(b => ({
   ...b,
   lines: b.lines ? [...b.lines] : undefined,
 }))
-
-// Working copy of scene-action parameters. Same "edit-then-paste"
-// model as `beats`. Each scene exposed in this object renders a
-// matching form section in the right edge of the editor pane when
-// a beat with that actionId/sceneActionId is selected.
-const sceneParams: SceneParams = JSON.parse(JSON.stringify(SCENE_PARAMS))
 
 let selectedIdx = 0
 
@@ -201,15 +189,13 @@ function renderEditor() {
             `<input id="f-color" type="text" value="${escapeAttr(b.color ?? '#e6edf3')}" />` +
             `<label><input id="f-silent" type="checkbox" ${b.silent ? 'checked' : ''} /> silent (play VO without showing typed text)</label>` +
             `<label>Concurrent scene action (optional)</label>` +
-            sceneActionSelect(b.sceneActionId, 'f-sceneAction') +
-            renderSceneParamsSection(b.sceneActionId)
+            sceneActionSelect(b.sceneActionId, 'f-sceneAction')
   } else if (b.type === 'wait') {
     html += `<label>Duration (ms)</label>` +
             `<input id="f-duration" type="number" min="0" step="50" value="${b.duration ?? 0}" />`
   } else if (b.type === 'scene') {
     html += `<label>Scene action</label>` +
-            sceneActionSelect(b.actionId, 'f-action') +
-            renderSceneParamsSection(b.actionId)
+            sceneActionSelect(b.actionId, 'f-action')
   } else if (b.type === 'cover' || b.type === 'backdrop') {
     const currentSrc = b.key
       ? imageOverrides.get(b.key) ?? pathForKey(b.key)
@@ -257,62 +243,6 @@ function renderEditor() {
 
   editorEl.innerHTML = html
   wireEditorInputs()
-}
-
-/** Render the param-tweak panel for a scene action, if we've
- *  extracted any params for it. Returns empty string for actions
- *  that haven't been refactored yet (their literals still live
- *  inline in IntroScene.ts) — those just show no params section. */
-function renderSceneParamsSection(actionId: SceneActionId | undefined): string {
-  if (!actionId) return ''
-  const fields = SCENE_PARAM_FIELDS[actionId]
-  if (!fields) return ''
-  const params = sceneParams[actionId.replace(/^show/, '').toLowerCase() as keyof SceneParams] as Record<string, number>
-  if (!params) return ''
-  let html = `<div class="scene-params"><div class="scene-params-head">Scene params · ${actionId}</div>`
-  for (const f of fields) {
-    const val = params[f.key]
-    html += `<label class="param-row">` +
-      `<span class="param-name">${f.label}</span>` +
-      `<input class="param-input" data-action="${actionId}" data-key="${f.key}" ` +
-      `type="number" min="${f.min ?? ''}" max="${f.max ?? ''}" step="${f.step ?? 1}" value="${val}" />` +
-      (f.hint ? `<span class="param-hint">${f.hint}</span>` : '') +
-      `</label>`
-  }
-  html += '</div>'
-  return html
-}
-
-/** Per-action descriptor for the param panel. Add new entries as
- *  more `show*` methods get the SCENE_PARAMS treatment. The `key`
- *  must match the typed field on the corresponding *SceneParams
- *  interface; the editor reads/writes through the shared
- *  `sceneParams` object. */
-interface ParamField {
-  key: string
-  label: string
-  step?: number
-  min?: number
-  max?: number
-  hint?: string
-}
-const SCENE_PARAM_FIELDS: Partial<Record<SceneActionId, ParamField[]>> = {
-  showFall: [
-    { key: 'playerScale',         label: 'Player scale',          step: 0.5, min: 1,    hint: 'How big the falling sprite renders' },
-    { key: 'playerFallDuration',  label: 'Fall duration (ms)',    step: 100, min: 500,  hint: 'How long the player takes to clear the screen' },
-    { key: 'documentCount',       label: 'Document count',        step: 1,   min: 0,    max: 100 },
-    { key: 'documentScaleMin',    label: 'Doc scale min',         step: 0.5, min: 1 },
-    { key: 'documentScaleMax',    label: 'Doc scale max',         step: 0.5, min: 1 },
-    { key: 'documentDurationMin', label: 'Doc duration min (ms)', step: 100, min: 200 },
-    { key: 'documentDurationMax', label: 'Doc duration max (ms)', step: 100, min: 200 },
-    { key: 'documentAlphaMin',    label: 'Doc alpha min',         step: 0.05, min: 0, max: 1 },
-    { key: 'documentAlphaMax',    label: 'Doc alpha max',         step: 0.05, min: 0, max: 1 },
-  ],
-  // showHospitalPan / showDesk / showClaimVanish / showGap /
-  // showWaitingRoom: literals still inline in IntroScene.ts. Convert
-  // each by lifting its numbers into an interface in introBeats.ts,
-  // routing the method through SCENE_PARAMS.<name>, and adding an
-  // entry here. The editor will then surface the panel automatically.
 }
 
 function sceneActionSelect(current: SceneActionId | undefined, id: string): string {
@@ -413,24 +343,6 @@ function wireEditorInputs() {
     render()
   })
 
-  // Scene-params number inputs share a class. Bind once to keep the
-  // wiring trivial regardless of how many actions are surfaced.
-  for (const inp of editorEl.querySelectorAll('.param-input')) {
-    inp.addEventListener('input', () => {
-      const el = inp as HTMLInputElement
-      const action = el.dataset.action as SceneActionId | undefined
-      const key = el.dataset.key
-      if (!action || !key) return
-      const sceneKey = action.replace(/^show/, '').toLowerCase() as keyof SceneParams
-      const target = sceneParams[sceneKey] as Record<string, number>
-      if (!target) return
-      const num = Number(el.value)
-      if (!Number.isFinite(num)) return
-      target[key] = num
-      renderExport()
-    })
-  }
-
   document.getElementById('vo-play')?.addEventListener('click', () => {
     if (audioEl.src) { audioEl.currentTime = 0; audioEl.play() }
   })
@@ -461,17 +373,7 @@ function renderSummary() {
 
 function renderExport() {
   const lines: string[] = []
-  lines.push('// Paste into src/scenes/introBeats.ts.')
-  lines.push('// Two declarations — replace the existing SCENE_PARAMS and')
-  lines.push('// BEATS in that file with the blocks below.')
-  lines.push('')
-  lines.push('export const SCENE_PARAMS: SceneParams = ' +
-    JSON.stringify(sceneParams, null, 2)
-      // Re-style to match hand-authored formatting: 2-space indent
-      // is fine, but quote keys without quotes and use single quotes.
-      .replace(/"([^"]+)":/g, '$1:')
-    + '')
-  lines.push('')
+  lines.push('// Paste into src/scenes/introBeats.ts replacing the BEATS array body.')
   lines.push('export const BEATS: Beat[] = [')
   for (const b of beats) {
     lines.push('  ' + serializeBeat(b) + ',')

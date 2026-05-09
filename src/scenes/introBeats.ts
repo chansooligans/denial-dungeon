@@ -41,63 +41,6 @@ export interface Beat {
   voice?: boolean
 }
 
-// ===== Scene parameters ===================================================
-//
-// Per-scene tweakable knobs. Each `show<Name>()` method in IntroScene
-// reads its numbers from SCENE_PARAMS.<name> instead of hardcoding
-// them, so the /intro-editor.html "scene params" pane can scrub
-// values live and export a paste-back snippet.
-//
-// Pattern when extracting a new scene:
-//   1. Pull out every literal number that's worth tweaking (durations,
-//      counts, scales, ranges) into a typed sub-config.
-//   2. Default value goes here.
-//   3. Method body reads `const p = SCENE_PARAMS.<name>` once at the
-//      top, then references `p.foo` instead of the literal.
-//   4. Add a corresponding form section in the editor.
-//
-// Currently extracted: showFall. The other show* methods still hold
-// their literals inline; convert them as needed using the same
-// pattern.
-
-export interface FallSceneParams {
-  /** How big the player sprite renders during the fall. */
-  playerScale: number
-  /** How long the player takes to fall from above to off-screen (ms). */
-  playerFallDuration: number
-  /** How many floating documents drift past during the fall. */
-  documentCount: number
-  /** Random scale range applied per document. */
-  documentScaleMin: number
-  documentScaleMax: number
-  /** Random duration range per document drift (ms). */
-  documentDurationMin: number
-  documentDurationMax: number
-  /** Random alpha range per document. */
-  documentAlphaMin: number
-  documentAlphaMax: number
-}
-
-export interface SceneParams {
-  fall: FallSceneParams
-}
-
-export const SCENE_PARAMS: SceneParams = {
-  fall: {
-    playerScale: 8,
-    playerFallDuration: 3200,
-    documentCount: 20,
-    documentScaleMin: 4,
-    documentScaleMax: 8,
-    documentDurationMin: 2000,
-    documentDurationMax: 4000,
-    documentAlphaMin: 0.2,
-    documentAlphaMax: 0.6,
-  },
-}
-
-// ===== Beats ==============================================================
-
 export const BEATS: Beat[] = [
   // Cover splash — full-bleed title page art before narration begins.
   { type: 'cover', key: 'intro_cover', duration: 3200 },
