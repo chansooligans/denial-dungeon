@@ -102,6 +102,14 @@ export default defineConfig({
         // Verbs: MAP / ESTIMATE / RECONCILE. Lives at
         // /mrf-cartographer-prototype.html.
         mrfCartographer: resolve(__dirname, 'mrf-cartographer-prototype.html'),
+        // GFE Oracle: pre-service Case. Self-pay patient scheduled
+        // for an elective procedure; NSA requires a Good Faith
+        // Estimate within 3 business days. Sibling to MRF
+        // Cartographer (same source-of-truth puzzle, different
+        // deliverable + a third bucket for co-providers). Verbs:
+        // ITEMIZE / ESTIMATE / COMMIT. Lives at
+        // /gfe-oracle-prototype.html.
+        gfeOracle: resolve(__dirname, 'gfe-oracle-prototype.html'),
         // Map editor: a dev-only authoring tool for level1's object
         // placement and orientation. Click any object to select it,
         // then rotate/flip via keyboard or drag to move. Outputs a
