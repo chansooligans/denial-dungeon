@@ -164,6 +164,10 @@ export default defineConfig({
         // payment converts from case rate to 65% of charges. Verbs:
         // TRIP / RECALCULATE / APPEAL.
         stoplossReckoner: resolve(__dirname, 'stoploss-reckoner-prototype.html'),
+        // OB Per-Diem Specter: case-rate + per-diem hybrid contract;
+        // hospital missed the per-diem days. Verbs: PARSE-CONTRACT /
+        // SPLIT-DAYS / APPEAL.
+        obPerdiemSpecter: resolve(__dirname, 'ob-perdiem-specter-prototype.html'),
         // Map editor: a dev-only authoring tool for level1's object
         // placement and orientation. Click any object to select it,
         // then rotate/flip via keyboard or drag to move. Outputs a
