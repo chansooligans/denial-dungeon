@@ -174,6 +174,9 @@ export default defineConfig({
         // Risk Adjustment Hollow: HCC under-capture for Medicare
         // Advantage. Verbs: REVIEW / ENRICH / QUERY.
         riskAdjHollow: resolve(__dirname, 'risk-adj-hollow-prototype.html'),
+        // Credentialing Lattice: provider-side eligibility gap.
+        // Verbs: VERIFY-NETWORK / ENROLL / BACKDATE.
+        credentialingLattice: resolve(__dirname, 'credentialing-lattice-prototype.html'),
         // Map editor: a dev-only authoring tool for level1's object
         // placement and orientation. Click any object to select it,
         // then rotate/flip via keyboard or drag to move. Outputs a
