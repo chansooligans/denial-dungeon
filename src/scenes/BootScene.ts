@@ -191,6 +191,33 @@ const OBJECT_SOURCES: Record<string, string> = {
   h_desk_10:         'desks_3_0',
   h_desk_11:         'desks_3_1',
   h_desk_12:         'desks_3_2',
+
+  // Plant variants — full 4×5 grid from plants.png (20 visual styles).
+  // Same row-major 1-indexed scheme: row 0 → 1..5, row 1 → 6..10,
+  // row 2 → 11..15, row 3 → 16..20. Existing h_plant / h_plant_lobby
+  // keys above keep their original obj1/obj2 sources for backwards
+  // compatibility; opt into a richer plant by referencing h_plant_N
+  // directly in a TILE_TEXTURES entry or via the map editor.
+  h_plant_1:         'plants_0_0',
+  h_plant_2:         'plants_0_1',
+  h_plant_3:         'plants_0_2',
+  h_plant_4:         'plants_0_3',
+  h_plant_5:         'plants_0_4',
+  h_plant_6:         'plants_1_0',
+  h_plant_7:         'plants_1_1',
+  h_plant_8:         'plants_1_2',
+  h_plant_9:         'plants_1_3',
+  h_plant_10:        'plants_1_4',
+  h_plant_11:        'plants_2_0',
+  h_plant_12:        'plants_2_1',
+  h_plant_13:        'plants_2_2',
+  h_plant_14:        'plants_2_3',
+  h_plant_15:        'plants_2_4',
+  h_plant_16:        'plants_3_0',
+  h_plant_17:        'plants_3_1',
+  h_plant_18:        'plants_3_2',
+  h_plant_19:        'plants_3_3',
+  h_plant_20:        'plants_3_4',
 }
 
 export class BootScene extends Phaser.Scene {

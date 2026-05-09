@@ -123,6 +123,8 @@
   <a href="#chloe">Chloe (player)</a>
   <a href="#npcs">NPCs</a>
   <a href="#objects">Objects (planned)</a>
+  <a href="#desks">Desks</a>
+  <a href="#plants">Plants</a>
 </p>
 <p>
   All sprite assets in one place. Each section pulls live PNGs from
@@ -194,6 +196,37 @@
 </div>
 
 <div id="obj-grids"></div>
+
+<div class="section-header" id="desks">
+  <h1>Desks</h1>
+  <span class="section-meta">12 variants from desks.png · 4 rows × 3 cols · 64×64 each</span>
+</div>
+<p>
+  Office-desk visual variants. The canonical <code>h_desk</code> texture
+  key (used by every <code>'c'</code> tile) points at
+  <code>desks_0_2</code> — third desk in row 1. The other 11 are
+  registered as <code>h_desk_1</code>…<code>h_desk_12</code> in
+  <code>BootScene.OBJECT_SOURCES</code> for future per-room visual
+  variation. Source: <code>public/sprites/objects-raw/desks_&lt;r&gt;_&lt;c&gt;.png</code>.
+</p>
+<div id="desk-grid"></div>
+
+<div class="section-header" id="plants">
+  <h1>Plants</h1>
+  <span class="section-meta">20 variants from plants.png · 4 rows × 5 cols · 64×64 each</span>
+</div>
+<p>
+  Indoor-plant visual variants — snake plant, peace lily, pothos,
+  fern, succulent, fiddle-leaf, monstera, and more. Registered as
+  <code>h_plant_1</code>…<code>h_plant_20</code> in
+  <code>BootScene.OBJECT_SOURCES</code>. The default
+  <code>h_plant</code> still points at the original
+  <code>obj1_1_1</code> for backwards compatibility — opt into a
+  richer plant per-tile via the map editor or by referencing the
+  variant key directly. Source:
+  <code>public/sprites/objects-raw/plants_&lt;r&gt;_&lt;c&gt;.png</code>.
+</p>
+<div id="plant-grid"></div>
 
 <script>
 // ---------- Chloe (player) — 4 directions × 4 walk frames ----------
@@ -883,6 +916,75 @@ document.getElementById('obj-reset').addEventListener('click', () => {
 });
 
 objRebuildAll();
+
+// ---------- Desks (12 variants, 4×3 grid) ----------
+(function renderDesks() {
+  const root = document.getElementById('desk-grid');
+  const table = document.createElement('table');
+  // Header row labels columns; each body row labels with `h_desk_N`
+  // (1-indexed row-major) so users can match the texture key in
+  // BootScene.OBJECT_SOURCES at a glance.
+  const head = document.createElement('tr');
+  head.innerHTML = `<td class="lbl">slot</td>` +
+    [0, 1, 2].map(c => `<td class="lbl">col ${c}</td>`).join('');
+  table.appendChild(head);
+  for (let r = 0; r < 4; r++) {
+    const tr = document.createElement('tr');
+    const lblTd = document.createElement('td');
+    lblTd.className = 'lbl';
+    lblTd.style.minWidth = '180px';
+    lblTd.style.textAlign = 'left';
+    lblTd.innerHTML = `<div>row ${r}</div>` +
+      `<div class="meta">h_desk_${r * 3 + 1}…${r * 3 + 3}</div>`;
+    tr.appendChild(lblTd);
+    for (let c = 0; c < 3; c++) {
+      const slot = `desks_${r}_${c}`;
+      const key = `h_desk_${r * 3 + c + 1}`;
+      const td = document.createElement('td');
+      td.style.minWidth = '120px';
+      td.innerHTML =
+        `<img src="/sprites/objects-raw/${slot}.png" alt="${slot}">` +
+        `<div class="meta">${slot}</div>` +
+        `<div class="meta" style="color:#f4d06f">${key}</div>`;
+      tr.appendChild(td);
+    }
+    table.appendChild(tr);
+  }
+  root.appendChild(table);
+})();
+
+// ---------- Plants (20 variants, 4×5 grid) ----------
+(function renderPlants() {
+  const root = document.getElementById('plant-grid');
+  const table = document.createElement('table');
+  const head = document.createElement('tr');
+  head.innerHTML = `<td class="lbl">slot</td>` +
+    [0, 1, 2, 3, 4].map(c => `<td class="lbl">col ${c}</td>`).join('');
+  table.appendChild(head);
+  for (let r = 0; r < 4; r++) {
+    const tr = document.createElement('tr');
+    const lblTd = document.createElement('td');
+    lblTd.className = 'lbl';
+    lblTd.style.minWidth = '180px';
+    lblTd.style.textAlign = 'left';
+    lblTd.innerHTML = `<div>row ${r}</div>` +
+      `<div class="meta">h_plant_${r * 5 + 1}…${r * 5 + 5}</div>`;
+    tr.appendChild(lblTd);
+    for (let c = 0; c < 5; c++) {
+      const slot = `plants_${r}_${c}`;
+      const key = `h_plant_${r * 5 + c + 1}`;
+      const td = document.createElement('td');
+      td.style.minWidth = '110px';
+      td.innerHTML =
+        `<img src="/sprites/objects-raw/${slot}.png" alt="${slot}">` +
+        `<div class="meta">${slot}</div>` +
+        `<div class="meta" style="color:#f4d06f">${key}</div>`;
+      tr.appendChild(td);
+    }
+    table.appendChild(tr);
+  }
+  root.appendChild(table);
+})();
 </script>
 
 </body>

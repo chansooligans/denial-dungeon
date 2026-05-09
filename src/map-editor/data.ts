@@ -93,6 +93,28 @@ export const OBJ_KEY_TO_SRC: Record<string, string> = {
   h_whiteboard: 'sprites/objects-raw/obj1_3_1.png', // fallback (no exact whiteboard sheet)
 }
 
+/** Variant texture keys (desks_1..12, plants_1..20) registered in
+ *  BootScene.OBJECT_SOURCES. Not glyph-addressable in the current
+ *  TILE_TEXTURES, but listed here so the map-editor palette can
+ *  preview them — switching a tile to one would require adding a
+ *  new glyph mapping in HospitalScene. */
+export const VARIANT_KEY_TO_SRC: Record<string, string> = {
+  ...Object.fromEntries(
+    Array.from({ length: 12 }, (_, i) => {
+      const r = Math.floor(i / 3)
+      const c = i % 3
+      return [`h_desk_${i + 1}`, `sprites/objects-raw/desks_${r}_${c}.png`]
+    })
+  ),
+  ...Object.fromEntries(
+    Array.from({ length: 20 }, (_, i) => {
+      const r = Math.floor(i / 5)
+      const c = i % 5
+      return [`h_plant_${i + 1}`, `sprites/objects-raw/plants_${r}_${c}.png`]
+    })
+  ),
+}
+
 /** Human label per glyph for the palette / status line. */
 export const GLYPH_LABEL: Record<string, string> = {
   c: 'Desk',
