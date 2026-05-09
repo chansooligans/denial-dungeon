@@ -195,7 +195,6 @@ export class IntroScene extends Phaser.Scene {
       case 'showDesk':         this.showDesk(); return
       case 'showClaimVanish':  this.showClaimVanish(); return
       case 'showFall':         this.showFall(); return
-      case 'showGap':          this.showGap(); return
       case 'showWaitingRoom':  this.showWaitingRoom(); return
     }
   }
@@ -370,59 +369,42 @@ export class IntroScene extends Phaser.Scene {
     })
   }
 
-  /** Wall-clock ms by which the song's start has been pushed back
-   *  to compensate for content cut from the cinematic — currently
-   *  the removed "That's not a typo." beat (~570ms typing) plus its
-   *  trailing 2500ms wait beat. Keeping this as a named constant so
-   *  any future cut/insert can adjust it without surgery in the
-   *  fade logic below. */
-  private readonly INTRO_SONG_START_DELAY_MS = 3000
-
   /** Fade the intro song in. Two-stage: first ramp to a quiet bed
    *  level (0.15) over 5s — that's the pre-narration hold, where the
    *  song would otherwise feel too loud sitting alone. Once the first
    *  voiceover beat fires, `boostIntroSongForVoice` bumps it up to
-   *  the under-narration level (0.35). The actual play() is delayed
-   *  by INTRO_SONG_START_DELAY_MS so the song's arrival lands on the
-   *  same later beat it used to before content was cut. */
+   *  the under-narration level (0.5).
+   *
+   *  Note on song-start vs cinematic-edits: when content was cut
+   *  from the cinematic ("That's not a typo." plus its 2500ms wait,
+   *  ~3s wall-clock total), we keep the song firing at the same
+   *  trigger-point in the cinematic but trimmed 3000ms off the
+   *  *front of the audio file* (intro_song.mp3) so the music's
+   *  internal phrasing still lands on the same later beats. That's
+   *  better than delaying play() — a delayed play() would leave the
+   *  pre-narration hold silent. */
   private fadeInIntroSong() {
     if (!this.cache.audio.exists('intro_song')) return
-    this.time.delayedCall(this.INTRO_SONG_START_DELAY_MS, () => {
-      if (this.done) return
-      this.introSong = this.sound.add('intro_song')
-      // Force volume to 0 BEFORE play() so the song never bursts at
-      // the default 1.0 volume — some audio backends ignore the
-      // sound.add config until after the first playback tick.
-      ;(this.introSong as any).setVolume?.(0)
-      this.introSong.play()
-      ;(this.introSong as any).setVolume?.(0)
-      // If a VO already started while we were waiting on the delay,
-      // skip the pre-narration bed level (0.15) and ramp straight to
-      // the under-narration mix (0.5). boostIntroSongForVoice already
-      // set introSongBoosted = true even though the song wasn't ready
-      // when it fired.
-      const target = this.introSongBoosted ? 0.5 : 0.15
-      this.tweens.add({
-        targets: this.introSong,
-        volume: target,
-        duration: 5000,
-      })
+    this.introSong = this.sound.add('intro_song')
+    // Force volume to 0 BEFORE play() so the song never bursts at
+    // the default 1.0 volume — some audio backends ignore the
+    // sound.add config until after the first playback tick.
+    ;(this.introSong as any).setVolume?.(0)
+    this.introSong.play()
+    ;(this.introSong as any).setVolume?.(0)
+    this.tweens.add({
+      targets: this.introSong,
+      volume: 0.15,
+      duration: 5000,
     })
   }
 
   /** Bump the intro song from its quiet pre-narration level up to
-   *  the under-narration mix (0.35). Called once when the first
+   *  the under-narration mix (0.5). Called once when the first
    *  voiceover beat plays. Subsequent calls are no-ops. */
   private boostIntroSongForVoice() {
-    if (this.introSongBoosted) return
+    if (!this.introSong || this.introSongBoosted) return
     this.introSongBoosted = true
-    // The song's start is delayed (INTRO_SONG_START_DELAY_MS) to
-    // compensate for content cut from the cinematic, so the first VO
-    // beat may fire before the song exists. In that case just flip
-    // the boosted flag — fadeInIntroSong's delayedCall reads it and
-    // ramps straight to the under-narration target instead of the
-    // pre-narration bed.
-    if (!this.introSong) return
     // Kill the still-running 5s pre-VO fade-in tween before pushing
     // up to the under-narration mix. Otherwise the older tween keeps
     // overwriting `volume` back toward its target and the boost
@@ -551,89 +533,284 @@ export class IntroScene extends Phaser.Scene {
   }
 
   showHospitalPan() {
-    // Backdrop for the "Every day, thousands of claims..." beat.
-    // Pure black to start — the scene opens against void so the
-    // narration's first line lands on nothing. Then claim IDs fade
-    // in one by one across the canvas, density growing over the
-    // ~14s the beat sits on screen. By the third narration line
-    // ("...claims get lost.") the field is full and a few are
-    // tinted red, foreshadowing the loss the next scene shows.
+    // Three-phase backdrop synced to this beat's three narration
+    // lines (~19s total). Replaces the previous claim-ID text field
+    // — readable text behind the narration overlay was reading as a
+    // second narration layer and competing for attention.
     //
-    // No walls, no floor tiles, no scattered desks. The previous
-    // version drew a literal corridor with a few isolated sprites
-    // that read as "this is supposed to be a hospital but the art
-    // got abandoned." The system the narration is describing is
-    // bigger than any one room, so the visual is now scale-of-data
-    // rather than scale-of-architecture.
+    //   Phase 1 (0–7.5s): "Every day, thousands of claims... a system
+    //     so complex that no single person understands all of it."
+    //     ~60 dim filler nodes scatter onto the canvas with a power-
+    //     curve delay distribution; thin edges fade in connecting
+    //     random nearby pairs. Result reads as a sprawling anonymous
+    //     network.
+    //
+    //   Phase 2 (~8–14s): "Doctors document. Coders translate. Billers
+    //     submit. Payers decide. Patients pay." Five brighter "anchor"
+    //     nodes pulse in sequence ~1.4s apart at curated zigzag
+    //     positions. After the fifth pulse a teal path draws through
+    //     them in order — Doctor → Coder → Biller → Payer → Patient.
+    //     The viewer connects "five highlighted nodes" with "five
+    //     named roles" from the narration; no on-screen labels.
+    //
+    //   Phase 3 (15–19s): "And somewhere between all of them, claims
+    //     get lost." Small gold dots spawn at the Doctor node and
+    //     travel segment-by-segment along the path. ~40% flicker red
+    //     and fade out mid-segment instead of arriving — the loss
+    //     happens BETWEEN nodes, mirroring the "between all of them"
+    //     phrasing.
     this.sceneContainer.removeAll(true)
     const { width, height } = this.scale
 
     const bg = this.add.rectangle(width / 2, height / 2, width, height, 0x0a0e14)
     this.sceneContainer.add(bg)
 
-    // Total spawn window — slightly less than the full beat duration
-    // so the last few claims have a moment to settle before the
-    // scene transitions to showDesk.
-    const TOTAL_DURATION_MS = 12000
-    const COUNT = 80
-
-    for (let i = 0; i < COUNT; i++) {
-      const id =
-        `CLM-2026-${String(Phaser.Math.Between(1, 12)).padStart(2, '0')}` +
-        `-${String(Phaser.Math.Between(1, 28)).padStart(2, '0')}` +
-        `-${String(Phaser.Math.Between(1, 99999)).padStart(5, '0')}`
-
-      // Tier roll — most claims are dim gray (routine), a small
-      // fraction are orange (in-process), a smaller fraction red
-      // (lost). Red ones spawn late so they line up with the third
-      // narration line about claims getting lost.
-      const r = Math.random()
-      const tier = r < 0.85 ? 'normal' : r < 0.95 ? 'inProcess' : 'lost'
-      const color = tier === 'normal' ? '#5a6a7a'
-                  : tier === 'inProcess' ? '#f0a868'
-                  : '#ef5b7b'
-      const targetAlpha = tier === 'normal' ? 0.25
-                        : tier === 'inProcess' ? 0.45
-                        : 0.6
-
-      // 60-px inset from edges so labels never clip the viewport.
-      const x = Phaser.Math.Between(60, width - 60)
-      const y = Phaser.Math.Between(60, height - 60)
-      const fontSize = Phaser.Math.Between(14, 22)
-
-      const t = this.add.text(x, y, id, {
-        fontSize: `${fontSize}px`,
-        fontFamily: 'monospace',
-        color,
-      }).setOrigin(0.5).setAlpha(0)
-      this.sceneContainer.add(t)
-
-      // Spawn-time distribution. Normal/in-process use a slight
-      // power-curve bias so density visibly accelerates as the beat
-      // progresses. Lost claims always spawn in the back third so
-      // they hit on cue.
-      const delay = tier === 'lost'
-        ? Phaser.Math.Between(8000, 11000)
-        : Math.pow(Math.random(), 1.5) * (TOTAL_DURATION_MS - 1500)
-
+    // ----- Phase 1: filler network ---------------------------------
+    const FILLER_COUNT = 100
+    const filler: Phaser.GameObjects.Arc[] = []
+    for (let i = 0; i < FILLER_COUNT; i++) {
+      // 80px inset so nodes never sit flush against the viewport edge.
+      const x = Phaser.Math.Between(80, width - 80)
+      const y = Phaser.Math.Between(80, height - 80)
+      const r = Phaser.Math.Between(3, 6)
+      const node = this.add.circle(x, y, r, 0x8b95a5, 0)
+      this.sceneContainer.add(node)
+      filler.push(node)
+      // Power-curve delay so density visibly accelerates: most nodes
+      // arrive in the back half of the spawn window.
       this.tweens.add({
-        targets: t,
-        alpha: targetAlpha,
+        targets: node,
+        alpha: Phaser.Math.FloatBetween(0.30, 0.55),
         duration: 700,
-        delay,
+        delay: Math.pow(Math.random(), 1.5) * 5000,
       })
+    }
 
-      // Subtle vertical drift so the field feels alive instead of
-      // statically painted on. Starts after the fade-in completes.
-      this.tweens.add({
-        targets: t,
-        y: y + Phaser.Math.FloatBetween(-12, 12),
-        duration: Phaser.Math.Between(4000, 7000),
-        yoyo: true,
-        repeat: -1,
-        ease: 'Sine.easeInOut',
-        delay: delay + 700,
+    // Edges between nearby filler-node pairs. Drawn into a single
+    // graphics object (one draw call beats 150 line objects) and
+    // alpha-tweened in over 3s starting at t=2s so the eye sees
+    // nodes-first → connections-next. Endpoint pairs also stashed
+    // separately so the random "firing" effect below can pick one
+    // to flash without re-rolling the whole graph.
+    const edgePairs: Array<[Phaser.GameObjects.Arc, Phaser.GameObjects.Arc]> = []
+    const edges = this.add.graphics().setAlpha(0)
+    edges.lineStyle(1, 0x8b95a5, 1)
+    for (let i = 0; i < 400 && edgePairs.length < 150; i++) {
+      const a = filler[Phaser.Math.Between(0, filler.length - 1)]
+      const b = filler[Phaser.Math.Between(0, filler.length - 1)]
+      if (a === b) continue
+      // Cap edge length so the graph doesn't read as a starburst —
+      // we want a web of local connections, not a fan.
+      const dx = a.x - b.x, dy = a.y - b.y
+      if (dx * dx + dy * dy > 360_000) continue
+      edges.lineBetween(a.x, a.y, b.x, b.y)
+      edgePairs.push([a, b])
+    }
+    this.sceneContainer.add(edges)
+    this.tweens.add({ targets: edges, alpha: 0.30, duration: 3000, delay: 2000 })
+
+    // Random edge "firings" — every so often a single edge brightens
+    // briefly, like a neuron pulse. Adds a layer of background
+    // activity so the network reads as live rather than statically
+    // painted. Each firing is its own short-lived graphics object;
+    // counts/duration are tuned so it never feels busy.
+    for (let f = 0; f < 36; f++) {
+      const fireDelay = 4500 + Math.random() * 13000
+      this.time.delayedCall(fireDelay, () => {
+        if (!edgePairs.length) return
+        const [a, b] = edgePairs[Phaser.Math.Between(0, edgePairs.length - 1)]
+        const fire = this.add.graphics()
+        fire.lineStyle(2, 0xc9d1d9, 1)
+        fire.lineBetween(a.x, a.y, b.x, b.y)
+        this.sceneContainer.add(fire)
+        fire.setAlpha(0.7)
+        this.tweens.add({
+          targets: fire,
+          alpha: 0,
+          duration: 450,
+          ease: 'Sine.easeOut',
+          onComplete: () => fire.destroy(),
+        })
       })
+    }
+
+    // ----- Phase 2: 5 role anchor nodes ----------------------------
+    // Curated zigzag positions across the canvas. Order = the
+    // narration order so the connecting path reads left-to-right
+    // even though the y-coords zigzag.
+    const PHASE2_START_MS = 8000
+    const PHASE2_INTERVAL_MS = 1400
+    const roleNodes: Array<{ x: number; y: number }> = [
+      { x: 280,  y: 380 },  // Doctor
+      { x: 580,  y: 920 },  // Coder
+      { x: 960,  y: 340 },  // Biller
+      { x: 1380, y: 860 },  // Payer
+      { x: 1700, y: 480 },  // Patient
+    ]
+    const roleSprites = roleNodes.map(r => {
+      const c = this.add.circle(r.x, r.y, 8, 0xe6edf3, 0)
+      this.sceneContainer.add(c)
+      return c
+    })
+    // Subtle dim presence during Phase 1 so they don't materialize
+    // out of nothing when the pulse hits — they blend with the
+    // filler dots until the pulse promotes them.
+    for (const c of roleSprites) {
+      this.tweens.add({
+        targets: c,
+        alpha: 0.25,
+        duration: 700,
+        delay: 1500 + Math.random() * 2500,
+      })
+    }
+    // Sequential brighten + scale + double ring-pulse + white burst.
+    // Three layered effects per anchor:
+    //   1. The node itself scales 2× and reaches full alpha.
+    //   2. A white burst circle pops + fades — the visual "punch".
+    //   3. A teal ring expands outward, slower and wider — the echo.
+    for (let i = 0; i < roleSprites.length; i++) {
+      const t0 = PHASE2_START_MS + i * PHASE2_INTERVAL_MS
+      this.tweens.add({
+        targets: roleSprites[i],
+        alpha: 1,
+        scale: 2.0,
+        duration: 350,
+        delay: t0,
+        ease: 'Sine.easeOut',
+      })
+      // White burst — short, bright, fast.
+      const burst = this.add.circle(roleNodes[i].x, roleNodes[i].y, 12, 0xffffff, 0)
+      this.sceneContainer.add(burst)
+      this.tweens.add({
+        targets: burst,
+        scale: 3,
+        alpha: 0,
+        duration: 350,
+        delay: t0,
+        ease: 'Sine.easeOut',
+        onStart: () => burst.setAlpha(0.95),
+        onComplete: () => burst.destroy(),
+      })
+      // Teal echo ring — slower, wider, hangs in the air longer.
+      const ring = this.add.circle(roleNodes[i].x, roleNodes[i].y, 8, 0xe6edf3, 0)
+        .setStrokeStyle(3, 0x7ee2c1)
+        .setAlpha(0)
+      this.sceneContainer.add(ring)
+      this.tweens.add({
+        targets: ring,
+        scale: 6.5,
+        alpha: 0,
+        duration: 1100,
+        delay: t0,
+        ease: 'Sine.easeOut',
+        onStart: () => ring.setAlpha(0.85),
+      })
+    }
+    // Path through the 5 nodes — drawn after all five have lit up so
+    // the chain only appears once every link is established. Brighter
+    // and thicker than filler edges so it reads as the real route.
+    const path = this.add.graphics().setAlpha(0)
+    path.lineStyle(3, 0x7ee2c1, 1)
+    for (let i = 0; i < roleNodes.length - 1; i++) {
+      path.lineBetween(roleNodes[i].x, roleNodes[i].y,
+                        roleNodes[i + 1].x, roleNodes[i + 1].y)
+    }
+    this.sceneContainer.add(path)
+    const pathAppear = PHASE2_START_MS + roleSprites.length * PHASE2_INTERVAL_MS
+    this.tweens.add({
+      targets: path,
+      alpha: 0.75,
+      duration: 800,
+      delay: pathAppear,
+    })
+
+    // Scout claim — a single bright dot that races the entire chain
+    // immediately after the path appears, tracing the route in ~1s.
+    // Bridges Phase 2 → Phase 3 visually: the path lights up, a
+    // claim proves it works, then Phase 3 floods it with traffic.
+    const scoutDelay = pathAppear + 200
+    const scout = this.add.circle(roleNodes[0].x, roleNodes[0].y, 7, 0xffffff, 0)
+    this.sceneContainer.add(scout)
+    this.tweens.add({ targets: scout, alpha: 1, duration: 150, delay: scoutDelay })
+    let scoutT = scoutDelay + 150
+    for (let n = 1; n < roleNodes.length; n++) {
+      this.tweens.add({
+        targets: scout,
+        x: roleNodes[n].x,
+        y: roleNodes[n].y,
+        duration: 350,
+        delay: scoutT,
+        ease: 'Sine.easeInOut',
+      })
+      scoutT += 350
+    }
+    this.tweens.add({ targets: scout, alpha: 0, duration: 250, delay: scoutT })
+
+    // ----- Phase 3: claims travel + some get lost ------------------
+    // Claim dots spawn at the Doctor node and tween segment-by-
+    // segment through the path. ~40% flagged "lost": at a random
+    // intermediate segment, recolor red and fade-to-zero mid-tween
+    // instead of arriving at the next node.
+    const PHASE3_START_MS = 15000
+    const CLAIM_COUNT = 16
+    const SEGMENT_MS = 700
+    for (let i = 0; i < CLAIM_COUNT; i++) {
+      const dot = this.add.circle(roleNodes[0].x, roleNodes[0].y, 5, 0xf4d06f, 0)
+      this.sceneContainer.add(dot)
+      const startDelay = PHASE3_START_MS + i * 220
+      this.tweens.add({ targets: dot, alpha: 1, duration: 200, delay: startDelay })
+
+      const lostAt = Math.random() < 0.45
+        ? Phaser.Math.Between(1, roleNodes.length - 1)
+        : -1
+
+      let segStart = startDelay + 200
+      for (let n = 1; n < roleNodes.length; n++) {
+        this.tweens.add({
+          targets: dot,
+          x: roleNodes[n].x,
+          y: roleNodes[n].y,
+          duration: SEGMENT_MS,
+          delay: segStart,
+          ease: 'Sine.easeInOut',
+        })
+        if (lostAt === n) {
+          // Mid-segment: recolor red, scale up briefly, then fade.
+          // A small red ring pops at the dot's position the moment
+          // it dies — a visible "loss event" the eye can latch onto
+          // even at low density.
+          this.time.delayedCall(segStart + 350, () => {
+            dot.setFillStyle(0xef5b7b)
+            const lossRing = this.add.circle(dot.x, dot.y, 5, 0xef5b7b, 0)
+              .setStrokeStyle(2, 0xef5b7b)
+            this.sceneContainer.add(lossRing)
+            lossRing.setAlpha(0.9)
+            this.tweens.add({
+              targets: lossRing,
+              scale: 5,
+              alpha: 0,
+              duration: 600,
+              ease: 'Sine.easeOut',
+              onComplete: () => lossRing.destroy(),
+            })
+          })
+          this.tweens.add({
+            targets: dot,
+            scale: 1.6,
+            duration: 150,
+            delay: segStart + 350,
+            yoyo: true,
+          })
+          this.tweens.add({
+            targets: dot,
+            alpha: 0,
+            duration: 400,
+            delay: segStart + 450,
+          })
+          break
+        }
+        segStart += SEGMENT_MS
+      }
     }
   }
 
@@ -694,60 +871,6 @@ export class IntroScene extends Phaser.Scene {
           this.tweens.add({ targets: claimText, alpha: 0, duration: 500, delay: 800 })
         },
       })
-    })
-  }
-
-  showGap() {
-    this.sceneContainer.removeAll(true)
-    const { width, height } = this.scale
-
-    // Dim foreground panel — keeps the comic backdrop subtly visible behind.
-    const darkness = this.add.rectangle(width / 2, height / 2, width, height, 0x0e1116, 0.55)
-    this.sceneContainer.add(darkness)
-
-    // Floor around gap
-    for (let x = 10; x < 50; x++) {
-      for (let y = 15; y < 25; y++) {
-        const tile = this.add.image(x * 16 + 8, y * 16 + 8, 'h_floor').setAlpha(0.2)
-        this.sceneContainer.add(tile)
-      }
-    }
-
-    // The gap — a jagged line of light
-    const gap = this.add.graphics()
-    gap.lineStyle(2, 0xf0a868, 0)
-    const points = [
-      { x: width / 2 - 30, y: height / 2 - 10 },
-      { x: width / 2 - 10, y: height / 2 + 5 },
-      { x: width / 2 + 5, y: height / 2 - 3 },
-      { x: width / 2 + 20, y: height / 2 + 8 },
-      { x: width / 2 + 35, y: height / 2 },
-    ]
-    this.sceneContainer.add(gap)
-
-    // Animate gap appearing
-    this.tweens.addCounter({
-      from: 0, to: 1, duration: 1500,
-      onUpdate: (tween) => {
-        const val = tween.getValue() ?? 0
-        gap.clear()
-        gap.lineStyle(2, 0xf0a868, val)
-        gap.beginPath()
-        gap.moveTo(points[0].x, points[0].y)
-        for (let i = 1; i < points.length; i++) {
-          if (i / points.length <= val) {
-            gap.lineTo(points[i].x, points[i].y)
-          }
-        }
-        gap.strokePath()
-      },
-    })
-
-    // Light pulsing from gap
-    const light = this.add.rectangle(width / 2, height / 2, 80, 30, 0xf0a868, 0)
-    this.sceneContainer.add(light)
-    this.tweens.add({
-      targets: light, alpha: 0.15, duration: 800, yoyo: true, repeat: -1, delay: 1000,
     })
   }
 

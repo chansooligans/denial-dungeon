@@ -1,15 +1,19 @@
-// Editor-side mirror of the two mapping tables that drive in-game
-// rendering. Duplicated rather than imported from the scene modules
-// because the editor doesn't have a Phaser context — we only need
-// the static "glyph → texture key → sprite PNG" lookups and labels.
-//
-// Keep in sync with:
-//   - HospitalScene.TILE_TEXTURES (glyph → object texture key)
-//   - BootScene.OBJECT_SOURCES    (texture key → /sprites/objects-raw slot)
-// If a new glyph or object key is added there, add it here too or
-// the editor will render that tile as "missing".
+// Editor-side data tables. The map editor renders objects as
+// CSS-tinted boxes (no PNG `<img>` tags) since the game is back to
+// fully-procedural object rendering — there are no sprite files
+// to load. Each table mirrors a source-of-truth in the scenes
+// module:
+//   - GLYPH_TO_OBJ_KEY mirrors HospitalScene.TILE_TEXTURES (glyph
+//     → object texture key). Hand-maintained.
+//   - KEY_TO_COLOR_CSS is derived from OBJECT_FALLBACK_COLORS in
+//     `../scenes/objectSources`, converted to CSS hex strings.
 
-/** Map glyph → object texture key (matches HospitalScene). */
+import { OBJECT_FALLBACK_COLORS } from '../scenes/objectSources'
+
+/** Map glyph → object texture key (matches HospitalScene.TILE_TEXTURES).
+ *  Procedural-era set: only the 12 keys with detailed pixel-art
+ *  generators in BootScene.makeHospitalTiles. Keep in sync if
+ *  TILE_TEXTURES changes. */
 export const GLYPH_TO_OBJ_KEY: Record<string, string> = {
   c: 'h_desk',
   h: 'h_chair',
@@ -23,28 +27,6 @@ export const GLYPH_TO_OBJ_KEY: Record<string, string> = {
   b: 'h_bulletin',
   H: 'h_bed',
   X: 'h_fax',
-  // Phase-C
-  A: 'h_aed',
-  a: 'h_sanitizer',
-  C: 'h_couch',
-  d: 'h_bench',
-  r: 'h_brochure',
-  i: 'h_signin',
-  p: 'h_payphone',
-  '>': 'h_arrow_sign',
-  T: 'h_trash',
-  I: 'h_iv_stand',
-  y: 'h_wheelchair',
-  g: 'h_gurney',
-  K: 'h_bookshelf',
-  s: 'h_shredder',
-  k: 'h_kiosk',
-  '#': 'h_directory',
-  '%': 'h_pneumatic',
-  e: 'h_elevator',
-  f: 'h_fountain',
-  '!': 'h_wet_floor',
-  M: 'h_mop_bucket',
 }
 
 /** Reverse — used by the palette. */
@@ -52,68 +34,19 @@ export const OBJ_KEY_TO_GLYPH: Record<string, string> = Object.fromEntries(
   Object.entries(GLYPH_TO_OBJ_KEY).map(([g, k]) => [k, g])
 )
 
-/** Map object texture key → relative sprite path under /public/.
- *  Mirrors BootScene.OBJECT_SOURCES (only the keys reachable via a
- *  glyph; ambient/unused keys omitted). */
-export const OBJ_KEY_TO_SRC: Record<string, string> = {
-  h_counter: 'sprites/objects-raw/obj1_0_0.png',
-  h_desk: 'sprites/objects-raw/desks_0_2.png', // canonical desk: row-1 col-3 of desks.png
-  h_chair: 'sprites/objects-raw/obj1_0_2.png',
-  h_cabinet: 'sprites/objects-raw/obj1_0_3.png',
-  h_bulletin: 'sprites/objects-raw/obj1_1_0.png',
-  h_plant: 'sprites/objects-raw/obj1_1_1.png',
-  h_water: 'sprites/objects-raw/obj1_2_1.png',
-  h_vending: 'sprites/objects-raw/obj1_2_2.png',
-  h_bed: 'sprites/objects-raw/obj3_0_0.png',
-  h_equipment: 'sprites/objects-raw/obj3_1_3.png',
-  h_fax: 'sprites/objects-raw/obj5_1_0.png',
-  // Phase-C — these texture keys exist in BootScene's OBJECT_SOURCES
-  // but the renderer falls back to a blank silhouette if missing.
-  h_aed: 'sprites/objects-raw/obj4_3_0.png',
-  h_sanitizer: 'sprites/objects-raw/obj2_1_1.png',
-  h_couch: 'sprites/objects-raw/obj2_0_0.png',
-  h_bench: 'sprites/objects-raw/obj2_0_1.png',
-  h_brochure: 'sprites/objects-raw/obj2_0_3.png',
-  h_signin: 'sprites/objects-raw/obj2_3_3.png',
-  h_payphone: 'sprites/objects-raw/obj4_3_1.png',
-  h_arrow_sign: 'sprites/objects-raw/obj4_3_2.png',
-  h_trash: 'sprites/objects-raw/obj2_1_3.png',
-  h_iv_stand: 'sprites/objects-raw/obj3_0_2.png',
-  h_wheelchair: 'sprites/objects-raw/obj3_0_3.png',
-  h_gurney: 'sprites/objects-raw/obj3_3_3.png',
-  h_bookshelf: 'sprites/objects-raw/obj5_0_0.png',
-  h_shredder: 'sprites/objects-raw/obj5_2_2.png',
-  h_kiosk: 'sprites/objects-raw/obj1_3_3.png',
-  h_directory: 'sprites/objects-raw/obj2_1_0.png',
-  h_pneumatic: 'sprites/objects-raw/obj5_1_3.png',
-  h_elevator: 'sprites/objects-raw/obj4_2_1.png',
-  h_fountain: 'sprites/objects-raw/obj4_2_3.png',
-  h_wet_floor: 'sprites/objects-raw/obj4_0_2.png',
-  h_mop_bucket: 'sprites/objects-raw/obj4_0_1.png',
-  h_whiteboard: 'sprites/objects-raw/obj1_3_1.png', // fallback (no exact whiteboard sheet)
-}
+/** Texture key → CSS hex color for the editor's box rendering.
+ *  Derived from the runtime fallback colors so editor + game can't
+ *  drift on what each object's tint should be. */
+export const KEY_TO_COLOR_CSS: Record<string, string> = Object.fromEntries(
+  Object.entries(OBJECT_FALLBACK_COLORS).map(([k, n]) =>
+    [k, '#' + n.toString(16).padStart(6, '0')]
+  )
+)
 
-/** Variant texture keys (desks_1..12, plants_1..20) registered in
- *  BootScene.OBJECT_SOURCES. Not glyph-addressable in the current
- *  TILE_TEXTURES, but listed here so the map-editor palette can
- *  preview them — switching a tile to one would require adding a
- *  new glyph mapping in HospitalScene. */
-export const VARIANT_KEY_TO_SRC: Record<string, string> = {
-  ...Object.fromEntries(
-    Array.from({ length: 12 }, (_, i) => {
-      const r = Math.floor(i / 3)
-      const c = i % 3
-      return [`h_desk_${i + 1}`, `sprites/objects-raw/desks_${r}_${c}.png`]
-    })
-  ),
-  ...Object.fromEntries(
-    Array.from({ length: 20 }, (_, i) => {
-      const r = Math.floor(i / 5)
-      const c = i % 5
-      return [`h_plant_${i + 1}`, `sprites/objects-raw/plants_${r}_${c}.png`]
-    })
-  ),
-}
+/** Default CSS color when the editor encounters an unknown key.
+ *  Should rarely fire — every key in `GLYPH_TO_OBJ_KEY` is also in
+ *  `OBJECT_FALLBACK_COLORS`. */
+export const DEFAULT_OBJECT_COLOR_CSS = '#6a7a8a'
 
 /** Human label per glyph for the palette / status line. */
 export const GLYPH_LABEL: Record<string, string> = {
@@ -129,25 +62,4 @@ export const GLYPH_LABEL: Record<string, string> = {
   b: 'Bulletin',
   H: 'Hospital bed',
   X: 'Fax / kiosk',
-  A: 'AED',
-  a: 'Sanitizer',
-  C: 'Couch',
-  d: 'Bench',
-  r: 'Brochure rack',
-  i: 'Sign-in stand',
-  p: 'Payphone',
-  '>': 'Arrow sign',
-  T: 'Trash',
-  I: 'IV stand',
-  y: 'Wheelchair',
-  g: 'Gurney',
-  K: 'Bookshelf',
-  s: 'Shredder',
-  k: 'Kiosk',
-  '#': 'Directory',
-  '%': 'Pneumatic tube',
-  e: 'Elevator',
-  f: 'Fountain',
-  '!': 'Wet floor',
-  M: 'Mop bucket',
 }

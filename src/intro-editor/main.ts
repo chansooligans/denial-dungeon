@@ -32,15 +32,15 @@ import {
   type SceneObject,
   type SceneObjects,
 } from '../scenes/introBeats'
-import { OBJ_KEY_TO_SRC, VARIANT_KEY_TO_SRC } from '../map-editor/data'
+import { KEY_TO_COLOR_CSS, DEFAULT_OBJECT_COLOR_CSS } from '../map-editor/data'
 
-// Combined sprite-key → public path lookup. The composition canvas
-// uses this to render each placed object as its real PNG. Variants
-// (desks_1..12, plants_1..20) come from the map-editor's table so
-// the two editors stay aligned on what art is available.
-const ALL_SPRITES: Record<string, string> = {
-  ...OBJ_KEY_TO_SRC,
-  ...VARIANT_KEY_TO_SRC,
+// Procedural-era rendering: each scene-composition object draws as
+// a tinted CSS box matching the in-game procedural fallback. The
+// box's color comes from KEY_TO_COLOR_CSS (mirror of BootScene's
+// OBJECT_FALLBACK_COLORS); a `?` placeholder is used for unknown
+// keys.
+function colorForSpriteKey(key: string): string {
+  return KEY_TO_COLOR_CSS[key] ?? DEFAULT_OBJECT_COLOR_CSS
 }
 
 // All cover/backdrop comic-page images currently shipped with the
@@ -293,7 +293,7 @@ function renderEditor() {
 function sceneActionSelect(current: SceneActionId | undefined, id: string): string {
   const ids: SceneActionId[] = [
     'showHospitalPan', 'showDesk', 'showClaimVanish',
-    'showFall', 'showGap', 'showWaitingRoom',
+    'showFall', 'showWaitingRoom',
   ]
   return `<select id="${id}">` +
     `<option value="">— none —</option>` +
@@ -372,26 +372,34 @@ function renderComposition(action: SceneActionId | undefined) {
     }
   }
 
-  // Objects on top.
+  // Objects on top — procedural-era boxes (no sprite PNGs).
   comp.objects.forEach((o, i) => {
-    const src = ALL_SPRITES[o.sprite]
-    if (!src) return // unknown texture — silently skip rather than crash
     const size = (o.size ?? 64) * COMPOSITION_SCALE
     const px = o.x * comp.gridSize * COMPOSITION_SCALE
     const py = o.y * comp.gridSize * COMPOSITION_SCALE
-    const img = document.createElement('img')
-    img.className = 'comp-obj' + (i === selectedObjIdx ? ' selected' : '')
-    img.src = `${import.meta.env.BASE_URL}${src}`
+    const box = document.createElement('div')
+    box.className = 'comp-obj' + (i === selectedObjIdx ? ' selected' : '')
+    box.style.position = 'absolute'
     // The procedural draw uses center origin; mirror it here so
-    // dragging visually tracks where the sprite would actually sit.
-    img.style.left = `${px - size / 2}px`
-    img.style.top = `${py - size / 2}px`
-    img.style.width = `${size}px`
-    img.style.height = `${size}px`
-    img.style.opacity = String(o.alpha ?? 0.5)
-    img.dataset.idx = String(i)
-    img.addEventListener('mousedown', onCompObjMouseDown)
-    canvas.appendChild(img)
+    // dragging visually tracks where the box would actually sit.
+    box.style.left = `${px - size / 2}px`
+    box.style.top = `${py - size / 2}px`
+    box.style.width = `${size}px`
+    box.style.height = `${size}px`
+    box.style.background = colorForSpriteKey(o.sprite)
+    box.style.border = '1px solid rgba(0,0,0,0.55)'
+    box.style.boxSizing = 'border-box'
+    box.style.opacity = String(o.alpha ?? 0.5)
+    box.style.cursor = 'grab'
+    box.style.display = 'flex'
+    box.style.alignItems = 'center'
+    box.style.justifyContent = 'center'
+    box.style.color = '#fff'
+    box.style.fontSize = '10px'
+    box.textContent = o.sprite.replace(/^h_/, '').slice(0, 4)
+    box.dataset.idx = String(i)
+    box.addEventListener('mousedown', onCompObjMouseDown)
+    canvas.appendChild(box)
   })
 
   // Click empty canvas → open palette.
@@ -446,11 +454,21 @@ function showCompositionPalette(clientX: number, clientY: number) {
   palette.style.left = `${clientX + 8}px`
   palette.style.top = `${clientY + 8}px`
   palette.style.display = 'grid'
-  for (const [key, src] of Object.entries(ALL_SPRITES)) {
+  // Procedural-era palette: tinted boxes per key (no PNGs).
+  for (const key of Object.keys(KEY_TO_COLOR_CSS).sort()) {
     const cell = document.createElement('div')
     cell.className = 'comp-palette-cell'
     cell.title = key
-    cell.innerHTML = `<img src="${import.meta.env.BASE_URL}${src}" /><span>${key}</span>`
+    const swatch = document.createElement('div')
+    swatch.style.width = '32px'
+    swatch.style.height = '32px'
+    swatch.style.background = colorForSpriteKey(key)
+    swatch.style.border = '1px solid rgba(0,0,0,0.55)'
+    swatch.style.boxSizing = 'border-box'
+    cell.appendChild(swatch)
+    const label = document.createElement('span')
+    label.textContent = key
+    cell.appendChild(label)
     cell.addEventListener('click', () => addObjFromPalette(key))
     palette.appendChild(cell)
   }

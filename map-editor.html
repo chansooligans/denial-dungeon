@@ -21,12 +21,40 @@
       overflow: auto;
       padding: 16px;
       background: #0a0e14;
+      position: relative;
+    }
+    #map-wrap {
+      position: relative;
+      /* Allows the inner #map (CSS-scaled) to push parent dimensions
+         so scrollbars on #left know the actual content size. */
     }
     #map {
       position: relative;
       background: #1a1e25;
       box-shadow: 0 0 0 1px #2a323d;
       image-rendering: pixelated;
+      transform-origin: 0 0;
+      transition: transform 80ms ease;
+    }
+    /* Floating zoom toolbar — sticky-ish at top-right of the left
+     * pane so it stays visible while scrolling the map. */
+    .zoom-toolbar {
+      position: sticky;
+      top: 0;
+      float: right;
+      display: flex;
+      gap: 4px;
+      background: #0a0e14;
+      border: 1px solid #2a323d;
+      border-radius: 4px;
+      padding: 4px;
+      margin-bottom: 8px;
+      z-index: 50;
+    }
+    .zoom-toolbar button {
+      padding: 4px 10px;
+      font-size: 12px;
+      min-width: 32px;
     }
     .cell {
       position: absolute;
@@ -37,15 +65,25 @@
     .cell.door  { background: #4a3d24; }
     .cell.floor { background: #15191f; border: 1px solid #1a1e25; }
     .cell.floor:hover { background: #1f2630; }
-    img.obj {
+    /* Procedural-era objects: tinted CSS boxes (no PNGs to load).
+       Glyph centered for quick at-a-glance identification. The
+       border tint mimics the dark-frame outline the in-game
+       procedural fallback draws. */
+    .obj {
       position: absolute;
       pointer-events: auto;
       cursor: grab;
-      image-rendering: pixelated;
       transition: filter 80ms ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font: bold 14px ui-monospace, monospace;
+      text-shadow: 0 1px 0 rgba(0,0,0,0.6);
+      user-select: none;
     }
-    img.obj:hover { filter: brightness(1.4); }
-    img.obj.selected { filter: drop-shadow(0 0 4px #f4d06f) brightness(1.3); }
+    .obj:hover { filter: brightness(1.4); }
+    .obj.selected { filter: drop-shadow(0 0 4px #f4d06f) brightness(1.3); }
     .sel-ring {
       position: absolute;
       box-sizing: border-box;
@@ -116,8 +154,28 @@
     }
     .palette-cell span {
       color: #7ee2c1;
-      font-size: 10px;
+      font-size: 9px;
+      max-width: 50px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
+    /* Inactive (no-glyph) palette cells get a subtle yellow tag so
+     * users can tell at a glance which textures don't have a default
+     * tile binding. They still place fine — the editor emits a
+     * tileMeta.sprite override for them. */
+    .palette-cell.inactive {
+      border-color: #2a3344;
+    }
+    .palette-cell.inactive::after {
+      content: '·';
+      position: absolute;
+      top: 1px; right: 4px;
+      color: #f4d06f;
+      font-size: 14px;
+      line-height: 1;
+    }
+    .palette-cell { position: relative; }
     button {
       background: #1f262f; color: #7ee2c1;
       border: 1px solid #2a323d;
@@ -132,7 +190,14 @@
 <body>
   <div id="app">
     <div id="left">
-      <div id="map"></div>
+      <div class="zoom-toolbar">
+        <button id="zoom-out" title="Zoom out (Cmd/Ctrl + -)">−</button>
+        <button id="zoom-reset" title="Reset zoom (Cmd/Ctrl + 0)">100%</button>
+        <button id="zoom-in" title="Zoom in (Cmd/Ctrl + =)">+</button>
+      </div>
+      <div id="map-wrap">
+        <div id="map"></div>
+      </div>
     </div>
     <div id="right">
       <h1>Map editor — level1</h1>
@@ -141,16 +206,22 @@
         <strong>Drag</strong> to move (must land on floor).<br />
         <strong>F</strong> flip horizontal. <strong>0</strong> reset flip.
         <strong>Del</strong> remove.<br />
-        Click empty floor → palette → choose glyph to add.<br />
-        <em>Rotation removed — author rotated sprite variants instead.</em>
+        <strong>+ / − / [ / ]</strong> resize selected (0.4×–2.5×).
+        <strong>1</strong> reset size.<br />
+        <strong>Cmd/Ctrl + scroll</strong> or the toolbar buttons to zoom the map.<br />
+        Click empty floor → palette opens with every available
+        sprite. Cells marked <span style="color:#f4d06f">·</span> are
+        inactive (no glyph mapping) — placing them emits a
+        <code>tileMeta.sprite</code> override.
       </div>
       <div id="status"></div>
       <button id="copy">Copy export to clipboard</button>
       <textarea id="export" spellcheck="false" readonly></textarea>
       <div class="legend">
-        Output is two blocks: <code>tileMeta</code> for rotations/flips,
-        <code>tileOverrides</code> for added/moved/removed objects. Paste
-        both into <code>src/content/maps/level1.ts</code>.
+        Output is two blocks. <code>tileMeta</code> carries sprite,
+        size, and flip overrides; <code>tileOverrides</code> only
+        emits when something was deleted. Paste both into
+        <code>src/content/maps/level1.ts</code>.
       </div>
     </div>
   </div>

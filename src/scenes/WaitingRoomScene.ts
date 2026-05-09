@@ -17,6 +17,13 @@ const TILE = 64
 // See HospitalScene — keeps the 2-tiles-tall character feel.
 const CHARACTER_SCALE = 2
 
+// Mirror of HospitalScene.OBJECT_DISPLAY_MULT — objects render
+// 1.5× tile size by default. Kept as its own const here (rather
+// than imported) since the two scenes have independent visual
+// budgets and the WR red-room register might want a different
+// scale tomorrow.
+const OBJECT_DISPLAY_MULT = 1.5
+
 /**
  * The Waiting Room is a *parallel layer* — it shares the Hospital's
  * floor plan, transformed. Same walls, same doors, same rooms; the
@@ -388,17 +395,25 @@ export class WaitingRoomScene extends Phaser.Scene {
           floor.setTint(def.tint)
         }
 
-        // Object on top (furniture, monitor, counter, etc.)
-        if (def.obj) {
-          // Match HospitalScene: 2× scale, bottom-anchored.
+        // Object on top (furniture, monitor, counter, etc.). Same
+        // tileMeta override semantics as HospitalScene — sprite
+        // override, size multiplier, flipX. A tile renders an obj
+        // when either def.obj OR meta.sprite is set, so authors can
+        // drop inactive textures onto plain WR floor.
+        const meta = this.mapDef.tileMeta?.[`${x},${y}`]
+        const objKey = meta?.sprite ?? def.obj
+        if (objKey) {
+          const sizeMult = meta?.size ?? 1
+          const dispSize = TILE * OBJECT_DISPLAY_MULT * sizeMult
           const objY = y * TILE + TILE
-          const obj = this.add.image(px, objY, def.obj)
-            .setOrigin(0.5, 1).setDisplaySize(TILE * 2, TILE * 2).setDepth(2)
-          if (def.objTint !== undefined) obj.setTint(def.objTint)
-          // Per-tile orientation overrides — same source-of-truth
-          // (mapDef.tileMeta) as HospitalScene so a desk flipped in
-          // the editor reads the same in both worlds.
-          const meta = this.mapDef.tileMeta?.[`${x},${y}`]
+          const obj = this.add.image(px, objY, objKey)
+            .setOrigin(0.5, 1).setDisplaySize(dispSize, dispSize).setDepth(2)
+          // Default tint only when using the glyph's default obj —
+          // the override sprite's palette wouldn't be tuned for the
+          // procedural-fallback tint.
+          if (!meta?.sprite && def.objTint !== undefined) {
+            obj.setTint(def.objTint)
+          }
           if (meta?.flipX) obj.setFlipX(true)
         }
 

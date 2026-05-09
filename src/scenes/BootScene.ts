@@ -1,6 +1,7 @@
 import Phaser from 'phaser'
 import { FACTION_COLOR } from '../types'
 import type { Faction } from '../types'
+import { OBJECT_SOURCES } from './objectSources'
 
 /** Mix a hex color toward white by `amt` (0..1). Used for highlight ramps. */
 function lighten(hex: number, amt: number): number {
@@ -64,161 +65,9 @@ const NPC_SOURCES: Record<string, string> = {
   noah:          'npc4_3', // visitor
 }
 
-/**
- * Mapping from canonical hospital / Waiting Room texture key to the
- * source slot in `public/sprites/objects-raw/`. Slot names encode
- * which LoRA-generated sheet + row + col (obj1..obj5 × rows 0..3 ×
- * cols 0..3 = 80 cells total, all 64×64 transparent PNGs).
- *
- * 11 canonical replacements override the procedural draws in
- * `BootScene.makeHospitalTiles`. The remaining 69 entries register
- * new texture keys (IV stand, wheelchair, AED, etc.) for future
- * placement — they aren't referenced by any tile char yet.
- *
- * Generated from the `Auto-fill suggestions` button on the
- * `/sprites.html` Objects section (manual visual inspection of each
- * cell). Override slot-by-slot in the picker if a different
- * assignment is desired, then update this dict.
- */
-const OBJECT_SOURCES: Record<string, string> = {
-  // ===== Canonical replacements (override procedural draws) =====
-  h_counter:    'obj1_0_0', // reception desk
-  // Canonical desk uses the new desks.png sheet (3rd in row 1: wood
-  // desk + monitor + plant). The 12-desk sheet is registered below
-  // as h_desk_1..h_desk_12 (row-major from desks.png) so we can swap
-  // visual variants per-instance without re-importing.
-  h_desk:       'desks_0_2',
-  h_chair:      'obj1_0_2', // office chair
-  h_cabinet:    'obj1_0_3', // filing cabinet (with plant on top)
-  h_bulletin:   'obj1_1_0', // cork bulletin board
-  h_plant:      'obj1_1_1', // potted fern
-  h_water:      'obj1_2_1', // water cooler
-  h_vending:    'obj1_2_2', // snack vending machine
-  h_bed:        'obj3_0_0', // hospital bed
-  h_equipment:  'obj3_1_3', // vital monitor on cart
-  h_fax:        'obj5_1_0', // fax machine
-
-  // ===== New keys registered for future placement =====
-  // Sheet 1 — office / lobby
-  h_computer:        'obj1_1_2',
-  h_printer:         'obj1_1_3',
-  h_box_stack:       'obj1_2_0',
-  h_armchair:        'obj1_2_3',
-  h_stanchion:       'obj1_3_0',
-  h_clock_wall:      'obj1_3_1',
-  h_supply_cart:     'obj1_3_2',
-  h_kiosk:           'obj1_3_3',
-  // Sheet 2 — waiting / lobby
-  h_couch:           'obj2_0_0',
-  h_bench:           'obj2_0_1',
-  h_side_table:      'obj2_0_2',
-  h_brochure:        'obj2_0_3',
-  h_directory:       'obj2_1_0',
-  h_sanitizer:       'obj2_1_1',
-  h_coat_rack:       'obj2_1_2',
-  h_trash:           'obj2_1_3',
-  h_recycle:         'obj2_2_0',
-  h_plant_lobby:     'obj2_2_1',
-  h_reception_bell:  'obj2_2_2',
-  h_atm:             'obj2_2_3',
-  h_monitor_wall:    'obj2_3_0',
-  h_tablet:          'obj2_3_1',
-  h_umbrella_stand:  'obj2_3_2',
-  h_signin:          'obj2_3_3',
-  // Sheet 3 — clinical / medical
-  h_exam_table:      'obj3_0_1',
-  h_iv_stand:        'obj3_0_2',
-  h_wheelchair:      'obj3_0_3',
-  h_stool:           'obj3_1_0',
-  h_bedside:         'obj3_1_1',
-  h_screen:          'obj3_1_2',
-  h_med_cart:        'obj3_2_0',
-  h_crash_cart:      'obj3_2_1',
-  h_sink:            'obj3_2_2',
-  h_biohazard:       'obj3_2_3',
-  h_linen_cart:      'obj3_3_0',
-  h_step:            'obj3_3_1',
-  h_equip_cart:      'obj3_3_2',
-  h_gurney:          'obj3_3_3',
-  // Sheet 4 — facilities / safety
-  h_cleaning_cart:   'obj4_0_0',
-  h_mop_bucket:      'obj4_0_1',
-  h_wet_floor:       'obj4_0_2',
-  h_bin_cart:        'obj4_0_3',
-  h_supply_cart_2:   'obj4_1_0',
-  h_bin_cart_full:   'obj4_1_1',
-  h_biohazard_sm:    'obj4_1_2',
-  h_linen_bin:       'obj4_1_3',
-  h_paper_towels:    'obj4_2_0',
-  h_elevator:        'obj4_2_1',
-  h_drink_counter:   'obj4_2_2',
-  h_fountain:        'obj4_2_3',
-  h_aed:             'obj4_3_0',
-  h_payphone:        'obj4_3_1',
-  h_arrow_sign:      'obj4_3_2',
-  h_clock_office:    'obj4_3_3',
-  // Sheet 5 — admin / records
-  h_bookshelf:       'obj5_0_0',
-  h_file_cart:       'obj5_0_1',
-  h_cabinet_open:    'obj5_0_2',
-  h_lamp:            'obj5_0_3',
-  h_kiosk_admin:     'obj5_1_1',
-  h_intercom:        'obj5_1_2',
-  h_pneumatic:       'obj5_1_3',
-  h_test_tubes:      'obj5_2_0',
-  h_printer_lab:     'obj5_2_1',
-  h_shredder:        'obj5_2_2',
-  h_cashbox:         'obj5_2_3',
-  h_med_vending:     'obj5_3_0',
-  h_reception_admin: 'obj5_3_1',
-  h_ticker:          'obj5_3_2',
-  h_paper_stack:     'obj5_3_3',
-
-  // Desk variants — full 4×3 grid from desks.png (12 visual styles).
-  // Numbered row-major (1-indexed): row 0 → 1,2,3; row 1 → 4,5,6;
-  // row 2 → 7,8,9; row 3 → 10,11,12. The canonical h_desk above
-  // points at desks_0_2 (a.k.a. h_desk_3); register the rest so a
-  // future tile-mapping pass can pick a different style per room.
-  h_desk_1:          'desks_0_0',
-  h_desk_2:          'desks_0_1',
-  h_desk_3:          'desks_0_2',
-  h_desk_4:          'desks_1_0',
-  h_desk_5:          'desks_1_1',
-  h_desk_6:          'desks_1_2',
-  h_desk_7:          'desks_2_0',
-  h_desk_8:          'desks_2_1',
-  h_desk_9:          'desks_2_2',
-  h_desk_10:         'desks_3_0',
-  h_desk_11:         'desks_3_1',
-  h_desk_12:         'desks_3_2',
-
-  // Plant variants — full 4×5 grid from plants.png (20 visual styles).
-  // Same row-major 1-indexed scheme: row 0 → 1..5, row 1 → 6..10,
-  // row 2 → 11..15, row 3 → 16..20. Existing h_plant / h_plant_lobby
-  // keys above keep their original obj1/obj2 sources for backwards
-  // compatibility; opt into a richer plant by referencing h_plant_N
-  // directly in a TILE_TEXTURES entry or via the map editor.
-  h_plant_1:         'plants_0_0',
-  h_plant_2:         'plants_0_1',
-  h_plant_3:         'plants_0_2',
-  h_plant_4:         'plants_0_3',
-  h_plant_5:         'plants_0_4',
-  h_plant_6:         'plants_1_0',
-  h_plant_7:         'plants_1_1',
-  h_plant_8:         'plants_1_2',
-  h_plant_9:         'plants_1_3',
-  h_plant_10:        'plants_1_4',
-  h_plant_11:        'plants_2_0',
-  h_plant_12:        'plants_2_1',
-  h_plant_13:        'plants_2_2',
-  h_plant_14:        'plants_2_3',
-  h_plant_15:        'plants_2_4',
-  h_plant_16:        'plants_3_0',
-  h_plant_17:        'plants_3_1',
-  h_plant_18:        'plants_3_2',
-  h_plant_19:        'plants_3_3',
-  h_plant_20:        'plants_3_4',
-}
+// OBJECT_SOURCES extracted to its own module so the map editor can
+// import the same source-of-truth without dragging Phaser in. Edit
+// the mapping there.
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -778,16 +627,19 @@ export class BootScene extends Phaser.Scene {
 
     // Chair — neutral body so TINT.chair in HospitalScene controls
     // the actual color (Phaser tints multiply against the texture).
+    // Shorter than its predecessor (body 6 rows instead of 8) and
+    // sits lower in the tile so chairs read as waist-high seating
+    // rather than podium-blocks dominating each cell.
     g = this.make.graphics({ x: 0, y: 0 })
     g.fillStyle(0xffffff)
-    g.fillRect(3, 2, 10, 8)
+    g.fillRect(3, 6, 10, 6)         // body 10×6 starting row 6
     g.fillStyle(0xd8d8d8, 0.4)
-    g.fillRect(4, 2, 8, 2)
+    g.fillRect(4, 6, 8, 1)           // top highlight
     g.fillStyle(0x404040)
-    g.fillRect(6, 10, 4, 3)
+    g.fillRect(6, 12, 4, 2)          // dark stem rows 12–13
     g.fillStyle(0x808080)
-    g.fillRect(4, 13, 2, 2)
-    g.fillRect(10, 13, 2, 2)
+    g.fillRect(4, 14, 2, 2)          // feet rows 14–15
+    g.fillRect(10, 14, 2, 2)
     if (!this.textures.exists('h_chair')) g.generateTexture('h_chair', 16, 16)
     g.destroy()
 
@@ -878,16 +730,19 @@ export class BootScene extends Phaser.Scene {
     g.generateTexture('h_whiteboard', 16, 16)
     g.destroy()
 
-    // Reception counter — polished wood
+    // Reception counter — polished wood. Lowered to occupy the
+    // bottom half of the tile and narrower (12 wide instead of 16)
+    // so multi-tile counters read as a continuous run with subtle
+    // tile-to-tile seams instead of a solid horizontal slab.
     g = this.make.graphics({ x: 0, y: 0 })
     g.fillStyle(0x6a5030)
-    g.fillRect(0, 4, 16, 10)
+    g.fillRect(2, 8, 12, 8)
     g.fillStyle(0x7a6040, 0.6)
-    g.fillRect(0, 4, 16, 3)
+    g.fillRect(2, 8, 12, 2)            // top edge highlight
     g.fillStyle(0x8a7050, 0.2)
-    g.fillRect(2, 5, 12, 1)
+    g.fillRect(3, 9, 10, 1)
     g.lineStyle(1, 0x5a4020, 0.6)
-    g.strokeRect(0, 4, 16, 10)
+    g.strokeRect(2, 8, 12, 8)
     if (!this.textures.exists('h_counter')) g.generateTexture('h_counter', 16, 16)
     g.destroy()
 

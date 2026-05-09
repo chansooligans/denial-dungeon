@@ -59,9 +59,12 @@ export class DialogueScene extends Phaser.Scene {
     // without fullscreen. The box still anchors to the bottom of the
     // viewport so the player's view of the world is preserved above.
     const m = isTouchDevice()
-    const speakerSize = m ? 17 : 13
-    const bodySize    = m ? 16 : 12
-    const boxHeight   = m ? 220 : 160
+    // Bumped from 13/12px desktop and 17/16px mobile so dialogue
+    // reads cleanly at the 1920×1280 canvas without leaning in.
+    // Box gets taller too to accommodate the larger lines.
+    const speakerSize = m ? 22 : 20
+    const bodySize    = m ? 20 : 18
+    const boxHeight   = m ? 260 : 200
     const speakerY    = height - boxHeight - 10
     const bodyY       = speakerY + speakerSize + 6
 
@@ -101,9 +104,10 @@ export class DialogueScene extends Phaser.Scene {
     const { width, height } = this.scale
 
     const m = isTouchDevice()
-    const choiceSize = m ? 15 : 11
-    const choiceStep = m ? 28 : 22
-    const choiceTopOffset = m ? 110 : 70
+    // Choice text + spacing scaled to match the bumped body size.
+    const choiceSize = m ? 19 : 17
+    const choiceStep = m ? 36 : 30
+    const choiceTopOffset = m ? 140 : 100
 
     if (node.choices && node.choices.length > 0) {
       node.choices.forEach((choice, i) => {
@@ -120,7 +124,7 @@ export class DialogueScene extends Phaser.Scene {
       })
     } else if (node.next) {
       const advanceText = this.add.text(width - 60, height - 30, 'click or space ▸', {
-        fontSize: m ? '13px' : '10px', fontFamily: 'monospace', color: '#5a6a7a',
+        fontSize: m ? '16px' : '14px', fontFamily: 'monospace', color: '#5a6a7a',
       }).setOrigin(1, 0.5)
       this.choiceTexts.push(advanceText)
 
@@ -153,7 +157,7 @@ export class DialogueScene extends Phaser.Scene {
       // after setText, so single-line atmosphere dialogues like the
       // L10 auditors flashed and vanished.)
       const closeText = this.add.text(width - 60, height - 30, 'click or space to close ▸', {
-        fontSize: m ? '13px' : '10px', fontFamily: 'monospace', color: '#5a6a7a',
+        fontSize: m ? '16px' : '14px', fontFamily: 'monospace', color: '#5a6a7a',
       }).setOrigin(1, 0.5)
       this.choiceTexts.push(closeText)
 

@@ -31,6 +31,14 @@ const TILE = 64
 // produce uneven pixel mapping.
 const CHARACTER_SCALE = 2
 
+// Multiplier applied to TILE for placed-object sprites. 2 = "object
+// fills two tiles, overflows up into the tile above" (the original
+// look — beds/cabinets towering over chairs); 1.5 = compact, less
+// dominant; 1 = object fits cleanly in one tile. Chunky 16×16
+// procedural art looks crisper at smaller multipliers since less
+// nearest-neighbor scaling is involved.
+const OBJECT_DISPLAY_MULT = 1.5
+
 // 70s + David Lynch palette — applied as tints on top of existing
 // sprites. Reads warm but uncanny: cream-tan floors, walnut walls,
 // burnt-orange chairs, mustard counters, avocado plants. Cooler
@@ -75,41 +83,6 @@ const TILE_TEXTURES: Record<string, { floor: string; obj?: string; solid?: boole
   'b': { floor: 'h_floor', obj: 'h_bulletin',   solid: true, floorTint: TINT.floor, objTint: TINT.bulletin },
   'H': { floor: 'h_floor', obj: 'h_bed',        solid: true, floorTint: TINT.floor, objTint: TINT.bed },
   'X': { floor: 'h_floor', obj: 'h_fax',        floorTint: TINT.floor, objTint: TINT.fax },
-
-  // ===== Phase-C upgrades — new LoRA-only objects (no procedural
-  // fallback). These chars don't exist in any earlier map; layouts
-  // can opt-in by adding the char in their `items`. Untinted by
-  // default since the LoRA art has its own palette and the prior
-  // tints were tuned for the procedural-fallback color scheme. =====
-
-  // Lobby / public-facing
-  'A': { floor: 'h_floor', obj: 'h_aed',         solid: true, floorTint: TINT.floor }, // wall AED
-  'a': { floor: 'h_floor', obj: 'h_sanitizer',   solid: true, floorTint: TINT.floor }, // hand-sanitizer station
-  'C': { floor: 'h_floor', obj: 'h_couch',       solid: true, floorTint: TINT.floor }, // padded lobby couch
-  'd': { floor: 'h_floor', obj: 'h_bench',       solid: true, floorTint: TINT.floor }, // multi-seat waiting bench
-  'r': { floor: 'h_floor', obj: 'h_brochure',    solid: true, floorTint: TINT.floor }, // brochure rack
-  'i': { floor: 'h_floor', obj: 'h_signin',      solid: true, floorTint: TINT.floor }, // sign-in clipboard stand
-  'p': { floor: 'h_floor', obj: 'h_payphone',    solid: true, floorTint: TINT.floor }, // pay phone
-  '>': { floor: 'h_floor', obj: 'h_arrow_sign',  solid: true, floorTint: TINT.floor }, // wayfinding arrow
-  'T': { floor: 'h_floor', obj: 'h_trash',       solid: true, floorTint: TINT.floor }, // trash can
-
-  // Clinical
-  'I': { floor: 'h_floor', obj: 'h_iv_stand',    solid: true, floorTint: TINT.floor }, // IV stand
-  'y': { floor: 'h_floor', obj: 'h_wheelchair',  solid: true, floorTint: TINT.floor }, // wheelchair
-  'g': { floor: 'h_floor', obj: 'h_gurney',      solid: true, floorTint: TINT.floor }, // gurney / stretcher
-
-  // Admin / records
-  'K': { floor: 'h_floor', obj: 'h_bookshelf',   solid: true, floorTint: TINT.floor }, // binder shelves
-  's': { floor: 'h_floor', obj: 'h_shredder',    solid: true, floorTint: TINT.floor }, // paper shredder
-  'k': { floor: 'h_floor', obj: 'h_kiosk',       solid: true, floorTint: TINT.floor }, // check-in / payment kiosk
-  '#': { floor: 'h_floor', obj: 'h_directory',   solid: true, floorTint: TINT.floor }, // directory sign
-  '%': { floor: 'h_floor', obj: 'h_pneumatic',   solid: true, floorTint: TINT.floor }, // pneumatic tube station
-
-  // Facilities
-  'e': { floor: 'h_floor', obj: 'h_elevator',    solid: true, floorTint: TINT.floor }, // elevator doors
-  'f': { floor: 'h_floor', obj: 'h_fountain',    solid: true, floorTint: TINT.floor }, // drinking fountain
-  '!': { floor: 'h_floor', obj: 'h_wet_floor',                  floorTint: TINT.floor }, // wet floor sign — passable
-  'M': { floor: 'h_floor', obj: 'h_mop_bucket',  solid: true, floorTint: TINT.floor }, // mop bucket
 }
 
 // Tiles that act as room boundaries for flood-fill: walls and doors.
@@ -435,28 +408,32 @@ export class HospitalScene extends Phaser.Scene {
         if (tileDef.floorTint !== undefined) floor.setTint(tileDef.floorTint)
         this.tileFloorSprites[y][x] = floor
 
-        if (tileDef.obj) {
-          // Objects render at 2× scale, bottom-anchored at the tile's
-          // bottom edge — matches how characters render so beds /
-          // cabinets / vending machines overflow up into the tile
-          // above (visually 2 tiles tall) instead of being squished
-          // into one tile. The placement still occupies one logical
-          // tile for collision; the sprite is just visually taller.
-          // Procedural-fallback 16×16 textures are first scaled to
-          // TILE via setDisplaySize so the 2× then renders at 2 tiles.
+        // Per-tile overrides — `tileMeta` is built by mapBuilder from
+        // RoomItem fields, or produced by /map-editor.html and
+        // pasted in by hand. Drives sprite swap, size multiplier,
+        // and horizontal flip. A tile renders an obj when EITHER
+        // the glyph has a default `tileDef.obj` OR `meta.sprite`
+        // is set — letting authors place inactive (no-glyph) textures
+        // directly via the editor.
+        const meta = this.mapDef.tileMeta?.[`${x},${y}`]
+        const objKey = meta?.sprite ?? tileDef.obj
+        if (objKey) {
+          // Objects render bottom-anchored at the tile's bottom edge.
+          // Base size is `TILE * OBJECT_DISPLAY_MULT`; `meta.size`
+          // scales further per-tile if a layout wants a hero piece.
+          const sizeMult = meta?.size ?? 1
+          const dispSize = TILE * OBJECT_DISPLAY_MULT * sizeMult
           const objY = (y + 1) * TILE
-          const obj = this.add.image(px, objY, tileDef.obj)
+          const obj = this.add.image(px, objY, objKey)
             .setOrigin(0.5, 1).setDepth(2).setAlpha(0)
-          obj.setDisplaySize(TILE * 2, TILE * 2)
-          if (tileDef.objTint !== undefined) obj.setTint(tileDef.objTint)
-          // Per-tile orientation overrides — `tileMeta` is built by
-          // mapBuilder from any `flipX` on a RoomItem, or produced by
-          // /map-editor.html and pasted into the map. Mirrors a
-          // sprite horizontally (e.g. face a side-view chair the
-          // other way). Rotation isn't supported — author rotated
-          // variants in source art instead, since CSS-rotating
-          // isometric sprites distorts their perspective.
-          const meta = this.mapDef.tileMeta?.[`${x},${y}`]
+          obj.setDisplaySize(dispSize, dispSize)
+          // Default tint applies only when the renderer is using the
+          // glyph's default obj. If the user overrode the sprite via
+          // tileMeta, the tint (which was tuned for the default art)
+          // would be wrong, so leave the override sprite untinted.
+          if (!meta?.sprite && tileDef.objTint !== undefined) {
+            obj.setTint(tileDef.objTint)
+          }
           if (meta?.flipX) obj.setFlipX(true)
           this.tileObjSprites[y][x] = obj
         }
@@ -516,27 +493,27 @@ export class HospitalScene extends Phaser.Scene {
     const hintText = LEVEL_ORIENTATION_HINTS[newLevel]
 
     const title = this.add.text(vw / 2, 80, titleText, {
-      fontSize: '22px', fontFamily: 'monospace', color: '#f0d090',
+      fontSize: '32px', fontFamily: 'monospace', color: '#f0d090',
       backgroundColor: '#1a060880',
-      padding: { x: 14, y: 6 },
-      stroke: '#05070a', strokeThickness: 3,
+      padding: { x: 18, y: 8 },
+      stroke: '#05070a', strokeThickness: 4,
       fontStyle: 'bold',
     }).setOrigin(0.5).setScrollFactor(0).setDepth(200).setAlpha(0)
 
-    const subtitle = this.add.text(vw / 2, 116, subtitleText, {
-      fontSize: '13px', fontFamily: 'monospace', color: '#c8a040',
+    const subtitle = this.add.text(vw / 2, 130, subtitleText, {
+      fontSize: '20px', fontFamily: 'monospace', color: '#c8a040',
       backgroundColor: '#1a060880',
-      padding: { x: 10, y: 4 },
-      stroke: '#05070a', strokeThickness: 2,
+      padding: { x: 14, y: 6 },
+      stroke: '#05070a', strokeThickness: 3,
     }).setOrigin(0.5).setScrollFactor(0).setDepth(200).setAlpha(0)
 
     const banners: Phaser.GameObjects.Text[] = [title, subtitle]
     if (hintText) {
-      const hint = this.add.text(vw / 2, 148, hintText, {
-        fontSize: '11px', fontFamily: 'monospace', color: '#7ee2c1',
+      const hint = this.add.text(vw / 2, 178, hintText, {
+        fontSize: '18px', fontFamily: 'monospace', color: '#7ee2c1',
         backgroundColor: '#1a060880',
-        padding: { x: 10, y: 4 },
-        stroke: '#05070a', strokeThickness: 2,
+        padding: { x: 14, y: 6 },
+        stroke: '#05070a', strokeThickness: 3,
         align: 'center',
       }).setOrigin(0.5).setScrollFactor(0).setDepth(200).setAlpha(0)
       banners.push(hint)
@@ -899,9 +876,9 @@ export class HospitalScene extends Phaser.Scene {
 
   private buildUI() {
     this.interactPrompt = this.add.text(0, 0, '[E] Talk', {
-      fontSize: '9px', fontFamily: 'monospace', color: '#f4d06f',
+      fontSize: '16px', fontFamily: 'monospace', color: '#f4d06f',
       backgroundColor: '#1f1208',
-      padding: { x: 4, y: 2 },
+      padding: { x: 8, y: 4 },
     }).setOrigin(0.5).setDepth(20).setVisible(false)
   }
 
@@ -910,15 +887,15 @@ export class HospitalScene extends Phaser.Scene {
     const level = LEVELS[state.currentLevel - 1]
 
     this.hudLevel = this.add.text(10, 10, `Level ${state.currentLevel}: ${level?.title ?? ''}`, {
-      fontSize: '10px', fontFamily: 'monospace', color: '#7ee2c1',
+      fontSize: '16px', fontFamily: 'monospace', color: '#7ee2c1',
       backgroundColor: '#1f120880',
-      padding: { x: 4, y: 2 },
+      padding: { x: 8, y: 4 },
     }).setScrollFactor(0).setDepth(100)
 
-    this.hudHp = this.add.text(10, 28, '', {
-      fontSize: '9px', fontFamily: 'monospace', color: '#ef5b7b',
+    this.hudHp = this.add.text(10, 44, '', {
+      fontSize: '14px', fontFamily: 'monospace', color: '#ef5b7b',
       backgroundColor: '#1f120880',
-      padding: { x: 4, y: 2 },
+      padding: { x: 8, y: 4 },
     }).setScrollFactor(0).setDepth(100)
 
     // Toast that flashes when the player bumps a solid object or
@@ -930,14 +907,14 @@ export class HospitalScene extends Phaser.Scene {
     const mobile = isTouchDevice()
     this.lockedToast = this.add.text(
       screenW / 2,
-      screenH - (mobile ? 80 : 60),
+      screenH - (mobile ? 110 : 90),
       '',
       {
-        fontSize: mobile ? '15px' : '12px',
+        fontSize: mobile ? '24px' : '20px',
         fontFamily: 'monospace',
         color: '#f4d06f',
         backgroundColor: '#1f1208cc',
-        padding: { x: mobile ? 12 : 8, y: mobile ? 6 : 4 },
+        padding: { x: mobile ? 16 : 14, y: mobile ? 8 : 6 },
         align: 'center',
       },
     ).setOrigin(0.5).setScrollFactor(0).setDepth(120).setAlpha(0)
@@ -999,12 +976,12 @@ export class HospitalScene extends Phaser.Scene {
     // against any tile color underneath.
     this.miniMapHint = this.add.text(0, 0, '', {
       fontFamily: 'monospace',
-      fontSize: '8px',
+      fontSize: '18px',
       color: '#7ee2c1',
       align: 'center',
       fontStyle: 'bold',
       stroke: '#0e1116',
-      strokeThickness: 3,
+      strokeThickness: 4,
     }).setOrigin(0.5, 1).setDepth(102)
 
     const miniMapObjs: Phaser.GameObjects.GameObject[] = [
@@ -1036,7 +1013,11 @@ export class HospitalScene extends Phaser.Scene {
         Math.floor((screenH - 100) / mh),
       ))
     } else {
-      this.miniMapCell = Math.max(1, Math.min(3, Math.floor(180 / mw))) || 1
+      // Collapsed minimap — 6px per tile on the 60-wide map gives a
+      // 360px-wide HUD element. Tuned by feel: 8px was overpowering
+      // the corner and 5px got squinted at. The bottom hint text
+      // stays at 18px regardless (set in buildMiniMap).
+      this.miniMapCell = Math.max(1, Math.min(6, Math.floor(360 / mw))) || 1
     }
     const cell = this.miniMapCell
     const innerW = mw * cell
@@ -1109,7 +1090,7 @@ export class HospitalScene extends Phaser.Scene {
       const cy = oy + (r.y + r.h / 2) * cell
       label.setPosition(cx, cy)
       label.setText(this.miniMapExpanded ? r.name : (r.shortName ?? r.name))
-      label.setFontSize(this.miniMapExpanded ? 14 : 7)
+      label.setFontSize(this.miniMapExpanded ? 22 : 12)
       // Use setWordWrapWidth instead of setStyle({ wordWrap }) — the
       // latter tripped a Phaser internal "Cannot read properties of
       // null (reading 'drawImage')" on first paint, on at least one
