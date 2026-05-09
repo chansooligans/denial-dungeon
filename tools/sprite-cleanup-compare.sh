@@ -45,50 +45,44 @@ run_variant() {
   echo
 }
 
-# Round-4 variants — keep going aggressive on halo. User picked
-# round-3 E (halo 85 × 2) as best so far; sweep continues 85 → 105
-# in 5-unit steps. global erase still locked at min_excess 120.
-#
-# Skin safety check: halo eroder requires ALL three channels within
-# halo_fuzz of the bg (~248,100,5). Light skin max-diff vs bg ~135,
-# dark skin max-diff ~95. Above 95 we risk eating dark-skin edges,
-# which is why the gradient stops at 105 — but the only dark-skin
-# character on npc15 is Andre (row 3), worth eyeballing carefully
-# at the 100/105 column.
+# Round-5 variants — halo locked at 85 × 2 (user's pick); sweep
+# global erase min_excess 120 → 124 in 1-unit steps. Lower
+# min_excess = more aggressive global erase (more pixels match
+# the dominance pattern); higher = more skin/clothing-safe.
 
-# A — round-3 E, the new anchor.
-run_variant A "anchor — halo 85 × 2, global 120 (round-3 E)" \
+# A — global 120 (most aggressive in this sweep).
+run_variant A "halo 85 × 2, global 120" \
   --fuzz 60 \
   --halo-fuzz 85 \
   --halo-passes 2 \
   --warm-min-excess 120
 
-# B — halo 90.
-run_variant B "halo 90 × 2, global 120" \
+# B — global 121.
+run_variant B "halo 85 × 2, global 121" \
   --fuzz 60 \
-  --halo-fuzz 90 \
+  --halo-fuzz 85 \
   --halo-passes 2 \
-  --warm-min-excess 120
+  --warm-min-excess 121
 
-# C — halo 95 (approaching dark-skin edge limit).
-run_variant C "halo 95 × 2, global 120" \
+# C — global 122.
+run_variant C "halo 85 × 2, global 122" \
   --fuzz 60 \
-  --halo-fuzz 95 \
+  --halo-fuzz 85 \
   --halo-passes 2 \
-  --warm-min-excess 120
+  --warm-min-excess 122
 
-# D — halo 100 (at dark-skin max-diff; risk of eating edges).
-run_variant D "halo 100 × 2, global 120 (dark-skin edge risk)" \
+# D — global 123.
+run_variant D "halo 85 × 2, global 123" \
   --fuzz 60 \
-  --halo-fuzz 100 \
+  --halo-fuzz 85 \
   --halo-passes 2 \
-  --warm-min-excess 120
+  --warm-min-excess 123
 
-# E — halo 105 (over dark-skin max-diff; almost certainly eats some).
-run_variant E "halo 105 × 2, global 120 (likely over the line)" \
+# E — global 124 (least aggressive in this sweep).
+run_variant E "halo 85 × 2, global 124" \
   --fuzz 60 \
-  --halo-fuzz 105 \
+  --halo-fuzz 85 \
   --halo-passes 2 \
-  --warm-min-excess 120
+  --warm-min-excess 124
 
 echo "✓ done — open /sprite-cleanup-compare.html in the dev server"
