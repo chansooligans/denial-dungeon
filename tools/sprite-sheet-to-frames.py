@@ -124,7 +124,7 @@ def already_has_alpha(img: Image.Image) -> bool:
     return all(p[c][3] == 0 for c in [(0, 0), (w - 1, 0), (0, h - 1), (w - 1, h - 1)])
 
 
-def remove_background(img: Image.Image, fuzz: int = 35) -> tuple[Image.Image, tuple[int, int, int]]:
+def remove_background(img: Image.Image, fuzz: int = 35, no_warm_bump: bool = False) -> tuple[Image.Image, tuple[int, int, int]]:
     """Flood-fill from the four corners through any pixel within
     `fuzz` RGB distance of the corner color, marking those pixels
     alpha=0. Reaches the halo of near-cream pixels around character
@@ -152,7 +152,8 @@ def remove_background(img: Image.Image, fuzz: int = 35) -> tuple[Image.Image, tu
     sr0, sg0, sb0, _ = pixels[0, 0]
     if is_chroma_key((sr0, sg0, sb0)):
         if is_warm_chroma((sr0, sg0, sb0)):
-            fuzz = max(fuzz, 60)
+            if not no_warm_bump:
+                fuzz = max(fuzz, 60)
         else:
             fuzz = max(fuzz, 90)
 
@@ -277,7 +278,7 @@ def keep_largest_blob(img: Image.Image, dilate_radius: int = 3) -> Image.Image:
     return img
 
 
-def erode_halo(img: Image.Image, ref: tuple[int, int, int], halo_fuzz: int = 60, passes: int = 3) -> Image.Image:
+def erode_halo(img: Image.Image, ref: tuple[int, int, int], halo_fuzz: int = 60, passes: int = 3, no_warm_bump: bool = False) -> Image.Image:
     """Remove the cream halo of anti-aliased pixels that flood-fill
     leaves around the character outline. Strategy: iteratively erase
     any opaque edge pixel (4-neighbor of a transparent pixel) whose
@@ -304,7 +305,8 @@ def erode_halo(img: Image.Image, ref: tuple[int, int, int], halo_fuzz: int = 60,
     # (max-diff ~95) intact.
     if is_chroma_key(ref):
         if is_warm_chroma(ref):
-            halo_fuzz = max(halo_fuzz, 90)
+            if not no_warm_bump:
+                halo_fuzz = max(halo_fuzz, 90)
         else:
             halo_fuzz = max(halo_fuzz, 130)
 
@@ -397,6 +399,9 @@ def main() -> None:
     p.add_argument("--halo-fuzz", type=int, default=60, help="Edge-halo eroder fuzz tolerance (default 60)")
     p.add_argument("--halo-passes", type=int, default=3, help="Halo eroder iterations; each pass eats 1 px ring (default 3)")
     p.add_argument("--dilate", type=int, default=3, help="Connected-component dilation radius for blob filter; bigger = more tolerant of intra-character gaps but more risk of merging neighbor characters (default 3)")
+    p.add_argument("--no-warm-bump", action="store_true", help="Disable the warm-chroma auto-bump in remove_background and erode_halo. Use with --fuzz / --halo-fuzz to dial cleanup precisely (parameter sweeps).")
+    p.add_argument("--no-global-erase", action="store_true", help="Skip chroma_key_global_erase entirely (the dominance-based pass that catches enclosed chroma pixels in hair). Useful for sweeps where the warm bg + skin overlap is the failure mode.")
+    p.add_argument("--warm-min-excess", type=int, default=100, help="min_excess threshold for chroma_key_global_erase on warm chromas. Higher = more conservative (less likely to eat skin). Skin r-excess ~60 across tones, so values >70 are safe; 100 is the production default. Cool chromas always use 15.")
     args = p.parse_args()
 
     input_path = Path(args.input)
@@ -414,17 +419,18 @@ def main() -> None:
                 if already_has_alpha(cell):
                     cleaned = cell.convert("RGBA")
                 else:
-                    cleaned, ref = remove_background(cell, fuzz=args.fuzz)
-                    cleaned = erode_halo(cleaned, ref, halo_fuzz=args.halo_fuzz, passes=args.halo_passes)
-                    if is_chroma_key(ref):
+                    cleaned, ref = remove_background(cell, fuzz=args.fuzz, no_warm_bump=args.no_warm_bump)
+                    cleaned = erode_halo(cleaned, ref, halo_fuzz=args.halo_fuzz, passes=args.halo_passes, no_warm_bump=args.no_warm_bump)
+                    if is_chroma_key(ref) and not args.no_global_erase:
                         # Catch any chroma-tinted pixels enclosed inside
                         # the silhouette (curls of hair, etc.) that
                         # flood-fill couldn't reach. Warm chromas (where
                         # the dominance pattern overlaps skin tones)
-                        # use a much higher min_excess so only highly
-                        # saturated halo orange gets erased — skin
-                        # r-excess (~60) stays well below the threshold.
-                        min_excess = 100 if is_warm_chroma(ref) else 15
+                        # use a much higher min_excess (configurable
+                        # via --warm-min-excess) so only saturated
+                        # halo orange gets erased — skin r-excess
+                        # (~60) stays well below the threshold.
+                        min_excess = args.warm_min_excess if is_warm_chroma(ref) else 15
                         cleaned = chroma_key_global_erase(cleaned, ref, min_excess=min_excess)
                 cleaned = keep_largest_blob(cleaned, dilate_radius=args.dilate)
                 trimmed = trim_to_bbox(cleaned)
@@ -438,12 +444,13 @@ def main() -> None:
             if already_has_alpha(frame):
                 cleaned = frame.convert("RGBA")
             else:
-                cleaned, ref = remove_background(frame, fuzz=args.fuzz)
-                cleaned = erode_halo(cleaned, ref, halo_fuzz=args.halo_fuzz, passes=args.halo_passes)
-                # See grid-mode branch — warm chromas use a much higher
-                # min_excess so the dominance heuristic doesn't eat skin.
-                if is_chroma_key(ref):
-                    min_excess = 100 if is_warm_chroma(ref) else 15
+                cleaned, ref = remove_background(frame, fuzz=args.fuzz, no_warm_bump=args.no_warm_bump)
+                cleaned = erode_halo(cleaned, ref, halo_fuzz=args.halo_fuzz, passes=args.halo_passes, no_warm_bump=args.no_warm_bump)
+                # See grid-mode branch — warm chromas use a higher
+                # min_excess (configurable) so the dominance heuristic
+                # doesn't eat skin.
+                if is_chroma_key(ref) and not args.no_global_erase:
+                    min_excess = args.warm_min_excess if is_warm_chroma(ref) else 15
                     cleaned = chroma_key_global_erase(cleaned, ref, min_excess=min_excess)
             cleaned = keep_largest_blob(cleaned, dilate_radius=args.dilate)
             trimmed = trim_to_bbox(cleaned)

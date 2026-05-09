@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Sprite cleanup — variant comparison</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <style>
+    body {
+      margin: 0; padding: 24px;
+      background: #0e1116; color: #d0d8e0;
+      font: 13px/1.5 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    }
+    h1 { color: #7ee2c1; font-size: 18px; margin: 0 0 8px; }
+    p  { color: #8b95a5; max-width: 760px; margin: 4px 0 16px; }
+    .legend {
+      background: #1a1e25;
+      border: 1px solid #2a323d;
+      padding: 12px 16px;
+      margin: 0 0 24px;
+      max-width: 900px;
+    }
+    .legend h2 { font-size: 13px; color: #f4d06f; margin: 0 0 8px; }
+    .legend dl { margin: 0; display: grid; grid-template-columns: 32px 1fr; gap: 4px 12px; }
+    .legend dt { color: #7ee2c1; font-weight: 700; }
+    .legend dd { margin: 0; color: #d0d8e0; }
+    .row {
+      display: grid;
+      grid-template-columns: 80px repeat(5, 1fr);
+      gap: 8px;
+      margin-bottom: 16px;
+      padding: 8px;
+      background: #15191f;
+      border: 1px solid #2a323d;
+    }
+    .header-row {
+      background: #0a0e14;
+      border-bottom: 2px solid #f4d06f;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .header-row > div {
+      color: #f4d06f;
+      font-weight: 700;
+      text-align: center;
+      padding: 4px;
+      font-size: 12px;
+    }
+    .header-row .desc {
+      color: #8b95a5;
+      font-weight: 400;
+      font-size: 10px;
+      text-transform: none;
+      margin-top: 4px;
+    }
+    .row-label {
+      align-self: center;
+      color: #7ee2c1;
+      text-align: center;
+      font-size: 11px;
+      padding: 4px;
+    }
+    .cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      background: #1f262f;
+      border: 1px solid #2a323d;
+    }
+    .cell img {
+      width: 96px;
+      height: 96px;
+      image-rendering: pixelated;
+      background:
+        linear-gradient(45deg, #0a0e14 25%, transparent 25%),
+        linear-gradient(-45deg, #0a0e14 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #0a0e14 75%),
+        linear-gradient(-45deg, transparent 75%, #0a0e14 75%);
+      background-size: 12px 12px;
+      background-position: 0 0, 0 6px, 6px -6px, -6px 0;
+      background-color: #1a1e25;
+    }
+    .cell .meta {
+      color: #5a6a7a;
+      font-size: 9px;
+      margin-top: 2px;
+    }
+    .pose-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .pose-tabs button {
+      background: #1f262f;
+      color: #7ee2c1;
+      border: 1px solid #2a323d;
+      padding: 6px 14px;
+      font: inherit;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .pose-tabs button.active {
+      background: #2a323d;
+      color: #f4d06f;
+      border-color: #f4d06f;
+    }
+    .pose-tabs button:hover { background: #2a323d; color: #fff; }
+    code {
+      background: #0a0e14;
+      padding: 1px 6px;
+      border-radius: 3px;
+      color: #f4d06f;
+    }
+  </style>
+</head>
+<body>
+  <h1>Sprite cleanup — variant comparison (npc15.png)</h1>
+  <p>
+    Each row is one of the five characters on
+    <code>sprite-source/npcs/npc15.png</code>. Each column is a
+    different cleanup parameterization. Pick the column that
+    looks best across all rows and tell Claude which letter to
+    use as the new production setting. Re-run
+    <code>tools/sprite-cleanup-compare.sh</code> after editing
+    that script to add or replace variants.
+  </p>
+
+  <div class="legend">
+    <h2>Variants</h2>
+    <dl>
+      <dt>A</dt><dd>Minimal — flood-fill only, no halo eroder, no global erase. fuzz 50.</dd>
+      <dt>B</dt><dd>Gentle — fuzz 55, halo 50 × 2 passes, no global erase.</dd>
+      <dt>C</dt><dd>Medium — fuzz 60, halo 70 × 2 passes, no global erase.</dd>
+      <dt>D</dt><dd>Medium + safe global — same as C but global erase with min_excess 130.</dd>
+      <dt>E</dt><dd>Current production (PR #169) — fuzz 60, halo 90 × 3 passes, global erase min_excess 100.</dd>
+    </dl>
+  </div>
+
+  <div class="pose-tabs" id="pose-tabs"></div>
+  <div id="grid"></div>
+
+  <script>
+    // npc15 has 5 character rows × 4 directional poses.
+    const ROWS = 5;
+    const POSES = [
+      { col: 0, label: 'Front (3/4)' },
+      { col: 1, label: 'Profile L' },
+      { col: 2, label: 'Profile R' },
+      { col: 3, label: 'Back' },
+    ];
+    const VARIANTS = [
+      { id: 'A', desc: 'flood only · fuzz 50' },
+      { id: 'B', desc: 'halo 50×2 · no global' },
+      { id: 'C', desc: 'halo 70×2 · no global' },
+      { id: 'D', desc: 'halo 70×2 · global 130' },
+      { id: 'E', desc: 'halo 90×3 · global 100 (current)' },
+    ];
+    // Friendly labels for each row (order matches npc15 cells).
+    const ROW_LABELS = [
+      'Sloane (exec)',
+      'Dr. Alvarez',
+      'Beatrice (clerk)',
+      'Andre (admin)',
+      'Theresa (headset)',
+    ];
+
+    let activePose = 0;
+    const tabs = document.getElementById('pose-tabs');
+    const grid = document.getElementById('grid');
+
+    function render() {
+      grid.innerHTML = '';
+      // Header row — variant labels.
+      const hdr = document.createElement('div');
+      hdr.className = 'row header-row';
+      hdr.appendChild(document.createElement('div'));
+      for (const v of VARIANTS) {
+        const d = document.createElement('div');
+        d.innerHTML = `${v.id}<div class="desc">${v.desc}</div>`;
+        hdr.appendChild(d);
+      }
+      grid.appendChild(hdr);
+
+      // One row per character.
+      for (let r = 0; r < ROWS; r++) {
+        const row = document.createElement('div');
+        row.className = 'row';
+        const lbl = document.createElement('div');
+        lbl.className = 'row-label';
+        lbl.innerHTML = `${ROW_LABELS[r]}<br><span style="color:#5a6a7a;font-size:10px">row ${r}</span>`;
+        row.appendChild(lbl);
+        for (const v of VARIANTS) {
+          const cell = document.createElement('div');
+          cell.className = 'cell';
+          const img = document.createElement('img');
+          img.src = `/sprites/cleanup-compare/${v.id}/v${v.id}_${r}_${activePose}.png?cb=${Date.now()}`;
+          img.alt = `${v.id} row ${r} pose ${activePose}`;
+          cell.appendChild(img);
+          const meta = document.createElement('div');
+          meta.className = 'meta';
+          meta.textContent = `${v.id} · ${r}_${activePose}`;
+          cell.appendChild(meta);
+          row.appendChild(cell);
+        }
+        grid.appendChild(row);
+      }
+    }
+
+    function renderTabs() {
+      tabs.innerHTML = '';
+      POSES.forEach((p, i) => {
+        const b = document.createElement('button');
+        b.textContent = p.label;
+        if (i === activePose) b.classList.add('active');
+        b.addEventListener('click', () => {
+          activePose = i;
+          renderTabs();
+          render();
+        });
+        tabs.appendChild(b);
+      });
+    }
+
+    renderTabs();
+    render();
+  </script>
+</body>
+</html>
