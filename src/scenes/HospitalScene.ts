@@ -1032,14 +1032,6 @@ export class HospitalScene extends Phaser.Scene {
     if (this.miniMapExpanded) {
       this.miniMapX = Math.floor((screenW - totalW) / 2)
       this.miniMapY = Math.floor((screenH - totalH) / 2)
-    } else if (isTouchDevice()) {
-      // Mobile: anchor to top-center so the minimap reads as a HUD
-      // element ABOVE the play area instead of competing with the
-      // top-right "skip / fullscreen" buttons. The bottom-edge hint
-      // text stays directly below the map (its position is recomputed
-      // from miniMapX/Y further down).
-      this.miniMapX = Math.floor((screenW - totalW) / 2)
-      this.miniMapY = 8
     } else {
       this.miniMapX = screenW - totalW - 8
       this.miniMapY = 8
