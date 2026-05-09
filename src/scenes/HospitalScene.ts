@@ -1013,11 +1013,11 @@ export class HospitalScene extends Phaser.Scene {
         Math.floor((screenH - 100) / mh),
       ))
     } else {
-      // Collapsed minimap — 8px per tile on the 60-wide map gives a
-      // 480px-wide HUD element. Big enough to read room shapes at a
-      // glance from a couch-distance display, with the bottom-edge
-      // hint text legible at 18px below it.
-      this.miniMapCell = Math.max(1, Math.min(8, Math.floor(480 / mw))) || 1
+      // Collapsed minimap — 6px per tile on the 60-wide map gives a
+      // 360px-wide HUD element. Tuned by feel: 8px was overpowering
+      // the corner and 5px got squinted at. The bottom hint text
+      // stays at 18px regardless (set in buildMiniMap).
+      this.miniMapCell = Math.max(1, Math.min(6, Math.floor(360 / mw))) || 1
     }
     const cell = this.miniMapCell
     const innerW = mw * cell
@@ -1090,7 +1090,7 @@ export class HospitalScene extends Phaser.Scene {
       const cy = oy + (r.y + r.h / 2) * cell
       label.setPosition(cx, cy)
       label.setText(this.miniMapExpanded ? r.name : (r.shortName ?? r.name))
-      label.setFontSize(this.miniMapExpanded ? 22 : 14)
+      label.setFontSize(this.miniMapExpanded ? 22 : 12)
       // Use setWordWrapWidth instead of setStyle({ wordWrap }) — the
       // latter tripped a Phaser internal "Cannot read properties of
       // null (reading 'drawImage')" on first paint, on at least one
