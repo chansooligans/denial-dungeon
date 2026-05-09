@@ -30,6 +30,12 @@ import { NPC_SOURCES } from '../scenes/npcSources'
 
 const TILE = 24 // CSS px per tile in the editor view at zoom 1.0
 
+// Per-page-load cache buster for sprite URLs — appended as `?v=N`
+// so the browser reloads NPC sprites every editor open. Without
+// this, freshly-cleaned PNGs from a process-npc-sheets.sh run
+// keep their old cached versions until a manual hard-refresh.
+const SESSION_CACHE_BUST = Date.now()
+
 // Match HospitalScene.OBJECT_DISPLAY_MULT — keeps the editor's
 // box-sizing aligned with the in-game render. Bump in lockstep
 // with the scene constants if the visual budget changes.
@@ -275,7 +281,11 @@ function render() {
     div.dataset.npcKey = npc.id
     if (npc.spriteSlot) {
       const img = document.createElement('img')
-      img.src = `/sprites/npcs-raw/${npc.spriteSlot}_0.png`
+      // Cache-bust per editor session so re-running the cleanup
+      // pipeline (process-npc-sheets.sh) shows up on next reload
+      // without a manual hard-refresh. Hashed against the page-
+      // load timestamp so the same session reuses the cache.
+      img.src = `/sprites/npcs-raw/${npc.spriteSlot}_0.png?v=${SESSION_CACHE_BUST}`
       img.style.width = '100%'
       img.style.height = '100%'
       img.style.imageRendering = 'pixelated'
