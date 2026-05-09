@@ -296,12 +296,15 @@ def erode_halo(img: Image.Image, ref: tuple[int, int, int], halo_fuzz: int = 60,
     pixels = img.load()
     w, h = img.size
     bg_r, bg_g, bg_b = ref
-    # Cool chromas: bump halo_fuzz wide. Warm chromas: gentler — the
-    # halo eroder works *inside-out from transparent edges*, so a wide
-    # halo_fuzz against an orange ref will eat warm clothing edges.
+    # Cool chromas: bump halo_fuzz wide. Warm chromas: moderate — the
+    # halo eroder eats edge pixels whose ALL three channels are within
+    # halo_fuzz of the bg, so to eat skin (220,180,140) vs orange
+    # (248,100,5) the halo_fuzz would have to exceed max-channel-diff
+    # = 135. We stay below that with a buffer to leave dark-skin
+    # (max-diff ~95) intact.
     if is_chroma_key(ref):
         if is_warm_chroma(ref):
-            halo_fuzz = max(halo_fuzz, 50)
+            halo_fuzz = max(halo_fuzz, 90)
         else:
             halo_fuzz = max(halo_fuzz, 130)
 
@@ -413,15 +416,16 @@ def main() -> None:
                 else:
                     cleaned, ref = remove_background(cell, fuzz=args.fuzz)
                     cleaned = erode_halo(cleaned, ref, halo_fuzz=args.halo_fuzz, passes=args.halo_passes)
-                    if is_chroma_key(ref) and not is_warm_chroma(ref):
+                    if is_chroma_key(ref):
                         # Catch any chroma-tinted pixels enclosed inside
                         # the silhouette (curls of hair, etc.) that
-                        # flood-fill couldn't reach. Skipped for warm
-                        # chromas (orange / red / yellow) because the
-                        # global erase relies on a channel-dominance
-                        # heuristic that overlaps skin tones — running
-                        # it on warm bgs eats faces and hands.
-                        cleaned = chroma_key_global_erase(cleaned, ref)
+                        # flood-fill couldn't reach. Warm chromas (where
+                        # the dominance pattern overlaps skin tones)
+                        # use a much higher min_excess so only highly
+                        # saturated halo orange gets erased — skin
+                        # r-excess (~60) stays well below the threshold.
+                        min_excess = 100 if is_warm_chroma(ref) else 15
+                        cleaned = chroma_key_global_erase(cleaned, ref, min_excess=min_excess)
                 cleaned = keep_largest_blob(cleaned, dilate_radius=args.dilate)
                 trimmed = trim_to_bbox(cleaned)
                 sized = fit_to_square(trimmed, args.size)
@@ -436,11 +440,11 @@ def main() -> None:
             else:
                 cleaned, ref = remove_background(frame, fuzz=args.fuzz)
                 cleaned = erode_halo(cleaned, ref, halo_fuzz=args.halo_fuzz, passes=args.halo_passes)
-                # See grid-mode branch — global erase is unsafe on
-                # warm chromas because skin tones share its dominance
-                # signature.
-                if is_chroma_key(ref) and not is_warm_chroma(ref):
-                    cleaned = chroma_key_global_erase(cleaned, ref)
+                # See grid-mode branch — warm chromas use a much higher
+                # min_excess so the dominance heuristic doesn't eat skin.
+                if is_chroma_key(ref):
+                    min_excess = 100 if is_warm_chroma(ref) else 15
+                    cleaned = chroma_key_global_erase(cleaned, ref, min_excess=min_excess)
             cleaned = keep_largest_blob(cleaned, dilate_radius=args.dilate)
             trimmed = trim_to_bbox(cleaned)
             sized = fit_to_square(trimmed, args.size)
