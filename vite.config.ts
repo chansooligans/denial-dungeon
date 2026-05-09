@@ -171,6 +171,9 @@ export default defineConfig({
         // Phantom Patient: wrong-MRN identity merge. Verbs: TRACE /
         // UNMERGE / REFILE.
         phantomPatient: resolve(__dirname, 'phantom-patient-prototype.html'),
+        // Risk Adjustment Hollow: HCC under-capture for Medicare
+        // Advantage. Verbs: REVIEW / ENRICH / QUERY.
+        riskAdjHollow: resolve(__dirname, 'risk-adj-hollow-prototype.html'),
         // Map editor: a dev-only authoring tool for level1's object
         // placement and orientation. Click any object to select it,
         // then rotate/flip via keyboard or drag to move. Outputs a
