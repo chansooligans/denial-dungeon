@@ -79,6 +79,8 @@ interface PlacedObj {
   size?: number
 }
 
+type Facing = 'down' | 'up' | 'left' | 'right'
+
 interface PlacedNpc {
   /** Stable id used as the editor's selection key — `npc:<index>`
    *  where index is the position in the original npcPlacements
@@ -94,11 +96,25 @@ interface PlacedNpc {
   /** Pass-through fields from npcPlacements — preserved on export. */
   levels?: number[]
   ambient?: boolean
+  /** Default direction the NPC faces in-game when the player isn't
+   *  in their room. R key cycles this on the selected NPC. */
+  facing: Facing
   /** Resolved sprite slot from NPC_SOURCES (e.g. 'npc7_0'). When
    *  present, the editor renders the actual PNG at
-   *  `/sprites/npcs-raw/{slot}_0.png`. Missing → placeholder dot. */
+   *  `/sprites/npcs-raw/{slot}_<col>.png` where col matches facing. */
   spriteSlot?: string
 }
+
+/** Facing → which directional column on the contact sheet renders
+ *  it. Matches BootScene.preload's NPC loader: col 0 = front (down),
+ *  1 = left profile, 2 = right profile, 3 = back (up). */
+const FACING_TO_COL: Record<Facing, number> = {
+  down: 0,
+  left: 1,
+  right: 2,
+  up: 3,
+}
+const FACING_CYCLE: Facing[] = ['down', 'left', 'up', 'right']
 
 interface EditorState {
   /** All rendered objects keyed by `"x,y"` — both layout-derived
@@ -163,6 +179,7 @@ function bootstrap() {
       y: p.tileY,
       levels: p.levels,
       ambient: p.ambient,
+      facing: p.facing ?? 'down',
       spriteSlot: NPC_SOURCES[p.npcId],
     })
   }
@@ -281,11 +298,15 @@ function render() {
     div.dataset.npcKey = npc.id
     if (npc.spriteSlot) {
       const img = document.createElement('img')
+      // Pick the directional pose that matches the placement's
+      // `facing` so the editor renders the same sprite the game
+      // shows when the player isn't in the NPC's room.
+      const col = FACING_TO_COL[npc.facing]
       // Cache-bust per editor session so re-running the cleanup
       // pipeline (process-npc-sheets.sh) shows up on next reload
       // without a manual hard-refresh. Hashed against the page-
       // load timestamp so the same session reuses the cache.
-      img.src = `/sprites/npcs-raw/${npc.spriteSlot}_0.png?v=${SESSION_CACHE_BUST}`
+      img.src = `/sprites/npcs-raw/${npc.spriteSlot}_${col}.png?v=${SESSION_CACHE_BUST}`
       img.style.width = '100%'
       img.style.height = '100%'
       img.style.imageRendering = 'pixelated'
@@ -372,8 +393,8 @@ function updateStatus() {
   const zoomTag = ` · zoom ${(zoomLevel * 100).toFixed(0)}%`
   if (!state.selectedKey) {
     statusLine.textContent =
-      'Click an object/NPC to select. Drag to move. F flips, +/- resize, ' +
-      '0 reset, 1 reset size, Del removes (object only). Click empty floor to add.' +
+      'Click an object/NPC to select. Drag to move. F flips object, R cycles NPC facing, ' +
+      '+/- resize, 0 reset, 1 reset size, Del removes (object only).' +
       zoomTag
     return
   }
@@ -383,7 +404,7 @@ function updateStatus() {
     const amb = npc.ambient ? ' · ambient' : ''
     const slot = npc.spriteSlot ? ` (${npc.spriteSlot})` : ' (no sprite)'
     statusLine.textContent =
-      `NPC: ${npc.npcId}${slot} at (${npc.x},${npc.y})${lvls}${amb}${zoomTag}`
+      `NPC: ${npc.npcId}${slot} at (${npc.x},${npc.y}) · facing ${npc.facing}${lvls}${amb}${zoomTag}`
     return
   }
   const obj = state.objects.get(state.selectedKey)!
@@ -509,10 +530,23 @@ window.addEventListener('keydown', (e) => {
   }
 
   if (!state.selectedKey) return
-  // Object-only keyboard verbs (resize / flip / delete). NPCs only
-  // support drag in this MVP; their `levels` filter and `ambient`
-  // flag belong with the in-code design pass, not the map editor.
-  if (isNpcKey(state.selectedKey)) return
+
+  // NPC-only verb: R cycles facing direction (down → left → up →
+  // right → down). Other NPC fields (levels filter, ambient flag)
+  // are still in-code design decisions, not editor knobs.
+  if (isNpcKey(state.selectedKey)) {
+    if (e.key === 'r' || e.key === 'R') {
+      const npc = state.npcs.get(state.selectedKey)
+      if (npc) {
+        const i = FACING_CYCLE.indexOf(npc.facing)
+        npc.facing = FACING_CYCLE[(i + 1) % FACING_CYCLE.length]
+        e.preventDefault()
+        render()
+      }
+    }
+    return
+  }
+
   const obj = state.objects.get(state.selectedKey)
   if (!obj) return
   let dirty = false
@@ -664,30 +698,37 @@ function updateExport() {
     `    { x: ${o.x}, y: ${o.y}, ch: '${o.ch.replace(/'/g, "\\'")}' },`
   )
 
-  // npcPlacements block — emitted only when at least one NPC has
-  // moved from its original tile. Preserves levels / ambient and
-  // original ordering. The output is the FULL replacement array;
+  // npcPlacements block — emitted whenever something differs from
+  // the original (position OR facing). Preserves levels / ambient
+  // and original ordering. The output is the FULL replacement array;
   // paste it over LEVEL_1_MAP.npcPlacements wholesale.
   const orig = LEVEL_1_MAP.npcPlacements
-  const movedNpcs: PlacedNpc[] = []
+  const changedNpcs: PlacedNpc[] = []
   for (const npc of state.npcs.values()) {
     const o = orig[npc.origIndex]
     if (!o) continue
-    if (npc.x !== o.tileX || npc.y !== o.tileY) movedNpcs.push(npc)
+    const origFacing = (o.facing as Facing | undefined) ?? 'down'
+    if (npc.x !== o.tileX || npc.y !== o.tileY || npc.facing !== origFacing) {
+      changedNpcs.push(npc)
+    }
   }
   const sortedNpcs = [...state.npcs.values()].sort((a, b) => a.origIndex - b.origIndex)
   const npcLines = sortedNpcs.map(n => {
     const parts = [`npcId: '${n.npcId}'`, `tileX: ${n.x}`, `tileY: ${n.y}`]
+    // Only emit facing when it's not the implicit default ('down').
+    // Keeps the export tidy for the majority of NPCs that don't
+    // need an explicit orientation.
+    if (n.facing && n.facing !== 'down') parts.push(`facing: '${n.facing}'`)
     if (n.levels) parts.push(`levels: [${n.levels.join(', ')}]`)
     if (n.ambient) parts.push(`ambient: true`)
     return `    { ${parts.join(', ')} },`
   })
 
-  const npcBlock = movedNpcs.length === 0
-    ? '// (no NPCs moved — npcPlacements unchanged)'
-    : `// 3. NPC placements — ${movedNpcs.length} moved. Replace
-//    LEVEL_1_MAP.npcPlacements with the full block below. Note that
-//    this output strips the const-reference shorthand (LOBBY.x + 10
+  const npcBlock = changedNpcs.length === 0
+    ? '// (no NPCs changed — npcPlacements unchanged)'
+    : `// 3. NPC placements — ${changedNpcs.length} changed (position or facing).
+//    Replace LEVEL_1_MAP.npcPlacements with the full block below.
+//    The output strips the const-reference shorthand (LOBBY.x + 10
 //    → 14); reapply by hand if you want the source-readable form.
 
 npcPlacements: [

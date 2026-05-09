@@ -124,6 +124,9 @@ interface NPCSprite {
    *  the texture toward the player. Tracks the active suffix on
    *  `npc_<id>_<dir>` so we only call setTexture when it changes. */
   currentFacing?: 'down' | 'up' | 'left' | 'right'
+  /** Resting pose when the player isn't in this NPC's room. Read
+   *  from the placement's `facing` field; defaults to 'down'. */
+  defaultFacing: 'down' | 'up' | 'left' | 'right'
 }
 
 export class HospitalScene extends Phaser.Scene {
@@ -634,7 +637,24 @@ export class HospitalScene extends Phaser.Scene {
         stroke: '#0e1116', strokeThickness: 4,
       }).setOrigin(0.5).setDepth(6).setAlpha(0)
 
-      this.npcSprites.push({ sprite, npc, label, tileX: p.tileX, tileY: p.tileY })
+      const defaultFacing = p.facing ?? 'down'
+      // Apply the resting pose immediately so freshly-spawned NPCs
+      // render in their authored direction even before update()
+      // gets a chance to run. setTexture only fires if the key
+      // exists; otherwise the front pose stays in place.
+      if (defaultFacing !== 'down') {
+        const dirKey = `npc_${npc.id}_${defaultFacing}`
+        if (this.textures.exists(dirKey)) {
+          sprite.setTexture(dirKey)
+          sprite.setOrigin(0.5, 1).setScale(CHARACTER_SCALE)
+        }
+      }
+      this.npcSprites.push({
+        sprite, npc, label,
+        tileX: p.tileX, tileY: p.tileY,
+        currentFacing: defaultFacing,
+        defaultFacing,
+      })
     }
   }
 
@@ -1590,23 +1610,21 @@ export class HospitalScene extends Phaser.Scene {
   }
 
   /** NPCs in rooms listed in `DYNAMIC_FACING_ROOMS` swap their
-   *  rendered direction to face the player when she's nearby — uses
-   *  the `_left/_right/_up/_down` directional textures BootScene
-   *  loads for every NPC. Outside the player's range, NPCs revert to
-   *  their default forward (down) facing.
+   *  rendered direction to face the player when she's *in the same
+   *  room*. Outside the room, the NPC reverts to its
+   *  placement.facing (or 'down' if unset).
    *
-   *  Starting with PATIENT SERVICES only as a feel-test. Extending
-   *  to more rooms is just adding entries to the set below. */
+   *  Room-containment was picked over a distance threshold so the
+   *  facing flip is semantically tied to whether the player has
+   *  actually entered the NPC's space — a player in the corridor
+   *  six tiles away from Dana's desk shouldn't make her swivel to
+   *  watch them. The room boundary is the natural cue. */
   private static readonly DYNAMIC_FACING_ROOMS = new Set([
     'PATIENT SERVICES',
   ])
-  private static readonly DYNAMIC_FACING_RANGE_TILES = 6
 
   private updateNPCFacing() {
     const rooms = this.mapDef.rooms ?? []
-    const rangeSq =
-      HospitalScene.DYNAMIC_FACING_RANGE_TILES *
-      HospitalScene.DYNAMIC_FACING_RANGE_TILES
 
     for (const ns of this.npcSprites) {
       // Find the room containing this NPC's tile.
@@ -1616,24 +1634,27 @@ export class HospitalScene extends Phaser.Scene {
       )
       if (!room || !HospitalScene.DYNAMIC_FACING_ROOMS.has(room.name)) continue
 
-      const dx = this.playerTileX - ns.tileX
-      const dy = this.playerTileY - ns.tileY
-      const distSq = dx * dx + dy * dy
+      // Is the player in the same room?
+      const playerInRoom =
+        this.playerTileX >= room.x && this.playerTileX < room.x + room.w &&
+        this.playerTileY >= room.y && this.playerTileY < room.y + room.h
 
-      // Compute desired facing. Out-of-range = revert to forward
-      // (down) so NPCs settle to a default pose when the player
-      // leaves the room.
       let desired: 'down' | 'up' | 'left' | 'right'
-      if (distSq > rangeSq) {
-        desired = 'down'
-      } else if (Math.abs(dx) > Math.abs(dy)) {
-        desired = dx < 0 ? 'left' : 'right'
-      } else if (dy === 0 && dx === 0) {
-        // Player on top of the NPC tile (shouldn't happen — NPCs
-        // are blockers — but guard anyway).
-        desired = 'down'
+      if (!playerInRoom) {
+        // Player outside this NPC's room — revert to the resting
+        // pose authored on the placement.
+        desired = ns.defaultFacing
       } else {
-        desired = dy < 0 ? 'up' : 'down'
+        // Player in same room — face them.
+        const dx = this.playerTileX - ns.tileX
+        const dy = this.playerTileY - ns.tileY
+        if (dx === 0 && dy === 0) {
+          desired = ns.defaultFacing
+        } else if (Math.abs(dx) > Math.abs(dy)) {
+          desired = dx < 0 ? 'left' : 'right'
+        } else {
+          desired = dy < 0 ? 'up' : 'down'
+        }
       }
 
       if (ns.currentFacing !== desired) {
