@@ -194,7 +194,7 @@ const LEVEL_PRESETS: LevelPreset[] = [
   { level: 6,  label: 'L6 — The Conveyor',           note: 'Alex · swarm' },
   { level: 7,  label: 'L7 — The Courtroom',          note: 'Sam · reaper' },
   { level: 8,  label: 'L8 — The River',              note: 'Jordan · specter' },
-  { level: 9,  label: 'L9 — The Maze',               note: 'Kim · hydra' },
+  { level: 9,  label: 'L9 — The Mirror',             note: 'Kim · doppelgänger' },
   { level: 10, label: 'L10 — The Audit',             note: 'Dana · boss' },
 ]
 
@@ -233,7 +233,7 @@ const ROOM_JUMPS: { id: string; label: string; x: number; y: number }[] = [
 /** Encounter id used to mark the "previous level done" for each
  *  level transition. Order matches LEVEL_DEFEAT_THRESHOLD = [1,2,…]. */
 const PRESET_DEFEAT_SEQUENCE = [
-  'intro_wrong_card',     // L1
+  'intro_wrong_card',      // L1
   'eligibility_fog',       // L2
   'co_197',                // L3
   'co_97',                 // L4
@@ -241,7 +241,7 @@ const PRESET_DEFEAT_SEQUENCE = [
   'co_16_swarm',           // L6
   'co_29_reaper',          // L7
   'surprise_bill_specter', // L8
-  'oa_23_hydra',           // L9
+  'co_18_doppelganger',    // L9 — was oa_23_hydra (hydra demoted to prototype-only)
   'boss_audit',            // L10
 ]
 

@@ -64,8 +64,10 @@ export const LEVELS: LevelDef[] = [
     hospitalDescription: 'The billing office. Claims queued and dropping.',
     waitingRoomDescription: 'A conveyor belt carrying forms into darkness. Some fall off.',
     concepts: ['x12_837', 'x12_277ca', 'clearinghouse', 'adjudication'],
-    encounters: ['co_16_swarm', 'co_18_doppelganger'],
-    cases: ['case_swarm_yamada', 'case_doppel_reyes'],
+    // Doppelgänger moved to L9 (replaces hydra in main flow);
+    // L6 is now swarm-only.
+    encounters: ['co_16_swarm'],
+    cases: ['case_swarm_yamada'],
     npcsActive: ['alex', 'pat'],
   },
   {
@@ -92,13 +94,17 @@ export const LEVELS: LevelDef[] = [
   },
   {
     id: 9,
-    title: 'The Maze',
-    subtitle: 'Coordination of benefits. Multiple payers, one claim.',
-    hospitalDescription: 'The COB desk. Spreadsheets tracking primary, secondary, tertiary.',
-    waitingRoomDescription: 'Hallways that split and merge. Every turn leads to another payer.',
-    concepts: ['cob', 'primary_secondary', 'x12_270_271'],
-    encounters: ['oa_23_hydra'],
-    cases: ['case_hydra_okwu'],
+    title: 'The Mirror',
+    subtitle: 'A duplicate that shouldn\'t exist. Version control across submissions.',
+    hospitalDescription: 'Registration. The clerk is staring at two claims that look identical.',
+    waitingRoomDescription: 'Hallways with mirrored claims hanging on the walls. The reflections don\'t match.',
+    concepts: ['x12_837', 'icn', 'frequency_codes', 'duplicate_handling'],
+    // Hydra (oa_23_hydra) demoted to prototype-only — kept in
+    // /prototypes/hydra-prototype.html for the COB-sequencing
+    // archetype but not currently in the main-game rotation.
+    // Doppelgänger took its slot (was free-roam at L6 before).
+    encounters: ['co_18_doppelganger'],
+    cases: ['case_doppel_reyes'],
     npcsActive: ['kim', 'alex'],
   },
   {

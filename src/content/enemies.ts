@@ -158,7 +158,7 @@ export const ENCOUNTERS: Record<string, Encounter> = {
     carcCode: 'CO-18',
     carcName: 'Duplicate claim',
     watchpoint: 'Same submission twice = the same denial twice. Vary the approach (837 frequency 7 instead of 1).',
-    level: 6,
+    level: 9,
     archetype: 'Duplicate Claim Doppelgänger',
     wing: 'billing',
     codexOnSight: 'obstacle_co_18_doppelganger',

@@ -101,9 +101,12 @@ const OBSTACLES: ObstacleMarker[] = [
   { tileX: 8,  tileY: 21, encounterId: 'co_197',               bounds: PATIENT_SVC_BOUNDS },  // Gatekeeper (L3)
   { tileX: 11, tileY: 21, encounterId: 'co_29_reaper',         bounds: PATIENT_SVC_BOUNDS },  // Reaper    (L7)
 
-  // REGISTRATION — Kim hands the fog / hydra.
+  // REGISTRATION — Kim hands the fog / doppelgänger.
+  // (Hydra was here at L9 in the prior rotation; now prototype-only.
+  // Doppelgänger took the slot — it moved from free-roam corridor to
+  // a Kim-handed registration encounter.)
   { tileX: 20, tileY: 21, encounterId: 'eligibility_fog',      bounds: REGISTRATION_BOUNDS }, // Fog       (L2)
-  { tileX: 32, tileY: 21, encounterId: 'oa_23_hydra',          bounds: REGISTRATION_BOUNDS }, // Hydra     (L9)
+  { tileX: 32, tileY: 21, encounterId: 'co_18_doppelganger',   bounds: REGISTRATION_BOUNDS }, // Doppelgänger (L9)
 
   // HIM / Coding — Pat hands the bundle.
   { tileX: 11, tileY: 55, encounterId: 'co_97',                bounds: HIM_BOUNDS },          // Bundle    (L4)
@@ -117,10 +120,6 @@ const OBSTACLES: ObstacleMarker[] = [
   // AUDIT — Dana hands the boss. Audit moved to second floor; the
   // boss obstacle moves with it so the WR mirror lines up.
   { tileX: 18, tileY: 105, encounterId: 'boss_audit',          bounds: AUDIT_BOUNDS },        // Boss      (L10)
-
-  // Doppelganger isn't currently wired to a level dialogue — left
-  // free-roam in the corridor as legacy / dev-panel-jump fodder.
-  { tileX: 14, tileY: 22, encounterId: 'co_18_doppelganger' },
 ]
 
 interface ObstacleSprite {

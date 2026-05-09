@@ -513,20 +513,21 @@ export const DIALOGUES: Record<string, DialogueNode> = {
     choices: [{ text: '(Step away.)' }],
   },
 
-  // === Level 9 — Kim hands off the COB hydra ===
+  // === Level 9 — Kim hands off the duplicate-claim doppelgänger.
+  //     (Was the COB hydra; hydra moved to prototype-only catalog.) ===
   kim_l9_intake: {
     id: 'kim_l9_intake',
     speaker: 'Kim',
-    text: "Three-payer mess on Okwu. Medicare, BCBS, and a Medicaid wrap. Someone billed BCBS first. Now Medicare's recouping and the wrap won't move until the chain is in order.",
+    text: "Two claims for Reyes — same DOS, same CPT, same everything — and they're both denying CO-18. Someone resubmitted instead of replacing.",
     next: 'kim_l9_intake_2',
   },
   kim_l9_intake_2: {
     id: 'kim_l9_intake_2',
     speaker: 'Kim',
-    text: "If you sequence them out of order again, the hydra grows another head. Want to take it?",
+    text: "I've got the original ICN. Box 22 frequency 7 references it and the duplicate folds back in. Want to take it?",
     choices: [
-      { text: '(Open the COB chain.)',
-        effect: { triggerDescent: { encounterId: 'oa_23_hydra' } } },
+      { text: '(Open the duplicate.)',
+        effect: { triggerDescent: { encounterId: 'co_18_doppelganger' } } },
       { text: 'Hold up.', next: 'kim_l9_intake_back' },
     ],
   },
