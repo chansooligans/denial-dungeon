@@ -85,7 +85,14 @@ const CAFETERIA = { x: 56, y: 50, w: 22, h: 13 }
 // === Outdoor — parking lot, reached via 'O' teleport from the lobby ===
 const OUTDOOR  = { x: 4,  y: 65, w: 50, h: 22 } // big sparse exterior
 
-// === Second floor — reached via 'S' teleport from Main Hub ===
+// === Stairwells — small dedicated rooms holding the 'S' teleport
+//     tiles, symmetric on both floors. STAIRWELL_1F is an annex on
+//     Main Hub's west wall (5×6, shared east-west wall with Main
+//     Hub via a connecting door). LANDING_2F is the equivalent on
+//     the second floor — small foyer that opens onto the 2F
+//     corridor leading to AUDIT / PAYER / COMPLIANCE.
+const STAIRWELL_1F = { x: 16, y: 4,  w: 5,  h: 6  } // 1F stair annex
+// === Second floor — reached via 'S' teleport from STAIRWELL_1F ===
 // Spatially placed far south of the ground floor so the same big
 // tilemap holds both. The player never walks the gap; teleport tiles
 // in MapDef.stairs fade-and-snap.
@@ -108,8 +115,11 @@ const SW_TROUGH_Y       = 49 // east-west corridor running just north of the sou
 // Each entry is one-way; pair them to make round-trips. The 'S' / 'O'
 // glyphs render as tinted floors and trigger teleport in
 // HospitalScene.tryMove.
-const STAIR_HUB_TO_2F   = { from: { x: 32, y: 10 }, to: { x: 33, y: 96 }, label: '↑ 2F' }
-const STAIR_2F_TO_HUB   = { from: { x: 33, y: 96 }, to: { x: 32, y: 10 }, label: '↓ 1F' }
+// Stair tile lives in STAIRWELL_1F (interior dx=1, dy=2 → world
+// (18, 7)) — moved out of Main Hub once we gave it a dedicated
+// stairwell room. The 2F landing tile stays where it was at (33, 96).
+const STAIR_HUB_TO_2F   = { from: { x: 18, y: 7  }, to: { x: 33, y: 96 }, label: '↑ 2F' }
+const STAIR_2F_TO_HUB   = { from: { x: 33, y: 96 }, to: { x: 18, y: 7  }, label: '↓ 1F' }
 // Lobby ↔ outdoor parking-lot teleport. The lobby endpoint sits on
 // the *west* interior column (LOBBY dx=1, dy=4 → world (5, 36)) so
 // the parking-lot entrance reads as a side door, not a south
@@ -132,6 +142,7 @@ const { layout, tileMeta } = buildMap({
       doors: [
         { side: 'S', offset: 10 },               // bottom door to corridor
         { side: 'E', offset: 5, locked: true },  // locked door east → Prior Auth
+        { side: 'W', offset: 4 },                // west door → STAIRWELL_1F
       ],
       items: [
         { dx: 7,  dy: 3, ch: 'w' },  // fountain (water cooler stand-in)
@@ -140,11 +151,29 @@ const { layout, tileMeta } = buildMap({
         { dx: 2,  dy: 6, ch: 'P' },
         { dx: 13, dy: 6, ch: 'P' },
         { dx: 5,  dy: 5, ch: 'b' },  // signage
-        // Stair tile up to second floor — paired in stairs[] with the
-        // landing's 'S' tile. Walking onto this tile triggers fade-
-        // and-snap teleport. (Hub origin is (20,3); dx=11/dy=6 →
-        // world (32, 10), matching STAIR_HUB_TO_2F.from.)
-        { dx: 11, dy: 6, ch: 'S' },
+        // (Stair-up tile moved out of Main Hub into STAIRWELL_1F —
+        // see the stairwell room def.)
+      ],
+    },
+    {
+      id: 'stairwell1F',
+      ...STAIRWELL_1F,
+      // East door at offset 3 → world (20, 7). Same tile as the
+      // Main Hub west door at offset 4 — they share the boundary
+      // wall column. The builder is idempotent on this overlap.
+      doors: [{ side: 'E', offset: 3 }],
+      // Inside: the 'S' stair tile at the center, plus a couple of
+      // plants for atmosphere. The stair tile is paired with the
+      // 2F landing's 'S' in stairs[] above. Walking onto it fade-
+      // and-snaps to LANDING_2F.
+      items: [
+        // Center: stair tile. Interior dx=1, dy=2 → world (18, 7),
+        // matching STAIR_HUB_TO_2F.from.
+        { dx: 1, dy: 2, ch: 'S' },
+        // Stairwell is 5×6 (interior 3×4) — valid item dx is 1..2,
+        // dy is 1..3. Two flanking plants for atmosphere.
+        { dx: 1, dy: 1, ch: 'P' },
+        { dx: 2, dy: 3, ch: 'P' },
       ],
     },
     {
@@ -624,6 +653,7 @@ export const LEVEL_1_MAP: MapDef = {
   // Minimap labels — abbreviated by default, full names on click.
   rooms: [
     { name: 'MAIN HUB',         shortName: 'HUB',  ...MAIN_HUB },
+    { name: 'STAIRWELL',        shortName: 'STR',  ...STAIRWELL_1F },
     { name: 'PRIOR AUTH',       shortName: 'AUTH', ...PRIOR_AUTH },
     { name: 'PATIENT SERVICES', shortName: 'PT',   ...PATIENT_SVC },
     { name: 'REGISTRATION',     shortName: 'REG',  ...REGISTRATION },
