@@ -16,8 +16,16 @@ import { addMuteButton } from './scenes/muteButton'
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
-  width: 960,
-  height: 640,
+  // Bumped from 960×640 to 1920×1280 in the TILE=32→64 resolution
+  // upgrade. Exactly 2× the prior canvas (same 8:5 aspect), so at
+  // TILE=64 the visible field of view is the same 30×20 tiles the
+  // game has always rendered — just with each tile drawn at 4× the
+  // pixel area. Keeps camera zoom at 1.0 for pixel-perfect rendering
+  // (no fractional nearest-neighbor scaling), and Phaser's
+  // Scale.FIT handles the down-scale to whatever the player's
+  // viewport actually is.
+  width: 1920,
+  height: 1280,
   parent: 'game',
   pixelArt: true,
   backgroundColor: '#0e1116',

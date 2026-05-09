@@ -85,6 +85,18 @@ export default defineConfig({
         // or AMEND (concede + recoupment). Lives at
         // /audit-boss-prototype.html.
         auditBoss: resolve(__dirname, 'audit-boss-prototype.html'),
+        // Map editor: a dev-only authoring tool for level1's object
+        // placement and orientation. Click any object to select it,
+        // then rotate/flip via keyboard or drag to move. Outputs a
+        // tileMeta + tileOverrides snippet to paste back into
+        // src/content/maps/level1.ts. Lives at /map-editor.html.
+        mapEditor: resolve(__dirname, 'map-editor.html'),
+        // Intro editor: beat-by-beat browser, voiceover scrubber,
+        // and live edit/export for src/scenes/introBeats.ts.
+        // "Open game at this beat" deep-links to /?introBeat=N
+        // (BootScene reads the URL param and forwards to IntroScene).
+        // Lives at /intro-editor.html.
+        introEditor: resolve(__dirname, 'intro-editor.html'),
       },
       output: {
         // Pull Phaser into its own vendor chunk. The framework is the

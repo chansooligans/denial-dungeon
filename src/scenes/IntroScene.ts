@@ -1,155 +1,7 @@
 import Phaser from 'phaser'
 import { addFullscreenButton } from './fullscreenButton'
 import { addMuteButton } from './muteButton'
-
-interface Beat {
-  type: 'text' | 'scene' | 'wait' | 'title' | 'cover' | 'backdrop'
-  lines?: string[]
-  color?: string
-  duration?: number
-  action?: (scene: IntroScene) => void
-  key?: string         // texture key for 'cover' and 'backdrop'
-  alpha?: number       // target alpha for 'backdrop' (default 0.35)
-  // For 'text' beats: an optional scene action that fires the moment
-  // the line starts (so a visual can play *behind* the typed text
-  // instead of running as a separate beat afterward).
-  sceneAction?: (scene: IntroScene) => void
-  // For 'text' beats: when true, play the voiceover but don't render
-  // the typed text on screen. Useful when an upcoming cover image
-  // already shows the same text in the comic art.
-  silent?: boolean
-  // For 'cover' beats: when true, fire the next narration MP3 as
-  // the cover starts displaying. Lets a line of voiceover land on
-  // the comic page rather than before it.
-  voice?: boolean
-}
-
-const BEATS: Beat[] = [
-  // Cover splash — full-bleed title page art before narration begins.
-  { type: 'cover', key: 'intro_cover', duration: 3200 },
-
-  // Beat 1: The Hook — text only over plain dark background.
-  { type: 'text', lines: [
-    'In the United States, it costs $215 in',
-    'administrative work to process a single',
-    'hospital bill.',
-  ], color: '#e6edf3' },
-  { type: 'wait', duration: 2200 },
-  { type: 'text', lines: ['In Canada, it costs $6.'], color: '#f0a868' },
-  { type: 'wait', duration: 2000 },
-  { type: 'text', lines: ["That's not a typo."], color: '#ef5b7b' },
-  { type: 'wait', duration: 2500 },
-
-  // Beat 2: The System
-  { type: 'scene', action: (s) => s.showHospitalPan() },
-  { type: 'text', lines: [
-    'Every day, thousands of claims move through',
-    'a system so complex that no single person',
-    'understands all of it.',
-  ], color: '#8b95a5' },
-  { type: 'wait', duration: 3000 },
-  { type: 'text', lines: [
-    'Doctors document. Coders translate.',
-    'Billers submit. Payers decide. Patients pay.',
-  ], color: '#8b95a5' },
-  { type: 'wait', duration: 3000 },
-  { type: 'text', lines: [
-    'And somewhere between all of them,',
-    'claims get lost.',
-  ], color: '#e6edf3' },
-  { type: 'wait', duration: 2500 },
-
-  // Beat 3: Your Desk
-  { type: 'scene', action: (s) => s.showDesk() },
-  { type: 'text', lines: [
-    'You, Chloe, are an intern',
-    'at Mercy General Hospital.',
-  ], color: '#e6edf3' },
-  { type: 'wait', duration: 2000 },
-  { type: 'text', lines: [
-    "It's Friday. It's late.",
-    'You should have gone home hours ago.',
-  ], color: '#8b95a5' },
-  { type: 'wait', duration: 2500 },
-
-  // Beat 4: The Vanishing
-  { type: 'scene', action: (s) => s.showClaimVanish() },
-  { type: 'text', lines: [
-    'One claim. Routine knee replacement.',
-    'Filed correctly — you think.',
-  ], color: '#e6edf3' },
-  { type: 'wait', duration: 2000 },
-  { type: 'text', lines: [
-    'But when you look for it in the system...',
-  ], color: '#e6edf3' },
-  { type: 'wait', duration: 1500 },
-  { type: 'text', lines: [
-    "It's gone.",
-  ], color: '#ef5b7b' },
-  { type: 'wait', duration: 1200 },
-  { type: 'text', lines: [
-    'Not denied. Not rejected. Not pending.',
-    'Gone.',
-  ], color: '#ef5b7b',
-    // Drop into the fall animation as the line types — the character
-    // falling visually rhymes with the claim being "gone".
-    sceneAction: (s) => s.showFall(),
-  },
-  // Brief wait that extends to cover the voiceover's tail, then the
-  // gap-reveal scene action fires immediately (no extra dead air).
-  { type: 'wait', duration: 200 },
-
-  // Beat 5: The Gap (procedural only; comic art shown as full reveal at end).
-  { type: 'scene', action: (s) => s.showGap() },
-  { type: 'wait', duration: 200 },
-
-  // Beat 7: The Waiting Room
-  { type: 'scene', action: (s) => s.showWaitingRoom() },
-  { type: 'text', lines: [
-    'Below the hospital you know,',
-    'there is another place.',
-  ], color: '#e6edf3' },
-  { type: 'wait', duration: 2500 },
-  { type: 'text', lines: [
-    'A place where every claim that was',
-    'ever filed still exists — waiting.',
-  ], color: '#8b95a5' },
-  { type: 'wait', duration: 2500 },
-  { type: 'text', lines: [
-    'The chairs stretch on forever.',
-    'The number on the ticket counter',
-    'never seems to change.',
-  ], color: '#8b95a5' },
-  { type: 'wait', duration: 2500 },
-  { type: 'text', lines: [
-    'Forms fill out themselves, then unfill.',
-    'Somewhere, a phone rings',
-    'that no one answers.',
-  ], color: '#8b95a5' },
-  { type: 'wait', duration: 2500 },
-  { type: 'text', lines: [
-    'They call it',
-  ], color: '#e6edf3' },
-  { type: 'wait', duration: 2000 },
-
-  // End reveal: full-bleed comic pages. Order intentionally flipped
-  // — page6 first, then page5 (which has 'THE WAITING ROOM' lettered
-  // into the comic art) as the climactic final image. The 18.mp3
-  // narration ('The Waiting Room.') fires on the FIRST cover via
-  // `voice: true` so the line lands on the comic page rather than
-  // before it.
-  { type: 'cover', key: 'intro_page6', duration: 6300, voice: true },
-  { type: 'cover', key: 'intro_page5', duration: 5700 },
-
-  // Closer: corridor reveal (gothic figures lurking in Mercy General)
-  // and Chloe at her desk back at work — bridges the cinematic into
-  // the gameplay framing without any new narration.
-  { type: 'cover', key: 'intro_page7', duration: 5500 },
-  { type: 'cover', key: 'intro_page8', duration: 5500 },
-
-  // Beat 8: Title
-  { type: 'title' },
-]
+import { BEATS, type SceneActionId } from './introBeats'
 
 export class IntroScene extends Phaser.Scene {
   private currentBeat = 0
@@ -233,7 +85,7 @@ export class IntroScene extends Phaser.Scene {
     this.sceneContainer = this.add.container(0, 0)
 
     this.skipText = this.add.text(width - 16, height - 16, '⏭ skip intro', {
-      fontSize: '14px', fontFamily: 'monospace', color: '#7ee2c1',
+      fontSize: '28px', fontFamily: 'monospace', color: '#7ee2c1',
       backgroundColor: '#0e1116cc',
       padding: { left: 10, right: 10, top: 6, bottom: 6 },
     }).setOrigin(1, 1).setDepth(1100).setInteractive({ useHandCursor: true })
@@ -252,8 +104,8 @@ export class IntroScene extends Phaser.Scene {
       width / 2, height - 30,
       '▼  click or SPACE to continue',
       {
-        fontSize: '12px', fontFamily: 'monospace', color: '#7ee2c1',
-        stroke: '#05070a', strokeThickness: 2,
+        fontSize: '24px', fontFamily: 'monospace', color: '#7ee2c1',
+        stroke: '#05070a', strokeThickness: 4,
       }
     ).setOrigin(0.5).setDepth(110).setAlpha(0)
 
@@ -334,6 +186,20 @@ export class IntroScene extends Phaser.Scene {
     this.playBeat()
   }
 
+  /** Resolve a scene-action id from BEATS data into the actual method
+   *  call. Switching keeps the registry colocated with the methods so
+   *  TypeScript catches any id that doesn't have a handler. */
+  private runSceneAction(id: SceneActionId) {
+    switch (id) {
+      case 'showHospitalPan': this.showHospitalPan(); return
+      case 'showDesk':         this.showDesk(); return
+      case 'showClaimVanish':  this.showClaimVanish(); return
+      case 'showFall':         this.showFall(); return
+      case 'showGap':          this.showGap(); return
+      case 'showWaitingRoom':  this.showWaitingRoom(); return
+    }
+  }
+
   private playBeat() {
     if (this.done) return
 
@@ -366,7 +232,7 @@ export class IntroScene extends Phaser.Scene {
         // Optional concurrent scene visual (e.g. the falling animation
         // that should run while "Not denied. Not rejected. Not pending.
         // Gone." types out).
-        if (beat.sceneAction) beat.sceneAction(this)
+        if (beat.sceneActionId) this.runSceneAction(beat.sceneActionId)
         if (beat.silent) {
           // Voice-only beat — no visible text, no typing animation.
           // Advance immediately; the following 'wait' beat extends to
@@ -400,7 +266,7 @@ export class IntroScene extends Phaser.Scene {
         // Clear any text from the prior beat so its dark text-bg
         // rectangles don't linger on top of the new procedural visual.
         this.clearLingeringText()
-        beat.action!(this)
+        if (beat.actionId) this.runSceneAction(beat.actionId)
         this.currentBeat++
         this.playBeat()
         break
@@ -504,24 +370,43 @@ export class IntroScene extends Phaser.Scene {
     })
   }
 
+  /** Wall-clock ms by which the song's start has been pushed back
+   *  to compensate for content cut from the cinematic — currently
+   *  the removed "That's not a typo." beat (~570ms typing) plus its
+   *  trailing 2500ms wait beat. Keeping this as a named constant so
+   *  any future cut/insert can adjust it without surgery in the
+   *  fade logic below. */
+  private readonly INTRO_SONG_START_DELAY_MS = 3000
+
   /** Fade the intro song in. Two-stage: first ramp to a quiet bed
    *  level (0.15) over 5s — that's the pre-narration hold, where the
    *  song would otherwise feel too loud sitting alone. Once the first
    *  voiceover beat fires, `boostIntroSongForVoice` bumps it up to
-   *  the under-narration level (0.35). */
+   *  the under-narration level (0.35). The actual play() is delayed
+   *  by INTRO_SONG_START_DELAY_MS so the song's arrival lands on the
+   *  same later beat it used to before content was cut. */
   private fadeInIntroSong() {
     if (!this.cache.audio.exists('intro_song')) return
-    this.introSong = this.sound.add('intro_song')
-    // Force volume to 0 BEFORE play() so the song never bursts at
-    // the default 1.0 volume — some audio backends ignore the
-    // sound.add config until after the first playback tick.
-    ;(this.introSong as any).setVolume?.(0)
-    this.introSong.play()
-    ;(this.introSong as any).setVolume?.(0)
-    this.tweens.add({
-      targets: this.introSong,
-      volume: 0.15,
-      duration: 5000,
+    this.time.delayedCall(this.INTRO_SONG_START_DELAY_MS, () => {
+      if (this.done) return
+      this.introSong = this.sound.add('intro_song')
+      // Force volume to 0 BEFORE play() so the song never bursts at
+      // the default 1.0 volume — some audio backends ignore the
+      // sound.add config until after the first playback tick.
+      ;(this.introSong as any).setVolume?.(0)
+      this.introSong.play()
+      ;(this.introSong as any).setVolume?.(0)
+      // If a VO already started while we were waiting on the delay,
+      // skip the pre-narration bed level (0.15) and ramp straight to
+      // the under-narration mix (0.5). boostIntroSongForVoice already
+      // set introSongBoosted = true even though the song wasn't ready
+      // when it fired.
+      const target = this.introSongBoosted ? 0.5 : 0.15
+      this.tweens.add({
+        targets: this.introSong,
+        volume: target,
+        duration: 5000,
+      })
     })
   }
 
@@ -529,8 +414,15 @@ export class IntroScene extends Phaser.Scene {
    *  the under-narration mix (0.35). Called once when the first
    *  voiceover beat plays. Subsequent calls are no-ops. */
   private boostIntroSongForVoice() {
-    if (!this.introSong || this.introSongBoosted) return
+    if (this.introSongBoosted) return
     this.introSongBoosted = true
+    // The song's start is delayed (INTRO_SONG_START_DELAY_MS) to
+    // compensate for content cut from the cinematic, so the first VO
+    // beat may fire before the song exists. In that case just flip
+    // the boosted flag — fadeInIntroSong's delayedCall reads it and
+    // ramps straight to the under-narration target instead of the
+    // pre-narration bed.
+    if (!this.introSong) return
     // Kill the still-running 5s pre-VO fade-in tween before pushing
     // up to the under-narration mix. Otherwise the older tween keeps
     // overwriting `volume` back toward its target and the boost
@@ -606,7 +498,11 @@ export class IntroScene extends Phaser.Scene {
     this.isTyping = true
 
     const { width, height } = this.scale
-    const lineHeight = 28
+    // Doubled from 28 to match the canvas-resolution upgrade (960×640
+    // → 1920×1280). Same goes for fontSize / padding / strokeThickness
+    // below — keeps the on-screen visual size consistent with what
+    // the cinematic was authored against.
+    const lineHeight = 56
     const startY = height / 2 - (lines.length * lineHeight) / 2
 
     const charDelay = 30
@@ -615,14 +511,14 @@ export class IntroScene extends Phaser.Scene {
 
     lines.forEach((line, i) => {
       const t = this.add.text(width / 2, startY + i * lineHeight, '', {
-        fontSize: '20px', fontFamily: 'monospace', color,
+        fontSize: '40px', fontFamily: 'monospace', color,
         align: 'center',
         // Dark band + dark stroke keep text legible regardless of what
         // procedural visuals or comic art might be drawing behind it.
         backgroundColor: '#0e1116',
-        padding: { x: 10, y: 4 },
+        padding: { x: 20, y: 8 },
         stroke: '#05070a',
-        strokeThickness: 3,
+        strokeThickness: 6,
       }).setOrigin(0.5).setDepth(50)
 
       let charIndex = 0
@@ -655,32 +551,90 @@ export class IntroScene extends Phaser.Scene {
   }
 
   showHospitalPan() {
+    // Backdrop for the "Every day, thousands of claims..." beat.
+    // Pure black to start — the scene opens against void so the
+    // narration's first line lands on nothing. Then claim IDs fade
+    // in one by one across the canvas, density growing over the
+    // ~14s the beat sits on screen. By the third narration line
+    // ("...claims get lost.") the field is full and a few are
+    // tinted red, foreshadowing the loss the next scene shows.
+    //
+    // No walls, no floor tiles, no scattered desks. The previous
+    // version drew a literal corridor with a few isolated sprites
+    // that read as "this is supposed to be a hospital but the art
+    // got abandoned." The system the narration is describing is
+    // bigger than any one room, so the visual is now scale-of-data
+    // rather than scale-of-architecture.
     this.sceneContainer.removeAll(true)
     const { width, height } = this.scale
 
-    // Draw a simple hospital corridor
-    for (let x = 0; x < 60; x++) {
-      for (let y = 0; y < 40; y++) {
-        const isWall = y < 8 || y > 32 || x < 2 || x > 57
-        const tile = this.add.image(
-          x * 16 + 8, y * 16 + 8,
-          isWall ? 'h_wall' : 'h_floor'
-        ).setAlpha(0)
-        this.sceneContainer.add(tile)
-        this.tweens.add({ targets: tile, alpha: isWall ? 0.6 : 0.3, duration: 1000, delay: x * 10 })
-      }
-    }
+    const bg = this.add.rectangle(width / 2, height / 2, width, height, 0x0a0e14)
+    this.sceneContainer.add(bg)
 
-    // Some desks scattered
-    const deskPositions = [[10, 15], [20, 20], [30, 14], [40, 22], [50, 18]]
-    for (const [dx, dy] of deskPositions) {
-      const desk = this.add.image(dx * 16, dy * 16, 'h_desk').setScale(2).setAlpha(0)
-      this.sceneContainer.add(desk)
-      this.tweens.add({ targets: desk, alpha: 0.5, duration: 800, delay: 500 })
-    }
+    // Total spawn window — slightly less than the full beat duration
+    // so the last few claims have a moment to settle before the
+    // scene transitions to showDesk.
+    const TOTAL_DURATION_MS = 12000
+    const COUNT = 80
 
-    // Slow camera pan
-    this.cameras.main.setBounds(0, 0, 960, 640)
+    for (let i = 0; i < COUNT; i++) {
+      const id =
+        `CLM-2026-${String(Phaser.Math.Between(1, 12)).padStart(2, '0')}` +
+        `-${String(Phaser.Math.Between(1, 28)).padStart(2, '0')}` +
+        `-${String(Phaser.Math.Between(1, 99999)).padStart(5, '0')}`
+
+      // Tier roll — most claims are dim gray (routine), a small
+      // fraction are orange (in-process), a smaller fraction red
+      // (lost). Red ones spawn late so they line up with the third
+      // narration line about claims getting lost.
+      const r = Math.random()
+      const tier = r < 0.85 ? 'normal' : r < 0.95 ? 'inProcess' : 'lost'
+      const color = tier === 'normal' ? '#5a6a7a'
+                  : tier === 'inProcess' ? '#f0a868'
+                  : '#ef5b7b'
+      const targetAlpha = tier === 'normal' ? 0.25
+                        : tier === 'inProcess' ? 0.45
+                        : 0.6
+
+      // 60-px inset from edges so labels never clip the viewport.
+      const x = Phaser.Math.Between(60, width - 60)
+      const y = Phaser.Math.Between(60, height - 60)
+      const fontSize = Phaser.Math.Between(14, 22)
+
+      const t = this.add.text(x, y, id, {
+        fontSize: `${fontSize}px`,
+        fontFamily: 'monospace',
+        color,
+      }).setOrigin(0.5).setAlpha(0)
+      this.sceneContainer.add(t)
+
+      // Spawn-time distribution. Normal/in-process use a slight
+      // power-curve bias so density visibly accelerates as the beat
+      // progresses. Lost claims always spawn in the back third so
+      // they hit on cue.
+      const delay = tier === 'lost'
+        ? Phaser.Math.Between(8000, 11000)
+        : Math.pow(Math.random(), 1.5) * (TOTAL_DURATION_MS - 1500)
+
+      this.tweens.add({
+        targets: t,
+        alpha: targetAlpha,
+        duration: 700,
+        delay,
+      })
+
+      // Subtle vertical drift so the field feels alive instead of
+      // statically painted on. Starts after the fade-in completes.
+      this.tweens.add({
+        targets: t,
+        y: y + Phaser.Math.FloatBetween(-12, 12),
+        duration: Phaser.Math.Between(4000, 7000),
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut',
+        delay: delay + 700,
+      })
+    }
   }
 
   showDesk() {
@@ -689,22 +643,27 @@ export class IntroScene extends Phaser.Scene {
 
     // Anchor the desk grouping in the lower third of the screen so it sits
     // below the centered narration text instead of crowding it.
-    const deskY = height / 2 + 130
+    const deskY = height / 2 + 260
 
-    const desk = this.add.image(width / 2, deskY, 'h_desk').setScale(6).setAlpha(0)
+    // setDisplaySize fits regardless of source resolution — the
+    // h_desk / h_chair textures are 16×16 procedural OR 64×64 LoRA
+    // depending on which loaded.
+    const desk = this.add.image(width / 2, deskY, 'h_desk')
+      .setDisplaySize(192, 192).setAlpha(0)
     this.sceneContainer.add(desk)
 
-    const chair = this.add.image(width / 2, deskY + 50, 'h_chair').setScale(4).setAlpha(0)
+    const chair = this.add.image(width / 2, deskY + 100, 'h_chair')
+      .setDisplaySize(128, 128).setAlpha(0)
     this.sceneContainer.add(chair)
 
     // Monitor glow over the desk
-    const glow = this.add.rectangle(width / 2 - 10, deskY - 25, 40, 30, 0x7ee2c1, 0.15).setAlpha(0)
+    const glow = this.add.rectangle(width / 2 - 20, deskY - 50, 80, 60, 0x7ee2c1, 0.15).setAlpha(0)
     this.sceneContainer.add(glow)
 
     // Sticky note beside the monitor
-    const sticky = this.add.text(width / 2 + 50, deskY - 50, '835 DOESN\'T\nMATCH — CHECK\nMONDAY', {
-      fontSize: '7px', fontFamily: 'monospace', color: '#2a2a2a',
-      backgroundColor: '#f4d06f', padding: { x: 4, y: 3 },
+    const sticky = this.add.text(width / 2 + 100, deskY - 100, '835 DOESN\'T\nMATCH — CHECK\nMONDAY', {
+      fontSize: '14px', fontFamily: 'monospace', color: '#2a2a2a',
+      backgroundColor: '#f4d06f', padding: { x: 8, y: 6 },
     }).setAlpha(0).setAngle(-5)
     this.sceneContainer.add(sticky)
 
@@ -715,8 +674,8 @@ export class IntroScene extends Phaser.Scene {
     const { width, height } = this.scale
 
     // Show a claim number that blinks and vanishes
-    const claimText = this.add.text(width / 2, height / 2 - 80, 'CLM-2026-04-28-00847', {
-      fontSize: '14px', fontFamily: 'monospace', color: '#7ee2c1',
+    const claimText = this.add.text(width / 2, height / 2 - 160, 'CLM-2026-04-28-00847', {
+      fontSize: '28px', fontFamily: 'monospace', color: '#7ee2c1',
     }).setOrigin(0.5).setDepth(60)
 
     this.sceneContainer.add(claimText)
@@ -802,7 +761,7 @@ export class IntroScene extends Phaser.Scene {
 
     // Player falls vertically from above, accelerates down, exits past the
     // bottom of the viewport (gravity feel).
-    const player = this.add.image(width / 2, -40, 'player').setScale(4).setAlpha(0)
+    const player = this.add.image(width / 2, -80, 'player').setScale(8).setAlpha(0)
     this.sceneContainer.add(player)
     // Quick fade-in so the character is visible during the drop.
     this.tweens.add({
@@ -810,7 +769,7 @@ export class IntroScene extends Phaser.Scene {
     })
     // Drop straight down past the bottom of the screen.
     this.tweens.add({
-      targets: player, y: height + 80,
+      targets: player, y: height + 160,
       duration: 3200, ease: 'Sine.easeIn',
     })
     // Slight fade near the very end as the character disappears off-screen.
@@ -823,18 +782,18 @@ export class IntroScene extends Phaser.Scene {
     const docTypes = ['doc_cms1500', 'doc_ub04', 'doc_835', 'doc_eob']
     for (let i = 0; i < 20; i++) {
       const doc = this.add.image(
-        Phaser.Math.Between(50, width - 50),
-        height + 20,
+        Phaser.Math.Between(100, width - 100),
+        height + 40,
         Phaser.Math.RND.pick(docTypes)
-      ).setScale(Phaser.Math.FloatBetween(2, 4))
+      ).setScale(Phaser.Math.FloatBetween(4, 8))
         .setAlpha(Phaser.Math.FloatBetween(0.2, 0.6))
         .setAngle(Phaser.Math.Between(-30, 30))
 
       this.sceneContainer.add(doc)
       this.tweens.add({
         targets: doc,
-        y: -30,
-        x: doc.x + Phaser.Math.Between(-40, 40),
+        y: -60,
+        x: doc.x + Phaser.Math.Between(-80, 80),
         angle: doc.angle + Phaser.Math.Between(-20, 20),
         duration: Phaser.Math.Between(2000, 4000),
         delay: Phaser.Math.Between(0, 2500),
@@ -853,11 +812,11 @@ export class IntroScene extends Phaser.Scene {
 
     // Rows of chairs fading into distance
     for (let row = 0; row < 8; row++) {
-      const y = 200 + row * 50
+      const y = 400 + row * 100
       const alpha = 0.6 - row * 0.07
-      const scale = 2 - row * 0.15
+      const scale = 4 - row * 0.3
       for (let col = 0; col < 14; col++) {
-        const x = 30 + col * 70 + (row % 2 ? 35 : 0)
+        const x = 60 + col * 140 + (row % 2 ? 70 : 0)
         const chair = this.add.image(x, y, 'wr_chair')
           .setScale(scale).setAlpha(0)
         this.sceneContainer.add(chair)
@@ -868,13 +827,13 @@ export class IntroScene extends Phaser.Scene {
     }
 
     // Ticket counter at far end
-    const counter = this.add.image(width / 2, 120, 'wr_counter').setScale(5).setAlpha(0)
+    const counter = this.add.image(width / 2, 240, 'wr_counter').setScale(10).setAlpha(0)
     this.sceneContainer.add(counter)
     this.tweens.add({ targets: counter, alpha: 0.7, duration: 1000, delay: 500 })
 
     // Number display — frozen
-    const numberText = this.add.text(width / 2, 115, 'NOW SERVING: 00000', {
-      fontSize: '12px', fontFamily: 'monospace', color: '#ef5b7b',
+    const numberText = this.add.text(width / 2, 230, 'NOW SERVING: 00000', {
+      fontSize: '24px', fontFamily: 'monospace', color: '#ef5b7b',
     }).setOrigin(0.5).setAlpha(0).setDepth(51)
     this.sceneContainer.add(numberText)
     this.tweens.add({ targets: numberText, alpha: 0.8, duration: 1000, delay: 800 })
@@ -882,16 +841,16 @@ export class IntroScene extends Phaser.Scene {
     // Floating papers
     for (let i = 0; i < 8; i++) {
       const paper = this.add.image(
-        Phaser.Math.Between(50, width - 50),
-        Phaser.Math.Between(100, height - 100),
+        Phaser.Math.Between(100, width - 100),
+        Phaser.Math.Between(200, height - 200),
         'wr_paper'
-      ).setScale(2).setAlpha(0)
+      ).setScale(4).setAlpha(0)
       this.sceneContainer.add(paper)
 
       this.tweens.add({ targets: paper, alpha: 0.3, duration: 500, delay: 1000 + i * 200 })
       this.tweens.add({
         targets: paper,
-        y: paper.y - 15,
+        y: paper.y - 30,
         duration: Phaser.Math.Between(2000, 4000),
         yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
         delay: i * 300,

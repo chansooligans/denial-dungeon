@@ -22,7 +22,7 @@
 // place. Per-level NPC placements (`levels` filter) put the right
 // staffer in the right room for each level.
 
-import { buildMapLayout, type MapDef } from '../mapBuilder'
+import { buildMap, type MapDef } from '../mapBuilder'
 
 const WIDTH = 60
 const HEIGHT = 72  // bumped from 46 to fit the south wing
@@ -56,7 +56,7 @@ const CORRIDOR_BEND     = { x: LOBBY_NORTH_DOOR.x,  y: HUB_SOUTH_DOOR.y + 1 }   
 const SW_TROUGH_Y       = 49 // east-west corridor running just north of the south-wing rooms
 const SW_BAY_Y          = 60 // shorter corridor between the upper south-wing rooms and AUDIT
 
-const layout = buildMapLayout({
+const { layout, tileMeta } = buildMap({
   width: WIDTH,
   height: HEIGHT,
   background: 'W',
@@ -328,6 +328,7 @@ export const LEVEL_1_MAP: MapDef = {
   width: WIDTH,
   height: HEIGHT,
   layout,
+  tileMeta,
   // Player spawns near the south of the lobby, looking up toward the chairs.
   playerStart: { x: LOBBY.x + 10, y: LOBBY.y + LOBBY.h - 3 },
   // Minimap labels — abbreviated by default, full names on click.

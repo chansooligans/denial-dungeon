@@ -83,7 +83,11 @@ const NPC_SOURCES: Record<string, string> = {
 const OBJECT_SOURCES: Record<string, string> = {
   // ===== Canonical replacements (override procedural draws) =====
   h_counter:    'obj1_0_0', // reception desk
-  h_desk:       'obj1_0_1', // wood desk + monitor
+  // Canonical desk uses the new desks.png sheet (3rd in row 1: wood
+  // desk + monitor + plant). The 12-desk sheet is registered below
+  // as h_desk_1..h_desk_12 (row-major from desks.png) so we can swap
+  // visual variants per-instance without re-importing.
+  h_desk:       'desks_0_2',
   h_chair:      'obj1_0_2', // office chair
   h_cabinet:    'obj1_0_3', // filing cabinet (with plant on top)
   h_bulletin:   'obj1_1_0', // cork bulletin board
@@ -169,6 +173,51 @@ const OBJECT_SOURCES: Record<string, string> = {
   h_reception_admin: 'obj5_3_1',
   h_ticker:          'obj5_3_2',
   h_paper_stack:     'obj5_3_3',
+
+  // Desk variants — full 4×3 grid from desks.png (12 visual styles).
+  // Numbered row-major (1-indexed): row 0 → 1,2,3; row 1 → 4,5,6;
+  // row 2 → 7,8,9; row 3 → 10,11,12. The canonical h_desk above
+  // points at desks_0_2 (a.k.a. h_desk_3); register the rest so a
+  // future tile-mapping pass can pick a different style per room.
+  h_desk_1:          'desks_0_0',
+  h_desk_2:          'desks_0_1',
+  h_desk_3:          'desks_0_2',
+  h_desk_4:          'desks_1_0',
+  h_desk_5:          'desks_1_1',
+  h_desk_6:          'desks_1_2',
+  h_desk_7:          'desks_2_0',
+  h_desk_8:          'desks_2_1',
+  h_desk_9:          'desks_2_2',
+  h_desk_10:         'desks_3_0',
+  h_desk_11:         'desks_3_1',
+  h_desk_12:         'desks_3_2',
+
+  // Plant variants — full 4×5 grid from plants.png (20 visual styles).
+  // Same row-major 1-indexed scheme: row 0 → 1..5, row 1 → 6..10,
+  // row 2 → 11..15, row 3 → 16..20. Existing h_plant / h_plant_lobby
+  // keys above keep their original obj1/obj2 sources for backwards
+  // compatibility; opt into a richer plant by referencing h_plant_N
+  // directly in a TILE_TEXTURES entry or via the map editor.
+  h_plant_1:         'plants_0_0',
+  h_plant_2:         'plants_0_1',
+  h_plant_3:         'plants_0_2',
+  h_plant_4:         'plants_0_3',
+  h_plant_5:         'plants_0_4',
+  h_plant_6:         'plants_1_0',
+  h_plant_7:         'plants_1_1',
+  h_plant_8:         'plants_1_2',
+  h_plant_9:         'plants_1_3',
+  h_plant_10:        'plants_1_4',
+  h_plant_11:        'plants_2_0',
+  h_plant_12:        'plants_2_1',
+  h_plant_13:        'plants_2_2',
+  h_plant_14:        'plants_2_3',
+  h_plant_15:        'plants_2_4',
+  h_plant_16:        'plants_3_0',
+  h_plant_17:        'plants_3_1',
+  h_plant_18:        'plants_3_2',
+  h_plant_19:        'plants_3_3',
+  h_plant_20:        'plants_3_4',
 }
 
 export class BootScene extends Phaser.Scene {
@@ -195,8 +244,10 @@ export class BootScene extends Phaser.Scene {
     // Voiceover for the cinematic IntroScene — one MP3 per text beat,
     // pre-split via whisper transcription so each line plays its own
     // audio. Keys are 'intro_voice_NN' where NN matches the text-beat
-    // index (1-based, zero-padded). 18 beats total.
-    for (let i = 1; i <= 18; i++) {
+    // index (1-based, zero-padded). 17 lines total — the original
+    // beat 3 ("That's not a typo.") was cut and the rest renumbered
+    // down by one to keep the 1-to-1 alignment.
+    for (let i = 1; i <= 17; i++) {
       const nn = String(i).padStart(2, '0')
       this.load.audio(`intro_voice_${nn}`, `audio/intro/${nn}.mp3`)
     }
@@ -262,7 +313,19 @@ export class BootScene extends Phaser.Scene {
     // Every page reload lands on the cover — which is the splash at
     // the start of the cinematic intro. Players can hit Skip on the
     // splash to jump to the title menu.
-    this.scene.start('Intro')
+    //
+    // Dev shortcut: `?introBeat=N` in the URL deep-links to a
+    // specific beat. Used by /intro-editor.html "open at beat" so
+    // authors can iterate on a single scene without sitting through
+    // the prior cinematic. Clamped + ignored if not a positive int.
+    const params = new URLSearchParams(window.location.search)
+    const beatRaw = params.get('introBeat')
+    const beatNum = beatRaw !== null ? parseInt(beatRaw, 10) : NaN
+    if (Number.isFinite(beatNum) && beatNum > 0) {
+      this.scene.start('Intro', { skipToBeat: beatNum })
+    } else {
+      this.scene.start('Intro')
+    }
   }
 
   /** Register the four directional walk-cycle animations. Anims are

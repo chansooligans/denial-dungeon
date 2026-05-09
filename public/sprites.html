@@ -114,88 +114,397 @@
       color: #5a6a7a; font-size: 12px; font-style: italic;
       max-width: 760px;
     }
+    .custom-list {
+      display: flex; flex-wrap: wrap; gap: 6px;
+      margin: 0 0 16px;
+      max-width: 1200px;
+    }
+    .custom-list .label {
+      color: #5a6a7a; font-size: 11px; align-self: center;
+      margin-right: 4px;
+    }
+    .custom-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #1a1e25; border: 1px solid #2a323d;
+      border-radius: 4px;
+      padding: 4px 6px 4px 10px;
+      font-size: 11px;
+      color: #d0d8e0;
+    }
+    .custom-chip .key {
+      color: #f4d06f; font-weight: bold;
+    }
+    .custom-chip .lbl {
+      color: #8b95a5;
+    }
+    .custom-chip button.del {
+      background: transparent; color: #ef5b7b;
+      border: none; padding: 0 4px;
+      font: inherit; cursor: pointer;
+      border-radius: 3px;
+    }
+    .custom-chip button.del:hover {
+      background: #ef5b7b; color: #0e1116;
+    }
+
+    /* Tab strip — sticky at top so navigation stays visible while
+     * scrolling within a tab. Only one tab is visible at a time;
+     * everything else is display:none. URL hash (#chloe / #npcs /
+     * #objects / #desks / #plants) drives the initial selection. */
+    nav.tabs {
+      position: sticky; top: 0;
+      display: flex; gap: 0;
+      background: #0e1116;
+      border-bottom: 1px solid #2a323d;
+      margin: 0 -24px 16px;
+      padding: 0 24px;
+      z-index: 20;
+    }
+    nav.tabs button {
+      background: transparent;
+      color: #8b95a5;
+      border: none;
+      border-bottom: 3px solid transparent;
+      border-radius: 0;
+      padding: 12px 18px;
+      font: inherit;
+      font-size: 13px;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+    }
+    nav.tabs button:hover { color: #d0d8e0; background: #15191f; }
+    nav.tabs button.active {
+      color: #7ee2c1;
+      border-bottom-color: #7ee2c1;
+    }
+    .tab-section { display: none; }
+    .tab-section.active { display: block; }
+    .tab-section .section-header {
+      /* Tabs eat the top divider role; remove the visual one. */
+      border-top: none;
+      margin-top: 0;
+      padding-top: 0;
+    }
+
+    /* Objects page — "Mapped objects" card grid (primary view). */
+    .obj-mapped-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 12px;
+      max-width: 1200px;
+      margin: 8px 0 24px;
+    }
+    .obj-mapped-card {
+      background: #1a1e25; border: 1px solid #2a323d;
+      border-radius: 4px;
+      padding: 10px;
+      display: flex; flex-direction: column;
+      gap: 6px;
+      align-items: center;
+      text-align: center;
+      position: relative;
+    }
+    .obj-mapped-card img {
+      width: 64px; height: 64px;
+      image-rendering: pixelated;
+      background: #0a0e14;
+    }
+    .obj-mapped-card .key {
+      color: #f4d06f; font-size: 12px; font-weight: bold;
+      word-break: break-all;
+    }
+    .obj-mapped-card .label {
+      color: #8b95a5; font-size: 10px;
+      line-height: 1.3;
+    }
+    /* Active-in-game / inactive badges. Active means the glyph that
+     * resolves to this texture key is referenced in a level layout
+     * today; inactive means the texture is registered but no map uses
+     * it (yet). */
+    .badge {
+      position: absolute;
+      top: 6px; right: 6px;
+      font-size: 9px;
+      padding: 2px 5px;
+      border-radius: 3px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .badge.active   { background: rgba(126,226,193,0.15); color: #7ee2c1; border: 1px solid rgba(126,226,193,0.4); }
+    .badge.inactive { background: rgba(91,106,122,0.15);  color: #8b95a5; border: 1px solid #3a4a5d; }
+    .badge.future   { background: rgba(244,208,111,0.1);  color: #f4d06f; border: 1px solid rgba(244,208,111,0.3); }
+
+    /* Collapsible "Source sheets" section under the mapped grid. */
+    details.advanced {
+      margin: 8px 0 16px;
+      max-width: 1200px;
+    }
+    details.advanced > summary {
+      cursor: pointer;
+      color: #5a6a7a;
+      font-size: 12px;
+      padding: 8px 12px;
+      background: #15191f;
+      border: 1px solid #2a323d;
+      border-radius: 4px;
+      list-style: none;
+    }
+    details.advanced[open] > summary {
+      color: #7ee2c1;
+      margin-bottom: 12px;
+    }
+    details.advanced > summary::-webkit-details-marker { display: none; }
+    details.advanced > summary::before {
+      content: '▶ ';
+      display: inline-block;
+      transition: transform 80ms;
+    }
+    details.advanced[open] > summary::before { transform: rotate(90deg); }
   </style>
 </head>
 <body>
 
 <h1>Sprite library</h1>
-<p class="section-nav">
-  <a href="#chloe">Chloe (player)</a>
-  <a href="#npcs">NPCs</a>
-  <a href="#objects">Objects (planned)</a>
-</p>
-<p>
-  All sprite assets in one place. Each section pulls live PNGs from
-  <code>public/sprites/</code> so renders match exactly what the
-  game loads at runtime.
-</p>
 
-<div class="section-header" id="chloe">
-  <h1>Chloe — player</h1>
-  <span class="section-meta">4 directions × 4 walk frames · 64×64 each</span>
-</div>
-<p>
-  The player walk cycle. Source <code>public/sprites/player/&lt;dir&gt;_walk_&lt;0..3&gt;.png</code>.
-  Generated from chroma-key LoRA outputs via
-  <code>tools/process-chloe-sheets.sh</code>.
-</p>
+<!-- Tab strip — only one section is visible at a time. URL hash is
+     synced (#chloe / #npcs / #objects / #desks / #plants) so deep
+     links and refreshes still land on the right tab. -->
+<nav class="tabs" id="tabs">
+  <button data-tab="chloe">Chloe</button>
+  <button data-tab="npcs">NPCs</button>
+  <button data-tab="objects">Objects</button>
+  <button data-tab="desks">Desks</button>
+  <button data-tab="plants">Plants</button>
+</nav>
 
-<div id="chloe-frames"></div>
+<section class="tab-section" data-tab="chloe">
+  <div class="section-header">
+    <h1>Chloe — player</h1>
+    <span class="section-meta">4 directions × 4 walk frames · 64×64 each</span>
+  </div>
+  <p>
+    The player walk cycle. Source <code>public/sprites/player/&lt;dir&gt;_walk_&lt;0..3&gt;.png</code>.
+    Generated from chroma-key LoRA outputs via
+    <code>tools/process-chloe-sheets.sh</code>.
+  </p>
+  <div id="chloe-frames"></div>
+</section>
 
-<div class="section-header" id="npcs">
-  <h1>NPCs</h1>
-  <span class="section-meta">5 LoRA sheets × 4 characters × 4 directions · 64×64 each</span>
-</div>
-<p>
-  All 80 LoRA-generated NPC frames from <code>public/sprites/npcs-raw/</code>.
-  Pick which slot becomes which game NPC using the dropdowns under each
-  row. Choices are saved as you click (local storage). When you've assigned
-  every character you want, hit "Show mapping" to copy the JSON and paste
-  it back to Claude.
-</p>
+<section class="tab-section" data-tab="npcs">
+  <div class="section-header">
+    <h1>NPCs</h1>
+    <span class="section-meta">5 LoRA sheets × 4 characters × 4 directions · 64×64 each</span>
+  </div>
+  <p>
+    All 80 LoRA-generated NPC frames from <code>public/sprites/npcs-raw/</code>.
+    Pick which slot becomes which game NPC using the dropdowns under each
+    row. Choices saved as you click (local storage). The
+    <span class="badge active" style="position:relative;top:0;right:0">active</span>
+    badge marks NPCs whose texture key is referenced by a placement in
+    <code>level1.ts</code>; <span class="badge inactive" style="position:relative;top:0;right:0">inactive</span>
+    means the NPC is registered but not placed.
+  </p>
 
-<div class="toolbar">
-  <button id="show-export">Show mapping</button>
-  <button id="add-custom">+ Add NPC</button>
-  <button id="auto-fill">Auto-fill remaining</button>
-  <button id="apply-names">Apply name suggestions</button>
-  <button id="reset">Reset all</button>
-  <span class="summary" id="summary"></span>
-</div>
+  <div class="toolbar">
+    <button id="show-export">Show mapping</button>
+    <button id="add-custom">+ Add NPC</button>
+    <button id="auto-fill">Auto-fill remaining</button>
+    <button id="apply-names">Apply name suggestions</button>
+    <button id="reset">Reset all</button>
+    <span class="summary" id="summary"></span>
+  </div>
 
-<div class="export-wrap" id="export-wrap" style="display:none">
-  <pre class="export" id="export-out"></pre>
-</div>
+  <!-- Live list of custom NPCs with per-item delete buttons. Hidden when empty. -->
+  <div class="custom-list" id="custom-list" style="display:none"></div>
 
-<div id="grids"></div>
+  <div class="export-wrap" id="export-wrap" style="display:none">
+    <pre class="export" id="export-out"></pre>
+  </div>
 
-<div class="section-header" id="objects">
-  <h1>Objects</h1>
-  <span class="section-meta">5 LoRA sheets × 16 cells · 80 objects total · 64×64 each</span>
-</div>
-<p>
-  All 80 LoRA-generated object frames from <code>public/sprites/objects-raw/</code>.
-  Pick which slot maps to each canonical hospital / Waiting Room
-  texture key (replaces the procedural draw in <code>BootScene</code>) or
-  give it a new custom key. Choices saved to local storage; export
-  the JSON when done.
-</p>
+  <div id="grids"></div>
+</section>
 
-<div class="toolbar">
-  <button id="obj-show-export">Show object mapping</button>
-  <button id="obj-add-custom">+ Add custom object</button>
-  <button id="obj-auto-fill">Auto-fill suggestions</button>
-  <button id="obj-reset">Reset</button>
-  <span class="summary" id="obj-summary"></span>
-</div>
+<section class="tab-section" data-tab="objects">
+  <div class="section-header">
+    <h1>Objects</h1>
+    <span class="section-meta">Hospital + Waiting Room textures · 64×64 each</span>
+  </div>
+  <p>
+    Texture keys registered in <code>BootScene.OBJECT_SOURCES</code>,
+    each rendering one of the 80 LoRA-generated object frames. The
+    <span class="badge active" style="position:relative;top:0;right:0">active</span>
+    badge marks keys that a glyph in <code>level1.ts</code> currently
+    places; <span class="badge inactive" style="position:relative;top:0;right:0">inactive</span>
+    means the key is registered + placeable via <code>TILE_TEXTURES</code>
+    but no map references it yet; <span class="badge future" style="position:relative;top:0;right:0">future</span>
+    means the key exists but isn't wired up to any glyph yet.
+  </p>
 
-<div class="export-wrap" id="obj-export-wrap" style="display:none">
-  <pre class="export" id="obj-export-out"></pre>
-</div>
+  <div class="toolbar">
+    <button id="obj-show-export">Show object mapping</button>
+    <button id="obj-add-custom">+ Add custom object</button>
+    <button id="obj-auto-fill">Auto-fill suggestions</button>
+    <button id="obj-reset">Reset</button>
+    <span class="summary" id="obj-summary"></span>
+  </div>
 
-<div id="obj-grids"></div>
+  <!-- Live list of custom object keys with per-item delete buttons. -->
+  <div class="custom-list" id="obj-custom-list" style="display:none"></div>
+
+  <div class="export-wrap" id="obj-export-wrap" style="display:none">
+    <pre class="export" id="obj-export-out"></pre>
+  </div>
+
+  <h2>Mapped objects</h2>
+  <p>
+    Every texture key currently bound to a LoRA cell, sorted by
+    namespace and active-in-game first. Click a card's "edit slot" to
+    jump to its source sheet below for re-mapping.
+  </p>
+  <div class="obj-mapped-grid" id="obj-mapped-grid"></div>
+
+  <details class="advanced" id="obj-source-sheets-details">
+    <summary>Source sheets — re-map cells to keys (5 sheets × 16 cells)</summary>
+    <p>
+      Each row of each sheet is one LoRA character/object. Pick which
+      slot maps to each canonical hospital / Waiting Room texture key
+      or give it a new custom key.
+    </p>
+    <div id="obj-grids"></div>
+  </details>
+</section>
+
+<section class="tab-section" data-tab="desks">
+  <div class="section-header">
+    <h1>Desks</h1>
+    <span class="section-meta">12 variants from desks.png · 4 rows × 3 cols · 64×64 each</span>
+  </div>
+  <p>
+    Office-desk visual variants. The canonical <code>h_desk</code> texture
+    key (used by every <code>'c'</code> tile) points at
+    <code>desks_0_2</code> — third desk in row 1. The other 11 are
+    registered as <code>h_desk_1</code>…<code>h_desk_12</code> in
+    <code>BootScene.OBJECT_SOURCES</code> for future per-room visual
+    variation. Source: <code>public/sprites/objects-raw/desks_&lt;r&gt;_&lt;c&gt;.png</code>.
+  </p>
+  <div id="desk-grid"></div>
+</section>
+
+<section class="tab-section" data-tab="plants">
+  <div class="section-header">
+    <h1>Plants</h1>
+    <span class="section-meta">20 variants from plants.png · 4 rows × 5 cols · 64×64 each</span>
+  </div>
+  <p>
+    Indoor-plant visual variants — snake plant, peace lily, pothos,
+    fern, succulent, fiddle-leaf, monstera, and more. Registered as
+    <code>h_plant_1</code>…<code>h_plant_20</code> in
+    <code>BootScene.OBJECT_SOURCES</code>. The default
+    <code>h_plant</code> still points at the original
+    <code>obj1_1_1</code> for backwards compatibility — opt into a
+    richer plant per-tile via the map editor or by referencing the
+    variant key directly. Source:
+    <code>public/sprites/objects-raw/plants_&lt;r&gt;_&lt;c&gt;.png</code>.
+  </p>
+  <div id="plant-grid"></div>
+</section>
 
 <script>
+// ---------- Tab switching ----------
+//
+// Click a tab → only that section is visible. URL hash mirrors the
+// active tab so refresh / deep-link / back-button all work.
+(function tabs() {
+  const VALID = new Set(['chloe', 'npcs', 'objects', 'desks', 'plants']);
+  function activate(name) {
+    if (!VALID.has(name)) name = 'chloe';
+    for (const btn of document.querySelectorAll('nav.tabs button')) {
+      btn.classList.toggle('active', btn.dataset.tab === name);
+    }
+    for (const sec of document.querySelectorAll('section.tab-section')) {
+      sec.classList.toggle('active', sec.dataset.tab === name);
+    }
+    if (location.hash !== '#' + name) {
+      history.replaceState(null, '', '#' + name);
+    }
+  }
+  for (const btn of document.querySelectorAll('nav.tabs button')) {
+    btn.addEventListener('click', () => activate(btn.dataset.tab));
+  }
+  window.addEventListener('hashchange', () => {
+    activate(location.hash.replace(/^#/, ''));
+  });
+  activate(location.hash.replace(/^#/, '') || 'chloe');
+})();
+
+// ---------- Active-in-game registries ----------
+//
+// Hardcoded lists of which sprite keys are referenced by gameplay
+// today. Drive the active/inactive badges on the NPC + Objects pages.
+// Update when level1.ts or HospitalScene.TILE_TEXTURES change. The
+// alternative — fetching + parsing source files at runtime — is more
+// fragile and adds no real value while the game is single-level.
+
+// Object glyphs that appear in any room's items[] in level1.ts.
+const ACTIVE_OBJECT_GLYPHS = new Set([
+  'c', 'h', 'P', 'b', '#', 'X', 'F', 'R', 'B', 'V', 'w',
+  'I', 'y', 'A', 'r', 'p', 'T', 'K', 's', '%',
+]);
+
+// Glyph → texture-key map mirrors HospitalScene.TILE_TEXTURES (only
+// the 'obj' fields). Used to compute which texture keys are active
+// based on which glyphs appear in level1.ts above. Keep in sync with
+// TILE_TEXTURES if a new glyph is added.
+const GLYPH_TO_OBJ_KEY = {
+  c: 'h_desk',        h: 'h_chair',       E: 'h_equipment',
+  P: 'h_plant',       w: 'h_water',       F: 'h_cabinet',
+  B: 'h_whiteboard',  R: 'h_counter',     V: 'h_vending',
+  b: 'h_bulletin',    H: 'h_bed',         X: 'h_fax',
+  A: 'h_aed',         a: 'h_sanitizer',   C: 'h_couch',
+  d: 'h_bench',       r: 'h_brochure',    i: 'h_signin',
+  p: 'h_payphone',   '>': 'h_arrow_sign', T: 'h_trash',
+  I: 'h_iv_stand',    y: 'h_wheelchair',  g: 'h_gurney',
+  K: 'h_bookshelf',   s: 'h_shredder',    k: 'h_kiosk',
+ '#': 'h_directory', '%': 'h_pneumatic',
+  e: 'h_elevator',    f: 'h_fountain',   '!': 'h_wet_floor',
+  M: 'h_mop_bucket',
+};
+
+const ACTIVE_OBJECT_KEYS = new Set();
+for (const g of ACTIVE_OBJECT_GLYPHS) {
+  if (GLYPH_TO_OBJ_KEY[g]) ACTIVE_OBJECT_KEYS.add(GLYPH_TO_OBJ_KEY[g]);
+}
+// Texture keys that are reachable from a glyph in TILE_TEXTURES
+// (i.e. could be placed in a map without a code change). Anything
+// registered in OBJECT_SOURCES but not here is "future" — needs a
+// glyph mapping before it can show up in-game.
+const PLACEABLE_OBJECT_KEYS = new Set(Object.values(GLYPH_TO_OBJ_KEY));
+
+// NPC keys referenced by placements in level1.ts. All 20 are
+// currently placed, but the resolver lives here so future maps can
+// flip rows on/off without source-code surgery in this file.
+const ACTIVE_NPC_KEYS = new Set([
+  // Story-relevant
+  'dana', 'kim', 'jordan', 'pat', 'alex', 'sam', 'martinez', 'anjali',
+  // Audit boss room
+  'carl', 'chen', 'rivera', 'eddi',
+  // Ambient populace
+  'walter', 'noah', 'officer_reyes', 'dev', 'liana', 'dr_priya',
+  'dr_ethan', 'joe',
+]);
+
+/** Return 'active' | 'inactive' | 'future' for an object texture key. */
+function objStatus(key) {
+  if (ACTIVE_OBJECT_KEYS.has(key)) return 'active';
+  if (PLACEABLE_OBJECT_KEYS.has(key)) return 'inactive';
+  return 'future';
+}
+
+/** Return 'active' | 'inactive' for an NPC texture key. */
+function npcStatus(key) {
+  return ACTIVE_NPC_KEYS.has(key) ? 'active' : 'inactive';
+}
+
 // ---------- Chloe (player) — 4 directions × 4 walk frames ----------
 (function renderChloe() {
   const root = document.getElementById('chloe-frames');
@@ -339,6 +648,49 @@ function rebuildAllDropdowns() {
   }
   refreshDropdowns();
   refreshRowLabels();
+  renderCustomNpcList();
+}
+
+/** Render the inline chip-list of custom NPCs so each one can be
+ *  deleted individually. Hidden when there are no customs. Deleting
+ *  also unmaps any slot currently assigned to that key — otherwise
+ *  the slot would point at a non-existent NPC. */
+function renderCustomNpcList() {
+  const root = document.getElementById('custom-list');
+  if (!customNpcs.length) {
+    root.style.display = 'none';
+    root.innerHTML = '';
+    return;
+  }
+  root.style.display = 'flex';
+  let html = '<span class="label">Custom NPCs:</span>';
+  for (const n of customNpcs) {
+    const safeKey = n.key.replace(/"/g, '&quot;');
+    html += `<span class="custom-chip">` +
+            `<span class="key">${n.key}</span>` +
+            (n.label && n.label !== n.key
+              ? `<span class="lbl">${n.label.replace(/</g, '&lt;')}</span>`
+              : '') +
+            `<button class="del" data-key="${safeKey}" title="Delete this custom NPC">×</button>` +
+            `</span>`;
+  }
+  root.innerHTML = html;
+  for (const btn of root.querySelectorAll('button.del')) {
+    btn.addEventListener('click', () => deleteCustomNpc(btn.dataset.key));
+  }
+}
+
+function deleteCustomNpc(key) {
+  if (!confirm(`Delete custom NPC "${key}"? Any slot assigned to this key will be unmapped.`)) return;
+  customNpcs = customNpcs.filter(n => n.key !== key);
+  saveCustom(customNpcs);
+  // Unmap any slot pointing at this key.
+  for (const slot of Object.keys(mapping)) {
+    if (mapping[slot] === key) delete mapping[slot];
+  }
+  saveMapping(mapping);
+  rebuildAllDropdowns();
+  refreshSummary();
 }
 
 function refreshRowLabels() {
@@ -353,10 +705,15 @@ function refreshRowLabels() {
       const idx = npc.label.indexOf('—');
       const name = idx > -1 ? npc.label.slice(0, idx).trim() : npc.label;
       const role = idx > -1 ? npc.label.slice(idx + 1).trim() : '';
+      const status = npcStatus(npc.key);
       wrap.innerHTML =
         `<div class="assigned-name">${name}</div>` +
         (role ? `<div class="assigned-role">${role}</div>` : '') +
-        `<div class="meta">${slot}</div>`;
+        `<div class="meta">${slot}</div>` +
+        // Badge sits inline with the row label rather than absolutely
+        // positioned (the .row-label cells aren't relative-positioned
+        // containers, so abs-positioned would float to the page).
+        `<span class="badge ${status}" style="position:relative;top:6px;right:0;display:inline-block">${status}</span>`;
     } else {
       wrap.innerHTML = `<div>row ${slot.split('_')[1]}</div><div class="meta">${slot}</div>`;
     }
@@ -557,6 +914,7 @@ document.getElementById('reset').addEventListener('click', () => {
 refreshDropdowns();
 refreshRowLabels();
 refreshSummary();
+renderCustomNpcList();
 
 // ---------- Objects — pick canonical hospital/WR keys for each slot ----------
 const OBJ_CANONICAL = [
@@ -752,6 +1110,98 @@ function objRefreshDropdowns() {
 function objRebuildAll() {
   objRefreshDropdowns();
   objRefreshSummary();
+  renderCustomObjList();
+  renderObjMappedGrid();
+}
+
+/** Card-grid view of every texture key currently bound to a slot.
+ *  Sorted: active first, then placeable-but-inactive, then future
+ *  (registered without a glyph mapping). Within each tier sorted by
+ *  key alphabetically. Replaces the LoRA-sheet-oriented browse path
+ *  as the primary view of "what's currently in this game." */
+function renderObjMappedGrid() {
+  const root = document.getElementById('obj-mapped-grid');
+  if (!root) return;
+  // Reverse the slot→key mapping so we can ask "which cell is h_desk?".
+  const keyToSlot = {};
+  for (const [slot, key] of Object.entries(objMapping)) {
+    if (key) keyToSlot[key] = slot;
+  }
+  // Build entries from canonical + custom registries; only include
+  // those that actually have a slot bound (otherwise there's nothing
+  // to preview).
+  const entries = [];
+  for (const n of OBJ_CANONICAL) {
+    const slot = keyToSlot[n.key];
+    if (slot) entries.push({ key: n.key, label: n.label, slot, custom: false });
+  }
+  for (const n of objCustom) {
+    const slot = keyToSlot[n.key];
+    if (slot) entries.push({ key: n.key, label: n.label, slot, custom: true });
+  }
+  // Order: active → inactive (placeable) → future, then by key.
+  const tier = { active: 0, inactive: 1, future: 2 };
+  entries.sort((a, b) => {
+    const ta = tier[objStatus(a.key)] - tier[objStatus(b.key)];
+    return ta !== 0 ? ta : a.key.localeCompare(b.key);
+  });
+
+  if (!entries.length) {
+    root.innerHTML = '<p style="color:#5a6a7a">No texture keys mapped yet — pick assignments in the Source sheets section below.</p>';
+    return;
+  }
+  let html = '';
+  for (const e of entries) {
+    const status = objStatus(e.key);
+    const labelText = e.label.replace(/^h_[a-z0-9_]+ — /, ''); // drop key prefix in label
+    html += `<div class="obj-mapped-card" title="${e.slot}">` +
+      `<span class="badge ${status}">${status}</span>` +
+      `<img src="/sprites/objects-raw/${e.slot}.png" alt="${e.slot}" />` +
+      `<div class="key">${e.key}</div>` +
+      `<div class="label">${labelText}</div>` +
+      `<div class="meta">${e.slot}${e.custom ? ' · custom' : ''}</div>` +
+      `</div>`;
+  }
+  root.innerHTML = html;
+}
+
+/** Inline chip-list of custom object keys with delete buttons. Same
+ *  pattern as the NPC list above; deleting a key unmaps every slot
+ *  currently pointing at it so the dropdowns don't show ghosts. */
+function renderCustomObjList() {
+  const root = document.getElementById('obj-custom-list');
+  if (!objCustom.length) {
+    root.style.display = 'none';
+    root.innerHTML = '';
+    return;
+  }
+  root.style.display = 'flex';
+  let html = '<span class="label">Custom objects:</span>';
+  for (const n of objCustom) {
+    const safeKey = n.key.replace(/"/g, '&quot;');
+    html += `<span class="custom-chip">` +
+            `<span class="key">${n.key}</span>` +
+            (n.label && n.label !== n.key
+              ? `<span class="lbl">${n.label.replace(/</g, '&lt;')}</span>`
+              : '') +
+            `<button class="del" data-key="${safeKey}" title="Delete this custom object">×</button>` +
+            `</span>`;
+  }
+  root.innerHTML = html;
+  for (const btn of root.querySelectorAll('button.del')) {
+    btn.addEventListener('click', () => deleteCustomObj(btn.dataset.key));
+  }
+}
+
+function deleteCustomObj(key) {
+  if (!confirm(`Delete custom object "${key}"? Any slot assigned to this key will be unmapped.`)) return;
+  objCustom = objCustom.filter(n => n.key !== key);
+  objSaveCustom(objCustom);
+  for (const slot of Object.keys(objMapping)) {
+    if (objMapping[slot] === key) delete objMapping[slot];
+  }
+  objSaveMapping(objMapping);
+  objRebuildAll();
 }
 
 const objRoot = document.getElementById('obj-grids');
@@ -883,6 +1333,75 @@ document.getElementById('obj-reset').addEventListener('click', () => {
 });
 
 objRebuildAll();
+
+// ---------- Desks (12 variants, 4×3 grid) ----------
+(function renderDesks() {
+  const root = document.getElementById('desk-grid');
+  const table = document.createElement('table');
+  // Header row labels columns; each body row labels with `h_desk_N`
+  // (1-indexed row-major) so users can match the texture key in
+  // BootScene.OBJECT_SOURCES at a glance.
+  const head = document.createElement('tr');
+  head.innerHTML = `<td class="lbl">slot</td>` +
+    [0, 1, 2].map(c => `<td class="lbl">col ${c}</td>`).join('');
+  table.appendChild(head);
+  for (let r = 0; r < 4; r++) {
+    const tr = document.createElement('tr');
+    const lblTd = document.createElement('td');
+    lblTd.className = 'lbl';
+    lblTd.style.minWidth = '180px';
+    lblTd.style.textAlign = 'left';
+    lblTd.innerHTML = `<div>row ${r}</div>` +
+      `<div class="meta">h_desk_${r * 3 + 1}…${r * 3 + 3}</div>`;
+    tr.appendChild(lblTd);
+    for (let c = 0; c < 3; c++) {
+      const slot = `desks_${r}_${c}`;
+      const key = `h_desk_${r * 3 + c + 1}`;
+      const td = document.createElement('td');
+      td.style.minWidth = '120px';
+      td.innerHTML =
+        `<img src="/sprites/objects-raw/${slot}.png" alt="${slot}">` +
+        `<div class="meta">${slot}</div>` +
+        `<div class="meta" style="color:#f4d06f">${key}</div>`;
+      tr.appendChild(td);
+    }
+    table.appendChild(tr);
+  }
+  root.appendChild(table);
+})();
+
+// ---------- Plants (20 variants, 4×5 grid) ----------
+(function renderPlants() {
+  const root = document.getElementById('plant-grid');
+  const table = document.createElement('table');
+  const head = document.createElement('tr');
+  head.innerHTML = `<td class="lbl">slot</td>` +
+    [0, 1, 2, 3, 4].map(c => `<td class="lbl">col ${c}</td>`).join('');
+  table.appendChild(head);
+  for (let r = 0; r < 4; r++) {
+    const tr = document.createElement('tr');
+    const lblTd = document.createElement('td');
+    lblTd.className = 'lbl';
+    lblTd.style.minWidth = '180px';
+    lblTd.style.textAlign = 'left';
+    lblTd.innerHTML = `<div>row ${r}</div>` +
+      `<div class="meta">h_plant_${r * 5 + 1}…${r * 5 + 5}</div>`;
+    tr.appendChild(lblTd);
+    for (let c = 0; c < 5; c++) {
+      const slot = `plants_${r}_${c}`;
+      const key = `h_plant_${r * 5 + c + 1}`;
+      const td = document.createElement('td');
+      td.style.minWidth = '110px';
+      td.innerHTML =
+        `<img src="/sprites/objects-raw/${slot}.png" alt="${slot}">` +
+        `<div class="meta">${slot}</div>` +
+        `<div class="meta" style="color:#f4d06f">${key}</div>`;
+      tr.appendChild(td);
+    }
+    table.appendChild(tr);
+  }
+  root.appendChild(table);
+})();
 </script>
 
 </body>
