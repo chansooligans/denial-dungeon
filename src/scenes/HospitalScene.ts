@@ -493,27 +493,27 @@ export class HospitalScene extends Phaser.Scene {
     const hintText = LEVEL_ORIENTATION_HINTS[newLevel]
 
     const title = this.add.text(vw / 2, 80, titleText, {
-      fontSize: '22px', fontFamily: 'monospace', color: '#f0d090',
+      fontSize: '32px', fontFamily: 'monospace', color: '#f0d090',
       backgroundColor: '#1a060880',
-      padding: { x: 14, y: 6 },
-      stroke: '#05070a', strokeThickness: 3,
+      padding: { x: 18, y: 8 },
+      stroke: '#05070a', strokeThickness: 4,
       fontStyle: 'bold',
     }).setOrigin(0.5).setScrollFactor(0).setDepth(200).setAlpha(0)
 
-    const subtitle = this.add.text(vw / 2, 116, subtitleText, {
-      fontSize: '13px', fontFamily: 'monospace', color: '#c8a040',
+    const subtitle = this.add.text(vw / 2, 130, subtitleText, {
+      fontSize: '20px', fontFamily: 'monospace', color: '#c8a040',
       backgroundColor: '#1a060880',
-      padding: { x: 10, y: 4 },
-      stroke: '#05070a', strokeThickness: 2,
+      padding: { x: 14, y: 6 },
+      stroke: '#05070a', strokeThickness: 3,
     }).setOrigin(0.5).setScrollFactor(0).setDepth(200).setAlpha(0)
 
     const banners: Phaser.GameObjects.Text[] = [title, subtitle]
     if (hintText) {
-      const hint = this.add.text(vw / 2, 148, hintText, {
-        fontSize: '11px', fontFamily: 'monospace', color: '#7ee2c1',
+      const hint = this.add.text(vw / 2, 178, hintText, {
+        fontSize: '18px', fontFamily: 'monospace', color: '#7ee2c1',
         backgroundColor: '#1a060880',
-        padding: { x: 10, y: 4 },
-        stroke: '#05070a', strokeThickness: 2,
+        padding: { x: 14, y: 6 },
+        stroke: '#05070a', strokeThickness: 3,
         align: 'center',
       }).setOrigin(0.5).setScrollFactor(0).setDepth(200).setAlpha(0)
       banners.push(hint)
@@ -887,15 +887,15 @@ export class HospitalScene extends Phaser.Scene {
     const level = LEVELS[state.currentLevel - 1]
 
     this.hudLevel = this.add.text(10, 10, `Level ${state.currentLevel}: ${level?.title ?? ''}`, {
-      fontSize: '10px', fontFamily: 'monospace', color: '#7ee2c1',
+      fontSize: '16px', fontFamily: 'monospace', color: '#7ee2c1',
       backgroundColor: '#1f120880',
-      padding: { x: 4, y: 2 },
+      padding: { x: 8, y: 4 },
     }).setScrollFactor(0).setDepth(100)
 
-    this.hudHp = this.add.text(10, 28, '', {
-      fontSize: '9px', fontFamily: 'monospace', color: '#ef5b7b',
+    this.hudHp = this.add.text(10, 44, '', {
+      fontSize: '14px', fontFamily: 'monospace', color: '#ef5b7b',
       backgroundColor: '#1f120880',
-      padding: { x: 4, y: 2 },
+      padding: { x: 8, y: 4 },
     }).setScrollFactor(0).setDepth(100)
 
     // Toast that flashes when the player bumps a solid object or
@@ -907,14 +907,14 @@ export class HospitalScene extends Phaser.Scene {
     const mobile = isTouchDevice()
     this.lockedToast = this.add.text(
       screenW / 2,
-      screenH - (mobile ? 80 : 60),
+      screenH - (mobile ? 110 : 90),
       '',
       {
-        fontSize: mobile ? '15px' : '12px',
+        fontSize: mobile ? '24px' : '20px',
         fontFamily: 'monospace',
         color: '#f4d06f',
         backgroundColor: '#1f1208cc',
-        padding: { x: mobile ? 12 : 8, y: mobile ? 6 : 4 },
+        padding: { x: mobile ? 16 : 14, y: mobile ? 8 : 6 },
         align: 'center',
       },
     ).setOrigin(0.5).setScrollFactor(0).setDepth(120).setAlpha(0)
@@ -976,12 +976,12 @@ export class HospitalScene extends Phaser.Scene {
     // against any tile color underneath.
     this.miniMapHint = this.add.text(0, 0, '', {
       fontFamily: 'monospace',
-      fontSize: '8px',
+      fontSize: '18px',
       color: '#7ee2c1',
       align: 'center',
       fontStyle: 'bold',
       stroke: '#0e1116',
-      strokeThickness: 3,
+      strokeThickness: 4,
     }).setOrigin(0.5, 1).setDepth(102)
 
     const miniMapObjs: Phaser.GameObjects.GameObject[] = [
@@ -1013,10 +1013,11 @@ export class HospitalScene extends Phaser.Scene {
         Math.floor((screenH - 100) / mh),
       ))
     } else {
-      // Collapsed minimap. Bumped from 3px → 5px per tile for a
-      // chunkier read that doesn't get squinted at on large displays.
-      // 60-wide map × 5 = 300px wide HUD element.
-      this.miniMapCell = Math.max(1, Math.min(5, Math.floor(300 / mw))) || 1
+      // Collapsed minimap — 8px per tile on the 60-wide map gives a
+      // 480px-wide HUD element. Big enough to read room shapes at a
+      // glance from a couch-distance display, with the bottom-edge
+      // hint text legible at 18px below it.
+      this.miniMapCell = Math.max(1, Math.min(8, Math.floor(480 / mw))) || 1
     }
     const cell = this.miniMapCell
     const innerW = mw * cell
@@ -1089,7 +1090,7 @@ export class HospitalScene extends Phaser.Scene {
       const cy = oy + (r.y + r.h / 2) * cell
       label.setPosition(cx, cy)
       label.setText(this.miniMapExpanded ? r.name : (r.shortName ?? r.name))
-      label.setFontSize(this.miniMapExpanded ? 18 : 11)
+      label.setFontSize(this.miniMapExpanded ? 22 : 14)
       // Use setWordWrapWidth instead of setStyle({ wordWrap }) — the
       // latter tripped a Phaser internal "Cannot read properties of
       // null (reading 'drawImage')" on first paint, on at least one

@@ -731,17 +731,18 @@ export class BootScene extends Phaser.Scene {
     g.destroy()
 
     // Reception counter — polished wood. Lowered to occupy the
-    // bottom half of the tile (was rows 4–13, now 8–15) so it
-    // reads as waist-high front-of-house furniture, not a wall.
+    // bottom half of the tile and narrower (12 wide instead of 16)
+    // so multi-tile counters read as a continuous run with subtle
+    // tile-to-tile seams instead of a solid horizontal slab.
     g = this.make.graphics({ x: 0, y: 0 })
     g.fillStyle(0x6a5030)
-    g.fillRect(0, 8, 16, 8)
+    g.fillRect(2, 8, 12, 8)
     g.fillStyle(0x7a6040, 0.6)
-    g.fillRect(0, 8, 16, 2)            // top edge highlight
+    g.fillRect(2, 8, 12, 2)            // top edge highlight
     g.fillStyle(0x8a7050, 0.2)
-    g.fillRect(2, 9, 12, 1)
+    g.fillRect(3, 9, 10, 1)
     g.lineStyle(1, 0x5a4020, 0.6)
-    g.strokeRect(0, 8, 16, 8)
+    g.strokeRect(2, 8, 12, 8)
     if (!this.textures.exists('h_counter')) g.generateTexture('h_counter', 16, 16)
     g.destroy()
 
