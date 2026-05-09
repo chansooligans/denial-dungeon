@@ -26,6 +26,7 @@ import {
   DEFAULT_OBJECT_COLOR_CSS,
   GLYPH_LABEL,
 } from './data'
+import { NPC_SOURCES } from '../scenes/npcSources'
 
 const TILE = 24 // CSS px per tile in the editor view at zoom 1.0
 
@@ -72,6 +73,27 @@ interface PlacedObj {
   size?: number
 }
 
+interface PlacedNpc {
+  /** Stable id used as the editor's selection key — `npc:<index>`
+   *  where index is the position in the original npcPlacements
+   *  array. NPCs sometimes co-locate (e.g. two NPCs on the same
+   *  bench) so we can't key by tile position. */
+  id: string
+  /** Index in the original npcPlacements array. Drives export
+   *  ordering so paste-back doesn't reshuffle. */
+  origIndex: number
+  npcId: string
+  x: number
+  y: number
+  /** Pass-through fields from npcPlacements — preserved on export. */
+  levels?: number[]
+  ambient?: boolean
+  /** Resolved sprite slot from NPC_SOURCES (e.g. 'npc7_0'). When
+   *  present, the editor renders the actual PNG at
+   *  `/sprites/npcs-raw/{slot}_0.png`. Missing → placeholder dot. */
+  spriteSlot?: string
+}
+
 interface EditorState {
   /** All rendered objects keyed by `"x,y"` — both layout-derived
    *  and freshly-added via the palette. */
@@ -79,21 +101,29 @@ interface EditorState {
   /** Tiles whose default obj has been removed by the user. Emit as
    *  tileOverrides ch:'' so the running game clears the default. */
   removed: Set<string>
-  /** Selected object position, if any. */
+  /** All NPC placements, keyed by their stable `id`. */
+  npcs: Map<string, PlacedNpc>
+  /** Selected object key (`"x,y"`) OR npc key (`npc:<n>`), if any. */
   selectedKey: string | null
 }
 
 const state: EditorState = {
   objects: new Map(),
   removed: new Set(),
+  npcs: new Map(),
   selectedKey: null,
+}
+
+/** Distinguish object tile-keys ("12,34") from NPC keys ("npc:5"). */
+function isNpcKey(key: string): boolean {
+  return key.startsWith('npc:')
 }
 
 /** Load the layout into state.objects, applying any tileMeta from
  *  level1.ts so we open the editor mid-edit-friendly (you see your
  *  previous flips, sprite overrides, and resizes). */
 function bootstrap() {
-  const { layout, width: mw, height: mh, tileMeta } = LEVEL_1_MAP
+  const { layout, width: mw, height: mh, tileMeta, npcPlacements } = LEVEL_1_MAP
   for (let y = 0; y < mh; y++) {
     const row = layout[y] || ''
     for (let x = 0; x < mw; x++) {
@@ -113,6 +143,22 @@ function bootstrap() {
         size: meta?.size,
       })
     }
+  }
+  // NPC placements — keyed by `npc:<origIndex>` so co-located NPCs
+  // don't collide on a tile-position key.
+  for (let i = 0; i < npcPlacements.length; i++) {
+    const p = npcPlacements[i]
+    const id = `npc:${i}`
+    state.npcs.set(id, {
+      id,
+      origIndex: i,
+      npcId: p.npcId,
+      x: p.tileX,
+      y: p.tileY,
+      levels: p.levels,
+      ambient: p.ambient,
+      spriteSlot: NPC_SOURCES[p.npcId],
+    })
   }
 }
 
@@ -209,14 +255,72 @@ function render() {
     canvas.appendChild(box)
   }
 
-  // Selection ring on the underlying tile.
+  // NPCs on top of objects. Render the actual sprite PNG when
+  // NPC_SOURCES has a slot for them (most cast NPCs do); otherwise
+  // a placeholder badge. Smaller than objects (1-tile sprites
+  // anchored bottom-center) since NPCs in-game don't tower over
+  // furniture.
+  for (const npc of state.npcs.values()) {
+    const dispPx = TILE * 1.4
+    const div = document.createElement('div')
+    div.className = 'npc'
+    div.style.position = 'absolute'
+    div.style.left = `${(npc.x + 0.5) * TILE - dispPx / 2}px`
+    div.style.top = `${(npc.y + 1) * TILE - dispPx}px`
+    div.style.width = `${dispPx}px`
+    div.style.height = `${dispPx}px`
+    div.style.cursor = 'grab'
+    div.style.userSelect = 'none'
+    div.style.imageRendering = 'pixelated'
+    div.dataset.npcKey = npc.id
+    if (npc.spriteSlot) {
+      const img = document.createElement('img')
+      img.src = `/sprites/npcs-raw/${npc.spriteSlot}_0.png`
+      img.style.width = '100%'
+      img.style.height = '100%'
+      img.style.imageRendering = 'pixelated'
+      img.style.pointerEvents = 'none'
+      div.appendChild(img)
+    } else {
+      div.textContent = npc.npcId.slice(0, 2).toUpperCase()
+      div.style.background = '#7ee2c1'
+      div.style.color = '#0a0e14'
+      div.style.fontWeight = 'bold'
+      div.style.display = 'flex'
+      div.style.alignItems = 'center'
+      div.style.justifyContent = 'center'
+      div.style.fontSize = '11px'
+      div.style.borderRadius = '3px'
+    }
+    if (state.selectedKey === npc.id) {
+      div.style.filter = 'drop-shadow(0 0 4px #7ee2c1) brightness(1.2)'
+    }
+    div.addEventListener('mousedown', onNpcMouseDown)
+    canvas.appendChild(div)
+  }
+
+  // Selection ring on the underlying tile (works for both objects
+  // and NPCs).
   if (state.selectedKey) {
-    const obj = state.objects.get(state.selectedKey)
-    if (obj && !state.removed.has(state.selectedKey)) {
+    let sx: number | null = null, sy: number | null = null
+    if (isNpcKey(state.selectedKey)) {
+      const npc = state.npcs.get(state.selectedKey)
+      if (npc) { sx = npc.x; sy = npc.y }
+    } else {
+      const obj = state.objects.get(state.selectedKey)
+      if (obj && !state.removed.has(state.selectedKey)) {
+        sx = obj.x; sy = obj.y
+      }
+    }
+    if (sx !== null && sy !== null) {
       const ring = document.createElement('div')
       ring.className = 'sel-ring'
-      ring.style.left = `${obj.x * TILE}px`
-      ring.style.top = `${obj.y * TILE}px`
+      // Green ring for NPCs to distinguish from object selection.
+      if (isNpcKey(state.selectedKey)) {
+        ring.style.border = '2px solid #7ee2c1'
+      }
+      ring.style.left = `${sx * TILE}px`
+      ring.style.top = `${sy * TILE}px`
       ring.style.width = `${TILE}px`
       ring.style.height = `${TILE}px`
       canvas.appendChild(ring)
@@ -242,9 +346,18 @@ function updateStatus() {
   const zoomTag = ` · zoom ${(zoomLevel * 100).toFixed(0)}%`
   if (!state.selectedKey) {
     statusLine.textContent =
-      'Click an object to select. Drag to move. F flips, +/- resize, ' +
-      '0 reset, 1 reset size, Del removes. Click empty floor to add.' +
+      'Click an object/NPC to select. Drag to move. F flips, +/- resize, ' +
+      '0 reset, 1 reset size, Del removes (object only). Click empty floor to add.' +
       zoomTag
+    return
+  }
+  if (isNpcKey(state.selectedKey)) {
+    const npc = state.npcs.get(state.selectedKey)!
+    const lvls = npc.levels ? ` · levels [${npc.levels.join(',')}]` : ' · all levels'
+    const amb = npc.ambient ? ' · ambient' : ''
+    const slot = npc.spriteSlot ? ` (${npc.spriteSlot})` : ' (no sprite)'
+    statusLine.textContent =
+      `NPC: ${npc.npcId}${slot} at (${npc.x},${npc.y})${lvls}${amb}${zoomTag}`
     return
   }
   const obj = state.objects.get(state.selectedKey)!
@@ -303,20 +416,44 @@ function onObjMouseDown(e: MouseEvent) {
   render()
 }
 
+function onNpcMouseDown(e: MouseEvent) {
+  e.stopPropagation()
+  const div = e.currentTarget as HTMLElement
+  const key = div.dataset.npcKey!
+  const npc = state.npcs.get(key)
+  if (!npc) return
+  state.selectedKey = key
+  const rect = canvas.getBoundingClientRect()
+  dragState = {
+    key,
+    offsetX: (e.clientX - rect.left) / zoomLevel - npc.x * TILE,
+    offsetY: (e.clientY - rect.top) / zoomLevel - npc.y * TILE,
+  }
+  render()
+}
+
 window.addEventListener('mousemove', (e) => {
   if (!dragState) return
-  const obj = state.objects.get(dragState.key)
-  if (!obj) return
   const rect = canvas.getBoundingClientRect()
-  // Divide by zoomLevel because canvas is CSS-scaled but coords are
-  // in unscaled tile-grid units.
   const tx = Math.floor((e.clientX - rect.left) / zoomLevel / TILE)
   const ty = Math.floor((e.clientY - rect.top) / zoomLevel / TILE)
-  if (tx === obj.x && ty === obj.y) return
   // Reject drop targets that aren't passable floor.
   const ch = LEVEL_1_MAP.layout[ty]?.[tx] || '.'
   if (ch === 'W' || ch === 'D' || ch === 'L') return
-  // Move it. Update key. The sidecar export will emit the new pos.
+
+  if (isNpcKey(dragState.key)) {
+    const npc = state.npcs.get(dragState.key)
+    if (!npc) return
+    if (tx === npc.x && ty === npc.y) return
+    npc.x = tx
+    npc.y = ty
+    render()
+    return
+  }
+  // Object drag (existing behavior).
+  const obj = state.objects.get(dragState.key)
+  if (!obj) return
+  if (tx === obj.x && ty === obj.y) return
   state.objects.delete(dragState.key)
   state.removed.delete(dragState.key)
   const newKey = `${tx},${ty}`
@@ -346,6 +483,10 @@ window.addEventListener('keydown', (e) => {
   }
 
   if (!state.selectedKey) return
+  // Object-only keyboard verbs (resize / flip / delete). NPCs only
+  // support drag in this MVP; their `levels` filter and `ambient`
+  // flag belong with the in-code design pass, not the map editor.
+  if (isNpcKey(state.selectedKey)) return
   const obj = state.objects.get(state.selectedKey)
   if (!obj) return
   let dirty = false
@@ -497,8 +638,38 @@ function updateExport() {
     `    { x: ${o.x}, y: ${o.y}, ch: '${o.ch.replace(/'/g, "\\'")}' },`
   )
 
+  // npcPlacements block — emitted only when at least one NPC has
+  // moved from its original tile. Preserves levels / ambient and
+  // original ordering. The output is the FULL replacement array;
+  // paste it over LEVEL_1_MAP.npcPlacements wholesale.
+  const orig = LEVEL_1_MAP.npcPlacements
+  const movedNpcs: PlacedNpc[] = []
+  for (const npc of state.npcs.values()) {
+    const o = orig[npc.origIndex]
+    if (!o) continue
+    if (npc.x !== o.tileX || npc.y !== o.tileY) movedNpcs.push(npc)
+  }
+  const sortedNpcs = [...state.npcs.values()].sort((a, b) => a.origIndex - b.origIndex)
+  const npcLines = sortedNpcs.map(n => {
+    const parts = [`npcId: '${n.npcId}'`, `tileX: ${n.x}`, `tileY: ${n.y}`]
+    if (n.levels) parts.push(`levels: [${n.levels.join(', ')}]`)
+    if (n.ambient) parts.push(`ambient: true`)
+    return `    { ${parts.join(', ')} },`
+  })
+
+  const npcBlock = movedNpcs.length === 0
+    ? '// (no NPCs moved — npcPlacements unchanged)'
+    : `// 3. NPC placements — ${movedNpcs.length} moved. Replace
+//    LEVEL_1_MAP.npcPlacements with the full block below. Note that
+//    this output strips the const-reference shorthand (LOBBY.x + 10
+//    → 14); reapply by hand if you want the source-readable form.
+
+npcPlacements: [
+${npcLines.join('\n')}
+],`
+
   exportBox.value =
-`// Paste these two blocks into src/content/maps/level1.ts.
+`// Paste these blocks into src/content/maps/level1.ts.
 //
 // 1. Replace LEVEL_1_MAP.tileMeta with this object (or merge if
 //    you also have build-time meta from RoomItem fields):
@@ -518,6 +689,8 @@ ${overrideLines.join('\n')}
 
 // then inside LEVEL_1_MAP, replace \`layout,\` with:
 //   layout: applyTileOverrides(layout, tileOverrides),
+
+${npcBlock}
 `
 }
 

@@ -623,6 +623,60 @@ export const DIALOGUES: Record<string, DialogueNode> = {
     text: "Radiology. I know it's near the cafeteria. I keep ending up at the cafeteria.",
   },
 
+  // Round 2 ambient — east wing, 2F, outdoor.
+  rad_tech_intro: {
+    id: 'rad_tech_intro',
+    speaker: 'Adaeze',
+    text: "Echo, MRI, two CTs since seven. Half are stat. The other half think they're stat.",
+  },
+  records_clerk_intro: {
+    id: 'records_clerk_intro',
+    speaker: 'Marisol',
+    text: "Whatever you're looking for is here. Whether you find it depends on what year it lived in.",
+  },
+  payer_rep_intro: {
+    id: 'payer_rep_intro',
+    speaker: 'Theresa',
+    text: "I'm contracted to be onsite three days a week. Tuesday I do nothing but call my own auto-attendant on speakerphone.",
+  },
+  payer_supervisor_intro: {
+    id: 'payer_supervisor_intro',
+    speaker: 'Diane',
+    text: "The medical policy hasn't changed. Your interpretation of it has.",
+  },
+  compliance_officer_intro: {
+    id: 'compliance_officer_intro',
+    speaker: 'Theo',
+    text: "Don't say 'breach' until I've finished the four-factor assessment. The word does work on its own.",
+  },
+  smoker_visitor_intro: {
+    id: 'smoker_visitor_intro',
+    speaker: 'Earl',
+    text: "Stepped out for one. Came back, room's empty, sheets stripped. They don't tell you anything if you're not in the room.",
+  },
+
+  // Round 3 ambient — smokers (outdoor-only), paramedic, lobby visitors.
+  smoker_outdoor_b_intro: {
+    id: 'smoker_outdoor_b_intro',
+    speaker: 'Sandra',
+    text: "I quit twice. Last time stuck three years. Then payroll switched the schedule and here I am.",
+  },
+  paramedic_intro: {
+    id: 'paramedic_intro',
+    speaker: 'Cassie',
+    text: "Transfer from West Coast. They paged ahead, but the bed's still showing dirty. I'll wait.",
+  },
+  flower_visitor_intro: {
+    id: 'flower_visitor_intro',
+    speaker: 'Greta',
+    text: "Lilies again. She always says they're fine. She knows I know they're not her favorite.",
+  },
+  elder_patient_intro: {
+    id: 'elder_patient_intro',
+    speaker: 'Mr. Beck',
+    text: "Sign says cardiology that way. Or it says cafeteria. Hard to tell. The arrow's at an angle.",
+  },
+
   dana_l10_intake_back: {
     id: 'dana_l10_intake_back',
     speaker: 'Dana',

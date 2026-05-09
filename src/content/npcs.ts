@@ -170,4 +170,92 @@ export const NPCS: Record<string, NPC> = {
     dialogueKey: 'noah_intro',
     description: 'Picking up a relative from radiology. Lost twice already.',
   },
+
+  // === Round 2 — populating the rooms added in the east-wing,
+  //     2F-floor, and outdoor PRs. Sprites map to NPC_SOURCES in
+  //     BootScene.ts. ===
+  rad_tech: {
+    id: 'rad_tech',
+    name: 'Adaeze',
+    department: 'Radiology',
+    spriteKey: 'npc_rad_tech',
+    dialogueKey: 'rad_tech_intro',
+    description: 'Imaging tech. Reads twenty studies before her first coffee.',
+  },
+  records_clerk: {
+    id: 'records_clerk',
+    name: 'Marisol',
+    department: 'Health Information',
+    spriteKey: 'npc_records_clerk',
+    dialogueKey: 'records_clerk_intro',
+    description: 'Knows which row of binders holds 2003 — by the smell.',
+  },
+  payer_rep: {
+    id: 'payer_rep',
+    name: 'Theresa',
+    department: 'Payer / Anthem',
+    spriteKey: 'npc_payer_rep',
+    dialogueKey: 'payer_rep_intro',
+    description: 'Provider relations rep, sitting in the office Mercy gave their payer liaisons.',
+  },
+  payer_supervisor: {
+    id: 'payer_supervisor',
+    name: 'Diane',
+    department: 'Payer / Aetna',
+    spriteKey: 'npc_payer_supervisor',
+    dialogueKey: 'payer_supervisor_intro',
+    description: 'Senior payer rep. Has the policy memorized and the empathy of a stop sign.',
+  },
+  compliance_officer: {
+    id: 'compliance_officer',
+    name: 'Theo',
+    department: 'Compliance / Privacy',
+    spriteKey: 'npc_compliance_officer',
+    dialogueKey: 'compliance_officer_intro',
+    description: 'HIPAA Privacy Officer. Will ask three questions before answering yours.',
+  },
+  smoker_visitor: {
+    id: 'smoker_visitor',
+    name: 'Earl',
+    department: 'Visitor',
+    spriteKey: 'npc_smoker_visitor',
+    dialogueKey: 'smoker_visitor_intro',
+    description: 'Stepped out for air four hours ago. Came back to find his wife discharged.',
+  },
+
+  // === Round 3 — npc16–20 sheets. Smokers are *outdoor-only*; the
+  //     name + sprite both signal it. Other characters (paramedic,
+  //     flower_visitor, elder_patient) work indoor or out. ===
+  smoker_outdoor_b: {
+    id: 'smoker_outdoor_b',
+    name: 'Sandra',
+    department: 'Visitor',
+    spriteKey: 'npc_smoker_outdoor_b',
+    dialogueKey: 'smoker_outdoor_b_intro',
+    description: 'On break. The third one this hour. Outdoor only — cigarette is part of the sprite.',
+  },
+  paramedic: {
+    id: 'paramedic',
+    name: 'Cassie',
+    department: 'EMS',
+    spriteKey: 'npc_paramedic',
+    dialogueKey: 'paramedic_intro',
+    description: 'Just rolled in with a transfer from the surgical center. Wants the radio code right.',
+  },
+  flower_visitor: {
+    id: 'flower_visitor',
+    name: 'Greta',
+    department: 'Visitor',
+    spriteKey: 'npc_flower_visitor',
+    dialogueKey: 'flower_visitor_intro',
+    description: 'Visiting her sister, room 412. Brings a fresh arrangement every Friday.',
+  },
+  elder_patient: {
+    id: 'elder_patient',
+    name: 'Mr. Beck',
+    department: 'Patient',
+    spriteKey: 'npc_elder_patient',
+    dialogueKey: 'elder_patient_intro',
+    description: "Can't read the wayfinding signs without his good glasses. Has the wrong glasses.",
+  },
 }
