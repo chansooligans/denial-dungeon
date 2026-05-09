@@ -75,6 +75,15 @@ const NPC_SOURCES: Record<string, string> = {
   payer_supervisor:   'npc14_3', // 2F Payer: woman in navy + bun (admin)
   compliance_officer: 'npc11_3', // 2F Compliance: silver-haired in blazer
   smoker_visitor:     'npc14_4', // Outdoor: bearded man in cap
+  // === Round 3 — sheets npc16.png … npc20.png (May 2026 batch 2).
+  //     Outdoor / visitor / security focus. NOTE: any sprite with a
+  //     visible cigarette is *outdoor-only* per the design brief —
+  //     smoker_outdoor_b uses such a pose. Don't place it inside a
+  //     hospital room. ===
+  smoker_outdoor_b: 'npc20_2', // Outdoor smoker — woman in overalls, cigarette
+  paramedic:        'npc19_1', // Outdoor: female EMT with EMS bag
+  flower_visitor:   'npc17_1', // Lobby: visitor with bouquet
+  elder_patient:    'npc20_3', // Lobby: elderly bearded man with cane
 }
 
 // OBJECT_SOURCES extracted to its own module so the map editor can

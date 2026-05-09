@@ -641,9 +641,11 @@ export const LEVEL_1_MAP: MapDef = {
     //     case. Tweak as the world fills in. ===
 
     // Lobby — entrance + waiting area
-    { npcId: 'walter',        tileX: LOBBY.x + 18, tileY: LOBBY.y + 5, ambient: true },
-    { npcId: 'noah',          tileX: LOBBY.x + 14, tileY: LOBBY.y + 7, ambient: true },
-    { npcId: 'officer_reyes', tileX: LOBBY.x + 22, tileY: LOBBY.y + 2, ambient: true },
+    { npcId: 'walter',         tileX: LOBBY.x + 18, tileY: LOBBY.y + 5, ambient: true },
+    { npcId: 'noah',           tileX: LOBBY.x + 14, tileY: LOBBY.y + 7, ambient: true },
+    { npcId: 'officer_reyes',  tileX: LOBBY.x + 22, tileY: LOBBY.y + 2, ambient: true },
+    { npcId: 'flower_visitor', tileX: LOBBY.x + 4,  tileY: LOBBY.y + 5, ambient: true },
+    { npcId: 'elder_patient',  tileX: LOBBY.x + 7,  tileY: LOBBY.y + 7, ambient: true },
 
     // PFS — moved here from the lobby; dev (orderly) reads as
     // back-office staff so the south wing makes more sense.
@@ -667,7 +669,11 @@ export const LEVEL_1_MAP: MapDef = {
     { npcId: 'payer_supervisor',   tileX: PAYER.x + 12,     tileY: PAYER.y + 3,      ambient: true },
     { npcId: 'compliance_officer', tileX: COMPLIANCE.x + 6, tileY: COMPLIANCE.y + 5, ambient: true },
 
-    // Outdoor — sparse for now; one visitor on a smoke break.
+    // Outdoor — parking lot ambient. Smoker NPCs are *outdoor-only*
+    // by design (cigarette is part of the sprite); placing them
+    // indoors would read as a HIPAA violation, not atmosphere.
     { npcId: 'smoker_visitor',     tileX: OUTDOOR.x + 25,   tileY: OUTDOOR.y + 10,   ambient: true },
+    { npcId: 'smoker_outdoor_b',   tileX: OUTDOOR.x + 35,   tileY: OUTDOOR.y + 14,   ambient: true },
+    { npcId: 'paramedic',          tileX: OUTDOOR.x + 8,    tileY: OUTDOOR.y + 14,   ambient: true },
   ],
 }

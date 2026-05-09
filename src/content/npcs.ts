@@ -222,4 +222,40 @@ export const NPCS: Record<string, NPC> = {
     dialogueKey: 'smoker_visitor_intro',
     description: 'Stepped out for air four hours ago. Came back to find his wife discharged.',
   },
+
+  // === Round 3 — npc16–20 sheets. Smokers are *outdoor-only*; the
+  //     name + sprite both signal it. Other characters (paramedic,
+  //     flower_visitor, elder_patient) work indoor or out. ===
+  smoker_outdoor_b: {
+    id: 'smoker_outdoor_b',
+    name: 'Sandra',
+    department: 'Visitor',
+    spriteKey: 'npc_smoker_outdoor_b',
+    dialogueKey: 'smoker_outdoor_b_intro',
+    description: 'On break. The third one this hour. Outdoor only — cigarette is part of the sprite.',
+  },
+  paramedic: {
+    id: 'paramedic',
+    name: 'Cassie',
+    department: 'EMS',
+    spriteKey: 'npc_paramedic',
+    dialogueKey: 'paramedic_intro',
+    description: 'Just rolled in with a transfer from the surgical center. Wants the radio code right.',
+  },
+  flower_visitor: {
+    id: 'flower_visitor',
+    name: 'Greta',
+    department: 'Visitor',
+    spriteKey: 'npc_flower_visitor',
+    dialogueKey: 'flower_visitor_intro',
+    description: 'Visiting her sister, room 412. Brings a fresh arrangement every Friday.',
+  },
+  elder_patient: {
+    id: 'elder_patient',
+    name: 'Mr. Beck',
+    department: 'Patient',
+    spriteKey: 'npc_elder_patient',
+    dialogueKey: 'elder_patient_intro',
+    description: "Can't read the wayfinding signs without his good glasses. Has the wrong glasses.",
+  },
 }

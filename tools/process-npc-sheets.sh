@@ -60,5 +60,14 @@ run_grid "$SRC/npc13.png" npc13 5
 run_grid "$SRC/npc14.png" npc14 5
 run_grid "$SRC/npc15.png" npc15 5
 
+# Round 3 — outdoor / visitor / security focus (May 2026 batch 2).
+# Includes three smoker poses (npc16_1, npc18_1, npc20_2) which by
+# design are *outdoor-only* placements per the original brief.
+run_grid "$SRC/npc16.png" npc16
+run_grid "$SRC/npc17.png" npc17
+run_grid "$SRC/npc18.png" npc18
+run_grid "$SRC/npc19.png" npc19
+run_grid "$SRC/npc20.png" npc20
+
 echo
 echo "✓ done — outputs in $OUT/ ($(ls "$OUT"/*.png 2>/dev/null | wc -l | xargs) PNGs)"

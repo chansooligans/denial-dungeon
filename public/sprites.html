@@ -589,6 +589,10 @@ const ACTIVE_NPC_KEYS = new Set([
   // Ambient populace — round 2 (npc6–15 sheets, May-2026 batch)
   'rad_tech', 'records_clerk', 'payer_rep', 'payer_supervisor',
   'compliance_officer', 'smoker_visitor',
+  // Ambient populace — round 3 (npc16–20 sheets, May-2026 batch 2)
+  // NOTE: smoker_outdoor_b is *outdoor-only* — cigarette is part
+  // of the sprite, indoor placement reads wrong.
+  'smoker_outdoor_b', 'paramedic', 'flower_visitor', 'elder_patient',
 ]);
 
 /** Return 'active' | 'inactive' | 'future' for an object texture key. */
@@ -671,6 +675,13 @@ const sheets = [
   { name: 'npc13', rows: 5 },
   { name: 'npc14', rows: 5 },
   { name: 'npc15', rows: 5 },
+  // Round 3 — May-2026 batch 2 (outdoor / visitor / security focus,
+  // includes 3 *outdoor-only* smoker poses).
+  { name: 'npc16', rows: 4 },
+  { name: 'npc17', rows: 4 },
+  { name: 'npc18', rows: 4 },
+  { name: 'npc19', rows: 4 },
+  { name: 'npc20', rows: 4 },
 ];
 
 // Per-slot suggested custom NPC for the "auto-fill remaining" button.
@@ -771,6 +782,41 @@ const SUGGESTED_CUSTOMS = {
   'npc15_2': { key: 'beatrice',     label: 'Beatrice — clerk (tan top, bun)' },
   'npc15_3': { key: 'andre',        label: 'Andre — admin (blue button-down)' },
   'npc15_4': { key: 'payer_rep',    label: 'Theresa — payer rep (headset, phone-bank)' },
+
+  // === Round 3 — npc16.png … npc20.png (May-2026 batch 2). Outdoor-
+  //     focused; three slots are smokers and are flagged in their
+  //     labels as outdoor-only. Indoor placement of those reads as
+  //     a HIPAA violation, not atmosphere. ===
+
+  // npc16 (4 rows)
+  'npc16_0': { key: 'security_d',     label: 'Officer (dark navy, alt)' },
+  'npc16_1': { key: 'smoker_outdoor_a_alt', label: 'Smoker — woman in lavender coat (OUTDOOR ONLY)' },
+  'npc16_2': { key: 'leo',            label: 'Leo — visitor (dark trench, coffee)' },
+  'npc16_3': { key: 'casual_man',     label: 'Visitor (bearded, blue jacket + cap)' },
+
+  // npc17 (4 rows)
+  'npc17_0': { key: 'officer_dress',  label: 'Officer (formal cap, dress uniform)' },
+  'npc17_1': { key: 'flower_visitor', label: 'Greta — visitor with bouquet' },
+  'npc17_2': { key: 'bike_emt',       label: 'Bike EMT (helmet, green jacket, EMS box)' },
+  'npc17_3': { key: 'visitor_gift',   label: 'Visitor with stuffed-toy / gift' },
+
+  // npc18 (4 rows)
+  'npc18_0': { key: 'maintenance_b',  label: 'Maintenance worker (dark jumpsuit, coffee)' },
+  'npc18_1': { key: 'smoker_outdoor_c_alt', label: 'Smoker — man in blue button-down (OUTDOOR ONLY)' },
+  'npc18_2': { key: 'maintenance_c',  label: 'Maintenance — gray jumpsuit + tool' },
+  'npc18_3': { key: 'officer_bodycam', label: 'Officer (body cam, cap, alt)' },
+
+  // npc19 (4 rows)
+  'npc19_0': { key: 'phone_visitor',  label: 'Visitor (dark coat, on phone)' },
+  'npc19_1': { key: 'paramedic',      label: 'Cassie — EMT/paramedic (EMS bag)' },
+  'npc19_2': { key: 'visitor_bags',   label: 'Visitor with shopping bag (olive coat)' },
+  'npc19_3': { key: 'bike_courier',   label: 'Bike courier (helmet, blue, satchel)' },
+
+  // npc20 (4 rows)
+  'npc20_0': { key: 'veteran',        label: 'Veteran — fatigues, cap, backpack' },
+  'npc20_1': { key: 'security_e',     label: 'Security — black hoodie (urban, alt)' },
+  'npc20_2': { key: 'smoker_outdoor_b', label: 'Sandra — woman in overalls (OUTDOOR ONLY)' },
+  'npc20_3': { key: 'elder_patient',  label: 'Mr. Beck — elderly patient with cane' },
 };
 
 // Mapping: slot ("npc1_0") → game NPC key ("dana"), or unset
