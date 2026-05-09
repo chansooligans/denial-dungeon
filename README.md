@@ -2,7 +2,9 @@
 
 A turn-based RPG that teaches the US healthcare revenue cycle. Walk through a hospital, talk to billing staff, fight claim denials, and discover the surreal "Waiting Room" beneath the building where lost claims go.
 
-**[Play it](https://chansooligans.github.io/the-waiting-room/)** (GitHub Pages) &middot; **[Prototype catalog](https://chansooligans.github.io/the-waiting-room/prototypes.html)** (encounter-redesign sketches)
+**[Play it](https://chansooligans.github.io/the-waiting-room/)** (GitHub Pages) &middot; **[Case Prototypes](https://chansooligans.github.io/the-waiting-room/prototypes.html)** (one playable sketch per Case)
+
+> **Glossary:** a **Case** is the player-side problem they solve in a single encounter — what older notes called a "problem." A **Case Prototype** is one self-contained HTML page exercising that Case end-to-end. The catalog above is the index of all of them.
 
 ## What You'll Learn
 
@@ -29,7 +31,7 @@ The game progressively teaches across 10 levels:
 - **ESC** button (top-right) to skip intro / flee battle
 - Battle tools, dialogue choices, and obstacle markers all respond to taps
 
-Walk through the hospital lobby, talk to NPCs in offices, and (when an NPC hands you a case) descend into The Waiting Room. Engage the pulsing purple obstacle markers to fight claim denials in turn-based combat. The mechanic varies per archetype: some are HP fights, some are case-file investigations against a real CMS-1500, some are races against a timely-filing clock.
+Walk through the hospital lobby, talk to NPCs in offices, and (when an NPC hands you a Case) descend into The Waiting Room. Engage the pulsing purple obstacle markers to fight claim denials in turn-based combat. The mechanic varies per Case archetype: some are HP fights, some are case-file investigations against a real CMS-1500, some are races against a timely-filing clock — see the [Case Prototypes catalog](https://chansooligans.github.io/the-waiting-room/prototypes.html) for one playable sketch of each.
 
 ## Tech Stack
 
@@ -119,7 +121,7 @@ Everything ships alongside the game on the same Vite + GitHub Pages deploy:
 - **`/map-editor.html`** — Visual editor for `level1.ts`'s placed objects + NPCs. Drag to move, F flips an object, R cycles an NPC's facing. Outputs paste-back `tileMeta` + `tileOverrides` + `npcPlacements`.
 - **`/intro-editor.html`** — Beat-by-beat intro cinematic editor. Voiceover scrubber per text beat, drag-and-drop cover art, "open game at this beat" deep-link, paste-back TS export.
 - **`/sprites.html`** — Sprite library + mapping UI. NPC tab grouped by character type (Doctors, Nurses & Techs, etc.) with active-in-game badges and per-cell remap dropdowns.
-- **`/prototypes.html`** — Catalog of encounter-redesign prototypes (one HTML per archetype).
+- **`/prototypes.html`** — **Case Prototypes** catalog. One playable HTML per Case (Wraith, Bundle, Reaper, …). The URL stays `prototypes.html` for link stability; the visible name is "Case Prototypes."
 - **In-game dev panel** — backtick (`~`) in any scene. Save presets per level, jump-to-room teleports, chart-pull toggles, copy/paste/clear save. Auto-on in `npm run dev`; append `?dev=1` on the deployed site if you need it.
 
 URL deep-link: `/?introBeat=N` jumps the cinematic to beat `N` (used by the intro editor's "open at this beat" button).

@@ -86,11 +86,15 @@ rendering. `ClaimSheet` renders `PatientCase.claim` with
 prototypes settle on the next mechanics shape — when that happens, the
 runtime adopts it.
 
-## Prototype catalog
-Twelve encounter-redesign prototypes live in `src/<encounter>-prototype/`,
-each shipping its own static page at `/<encounter>-prototype.html`. They
-drop HP / tools-as-damage / multiple-choice in favor of a real CMS-1500
-form + verb-space tuned per encounter. Catalog index at `/prototypes.html`.
+## Case Prototypes
+A **Case** is the player-side problem they solve in a single encounter
+(formerly called a "problem"). A **Case Prototype** is the playable
+HTML page exercising that Case end-to-end. Twelve are shipped in
+`src/<encounter>-prototype/` (each at `/<encounter>-prototype.html`) and
+fifteen are planned. They drop HP / tools-as-damage / multiple-choice
+in favor of a real CMS-1500 form + verb-space tuned per Case. Catalog
+index at `/prototypes.html` (URL kept for link stability; the visible
+title is "Case Prototypes").
 
 | Level | Prototype           | District       | Verb-space                       |
 |-------|---------------------|----------------|----------------------------------|
