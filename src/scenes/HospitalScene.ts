@@ -120,6 +120,10 @@ interface NPCSprite {
   label: Phaser.GameObjects.Text
   tileX: number
   tileY: number
+  /** Current rendered facing — set when dynamic-facing rooms swap
+   *  the texture toward the player. Tracks the active suffix on
+   *  `npc_<id>_<dir>` so we only call setTexture when it changes. */
+  currentFacing?: 'down' | 'up' | 'left' | 'right'
 }
 
 export class HospitalScene extends Phaser.Scene {
@@ -1150,6 +1154,7 @@ export class HospitalScene extends Phaser.Scene {
     }
 
     this.checkNpcProximity()
+    this.updateNPCFacing()
   }
 
   /** Play the walk-cycle animation matching the direction of intent.
@@ -1581,6 +1586,60 @@ export class HospitalScene extends Phaser.Scene {
       // Sprite origin is (0.5, 1), so sprite.y is the bottom edge.
       // Prompt sits a fixed gap above the top of the sprite.
       this.interactPrompt.setPosition(closest.sprite.x, closest.sprite.y - closest.sprite.displayHeight - 8)
+    }
+  }
+
+  /** NPCs in rooms listed in `DYNAMIC_FACING_ROOMS` swap their
+   *  rendered direction to face the player when she's nearby — uses
+   *  the `_left/_right/_up/_down` directional textures BootScene
+   *  loads for every NPC. Outside the player's range, NPCs revert to
+   *  their default forward (down) facing.
+   *
+   *  Starting with PATIENT SERVICES only as a feel-test. Extending
+   *  to more rooms is just adding entries to the set below. */
+  private static readonly DYNAMIC_FACING_ROOMS = new Set([
+    'PATIENT SERVICES',
+  ])
+  private static readonly DYNAMIC_FACING_RANGE_TILES = 6
+
+  private updateNPCFacing() {
+    const rooms = this.mapDef.rooms ?? []
+    const rangeSq =
+      HospitalScene.DYNAMIC_FACING_RANGE_TILES *
+      HospitalScene.DYNAMIC_FACING_RANGE_TILES
+
+    for (const ns of this.npcSprites) {
+      // Find the room containing this NPC's tile.
+      const room = rooms.find(r =>
+        ns.tileX >= r.x && ns.tileX < r.x + r.w &&
+        ns.tileY >= r.y && ns.tileY < r.y + r.h,
+      )
+      if (!room || !HospitalScene.DYNAMIC_FACING_ROOMS.has(room.name)) continue
+
+      const dx = this.playerTileX - ns.tileX
+      const dy = this.playerTileY - ns.tileY
+      const distSq = dx * dx + dy * dy
+
+      // Compute desired facing. Out-of-range = revert to forward
+      // (down) so NPCs settle to a default pose when the player
+      // leaves the room.
+      let desired: 'down' | 'up' | 'left' | 'right'
+      if (distSq > rangeSq) {
+        desired = 'down'
+      } else if (Math.abs(dx) > Math.abs(dy)) {
+        desired = dx < 0 ? 'left' : 'right'
+      } else if (dy === 0 && dx === 0) {
+        // Player on top of the NPC tile (shouldn't happen — NPCs
+        // are blockers — but guard anyway).
+        desired = 'down'
+      } else {
+        desired = dy < 0 ? 'up' : 'down'
+      }
+
+      if (ns.currentFacing !== desired) {
+        ns.currentFacing = desired
+        ns.sprite.setTexture(`npc_${ns.npc.id}_${desired}`)
+      }
     }
   }
 
