@@ -654,7 +654,11 @@ export const LEVEL_1_MAP: MapDef = {
     { npcId: 'dr_priya',      tileX: MAIN_HUB.x + 9,  tileY: MAIN_HUB.y + 6, ambient: true },
     { npcId: 'dr_ethan',      tileX: MAIN_HUB.x + 14, tileY: MAIN_HUB.y + 8, ambient: true },
 
-    // Billing — back-office facilities
-    { npcId: 'joe',           tileX: BILLING.x + 5,  tileY: BILLING.y + 5, ambient: true },
+    // East wing — ambient atmosphere staff. Pharmacy gets liana
+    // (orphan placement, finally seated); Medical Records gets joe
+    // (moved from billing — janitor-in-chart-room reads better than
+    // janitor-in-claim-queue and his dust line fits the binders).
+    { npcId: 'liana',         tileX: PHARMACY.x + 6,    tileY: PHARMACY.y + 4,    ambient: true },
+    { npcId: 'joe',           tileX: MED_RECORDS.x + 7, tileY: MED_RECORDS.y + 5, ambient: true },
   ],
 }

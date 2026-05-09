@@ -109,10 +109,10 @@ export const NPCS: Record<string, NPC> = {
   liana: {
     id: 'liana',
     name: 'Liana',
-    department: 'Nursing',
+    department: 'Pharmacy',
     spriteKey: 'npc_liana',
     dialogueKey: 'liana_intro',
-    description: 'Six discharges before lunch. She tracks them in a paper notebook.',
+    description: "Floor pharmacist. Walks the formulary like it's a script.",
   },
   dr_priya: {
     id: 'dr_priya',

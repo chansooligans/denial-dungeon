@@ -557,7 +557,7 @@ export const DIALOGUES: Record<string, DialogueNode> = {
   liana_intro: {
     id: 'liana_intro',
     speaker: 'Liana',
-    text: "Six discharges before lunch. Three of them still owe paperwork.",
+    text: "Pharmacy ran the prior auth twice. Both came back 'in process.' That's not a status. That's a holding pattern.",
   },
   dr_priya_intro: {
     id: 'dr_priya_intro',
@@ -587,7 +587,7 @@ export const DIALOGUES: Record<string, DialogueNode> = {
   joe_intro: {
     id: 'joe_intro',
     speaker: 'Joe',
-    text: "Watch your step. Floor's wet. Always.",
+    text: "Dust on these binders is older than the binders. Records doesn't throw anything out. Can't.",
   },
   noah_intro: {
     id: 'noah_intro',
