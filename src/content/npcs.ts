@@ -258,4 +258,46 @@ export const NPCS: Record<string, NPC> = {
     dialogueKey: 'elder_patient_intro',
     description: "Can't read the wayfinding signs without his good glasses. Has the wrong glasses.",
   },
+
+  // === Round 4 — cafeteria staff + a couple of pool back-fills. ===
+  cafeteria_worker: {
+    id: 'cafeteria_worker',
+    name: 'Manny',
+    department: 'Cafeteria',
+    spriteKey: 'npc_cafeteria_worker',
+    dialogueKey: 'cafeteria_worker_intro',
+    description: 'Runs the hot line. Knows what every doctor orders without looking up.',
+  },
+  cashier: {
+    id: 'cashier',
+    name: 'Yvette',
+    department: 'Cafeteria',
+    spriteKey: 'npc_cashier',
+    dialogueKey: 'cashier_intro',
+    description: 'Cashier. Will validate parking even if you forgot to ask.',
+  },
+  server: {
+    id: 'server',
+    name: 'Reggie',
+    department: 'Cafeteria',
+    spriteKey: 'npc_server',
+    dialogueKey: 'server_intro',
+    description: 'Bussing tables since 6 AM. Coffee in one hand, tray in the other.',
+  },
+  bike_emt: {
+    id: 'bike_emt',
+    name: 'Chase',
+    department: 'EMS',
+    spriteKey: 'npc_bike_emt',
+    dialogueKey: 'bike_emt_intro',
+    description: "Bike EMT. Faster through downtown traffic than the rig — sometimes.",
+  },
+  dr_park: {
+    id: 'dr_park',
+    name: 'Dr. Park',
+    department: 'Internal Medicine',
+    spriteKey: 'npc_dr_park',
+    dialogueKey: 'dr_park_intro',
+    description: 'Hospitalist. Reads charts faster than she reads the news.',
+  },
 }

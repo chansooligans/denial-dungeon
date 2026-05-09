@@ -77,6 +77,10 @@ const MED_RECORDS = { x: 51, y: 37, w: 14, h: 10 } // chart room
 const HIM      = { x: 4,  y: 50, w: 14, h: 10 } // coding / CDI floor
 const BILLING  = { x: 22, y: 50, w: 14, h: 10 } // clearinghouse / claim queue
 const PFS      = { x: 40, y: 50, w: 16, h: 10 } // patient financial services / phones
+// Cafeteria + lounge — east of PFS, fills the empty space south of
+// the east wing. Big-ish (22×13) because it's a public space with
+// multiple tables, a service counter, vending, and lots of plants.
+const CAFETERIA = { x: 56, y: 50, w: 22, h: 13 }
 
 // === Outdoor — parking lot, reached via 'O' teleport from the lobby ===
 const OUTDOOR  = { x: 4,  y: 65, w: 50, h: 22 } // big sparse exterior
@@ -351,6 +355,48 @@ const { layout, tileMeta } = buildMap({
         { dx: 13, dy: 7, ch: 'P' },
       ],
     },
+    {
+      id: 'cafeteria',
+      ...CAFETERIA,
+      // North door at offset 4 → world (60, 50). Connects to the
+      // south-wing trough (extended east in corridors[]).
+      doors: [{ side: 'N', offset: 4 }],
+      // Public lounge / cafeteria. Service counter on the north
+      // side, two rows of dining tables (c+h pairs), a wall of
+      // vending + water cooler on the south, plants in the corners.
+      items: [
+        // Service counter — north interior row, west cluster.
+        { dx: 1, dy: 1, ch: 'R' }, { dx: 2, dy: 1, ch: 'R' }, { dx: 3, dy: 1, ch: 'R' },
+        { dx: 4, dy: 1, ch: 'R' },
+        // Hot-line / steam tray — using cabinet glyph as stand-in.
+        { dx: 6, dy: 1, ch: 'F' },
+        // Whiteboard with daily menu, just east of the counter.
+        { dx: 14, dy: 1, ch: 'B' },
+        // Bulletin (community board) on the north wall.
+        { dx: 17, dy: 1, ch: 'b' },
+        // Dining tables — two rows of paired desk + chair.
+        // Row 1
+        { dx: 2,  dy: 4, ch: 'c' }, { dx: 2,  dy: 5, ch: 'h' },
+        { dx: 6,  dy: 4, ch: 'c' }, { dx: 6,  dy: 5, ch: 'h' },
+        { dx: 10, dy: 4, ch: 'c' }, { dx: 10, dy: 5, ch: 'h' },
+        { dx: 14, dy: 4, ch: 'c' }, { dx: 14, dy: 5, ch: 'h' },
+        { dx: 18, dy: 4, ch: 'c' }, { dx: 18, dy: 5, ch: 'h' },
+        // Row 2 — chairs facing the other way for variety
+        { dx: 2,  dy: 8, ch: 'h' }, { dx: 2,  dy: 9, ch: 'c' },
+        { dx: 6,  dy: 8, ch: 'h' }, { dx: 6,  dy: 9, ch: 'c' },
+        { dx: 14, dy: 8, ch: 'h' }, { dx: 14, dy: 9, ch: 'c' },
+        { dx: 18, dy: 8, ch: 'h' }, { dx: 18, dy: 9, ch: 'c' },
+        // South wall: vending row + water cooler + plants
+        { dx: 1,  dy: 11, ch: 'V' },
+        { dx: 4,  dy: 11, ch: 'V' },
+        { dx: 8,  dy: 11, ch: 'w' },
+        { dx: 12, dy: 11, ch: 'V' },
+        { dx: 16, dy: 11, ch: 'V' },
+        // Corner plants
+        { dx: 19, dy: 1,  ch: 'P' },
+        { dx: 19, dy: 11, ch: 'P' },
+      ],
+    },
     // ===== Outdoor — parking lot =====
     {
       id: 'outdoor',
@@ -498,8 +544,8 @@ const { layout, tileMeta } = buildMap({
     },
     {
       points: [
-        [HIM.x + 7,    SW_TROUGH_Y], // east-west cross-corridor, anchored to HIM's door col
-        [PFS.x + 8,    SW_TROUGH_Y], // ... extends to PFS's door col
+        [HIM.x + 7,         SW_TROUGH_Y], // east-west cross-corridor, anchored to HIM's door col
+        [CAFETERIA.x + 4,   SW_TROUGH_Y], // ... extended east to the Cafeteria N door col (was PFS.x+8)
       ],
       width: 1,
     },
@@ -586,6 +632,7 @@ export const LEVEL_1_MAP: MapDef = {
     { name: 'HIM / CODING',     shortName: 'HIM',  ...HIM },
     { name: 'BILLING',          shortName: 'BIL',  ...BILLING },
     { name: 'PFS / PHONES',     shortName: 'PFS',  ...PFS },
+    { name: 'CAFETERIA',        shortName: 'CAF',  ...CAFETERIA },
     { name: 'RADIOLOGY',        shortName: 'RAD',  ...RADIOLOGY },
     { name: 'PHARMACY',         shortName: 'PHA',  ...PHARMACY },
     { name: 'MEDICAL RECORDS',  shortName: 'REC',  ...MED_RECORDS },
@@ -724,8 +771,26 @@ export const LEVEL_1_MAP: MapDef = {
     //  - Sandra looks 'right' (different direction from Earl for
     //    visual variety).
     //  - Cassie the paramedic looks 'right' across the lot.
+    //  - Chase the bike EMT just rolled in on his bike — looks
+    //    'left' away from Cassie's rig.
     { npcId: 'smoker_visitor',   tileX: OUTDOOR.x + 25, tileY: OUTDOOR.y + 10, facing: 'left',  ambient: true },
     { npcId: 'smoker_outdoor_b', tileX: OUTDOOR.x + 35, tileY: OUTDOOR.y + 14, facing: 'right', ambient: true },
     { npcId: 'paramedic',        tileX: OUTDOOR.x + 8,  tileY: OUTDOOR.y + 14, facing: 'right', ambient: true },
+    { npcId: 'bike_emt',         tileX: OUTDOOR.x + 14, tileY: OUTDOOR.y + 8,  facing: 'left',  ambient: true },
+
+    // Cafeteria — service staff behind the counter, a server
+    // working the floor.
+    //  - Manny mans the hot line (north-side counter), facing
+    //    'down' toward the patron-side approach.
+    //  - Yvette sits at the register a little east, facing 'left'
+    //    toward the counter line.
+    //  - Reggie roams the dining floor, facing 'down'.
+    { npcId: 'cafeteria_worker', tileX: CAFETERIA.x + 3,  tileY: CAFETERIA.y + 2, ambient: true },
+    { npcId: 'cashier',          tileX: CAFETERIA.x + 9,  tileY: CAFETERIA.y + 2, facing: 'left', ambient: true },
+    { npcId: 'server',           tileX: CAFETERIA.x + 11, tileY: CAFETERIA.y + 7, ambient: true },
+
+    // Main Hub — extra hospitalist, joins the existing physician
+    // crowd. Faces 'right' toward the hub bulletin / colleagues.
+    { npcId: 'dr_park',          tileX: MAIN_HUB.x + 3,  tileY: MAIN_HUB.y + 2, facing: 'right', ambient: true },
   ],
 }

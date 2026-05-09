@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Dev tools — The Waiting Room</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <style>
+    body {
+      margin: 0; padding: 32px;
+      background: #0e1116; color: #d0d8e0;
+      font: 14px/1.5 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      max-width: 880px;
+    }
+    h1 { color: #7ee2c1; font-size: 22px; margin: 0 0 4px; }
+    .lede {
+      color: #8b95a5;
+      max-width: 720px;
+      margin: 4px 0 28px;
+    }
+    h2 {
+      color: #f4d06f;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin: 28px 0 8px;
+      padding-top: 16px;
+      border-top: 1px dashed #2a323d;
+    }
+    h2:first-of-type { border-top: none; padding-top: 0; }
+    .card {
+      display: block;
+      background: #15191f;
+      border: 1px solid #2a323d;
+      border-radius: 6px;
+      padding: 14px 18px;
+      margin-bottom: 10px;
+      text-decoration: none;
+      color: inherit;
+      transition: border-color 80ms, transform 80ms;
+    }
+    .card:hover {
+      border-color: #7ee2c1;
+      transform: translateY(-1px);
+    }
+    .card .title {
+      color: #7ee2c1;
+      font-weight: 700;
+      font-size: 14px;
+    }
+    .card .path {
+      color: #5a6a7a;
+      font-size: 11px;
+      margin-left: 8px;
+    }
+    .card .desc {
+      color: #b8c0cc;
+      font-size: 12px;
+      margin-top: 4px;
+      line-height: 1.45;
+    }
+    .meta {
+      color: #5a6a7a;
+      font-size: 11px;
+      margin-top: 24px;
+      padding-top: 12px;
+      border-top: 1px dashed #2a323d;
+    }
+    a.back {
+      color: #7ee2c1;
+      text-decoration: none;
+      font-size: 12px;
+    }
+    a.back:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <h1>Dev tools</h1>
+  <p class="lede">
+    Authoring + diagnostic pages that ship alongside the game on
+    the same Vite + GitHub Pages deploy. Bookmark this page; it's
+    the entry point for everything that isn't the game itself.
+  </p>
+
+  <h2>Authoring</h2>
+
+  <a class="card" href="/map-editor.html">
+    <span class="title">Map editor</span>
+    <span class="path">/map-editor.html</span>
+    <div class="desc">
+      Visual editor for <code>level1.ts</code>'s placed objects + NPCs.
+      Drag to move, click to select, F flips an object, R cycles an
+      NPC's facing direction. Resize objects with +/-/[/]. Click empty
+      floor to open the sprite palette. Outputs a paste-back
+      <code>tileMeta</code> + <code>tileOverrides</code> + <code>npcPlacements</code>
+      snippet.
+    </div>
+  </a>
+
+  <a class="card" href="/intro-editor.html">
+    <span class="title">Intro editor</span>
+    <span class="path">/intro-editor.html</span>
+    <div class="desc">
+      Beat-by-beat intro cinematic editor. Timeline of every beat,
+      voiceover audio scrubber per text beat, drag-and-drop replacement
+      for cover art, "open game at this beat" deep-link, paste-back TS
+      export.
+    </div>
+  </a>
+
+  <h2>Inspection</h2>
+
+  <a class="card" href="/sprites.html">
+    <span class="title">Sprite library</span>
+    <span class="path">/sprites.html</span>
+    <div class="desc">
+      Inventory of every NPC and object sprite. Tabs for Chloe / NPCs /
+      Objects. NPC tab grouped by character type (Doctors, Nurses &
+      Techs, Admin, etc.) with active-in-game badges and per-cell
+      remap dropdowns. Object tab has its own category sub-tabs.
+    </div>
+  </a>
+
+  <a class="card" href="/prototypes.html">
+    <span class="title">Prototype catalog</span>
+    <span class="path">/prototypes.html</span>
+    <div class="desc">
+      One-per-archetype encounter-redesign sketches. Each prototype
+      (Wraith, Bundle, Reaper, Gatekeeper, Fog, Hydra, Swarm, Specter,
+      Doppelgänger, Lighthouse, Surprise Bill, Audit Boss) is its
+      own playable HTML. Catalog filters by district + level.
+    </div>
+  </a>
+
+  <h2>In-game dev panel</h2>
+
+  <a class="card" href="/">
+    <span class="title">Game (with dev panel)</span>
+    <span class="path">/?dev=1</span>
+    <div class="desc">
+      Press <code>~</code> (backtick) in any scene to open the dev
+      panel: state inspector, save presets per level (skip into L4
+      coding-bundle, L8 phone-bank, L10 audit), jump-to-room teleports,
+      jump-to-WR-boss button, chart-pull toggles, copy/paste/clear save.
+      Auto-on in <code>npm run dev</code>; append <code>?dev=1</code>
+      on the deployed site if you need it.
+    </div>
+  </a>
+
+  <h2>Reference docs</h2>
+
+  <a class="card" href="https://github.com/chansooligans/the-waiting-room/blob/main/reference/sprite-cleanup.md">
+    <span class="title">Sprite cleanup runbook</span>
+    <span class="path">reference/sprite-cleanup.md</span>
+    <div class="desc">
+      How to take a freshly-generated NPC contact sheet from ChatGPT /
+      LoRA and turn it into the per-cell 64×64 PNGs the game loads.
+      Pipeline overview, the warm-vs-cool chroma trap, parameter
+      cheat-sheet, recipe for re-running a comparison sweep.
+    </div>
+  </a>
+
+  <p class="meta">
+    URL deep-link: <code>/?introBeat=N</code> jumps the cinematic to
+    beat N (used by the intro editor's "open at this beat" button).
+  </p>
+
+  <p>
+    <a class="back" href="/">← back to game</a>
+  </p>
+</body>
+</html>

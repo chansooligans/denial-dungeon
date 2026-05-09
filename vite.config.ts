@@ -97,6 +97,10 @@ export default defineConfig({
         // (BootScene reads the URL param and forwards to IntroScene).
         // Lives at /intro-editor.html.
         introEditor: resolve(__dirname, 'intro-editor.html'),
+        // Dev tools index — single page that links every authoring +
+        // diagnostic page in one place. Bookmark this. Lives at
+        // /dev.html on GitHub Pages.
+        dev: resolve(__dirname, 'dev.html'),
       },
       output: {
         // Pull Phaser into its own vendor chunk. The framework is the

@@ -65,6 +65,27 @@
     .cell.door  { background: #4a3d24; }
     .cell.floor { background: #15191f; border: 1px solid #1a1e25; }
     .cell.floor:hover { background: #1f2630; }
+    /* Teleport tiles — render in-editor with their in-game tints
+     * (brass for stairs, moss for outdoor exit) so authors can see
+     * them at a glance instead of hunting through the layout grid. */
+    .cell.stair { background: #6a4828; border: 1px solid #9a6a3a; }
+    .cell.exit  { background: #3a4a28; border: 1px solid #6a8848; }
+    /* Floating badge over a stair source tile showing the
+     * destination + label from MapDef.stairs. Pointer-events off
+     * so clicks pass through to the underlying cell. */
+    .stair-label {
+      position: absolute;
+      pointer-events: none;
+      z-index: 6;
+      color: #f4d06f;
+      background: rgba(14, 17, 22, 0.85);
+      border: 1px solid rgba(244, 208, 111, 0.5);
+      border-radius: 3px;
+      padding: 1px 4px;
+      font: bold 9px ui-monospace, monospace;
+      white-space: nowrap;
+      transform: translate(-50%, -50%);
+    }
     /* Procedural-era objects: tinted CSS boxes (no PNGs to load).
        Glyph centered for quick at-a-glance identification. The
        border tint mimics the dark-frame outline the in-game
