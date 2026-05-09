@@ -94,6 +94,14 @@ export default defineConfig({
         // COMPARE-CONTRACT / REPRICE / APPEAL. Lives at
         // /case-rate-specter-prototype.html.
         caseRateSpecter: resolve(__dirname, 'case-rate-specter-prototype.html'),
+        // MRF Cartographer: pricing-transparency Case. First
+        // prototype where the deliverable is a regulatory file,
+        // not a claim packet. Player builds the machine-readable
+        // file row by row from the chargemaster (hard-coded
+        // services) and the claim history (soft-coded services).
+        // Verbs: MAP / ESTIMATE / RECONCILE. Lives at
+        // /mrf-cartographer-prototype.html.
+        mrfCartographer: resolve(__dirname, 'mrf-cartographer-prototype.html'),
         // Map editor: a dev-only authoring tool for level1's object
         // placement and orientation. Click any object to select it,
         // then rotate/flip via keyboard or drag to move. Outputs a
