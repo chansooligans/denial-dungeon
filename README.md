@@ -39,9 +39,60 @@ Walk through the hospital lobby, talk to NPCs in offices, and (when an NPC hands
 
 Art is a mix:
 - **Hospital + Waiting Room object sprites** (desks, chairs, plants, counters, beds, etc.) are drawn procedurally at runtime via Phaser's `Graphics` API in `BootScene.makeHospitalTiles` / `makeWaitingRoomTiles`. No image files; per-room tints reskin the same source textures.
-- **Chloe (player) + NPCs** are PNG sprites under `public/sprites/` generated from a LoRA-trained Stable Diffusion pipeline (chroma-key cleanup → trim → 64×64 squares).
+- **Chloe (player) + NPCs** are PNG sprites under `public/sprites/` generated from a LoRA-trained Stable Diffusion pipeline (chroma-key cleanup → trim → 64×64 squares). See `reference/sprite-cleanup.md` for the cleanup procedure + parameter cheat-sheet.
 - **Comic-page intro pages** are full-bleed PNGs under `public/intro/`.
 - **Voiceover** is one MP3 per text beat under `public/audio/intro/`, plus ambient music tracks for the Hospital + Waiting Room layers.
+
+### Generating new NPC contact sheets (ChatGPT prompt)
+
+When adding new NPCs, sheets generated with this prompt drop straight into the cleanup pipeline (`tools/process-npc-sheets.sh`) without parameter tuning. Save the result as `sprite-source/npcs/npcN.png` and run the script.
+
+```
+A pixel-art character contact sheet for a 2D top-down RPG.
+
+Layout:
+- 4 rows × 4 columns. Each row is one character; each column is the
+  same character in a different directional pose, in this exact
+  order:
+    Col 0 — three-quarter front (facing camera, slightly turned)
+    Col 1 — left profile (character facing screen-left)
+    Col 2 — right profile (character facing screen-right)
+    Col 3 — back (character facing away from camera)
+- All cells must be the same height. Don't resize between poses.
+- Characters are full-body, standing, idle, arms relaxed.
+
+Style:
+- Crisp pixel art, ~64-pixel-tall characters at 1× scale (the sheet
+  itself is much larger — render at high res; the cleanup script
+  downsamples).
+- Dark outlines around silhouettes. Hand-feel pixels — not blurred
+  or anti-aliased into mush.
+- Warm earth-tone palette consistent with hospital interiors:
+  cream / tan / walnut / brick / mustard / avocado / sepia. Avoid
+  oversaturated primaries.
+
+Background — CRITICAL:
+- Solid uniform black (#000000) across the ENTIRE sheet, behind
+  every cell. No gradient, no color blocks, no stage lighting.
+- Black is the chroma key the cleanup script removes. Orange / red /
+  yellow backgrounds also work but require a tighter cleanup
+  parameter pass — black is preferred.
+- Do NOT add character shadows that bleed into the bg.
+- Do NOT add cell borders, grid lines, or labels on the sheet.
+
+Characters (4 of them — describe each one row by row):
+- Row 0: [character description, e.g. "Brunette woman, 30s,
+  navy scrubs with ID badge, hair in a bun"]
+- Row 1: [...]
+- Row 2: [...]
+- Row 3: [...]
+
+Tone: realistic-but-warm, hospital ambient. No fantasy elements,
+no exaggerated poses, no weapons. People you'd see at Mercy
+General Hospital on a regular Friday afternoon.
+```
+
+Drop the resulting PNG into `sprite-source/npcs/` named `npc{N}.png` (next number after the existing sheets), then run `bash tools/process-npc-sheets.sh`. The cleanup will produce the per-cell PNGs and `BootScene.preload` picks them up via `NPC_SOURCES` (`src/scenes/npcSources.ts`) once you map an id to the new slot.
 
 ## Development
 
