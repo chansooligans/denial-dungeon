@@ -118,6 +118,14 @@ export default defineConfig({
         // Verbs: TRACE-CONTRACT / APPLY-NSA / RESOLVE. Lives at
         // /carveout-phantom-prototype.html.
         carveoutPhantom: resolve(__dirname, 'carveout-phantom-prototype.html'),
+        // Form Mirror: wrong-form Case. Facility claim filed on
+        // a CMS-1500 (837P) instead of UB-04 (837I); came back
+        // CO-95 (clearinghouse rejection, not a denial). Player
+        // detects the mismatch, maps institutional-only fields
+        // to the correct UB-04 form locators, and refiles as
+        // 837I. Verbs: DETECT / MAP / REROUTE. Lives at
+        // /form-mirror-prototype.html.
+        formMirror: resolve(__dirname, 'form-mirror-prototype.html'),
         // Map editor: a dev-only authoring tool for level1's object
         // placement and orientation. Click any object to select it,
         // then rotate/flip via keyboard or drag to move. Outputs a
