@@ -77,10 +77,18 @@ const MED_RECORDS = { x: 51, y: 37, w: 14, h: 10 } // chart room
 const HIM      = { x: 4,  y: 50, w: 14, h: 10 } // coding / CDI floor
 const BILLING  = { x: 22, y: 50, w: 14, h: 10 } // clearinghouse / claim queue
 const PFS      = { x: 40, y: 50, w: 16, h: 10 } // patient financial services / phones
-// Cafeteria + lounge — east of PFS, fills the empty space south of
-// the east wing. Big-ish (22×13) because it's a public space with
-// multiple tables, a service counter, vending, and lots of plants.
-const CAFETERIA = { x: 56, y: 50, w: 22, h: 13 }
+
+// === West wing — north of Patient Services, west of MAIN_HUB.
+//     Reached by extending the main north-south corridor (the one
+//     that goes from the lobby up to MAIN_HUB) further north past
+//     the bend, then branching west. Three rooms cluster around
+//     that branch.
+//   - CAFETERIA: big public space in the NW corner.
+//   - LAB:       small clinical lab (microscope-y) below cafeteria.
+//   - LOUNGE:    staff break room east of the lab.
+const CAFETERIA = { x: 2,  y: 2,  w: 12, h: 8 } // 10×6 interior
+const LAB       = { x: 2,  y: 11, w: 6,  h: 6 } // 4×4 interior
+const LOUNGE    = { x: 8,  y: 11, w: 6,  h: 6 } // 4×4 interior
 
 // === Outdoor — parking lot, reached via 'O' teleport from the lobby ===
 const OUTDOOR  = { x: 4,  y: 65, w: 50, h: 22 } // big sparse exterior
@@ -190,6 +198,74 @@ const { layout, tileMeta } = buildMap({
         { dx: 1, dy: 6, ch: 'F' },
       ],
     },
+
+    // ===== West wing — north of Patient Services =====
+    {
+      id: 'cafeteria',
+      ...CAFETERIA,
+      // East door at offset 2 → world (13, 4). Connects to the
+      // main north-south corridor (extended north from the bend
+      // at (14, 13) up to (14, 4)).
+      doors: [{ side: 'E', offset: 2 }],
+      // Public lounge / cafeteria. Service counter (R) on the
+      // north interior row, two rows of tables, vending wall.
+      // Sized for a 12×8 footprint (interior 10×6); valid item
+      // dx is 1..9, dy is 1..6.
+      items: [
+        // Service counter — north row, west cluster.
+        { dx: 1, dy: 1, ch: 'R' }, { dx: 2, dy: 1, ch: 'R' }, { dx: 3, dy: 1, ch: 'R' },
+        // Hot-line / steam tray (cabinet stand-in).
+        { dx: 5, dy: 1, ch: 'F' },
+        // Whiteboard with daily menu.
+        { dx: 7, dy: 1, ch: 'B' },
+        // Bulletin (community board).
+        { dx: 9, dy: 1, ch: 'b' },
+        // Dining tables — two rows of paired desk + chair.
+        { dx: 1, dy: 3, ch: 'c' }, { dx: 1, dy: 4, ch: 'h' },
+        { dx: 4, dy: 3, ch: 'c' }, { dx: 4, dy: 4, ch: 'h' },
+        { dx: 7, dy: 3, ch: 'c' }, { dx: 7, dy: 4, ch: 'h' },
+        // South-row tables — chairs north of desks for variety.
+        { dx: 1, dy: 6, ch: 'h' },
+        { dx: 4, dy: 6, ch: 'h' },
+        { dx: 7, dy: 6, ch: 'h' },
+        // Vending + water cooler on the west side.
+        { dx: 9, dy: 3, ch: 'V' },
+        { dx: 9, dy: 5, ch: 'w' },
+        // Corner plants.
+        { dx: 9, dy: 6, ch: 'P' },
+      ],
+    },
+    {
+      id: 'lab',
+      ...LAB,
+      // North door at offset 3 → world (5, 11). Opens onto the
+      // east-west cross-corridor at y=10.
+      doors: [{ side: 'N', offset: 3 }],
+      // Clinical lab / pathology. Microscope-bench + cabinet of
+      // sample binders + a fax for results. Small (4×4 interior).
+      items: [
+        { dx: 1, dy: 2, ch: 'c' }, { dx: 1, dy: 3, ch: 'h' }, // bench + chair
+        { dx: 3, dy: 2, ch: 'X' },                            // bench-side terminal / fax
+        { dx: 3, dy: 4, ch: 'F' },                            // sample binders cabinet
+        { dx: 1, dy: 4, ch: 'P' },                            // plant
+      ],
+    },
+    {
+      id: 'lounge',
+      ...LOUNGE,
+      // North door at offset 3 → world (11, 11).
+      doors: [{ side: 'N', offset: 3 }],
+      // Staff break room: water cooler, soft chairs (using 'h'),
+      // a small cabinet of mugs, plant in the corner.
+      items: [
+        { dx: 1, dy: 2, ch: 'h' },
+        { dx: 1, dy: 3, ch: 'h' },
+        { dx: 3, dy: 2, ch: 'w' }, // water cooler
+        { dx: 3, dy: 4, ch: 'F' }, // mug cabinet
+        { dx: 1, dy: 4, ch: 'P' }, // plant
+      ],
+    },
+
     {
       id: 'patientServices',
       ...PATIENT_SVC,
@@ -384,48 +460,6 @@ const { layout, tileMeta } = buildMap({
         { dx: 13, dy: 7, ch: 'P' },
       ],
     },
-    {
-      id: 'cafeteria',
-      ...CAFETERIA,
-      // North door at offset 4 → world (60, 50). Connects to the
-      // south-wing trough (extended east in corridors[]).
-      doors: [{ side: 'N', offset: 4 }],
-      // Public lounge / cafeteria. Service counter on the north
-      // side, two rows of dining tables (c+h pairs), a wall of
-      // vending + water cooler on the south, plants in the corners.
-      items: [
-        // Service counter — north interior row, west cluster.
-        { dx: 1, dy: 1, ch: 'R' }, { dx: 2, dy: 1, ch: 'R' }, { dx: 3, dy: 1, ch: 'R' },
-        { dx: 4, dy: 1, ch: 'R' },
-        // Hot-line / steam tray — using cabinet glyph as stand-in.
-        { dx: 6, dy: 1, ch: 'F' },
-        // Whiteboard with daily menu, just east of the counter.
-        { dx: 14, dy: 1, ch: 'B' },
-        // Bulletin (community board) on the north wall.
-        { dx: 17, dy: 1, ch: 'b' },
-        // Dining tables — two rows of paired desk + chair.
-        // Row 1
-        { dx: 2,  dy: 4, ch: 'c' }, { dx: 2,  dy: 5, ch: 'h' },
-        { dx: 6,  dy: 4, ch: 'c' }, { dx: 6,  dy: 5, ch: 'h' },
-        { dx: 10, dy: 4, ch: 'c' }, { dx: 10, dy: 5, ch: 'h' },
-        { dx: 14, dy: 4, ch: 'c' }, { dx: 14, dy: 5, ch: 'h' },
-        { dx: 18, dy: 4, ch: 'c' }, { dx: 18, dy: 5, ch: 'h' },
-        // Row 2 — chairs facing the other way for variety
-        { dx: 2,  dy: 8, ch: 'h' }, { dx: 2,  dy: 9, ch: 'c' },
-        { dx: 6,  dy: 8, ch: 'h' }, { dx: 6,  dy: 9, ch: 'c' },
-        { dx: 14, dy: 8, ch: 'h' }, { dx: 14, dy: 9, ch: 'c' },
-        { dx: 18, dy: 8, ch: 'h' }, { dx: 18, dy: 9, ch: 'c' },
-        // South wall: vending row + water cooler + plants
-        { dx: 1,  dy: 11, ch: 'V' },
-        { dx: 4,  dy: 11, ch: 'V' },
-        { dx: 8,  dy: 11, ch: 'w' },
-        { dx: 12, dy: 11, ch: 'V' },
-        { dx: 16, dy: 11, ch: 'V' },
-        // Corner plants
-        { dx: 19, dy: 1,  ch: 'P' },
-        { dx: 19, dy: 11, ch: 'P' },
-      ],
-    },
     // ===== Outdoor — parking lot =====
     {
       id: 'outdoor',
@@ -573,8 +607,30 @@ const { layout, tileMeta } = buildMap({
     },
     {
       points: [
-        [HIM.x + 7,         SW_TROUGH_Y], // east-west cross-corridor, anchored to HIM's door col
-        [CAFETERIA.x + 4,   SW_TROUGH_Y], // ... extended east to the Cafeteria N door col (was PFS.x+8)
+        [HIM.x + 7, SW_TROUGH_Y], // east-west cross-corridor, anchored to HIM's door col
+        [PFS.x + 8, SW_TROUGH_Y], // ... extends to PFS's door col
+      ],
+      width: 1,
+    },
+    // West-wing corridors. The main lobby↔hub corridor used to dead-
+    // end at the bend (14, 13). Two new segments extend it into the
+    // new wing:
+    //   1. North extension at x=14 from the bend (14, 13) up to
+    //      (14, 4) — passes the cafeteria's east door at (13, 4).
+    //   2. East-west cross-corridor at y=10, from the main corridor
+    //      west to (5, 10) — connects the cafeteria south + lab +
+    //      lounge north doors.
+    {
+      points: [
+        [CORRIDOR_BEND.x, CORRIDOR_BEND.y], // (14, 13) — bend (already on the lobby↔hub corridor)
+        [CORRIDOR_BEND.x, CAFETERIA.y + 2], // (14, 4) — just east of the cafeteria east door
+      ],
+      width: 1,
+    },
+    {
+      points: [
+        [CORRIDOR_BEND.x, LAB.y - 1], // (14, 10) — junction with the north-extension
+        [LAB.x + 3,       LAB.y - 1], // (5, 10) — just north of the lab's N door
       ],
       width: 1,
     },
@@ -655,6 +711,11 @@ export const LEVEL_1_MAP: MapDef = {
     { name: 'MAIN HUB',         shortName: 'HUB',  ...MAIN_HUB },
     { name: 'STAIRWELL',        shortName: 'STR',  ...STAIRWELL_1F },
     { name: 'PRIOR AUTH',       shortName: 'AUTH', ...PRIOR_AUTH },
+    // West wing (north-of-PS).
+    { name: 'CAFETERIA',        shortName: 'CAF',  ...CAFETERIA },
+    { name: 'LAB',              shortName: 'LAB',  ...LAB },
+    { name: 'LOUNGE',           shortName: 'LNG',  ...LOUNGE },
+    // Mid + south rows.
     { name: 'PATIENT SERVICES', shortName: 'PT',   ...PATIENT_SVC },
     { name: 'REGISTRATION',     shortName: 'REG',  ...REGISTRATION },
     { name: 'ELIGIBILITY',      shortName: 'ELIG', ...ELIGIBILITY },
@@ -662,7 +723,6 @@ export const LEVEL_1_MAP: MapDef = {
     { name: 'HIM / CODING',     shortName: 'HIM',  ...HIM },
     { name: 'BILLING',          shortName: 'BIL',  ...BILLING },
     { name: 'PFS / PHONES',     shortName: 'PFS',  ...PFS },
-    { name: 'CAFETERIA',        shortName: 'CAF',  ...CAFETERIA },
     { name: 'RADIOLOGY',        shortName: 'RAD',  ...RADIOLOGY },
     { name: 'PHARMACY',         shortName: 'PHA',  ...PHARMACY },
     { name: 'MEDICAL RECORDS',  shortName: 'REC',  ...MED_RECORDS },
@@ -809,15 +869,19 @@ export const LEVEL_1_MAP: MapDef = {
     { npcId: 'bike_emt',         tileX: OUTDOOR.x + 14, tileY: OUTDOOR.y + 8,  facing: 'left',  ambient: true },
 
     // Cafeteria — service staff behind the counter, a server
-    // working the floor.
-    //  - Manny mans the hot line (north-side counter), facing
-    //    'down' toward the patron-side approach.
-    //  - Yvette sits at the register a little east, facing 'left'
-    //    toward the counter line.
-    //  - Reggie roams the dining floor, facing 'down'.
-    { npcId: 'cafeteria_worker', tileX: CAFETERIA.x + 3,  tileY: CAFETERIA.y + 2, ambient: true },
-    { npcId: 'cashier',          tileX: CAFETERIA.x + 9,  tileY: CAFETERIA.y + 2, facing: 'left', ambient: true },
-    { npcId: 'server',           tileX: CAFETERIA.x + 11, tileY: CAFETERIA.y + 7, ambient: true },
+    // working the dining floor. Cafeteria moved from a 22×13 SE
+    // footprint to a 12×8 NW one; positions resized to match.
+    //  - Manny mans the hot line on the north counter row.
+    //  - Yvette sits at the register on the same row, faces
+    //    'left' toward the counter line.
+    //  - Reggie roams the dining floor.
+    { npcId: 'cafeteria_worker', tileX: CAFETERIA.x + 3, tileY: CAFETERIA.y + 2, ambient: true },
+    { npcId: 'cashier',          tileX: CAFETERIA.x + 9, tileY: CAFETERIA.y + 2, facing: 'left', ambient: true },
+    { npcId: 'server',           tileX: CAFETERIA.x + 7, tileY: CAFETERIA.y + 5, ambient: true },
+
+    // Lab — single tech at the bench. Faces 'right' toward the
+    // sample-binders cabinet on the east wall.
+    { npcId: 'lab_tech',         tileX: LAB.x + 2, tileY: LAB.y + 3, facing: 'right', ambient: true },
 
     // Main Hub — extra hospitalist, joins the existing physician
     // crowd. Faces 'right' toward the hub bulletin / colleagues.

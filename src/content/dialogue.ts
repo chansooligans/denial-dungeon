@@ -703,6 +703,11 @@ export const DIALOGUES: Record<string, DialogueNode> = {
     speaker: 'Dr. Park',
     text: "I rounded twenty-two patients before the auditor's email. I'm not reading it until the cafeteria runs out of coffee.",
   },
+  lab_tech_intro: {
+    id: 'lab_tech_intro',
+    speaker: 'Roni',
+    text: "Modifier 91 on the second draw, modifier 59 on the urinalysis. They keep coming back NCCI-bundled because nobody copy-pastes the right modifier.",
+  },
 
   dana_l10_intake_back: {
     id: 'dana_l10_intake_back',

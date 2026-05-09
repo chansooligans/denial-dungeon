@@ -60,4 +60,5 @@ export const NPC_SOURCES: Record<string, string> = {
   server:             'npc13_4', // waiter vest
   bike_emt:           'npc17_2', // Outdoor (alt EMT, helmet + green jacket)
   dr_park:            'npc7_1',  // Main Hub: physician with glasses, white coat
+  lab_tech:           'npc10_2', // West wing LAB: dark scrubs, glasses
 }

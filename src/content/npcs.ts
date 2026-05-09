@@ -300,4 +300,12 @@ export const NPCS: Record<string, NPC> = {
     dialogueKey: 'dr_park_intro',
     description: 'Hospitalist. Reads charts faster than she reads the news.',
   },
+  lab_tech: {
+    id: 'lab_tech',
+    name: 'Roni',
+    department: 'Lab / Pathology',
+    spriteKey: 'npc_lab_tech',
+    dialogueKey: 'lab_tech_intro',
+    description: 'Med-tech, dark scrubs + glasses. Annotates her samples in three colors.',
+  },
 }
