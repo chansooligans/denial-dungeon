@@ -110,6 +110,14 @@ export default defineConfig({
         // ITEMIZE / ESTIMATE / COMMIT. Lives at
         // /gfe-oracle-prototype.html.
         gfeOracle: resolve(__dirname, 'gfe-oracle-prototype.html'),
+        // Carve-out Phantom: two-bills-for-one-visit Case. Patient
+        // got an in-network facility bill plus an OON physician-
+        // group bill for the same ER visit. Player walks the
+        // contract chain, applies the right NSA carve-out, and
+        // routes the rate dispute through IDR (not the patient).
+        // Verbs: TRACE-CONTRACT / APPLY-NSA / RESOLVE. Lives at
+        // /carveout-phantom-prototype.html.
+        carveoutPhantom: resolve(__dirname, 'carveout-phantom-prototype.html'),
         // Map editor: a dev-only authoring tool for level1's object
         // placement and orientation. Click any object to select it,
         // then rotate/flip via keyboard or drag to move. Outputs a
