@@ -134,6 +134,14 @@ export default defineConfig({
         // working within it. Verbs: SOURCE / LICENSE /
         // ALTERNATIVE. Lives at /cpt-licensure-mire-prototype.html.
         cptLicensureMire: resolve(__dirname, 'cpt-licensure-mire-prototype.html'),
+        // ASP/WAC Apothecary: drug-pricing Case. Part B J-code
+        // claim underpaid because the hospital billed in vials
+        // but HCPCS units are 10mg. Player picks the right
+        // reimbursement basis (ASP+6%, not WAC/AWP/CDM), the
+        // right unit count (40 not 1), and files. Verbs:
+        // PRICE / CONVERT / APPEAL. Lives at
+        // /asp-wac-apothecary-prototype.html.
+        aspWacApothecary: resolve(__dirname, 'asp-wac-apothecary-prototype.html'),
         // Map editor: a dev-only authoring tool for level1's object
         // placement and orientation. Click any object to select it,
         // then rotate/flip via keyboard or drag to move. Outputs a
