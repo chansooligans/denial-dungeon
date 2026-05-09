@@ -154,6 +154,12 @@ export default defineConfig({
         // chargemaster, not the claim. Lives at
         // /chemo-bundle-specter-prototype.html.
         chemoBundleSpecter: resolve(__dirname, 'chemo-bundle-specter-prototype.html'),
+        // Implant Carve-out Specter: high-cost implant unflagged
+        // at billing, rolled into the DRG case rate when the
+        // contract appendix carves it out at invoice +20%. Verbs:
+        // ITEMIZE / INVOICE-MATCH / APPEND. Lives at
+        // /implant-carveout-specter-prototype.html.
+        implantCarveoutSpecter: resolve(__dirname, 'implant-carveout-specter-prototype.html'),
         // Map editor: a dev-only authoring tool for level1's object
         // placement and orientation. Click any object to select it,
         // then rotate/flip via keyboard or drag to move. Outputs a
