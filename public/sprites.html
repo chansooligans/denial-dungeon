@@ -530,7 +530,7 @@ const OBJ_CATEGORY = {
   h_printer: 'office', h_armchair: 'office', h_couch: 'office',
   h_bench: 'office', h_side_table: 'office', h_brochure: 'office',
   h_coat_rack: 'office', h_trash: 'office', h_recycle: 'office',
-  h_reception_bell: 'office', h_atm: 'office', h_monitor_wall: 'office',
+  h_reception_bell: 'office', h_monitor_wall: 'office',
   h_tablet: 'office', h_umbrella_stand: 'office', h_stanchion: 'office',
 }
 function objCategoryFor(key) {
@@ -1054,7 +1054,6 @@ const BOOT_OBJECT_SOURCES = {
   h_recycle:         'office_2_0',
   h_plant_lobby:     'office_2_1',
   h_reception_bell:  'office_2_2',
-  h_atm:             'office_2_3',
   h_monitor_wall:    'office_3_0',
   h_umbrella_stand:  'office_3_2',
   h_signin:          'office_3_3',
@@ -1178,7 +1177,7 @@ const OBJ_SUGGESTIONS = {
   obj2_2_0: { custom: { key: 'h_recycle',      label: 'h_recycle — recycling bin' } },
   obj2_2_1: { custom: { key: 'h_plant_lobby',  label: 'h_plant_lobby — large lobby plant' } },
   obj2_2_2: { custom: { key: 'h_reception_bell', label: 'h_reception_bell — small front-desk with bell' } },
-  obj2_2_3: { custom: { key: 'h_atm',          label: 'h_atm — ATM kiosk' } },
+  obj2_2_3: { custom: { key: 'h_kiosk',        label: 'h_kiosk — ATM-shaped kiosk (was h_atm)' } },
   obj2_3_0: { custom: { key: 'h_monitor_wall', label: 'h_monitor_wall — wall-mounted TV' } },
   obj2_3_1: { custom: { key: 'h_tablet',       label: 'h_tablet — flat tablet on stand' } },
   obj2_3_2: { custom: { key: 'h_umbrella_stand', label: 'h_umbrella_stand — umbrella stand' } },
@@ -1405,11 +1404,34 @@ function renderObjMappedGrid() {
       override: overriddenKeys.has(n.key),
     });
   }
-  // Filter by active sub-tab.
+  // Filter by active sub-tab. Two separate de-duplication rules:
+  //
+  //   - "All" view: hide the numbered desk and plant variants
+  //     (h_desk_1..12, h_plant_1..20). They bloat the grid with
+  //     near-duplicates, and each has its own dedicated sub-tab
+  //     where it belongs. Canonical h_desk + h_plant still appear
+  //     in "All" as representatives.
+  //   - "Desks" / "Plants" sub-tabs: hide the canonical h_desk /
+  //     h_plant since they alias to one of the variants on the
+  //     same slot (h_desk = desks_0_2 = h_desk_3 visually). Showing
+  //     both produces a literal duplicate card.
   const subtab = activeObjSubtab;
-  const filtered = subtab === 'all'
-    ? entries
-    : entries.filter(e => objCategoryFor(e.key) === subtab);
+  const isVariant = (key) =>
+    /^h_desk_\d+$/.test(key) || /^h_plant_\d+$/.test(key);
+  let filtered;
+  if (subtab === 'all') {
+    filtered = entries.filter(e => !isVariant(e.key));
+  } else if (subtab === 'desks') {
+    filtered = entries.filter(e =>
+      objCategoryFor(e.key) === 'desks' && e.key !== 'h_desk'
+    );
+  } else if (subtab === 'plants') {
+    filtered = entries.filter(e =>
+      objCategoryFor(e.key) === 'plants' && e.key !== 'h_plant'
+    );
+  } else {
+    filtered = entries.filter(e => objCategoryFor(e.key) === subtab);
+  }
 
   // Order: active → inactive → future, then by key. (Desk/plant
   // variants are mostly "future" since they aren't tied to a glyph.)

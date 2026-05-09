@@ -118,7 +118,9 @@ const OBJECT_SOURCES: Record<string, string> = {
   h_recycle:         'office_2_0', // blue recycling bin
   h_plant_lobby:     'office_2_1', // large lobby plant in stone pot
   h_reception_bell:  'office_2_2', // small reception desk with bell
-  h_atm:             'office_2_3', // (alias of h_kiosk — same cell)
+  // (h_atm was a separate key that aliased to office_2_3 — dropped
+  // since h_kiosk on the same cell already covers ATM-shaped art.
+  // If a layout needs a distinct ATM sprite, generate new art.)
   h_monitor_wall:    'office_3_0', // wall-mounted display
   h_umbrella_stand:  'office_3_2', // umbrella holder
   h_signin:          'office_3_3', // sign-in clipboard on stand
