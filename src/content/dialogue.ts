@@ -709,6 +709,38 @@ export const DIALOGUES: Record<string, DialogueNode> = {
     text: "Modifier 91 on the second draw, modifier 59 on the urinalysis. They keep coming back NCCI-bundled because nobody copy-pastes the right modifier.",
   },
 
+  // === Round 5 — Data Sandbox (R&D) + Turquoise Lounge ===
+  chansoo_intro: {
+    id: 'chansoo_intro',
+    speaker: 'Chansoo',
+    text: "Pulling the denial regression. Cleanest signal from the dirtiest data — every reason code is a different kind of lie.",
+  },
+  nicole_intro: {
+    id: 'nicole_intro',
+    speaker: 'Nicole',
+    text: "Spinning up a sandbox env. One model per department, one schema per payer. Don't ask me which one Aetna's running today.",
+  },
+  nick_intro: {
+    id: 'nick_intro',
+    speaker: 'Nick',
+    text: "PRD's in Notion, Linear's in flames, retro's at four. We ship Tuesday.",
+  },
+  monika_intro: {
+    id: 'monika_intro',
+    speaker: 'Monika',
+    text: "Joining claim adjudications to remit codes. Two LEFT JOINs deep and still finding nulls where the patient should be.",
+  },
+  chris_intro: {
+    id: 'chris_intro',
+    speaker: 'Chris',
+    text: "Pricing transparency rules. Hospitals love them in the press release, hate them in the spreadsheet.",
+  },
+  adam_intro: {
+    id: 'adam_intro',
+    speaker: 'Adam',
+    text: "Standing up the chargemaster diff. Five hundred million rows; the diff fits on a screenshot. That's the bug.",
+  },
+
   dana_l10_intake_back: {
     id: 'dana_l10_intake_back',
     speaker: 'Dana',

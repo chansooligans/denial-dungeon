@@ -61,4 +61,16 @@ export const NPC_SOURCES: Record<string, string> = {
   bike_emt:           'npc17_2', // Outdoor (alt EMT, helmet + green jacket)
   dr_park:            'npc7_1',  // Main Hub: physician with glasses, white coat
   lab_tech:           'npc10_2', // West wing LAB: dark scrubs, glasses
+  // Round 5 — single-character sheets (npc21–26). Each sheet has
+  // exactly one character, so the slot row is always _0. The build
+  // script (process-npc-sheets.sh) re-shapes the python output into
+  // the canonical `npc<N>_0_<dir>.png` filename, regardless of
+  // whether the source sheet was a 4×1 strip (orange chroma) or
+  // a 2×2 grid (green chroma).
+  chansoo:  'npc21_0', // Data Sandbox: bearded glasses + dark coat
+  nicole:   'npc22_0', // Data Sandbox: blonde, navy cardigan + ID
+  nick:     'npc23_0', // Data Sandbox: stubble, dark sweater + ID
+  monika:   'npc24_0', // Data Sandbox: brunette, black turtleneck + lanyard
+  chris:    'npc25_0', // Turquoise Lounge: light-blue button-up
+  adam:     'npc26_0', // Turquoise Lounge: bearded balding, gray button-up
 }
