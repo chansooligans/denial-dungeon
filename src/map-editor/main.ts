@@ -309,6 +309,22 @@ function render() {
     canvas.appendChild(div)
   }
 
+  // Room name overlays. One label per room, anchored to the room's
+  // center. Pulls from LEVEL_1_MAP.rooms (the same list that drives
+  // the in-game minimap labels), so editor + game can't drift.
+  // Pointer-events are off (CSS) so clicks pass through to the
+  // cells / objects / NPCs underneath.
+  for (const room of LEVEL_1_MAP.rooms ?? []) {
+    const cx = (room.x + room.w / 2) * TILE
+    const cy = (room.y + room.h / 2) * TILE
+    const label = document.createElement('div')
+    label.className = 'room-label'
+    label.style.left = `${cx}px`
+    label.style.top = `${cy}px`
+    label.textContent = room.name
+    canvas.appendChild(label)
+  }
+
   // Selection ring on the underlying tile (works for both objects
   // and NPCs).
   if (state.selectedKey) {

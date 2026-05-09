@@ -91,6 +91,24 @@
       pointer-events: none;
       z-index: 10;
     }
+    /* Room name overlay — sits above the floor + cells but below
+     * selection rings. Pointer-events disabled so clicks pass through
+     * to the cells/objects underneath. */
+    .room-label {
+      position: absolute;
+      pointer-events: none;
+      z-index: 5;
+      color: #f4d06f;
+      background: rgba(14, 17, 22, 0.65);
+      border: 1px solid rgba(244, 208, 111, 0.35);
+      border-radius: 3px;
+      padding: 2px 6px;
+      font: bold 10px ui-monospace, monospace;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      transform: translate(-50%, -50%);
+    }
     #right {
       display: flex;
       flex-direction: column;
