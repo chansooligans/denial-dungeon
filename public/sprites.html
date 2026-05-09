@@ -371,22 +371,13 @@
   </div>
 
   <!-- Category sub-tabs. "All" shows the full grouped grid; specific
-       categories filter to that group. -->
+       categories filter to that group. The buttons after "All" are
+       generated at render time from NPC_CATEGORIES so adding a new
+       category in the JS array can't silently leave the UI without
+       a tab (the bug that hid R&D / Product / Vendor on first ship). -->
   <nav class="tabs subtabs" id="npc-subtabs">
     <button data-subtab="all">All</button>
-    <button data-subtab="doctors">Doctors</button>
-    <button data-subtab="nurses-techs">Nurses & Techs</button>
-    <button data-subtab="admin-frontdesk">Admin / Front Desk</button>
-    <button data-subtab="coding-it">Coding / IT</button>
-    <button data-subtab="exec-compliance">Exec / Compliance</button>
-    <button data-subtab="payer">Payer</button>
-    <button data-subtab="security">Security</button>
-    <button data-subtab="facilities">Facilities</button>
-    <button data-subtab="cafeteria-service">Cafeteria / Service</button>
-    <button data-subtab="ems">EMS</button>
-    <button data-subtab="patients-visitors">Patients / Visitors</button>
-    <button data-subtab="smokers">Smokers (outdoor)</button>
-    <button data-subtab="misc">Misc</button>
+    <!-- per-category buttons appended in JS -->
   </nav>
 
   <!-- Live list of custom NPCs with per-item delete buttons. Hidden when empty. -->
@@ -1265,13 +1256,36 @@ for (const cat of NPC_CATEGORIES) {
   root.appendChild(section);
 }
 
+// Build per-category sub-tab buttons from NPC_CATEGORIES, so the UI
+// can't drift from the data. The "All" button is hand-coded in HTML;
+// everything after it is generated.
+{
+  const subtabsNav = document.getElementById('npc-subtabs');
+  for (const cat of NPC_CATEGORIES) {
+    const btn = document.createElement('button');
+    btn.dataset.subtab = cat.id;
+    btn.textContent = cat.label;
+    subtabsNav.appendChild(btn);
+  }
+}
+
 // Wire NPC sub-tab buttons.
 for (const btn of document.querySelectorAll('#npc-subtabs button')) {
   btn.addEventListener('click', () => setNpcSubtab(btn.dataset.subtab));
   if (btn.dataset.subtab === activeNpcSubtab) btn.classList.add('active');
 }
-// Apply the persisted filter (if not "all") on first render.
-if (activeNpcSubtab !== 'all') setNpcSubtab(activeNpcSubtab);
+// Apply the persisted filter (if not "all") on first render. If the
+// persisted value points at a category that no longer exists (e.g.
+// after a rename), fall back to "all" so the user isn't stuck with
+// an empty grid.
+const persistedCatExists = activeNpcSubtab === 'all' ||
+  NPC_CATEGORIES.some(c => c.id === activeNpcSubtab);
+if (!persistedCatExists) {
+  activeNpcSubtab = 'all';
+  setNpcSubtab('all');
+} else if (activeNpcSubtab !== 'all') {
+  setNpcSubtab(activeNpcSubtab);
+}
 
 document.getElementById('show-export').addEventListener('click', () => {
   const wrap = document.getElementById('export-wrap');
