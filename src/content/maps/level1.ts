@@ -654,11 +654,20 @@ export const LEVEL_1_MAP: MapDef = {
     { npcId: 'dr_priya',      tileX: MAIN_HUB.x + 9,  tileY: MAIN_HUB.y + 6, ambient: true },
     { npcId: 'dr_ethan',      tileX: MAIN_HUB.x + 14, tileY: MAIN_HUB.y + 8, ambient: true },
 
-    // East wing — ambient atmosphere staff. Pharmacy gets liana
-    // (orphan placement, finally seated); Medical Records gets joe
-    // (moved from billing — janitor-in-chart-room reads better than
-    // janitor-in-claim-queue and his dust line fits the binders).
+    // East wing — ambient atmosphere staff.
+    { npcId: 'rad_tech',      tileX: RADIOLOGY.x + 6,   tileY: RADIOLOGY.y + 5,   ambient: true },
     { npcId: 'liana',         tileX: PHARMACY.x + 6,    tileY: PHARMACY.y + 4,    ambient: true },
     { npcId: 'joe',           tileX: MED_RECORDS.x + 7, tileY: MED_RECORDS.y + 5, ambient: true },
+    { npcId: 'records_clerk', tileX: MED_RECORDS.x + 4, tileY: MED_RECORDS.y + 5, ambient: true },
+
+    // 2F — Payer office gets two reps; Compliance gets the privacy
+    // officer. AUDIT (also 2F) only spawns the L10 audit team and Dana,
+    // already wired above.
+    { npcId: 'payer_rep',          tileX: PAYER.x + 5,      tileY: PAYER.y + 3,      ambient: true },
+    { npcId: 'payer_supervisor',   tileX: PAYER.x + 12,     tileY: PAYER.y + 3,      ambient: true },
+    { npcId: 'compliance_officer', tileX: COMPLIANCE.x + 6, tileY: COMPLIANCE.y + 5, ambient: true },
+
+    // Outdoor — sparse for now; one visitor on a smoke break.
+    { npcId: 'smoker_visitor',     tileX: OUTDOOR.x + 25,   tileY: OUTDOOR.y + 10,   ambient: true },
   ],
 }

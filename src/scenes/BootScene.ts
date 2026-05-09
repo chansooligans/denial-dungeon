@@ -63,6 +63,18 @@ const NPC_SOURCES: Record<string, string> = {
   officer_reyes: 'npc4_1', // security
   joe:           'npc4_2', // janitor
   noah:          'npc4_3', // visitor
+  // === Round 2 — sheets npc6.png … npc15.png (May 2026 batch).
+  //     Each entry maps to one character row on a contact sheet;
+  //     `npc{N}_{row}_0.png` is the 3/4-front pose used by placements.
+  //     Many cells in this batch remain unmapped — see
+  //     /sprites.html for the full inventory; add new entries here
+  //     as roles get cast. ===
+  rad_tech:           'npc7_0',  // Radiology: female tech, white coat + pony-tail
+  records_clerk:      'npc11_0', // Med Records: woman in tan jacket
+  payer_rep:          'npc15_4', // 2F Payer: woman with headset (phones)
+  payer_supervisor:   'npc14_3', // 2F Payer: woman in navy + bun (admin)
+  compliance_officer: 'npc11_3', // 2F Compliance: silver-haired in blazer
+  smoker_visitor:     'npc14_4', // Outdoor: bearded man in cap
 }
 
 // OBJECT_SOURCES extracted to its own module so the map editor can

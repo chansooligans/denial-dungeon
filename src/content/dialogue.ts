@@ -623,6 +623,38 @@ export const DIALOGUES: Record<string, DialogueNode> = {
     text: "Radiology. I know it's near the cafeteria. I keep ending up at the cafeteria.",
   },
 
+  // Round 2 ambient — east wing, 2F, outdoor.
+  rad_tech_intro: {
+    id: 'rad_tech_intro',
+    speaker: 'Adaeze',
+    text: "Echo, MRI, two CTs since seven. Half are stat. The other half think they're stat.",
+  },
+  records_clerk_intro: {
+    id: 'records_clerk_intro',
+    speaker: 'Marisol',
+    text: "Whatever you're looking for is here. Whether you find it depends on what year it lived in.",
+  },
+  payer_rep_intro: {
+    id: 'payer_rep_intro',
+    speaker: 'Theresa',
+    text: "I'm contracted to be onsite three days a week. Tuesday I do nothing but call my own auto-attendant on speakerphone.",
+  },
+  payer_supervisor_intro: {
+    id: 'payer_supervisor_intro',
+    speaker: 'Diane',
+    text: "The medical policy hasn't changed. Your interpretation of it has.",
+  },
+  compliance_officer_intro: {
+    id: 'compliance_officer_intro',
+    speaker: 'Theo',
+    text: "Don't say 'breach' until I've finished the four-factor assessment. The word does work on its own.",
+  },
+  smoker_visitor_intro: {
+    id: 'smoker_visitor_intro',
+    speaker: 'Earl',
+    text: "Stepped out for one. Came back, room's empty, sheets stripped. They don't tell you anything if you're not in the room.",
+  },
+
   dana_l10_intake_back: {
     id: 'dana_l10_intake_back',
     speaker: 'Dana',

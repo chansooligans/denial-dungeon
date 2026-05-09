@@ -31,3 +31,4 @@ sprite-source/**/*.jpg
 sprite-source/**/*.jpeg
 sprite-source/**/*.webp
 tools/__pycache__/
+.venv-tools/
