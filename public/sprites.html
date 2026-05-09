@@ -551,6 +551,8 @@ function objCategoryFor(key) {
 const ACTIVE_OBJECT_GLYPHS = new Set([
   'c', 'h', 'P', 'b', '#', 'X', 'F', 'R', 'B', 'V', 'w',
   'I', 'y', 'A', 'r', 'p', 'T', 'K', 's', '%',
+  // Lobby reorg glyphs
+  'i', 'a', 'C', 'd', 'f', 'o', 'O', 'm', 'Q', 'q',
 ]);
 
 // Glyph → texture-key map mirrors HospitalScene.TILE_TEXTURES (only
@@ -570,6 +572,9 @@ const GLYPH_TO_OBJ_KEY = {
  '#': 'h_directory', '%': 'h_pneumatic',
   e: 'h_elevator',    f: 'h_fountain',   '!': 'h_wet_floor',
   M: 'h_mop_bucket',
+  // Lobby reorg additions
+  o: 'h_clock_office', O: 'h_coat_rack',  m: 'h_armchair',
+  Q: 'h_plant_lobby',  q: 'h_recycle',
 };
 
 const ACTIVE_OBJECT_KEYS = new Set();

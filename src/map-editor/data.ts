@@ -45,6 +45,12 @@ export const GLYPH_TO_OBJ_KEY: Record<string, string> = {
   f: 'h_fountain',
   '!': 'h_wet_floor',
   M: 'h_mop_bucket',
+  // Lobby reorg additions
+  o: 'h_clock_office',
+  O: 'h_coat_rack',
+  m: 'h_armchair',
+  Q: 'h_plant_lobby',
+  q: 'h_recycle',
 }
 
 /** Reverse — used by the palette. */
@@ -150,4 +156,9 @@ export const GLYPH_LABEL: Record<string, string> = {
   f: 'Fountain',
   '!': 'Wet floor',
   M: 'Mop bucket',
+  o: 'Wall clock',
+  O: 'Coat rack',
+  m: 'Armchair',
+  Q: 'Lobby plant',
+  q: 'Recycle bin',
 }

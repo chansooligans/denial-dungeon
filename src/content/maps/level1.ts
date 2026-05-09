@@ -138,55 +138,92 @@ const { layout, tileMeta } = buildMap({
     {
       id: 'lobby',
       ...LOBBY,
-      // Phase-C ambient props for the LoRA art upgrade. Single AED on
-      // the north wall (visual public-safety beat), a brochure rack
-      // beside the counter, a payphone in the SW corner, a trash can
-      // SE. Tuned for atmosphere — none of them gate movement.
-      // North to the corridor / hospital interior, south to the new wing.
+      // North door connects the lobby to the staff corridor leading
+      // up to the Main Hub; south door drops into the south wing.
       doors: [
         { side: 'N', offset: 10 },
         { side: 'S', offset: 14 },
       ],
-      // 70s-Lynch lobby — packed warmer + denser than the old cavern.
-      // Reuses existing prop chars (lamps stand-in: water-cooler 'w';
-      // side tables: 'c'; framed art: 'b'). The HospitalScene tints
-      // give the room its register; the props give it its density.
+      // Reorganized lobby — uses the new themed-sheet objects
+      // (clinical / facilities / admin / office) for variety. Three
+      // bands of vertical structure:
+      //   1. North wall props (dy=1):  reception counter NW, then
+      //      sign-in / brochure / wayfinding / public-safety wrapping
+      //      around to a coat rack + lobby plant in the NE corner.
+      //   2. Mid-room seating (dy=3 + dy=4 + dy=6):  a "premium" row
+      //      with a couch + armchair + bench right behind the
+      //      reception, then two rows of plain chairs flanking Chloe's
+      //      intern desk (dy=5) — same shape as before, denser sprite
+      //      mix.
+      //   3. South wall amenities (dy=7):  payphone / vending / water
+      //      cooler on the west, trash + recycle + plant on the east.
+      //      South door is at dx=13; a clean walking lane at dx=8..15
+      //      keeps the south approach open.
+      //
+      // Player spawns at (LOBBY.x+10, LOBBY.y+LOBBY.h-3) = (14, 39),
+      // which is interior (dx=9, dy=6) — Chloe's chair. The chair row
+      // at dy=6 keeps that tile as 'h' so the player visually sits on
+      // the chair on spawn.
       items: [
-        // Counter spans three columns west of the door
-        { dx: 1, dy: 1, ch: 'R' }, { dx: 2, dy: 1, ch: 'R' }, { dx: 3, dy: 1, ch: 'R' },
-        // Bulletin board + a small framed print north wall
-        { dx: 5,  dy: 1, ch: 'b' },
-        { dx: 18, dy: 1, ch: 'b' }, // second bulletin (like a print)
-        // Plants flanking — north corners + by the door
-        { dx: 7,  dy: 1, ch: 'P' },
-        { dx: 12, dy: 1, ch: 'P' }, // by door
-        { dx: 22, dy: 1, ch: 'P' },
-        // Side tables (with magazines / ashtrays — implied)
-        { dx: 5,  dy: 4, ch: 'c' },
-        { dx: 19, dy: 4, ch: 'c' },
-        // Two rows of patient chairs flanking Chloe's intern station.
-        // Chloe's desk sits at (dx=9, dy=5) — between the rows on
-        // the player's spawn column — with her chair directly south
-        // at (dx=9, dy=6). The patient row at dy=6 leaves dx=9 open
-        // so it reads as "her chair," not part of public seating.
-        { dx: 7,  dy: 4, ch: 'h' }, { dx: 9,  dy: 4, ch: 'h' }, { dx: 11, dy: 4, ch: 'h' },
-        { dx: 14, dy: 4, ch: 'h' }, { dx: 16, dy: 4, ch: 'h' },
-        { dx: 9,  dy: 5, ch: 'c' }, // Chloe's desk
-        { dx: 7,  dy: 6, ch: 'h' },                              { dx: 11, dy: 6, ch: 'h' },
-        { dx: 14, dy: 6, ch: 'h' }, { dx: 16, dy: 6, ch: 'h' },
-        { dx: 9,  dy: 6, ch: 'h' }, // Chloe's chair (player spawns here)
-        // South wall amenities — vending, water cooler ("lamp"), bulletin.
-        // dx=13 was a bulletin print but the new south door at offset 14
-        // lands on dx=13 — relocate the print east to dx=10.
-        { dx: 2,  dy: 7, ch: 'V' },
-        { dx: 22, dy: 7, ch: 'w' }, // doubles as a tall lamp visually with the warm tint
-        { dx: 24, dy: 7, ch: 'P' }, // corner plant
-        { dx: 10, dy: 8, ch: 'b' }, // framed print over a chair row
-        // Phase-C LoRA props
-        { dx: 20, dy: 1, ch: 'A' }, // AED on north wall
-        { dx: 4,  dy: 1, ch: 'r' }, // brochure rack
-        { dx: 1,  dy: 8, ch: 'p' }, // payphone (SW corner)
-        { dx: 24, dy: 8, ch: 'T' }, // trash can (SE corner)
+        // ===== North wall (dy=1) — reception + wayfinding + safety =====
+        // Reception counter, three tiles wide
+        { dx: 1, dy: 1, ch: 'R' },
+        { dx: 2, dy: 1, ch: 'R' },
+        { dx: 3, dy: 1, ch: 'R' },
+        // Sign-in clipboard at the counter's east end
+        { dx: 4, dy: 1, ch: 'i' },
+        // Brochure rack between counter and approach to north door
+        { dx: 6, dy: 1, ch: 'r' },
+        // Plant flanking the door from the west
+        { dx: 8, dy: 1, ch: 'P' },
+        // dx=9: north door (mapBuilder)
+        // East of door — practical-amenities wall
+        { dx: 11, dy: 1, ch: 'a' },  // sanitizer dispenser
+        { dx: 13, dy: 1, ch: 'o' },  // wall clock
+        { dx: 15, dy: 1, ch: 'A' },  // AED defibrillator
+        { dx: 17, dy: 1, ch: 'b' },  // bulletin board
+        { dx: 19, dy: 1, ch: '#' },  // directory sign
+        { dx: 21, dy: 1, ch: 'O' },  // coat rack
+        { dx: 22, dy: 1, ch: 'Q' },  // large lobby plant (NE corner)
+
+        // ===== Mid-room "premium" seating row (dy=3) =====
+        // Couch at the west end, fountain, armchair, then a bench at
+        // the east end. Walking corridor at dy=2 keeps the room
+        // legible.
+        { dx: 2,  dy: 3, ch: 'C' },  // 3-seat blue couch
+        { dx: 4,  dy: 3, ch: 'f' },  // drinking fountain
+        { dx: 7,  dy: 3, ch: 'm' },  // padded armchair
+        { dx: 14, dy: 3, ch: 'm' },  // armchair
+        { dx: 18, dy: 3, ch: 'd' },  // 3-seat green bench
+        { dx: 21, dy: 3, ch: 'P' },  // potted plant accent
+
+        // ===== Chloe's intern station (dy=4..6) =====
+        // Front row of waiting chairs (faces north toward reception)
+        { dx: 5,  dy: 4, ch: 'h' },
+        { dx: 7,  dy: 4, ch: 'h' },
+        { dx: 9,  dy: 4, ch: 'h' },
+        { dx: 11, dy: 4, ch: 'h' },
+        { dx: 13, dy: 4, ch: 'h' },
+        // Chloe's desk
+        { dx: 9, dy: 5, ch: 'c' },
+        // Back row — Chloe's chair at center (player spawn) flanked
+        // by patient chairs.
+        { dx: 5,  dy: 6, ch: 'h' },
+        { dx: 7,  dy: 6, ch: 'h' },
+        { dx: 9,  dy: 6, ch: 'h' },  // Chloe's chair (player spawn)
+        { dx: 11, dy: 6, ch: 'h' },
+        { dx: 13, dy: 6, ch: 'h' },
+
+        // ===== South wall (dy=7) — amenities =====
+        // West side: payphone, vending, water cooler
+        { dx: 1,  dy: 7, ch: 'p' },  // payphone (SW corner)
+        { dx: 3,  dy: 7, ch: 'V' },  // vending machine
+        { dx: 5,  dy: 7, ch: 'w' },  // water cooler
+        // dx=8..15: walking lane to the south door at dx=13
+        // East side: trash + recycle + plant
+        { dx: 17, dy: 7, ch: 'T' },  // trash can
+        { dx: 19, dy: 7, ch: 'q' },  // recycling bin
+        { dx: 21, dy: 7, ch: 'P' },  // plant (SE corner)
       ],
     },
 
