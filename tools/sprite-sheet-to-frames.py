@@ -94,6 +94,23 @@ def is_chroma_key(ref: tuple[int, int, int], threshold: int = 150) -> bool:
     return max(r, g, b) - min(r, g, b) > threshold
 
 
+def is_warm_chroma(ref: tuple[int, int, int]) -> bool:
+    """A warm chroma key (orange / red / yellow) is one where red
+    dominates over both green and blue. The channel-dominance pattern
+    of warm chromas overlaps with skin tones (skin: r > g > b too),
+    so the aggressive `chroma_key_global_erase` and the wide halo-
+    eroder fuzz that work for cool chromas (green/magenta/cyan) eat
+    skin and warm clothing.
+
+    For warm-chroma backgrounds, the cleanup uses gentler tolerances
+    and skips `chroma_key_global_erase` entirely; flood-fill from the
+    corners is enough because warm-chroma sheets in this codebase
+    have very uniform backgrounds (channel variance ~10 across the
+    entire image)."""
+    r, g, b = ref
+    return r > g + 30 and r > b + 30
+
+
 def already_has_alpha(img: Image.Image) -> bool:
     """True if the input PNG already has real transparency at its
     corners — meaning some upstream tool (rembg / Photoshop /
@@ -127,9 +144,17 @@ def remove_background(img: Image.Image, fuzz: int = 35) -> tuple[Image.Image, tu
     w, h = img.size
 
     # Auto-bump fuzz for chroma-key bgs based on the corner sample.
+    # Cool chromas (green/magenta/cyan) get the aggressive bump because
+    # the gap between bg and character palette is large. Warm chromas
+    # (orange/red/yellow) overlap with skin-tone dominance — only a
+    # gentle bump is safe before flood-fill starts bleeding into faces
+    # and warm clothing.
     sr0, sg0, sb0, _ = pixels[0, 0]
     if is_chroma_key((sr0, sg0, sb0)):
-        fuzz = max(fuzz, 90)
+        if is_warm_chroma((sr0, sg0, sb0)):
+            fuzz = max(fuzz, 60)
+        else:
+            fuzz = max(fuzz, 90)
 
     def matches_bg(x: int, y: int, ref: tuple[int, int, int]) -> bool:
         r, g, b, _ = pixels[x, y]
@@ -271,8 +296,14 @@ def erode_halo(img: Image.Image, ref: tuple[int, int, int], halo_fuzz: int = 60,
     pixels = img.load()
     w, h = img.size
     bg_r, bg_g, bg_b = ref
+    # Cool chromas: bump halo_fuzz wide. Warm chromas: gentler — the
+    # halo eroder works *inside-out from transparent edges*, so a wide
+    # halo_fuzz against an orange ref will eat warm clothing edges.
     if is_chroma_key(ref):
-        halo_fuzz = max(halo_fuzz, 130)
+        if is_warm_chroma(ref):
+            halo_fuzz = max(halo_fuzz, 50)
+        else:
+            halo_fuzz = max(halo_fuzz, 130)
 
     for _ in range(passes):
         # Snapshot the current alpha mask so all edits this pass see
@@ -382,10 +413,14 @@ def main() -> None:
                 else:
                     cleaned, ref = remove_background(cell, fuzz=args.fuzz)
                     cleaned = erode_halo(cleaned, ref, halo_fuzz=args.halo_fuzz, passes=args.halo_passes)
-                    if is_chroma_key(ref):
+                    if is_chroma_key(ref) and not is_warm_chroma(ref):
                         # Catch any chroma-tinted pixels enclosed inside
                         # the silhouette (curls of hair, etc.) that
-                        # flood-fill couldn't reach.
+                        # flood-fill couldn't reach. Skipped for warm
+                        # chromas (orange / red / yellow) because the
+                        # global erase relies on a channel-dominance
+                        # heuristic that overlaps skin tones — running
+                        # it on warm bgs eats faces and hands.
                         cleaned = chroma_key_global_erase(cleaned, ref)
                 cleaned = keep_largest_blob(cleaned, dilate_radius=args.dilate)
                 trimmed = trim_to_bbox(cleaned)
@@ -401,7 +436,10 @@ def main() -> None:
             else:
                 cleaned, ref = remove_background(frame, fuzz=args.fuzz)
                 cleaned = erode_halo(cleaned, ref, halo_fuzz=args.halo_fuzz, passes=args.halo_passes)
-                if is_chroma_key(ref):
+                # See grid-mode branch — global erase is unsafe on
+                # warm chromas because skin tones share its dominance
+                # signature.
+                if is_chroma_key(ref) and not is_warm_chroma(ref):
                     cleaned = chroma_key_global_erase(cleaned, ref)
             cleaned = keep_largest_blob(cleaned, dilate_radius=args.dilate)
             trimmed = trim_to_bbox(cleaned)
