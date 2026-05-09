@@ -13,7 +13,6 @@ export type SceneActionId =
   | 'showDesk'
   | 'showClaimVanish'
   | 'showFall'
-  | 'showGap'
   | 'showWaitingRoom'
 
 export interface Beat {
@@ -146,12 +145,8 @@ export const BEATS: Beat[] = [
     // falling visually rhymes with the claim being "gone".
     sceneActionId: 'showFall',
   },
-  // Brief wait that extends to cover the voiceover's tail, then the
-  // gap-reveal scene action fires immediately (no extra dead air).
-  { type: 'wait', duration: 200 },
-
-  // Beat 5: The Gap (procedural only; comic art shown as full reveal at end).
-  { type: 'scene', actionId: 'showGap' },
+  // Brief wait that extends to cover the voiceover's tail before the
+  // Waiting Room beat fires.
   { type: 'wait', duration: 200 },
 
   // Beat 7: The Waiting Room

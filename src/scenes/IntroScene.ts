@@ -195,7 +195,6 @@ export class IntroScene extends Phaser.Scene {
       case 'showDesk':         this.showDesk(); return
       case 'showClaimVanish':  this.showClaimVanish(); return
       case 'showFall':         this.showFall(); return
-      case 'showGap':          this.showGap(); return
       case 'showWaitingRoom':  this.showWaitingRoom(); return
     }
   }
@@ -872,60 +871,6 @@ export class IntroScene extends Phaser.Scene {
           this.tweens.add({ targets: claimText, alpha: 0, duration: 500, delay: 800 })
         },
       })
-    })
-  }
-
-  showGap() {
-    this.sceneContainer.removeAll(true)
-    const { width, height } = this.scale
-
-    // Dim foreground panel — keeps the comic backdrop subtly visible behind.
-    const darkness = this.add.rectangle(width / 2, height / 2, width, height, 0x0e1116, 0.55)
-    this.sceneContainer.add(darkness)
-
-    // Floor around gap
-    for (let x = 10; x < 50; x++) {
-      for (let y = 15; y < 25; y++) {
-        const tile = this.add.image(x * 16 + 8, y * 16 + 8, 'h_floor').setAlpha(0.2)
-        this.sceneContainer.add(tile)
-      }
-    }
-
-    // The gap — a jagged line of light
-    const gap = this.add.graphics()
-    gap.lineStyle(2, 0xf0a868, 0)
-    const points = [
-      { x: width / 2 - 30, y: height / 2 - 10 },
-      { x: width / 2 - 10, y: height / 2 + 5 },
-      { x: width / 2 + 5, y: height / 2 - 3 },
-      { x: width / 2 + 20, y: height / 2 + 8 },
-      { x: width / 2 + 35, y: height / 2 },
-    ]
-    this.sceneContainer.add(gap)
-
-    // Animate gap appearing
-    this.tweens.addCounter({
-      from: 0, to: 1, duration: 1500,
-      onUpdate: (tween) => {
-        const val = tween.getValue() ?? 0
-        gap.clear()
-        gap.lineStyle(2, 0xf0a868, val)
-        gap.beginPath()
-        gap.moveTo(points[0].x, points[0].y)
-        for (let i = 1; i < points.length; i++) {
-          if (i / points.length <= val) {
-            gap.lineTo(points[i].x, points[i].y)
-          }
-        }
-        gap.strokePath()
-      },
-    })
-
-    // Light pulsing from gap
-    const light = this.add.rectangle(width / 2, height / 2, 80, 30, 0xf0a868, 0)
-    this.sceneContainer.add(light)
-    this.tweens.add({
-      targets: light, alpha: 0.15, duration: 800, yoyo: true, repeat: -1, delay: 1000,
     })
   }
 

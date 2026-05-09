@@ -293,7 +293,7 @@ function renderEditor() {
 function sceneActionSelect(current: SceneActionId | undefined, id: string): string {
   const ids: SceneActionId[] = [
     'showHospitalPan', 'showDesk', 'showClaimVanish',
-    'showFall', 'showGap', 'showWaitingRoom',
+    'showFall', 'showWaitingRoom',
   ]
   return `<select id="${id}">` +
     `<option value="">— none —</option>` +
