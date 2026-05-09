@@ -2,6 +2,7 @@ import Phaser from 'phaser'
 import { FACTION_COLOR } from '../types'
 import type { Faction } from '../types'
 import { OBJECT_SOURCES } from './objectSources'
+import { NPC_SOURCES } from './npcSources'
 
 /** Mix a hex color toward white by `amt` (0..1). Used for highlight ramps. */
 function lighten(hex: number, amt: number): number {
@@ -26,65 +27,9 @@ function darken(hex: number, amt: number): number {
   )
 }
 
-/**
- * Mapping from the canonical `npc_<id>` texture key the game uses
- * to the source slot in `public/sprites/npcs-raw/`. The slot name
- * encodes which LoRA-generated sheet + row the character was on
- * (npc1..npc5 × rows 0..3). Front-facing pose is column 0; other
- * columns (1=left, 2=right, 3=up) are wired to `npc_<id>_<dir>`
- * keys for future directional rendering.
- *
- * 12 canonical NPCs (matched against `src/content/npcs.ts`) plus 8
- * customs registered for future content slots — see the per-row
- * picker on `/npcs-preview.html` for the assignment UI that
- * produced this mapping.
- */
-const NPC_SOURCES: Record<string, string> = {
-  // Canonical roster — drives existing dialogue + placement.
-  dana:     'npc5_1',
-  kim:      'npc3_1',
-  jordan:   'npc3_2',
-  pat:      'npc5_0',
-  alex:     'npc5_2',
-  sam:      'npc3_3',
-  martinez: 'npc1_0',
-  anjali:   'npc2_1',
-  carl:     'npc5_3',
-  chen:     'npc2_2',
-  rivera:   'npc3_0',
-  eddi:     'npc2_3',
-  // Custom NPCs — sprite registered for future placement; not yet
-  // referenced by gameplay content.
-  liana:         'npc1_1', // nurse (blue scrubs)
-  dr_priya:      'npc1_2', // surgeon (green scrubs)
-  dev:           'npc1_3', // orderly (teal scrubs)
-  walter:        'npc2_0', // elderly patient
-  dr_ethan:      'npc4_0', // physician (white coat)
-  officer_reyes: 'npc4_1', // security
-  joe:           'npc4_2', // janitor
-  noah:          'npc4_3', // visitor
-  // === Round 2 — sheets npc6.png … npc15.png (May 2026 batch).
-  //     Each entry maps to one character row on a contact sheet;
-  //     `npc{N}_{row}_0.png` is the 3/4-front pose used by placements.
-  //     Many cells in this batch remain unmapped — see
-  //     /sprites.html for the full inventory; add new entries here
-  //     as roles get cast. ===
-  rad_tech:           'npc7_0',  // Radiology: female tech, white coat + pony-tail
-  records_clerk:      'npc11_0', // Med Records: woman in tan jacket
-  payer_rep:          'npc15_4', // 2F Payer: woman with headset (phones)
-  payer_supervisor:   'npc14_3', // 2F Payer: woman in navy + bun (admin)
-  compliance_officer: 'npc11_3', // 2F Compliance: silver-haired in blazer
-  smoker_visitor:     'npc14_4', // Outdoor: bearded man in cap
-  // === Round 3 — sheets npc16.png … npc20.png (May 2026 batch 2).
-  //     Outdoor / visitor / security focus. NOTE: any sprite with a
-  //     visible cigarette is *outdoor-only* per the design brief —
-  //     smoker_outdoor_b uses such a pose. Don't place it inside a
-  //     hospital room. ===
-  smoker_outdoor_b: 'npc20_2', // Outdoor smoker — woman in overalls, cigarette
-  paramedic:        'npc19_1', // Outdoor: female EMT with EMS bag
-  flower_visitor:   'npc17_1', // Lobby: visitor with bouquet
-  elder_patient:    'npc20_3', // Lobby: elderly bearded man with cane
-}
+// NPC_SOURCES extracted to ./npcSources so the map editor + sprite
+// library page can import it without dragging Phaser into their
+// bundles. Edit the mapping there.
 
 // OBJECT_SOURCES extracted to its own module so the map editor can
 // import the same source-of-truth without dragging Phaser in. Edit

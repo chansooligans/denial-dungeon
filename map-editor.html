@@ -202,10 +202,14 @@
     <div id="right">
       <h1>Map editor — level1</h1>
       <div class="help">
-        <strong>Click</strong> object to select.
+        <strong>Click</strong> object or NPC to select.
         <strong>Drag</strong> to move (must land on floor).<br />
-        <strong>F</strong> flip horizontal. <strong>0</strong> reset flip.
-        <strong>Del</strong> remove.<br />
+        NPCs render with a <span style="color:#7ee2c1">cyan</span>
+        ring; objects with a <span style="color:#f4d06f">gold</span>
+        ring. NPC keyboard verbs (resize, flip, delete) aren't
+        wired — drag-only.<br />
+        <strong>F</strong> flip horizontal (object). <strong>0</strong> reset flip.
+        <strong>Del</strong> remove (object).<br />
         <strong>+ / − / [ / ]</strong> resize selected (0.4×–2.5×).
         <strong>1</strong> reset size.<br />
         <strong>Cmd/Ctrl + scroll</strong> or the toolbar buttons to zoom the map.<br />
@@ -218,9 +222,12 @@
       <button id="copy">Copy export to clipboard</button>
       <textarea id="export" spellcheck="false" readonly></textarea>
       <div class="legend">
-        Output is two blocks. <code>tileMeta</code> carries sprite,
-        size, and flip overrides; <code>tileOverrides</code> only
-        emits when something was deleted. Paste both into
+        Output is up to three blocks. <code>tileMeta</code> carries
+        sprite, size, and flip overrides; <code>tileOverrides</code>
+        emits when something was deleted; <code>npcPlacements</code>
+        emits when at least one NPC was moved (replacement of the
+        full array — re-applies any const-reference shorthand by
+        hand). Paste relevant blocks into
         <code>src/content/maps/level1.ts</code>.
       </div>
     </div>
