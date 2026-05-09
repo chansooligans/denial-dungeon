@@ -260,6 +260,62 @@
       transition: transform 80ms;
     }
     details.advanced[open] > summary::before { transform: rotate(90deg); }
+
+    /* Sub-tabs nested inside Objects: smaller, no sticky behavior. */
+    nav.tabs.subtabs {
+      position: static;
+      margin: 0 0 12px;
+      padding: 0;
+      border-bottom: 1px solid #2a323d;
+      gap: 4px;
+    }
+    nav.tabs.subtabs button {
+      padding: 8px 14px;
+      font-size: 12px;
+      letter-spacing: 0.02em;
+    }
+
+    /* Mapped-objects card: clickable, with a hover hint that it's
+     * editable. Highlights the selected card so the dropdown popover
+     * has a clear visual anchor. */
+    .obj-mapped-card {
+      cursor: pointer;
+      transition: border-color 80ms;
+    }
+    .obj-mapped-card:hover { border-color: #7ee2c1; }
+    .obj-mapped-card.editing {
+      border-color: #f4d06f;
+      background: #1f2630;
+    }
+    /* Inline remap dropdown — a select that appears under the card's
+     * key when in editing mode, lets the user pick a different LoRA
+     * cell to back this texture key. */
+    .obj-mapped-card .remap {
+      width: 100%;
+      box-sizing: border-box;
+      background: #0a0e14;
+      color: #d0d8e0;
+      border: 1px solid #2a323d;
+      border-radius: 3px;
+      padding: 4px 6px;
+      font: inherit;
+      font-size: 11px;
+      margin-top: 4px;
+    }
+    .obj-mapped-card .remap-toggle {
+      background: transparent;
+      color: #5a6a7a;
+      border: 1px solid #2a323d;
+      border-radius: 3px;
+      padding: 2px 6px;
+      font: inherit;
+      font-size: 10px;
+      cursor: pointer;
+    }
+    .obj-mapped-card .remap-toggle:hover {
+      color: #f4d06f;
+      border-color: #f4d06f;
+    }
   </style>
 </head>
 <body>
@@ -273,8 +329,6 @@
   <button data-tab="chloe">Chloe</button>
   <button data-tab="npcs">NPCs</button>
   <button data-tab="objects">Objects</button>
-  <button data-tab="desks">Desks</button>
-  <button data-tab="plants">Plants</button>
 </nav>
 
 <section class="tab-section" data-tab="chloe">
@@ -330,15 +384,30 @@
     <span class="section-meta">Hospital + Waiting Room textures · 64×64 each</span>
   </div>
   <p>
-    Texture keys registered in <code>BootScene.OBJECT_SOURCES</code>,
-    each rendering one of the 80 LoRA-generated object frames. The
+    Texture keys registered in <code>BootScene.OBJECT_SOURCES</code>.
+    The
     <span class="badge active" style="position:relative;top:0;right:0">active</span>
-    badge marks keys that a glyph in <code>level1.ts</code> currently
-    places; <span class="badge inactive" style="position:relative;top:0;right:0">inactive</span>
-    means the key is registered + placeable via <code>TILE_TEXTURES</code>
-    but no map references it yet; <span class="badge future" style="position:relative;top:0;right:0">future</span>
-    means the key exists but isn't wired up to any glyph yet.
+    badge marks keys placed by some glyph in <code>level1.ts</code>;
+    <span class="badge inactive" style="position:relative;top:0;right:0">inactive</span>
+    means the key is registered + has a glyph in
+    <code>TILE_TEXTURES</code> but no map references that glyph yet;
+    <span class="badge future" style="position:relative;top:0;right:0">future</span>
+    means the key exists with no glyph mapping (won't appear in-game
+    until you wire it up). Click a card to remap which LoRA cell
+    backs that key — the badge updates live as the mapping changes.
   </p>
+
+  <!-- Category sub-tabs nested inside the Objects tab. -->
+  <nav class="tabs subtabs" id="obj-subtabs">
+    <button data-subtab="all">All</button>
+    <button data-subtab="clinical">Clinical</button>
+    <button data-subtab="facilities">Facilities</button>
+    <button data-subtab="admin">Admin</button>
+    <button data-subtab="office">Office / Lobby</button>
+    <button data-subtab="desks">Desks</button>
+    <button data-subtab="plants">Plants</button>
+    <button data-subtab="misc">Misc</button>
+  </nav>
 
   <div class="toolbar">
     <button id="obj-show-export">Show object mapping</button>
@@ -348,65 +417,27 @@
     <span class="summary" id="obj-summary"></span>
   </div>
 
-  <!-- Live list of custom object keys with per-item delete buttons. -->
-  <div class="custom-list" id="obj-custom-list" style="display:none"></div>
-
   <div class="export-wrap" id="obj-export-wrap" style="display:none">
     <pre class="export" id="obj-export-out"></pre>
   </div>
 
-  <h2>Mapped objects</h2>
-  <p>
-    Every texture key currently bound to a LoRA cell, sorted by
-    namespace and active-in-game first. Click a card's "edit slot" to
-    jump to its source sheet below for re-mapping.
-  </p>
+  <!-- Mapped-objects card grid. Filtered by the active sub-tab.
+       Clicking a card opens a small popover that lets you change
+       which slot backs the key (the existing dropdown infrastructure,
+       just inline). Active/inactive/future badge updates live. -->
   <div class="obj-mapped-grid" id="obj-mapped-grid"></div>
 
   <details class="advanced" id="obj-source-sheets-details">
-    <summary>Source sheets — re-map cells to keys (5 sheets × 16 cells)</summary>
+    <summary>Source sheets — full LoRA cell grid (advanced)</summary>
     <p>
-      Each row of each sheet is one LoRA character/object. Pick which
-      slot maps to each canonical hospital / Waiting Room texture key
-      or give it a new custom key.
+      Each row is one LoRA character/object sheet. Pick which slot
+      maps to each canonical key or add a new custom key. This pane
+      exists so you can see every cell at once for re-mapping; the
+      Mapped Objects view above is the day-to-day surface.
     </p>
     <div id="obj-grids"></div>
   </details>
 </section>
-
-<section class="tab-section" data-tab="desks">
-  <div class="section-header">
-    <h1>Desks</h1>
-    <span class="section-meta">12 variants from desks.png · 4 rows × 3 cols · 64×64 each</span>
-  </div>
-  <p>
-    Office-desk visual variants. The canonical <code>h_desk</code> texture
-    key (used by every <code>'c'</code> tile) points at
-    <code>desks_0_2</code> — third desk in row 1. The other 11 are
-    registered as <code>h_desk_1</code>…<code>h_desk_12</code> in
-    <code>BootScene.OBJECT_SOURCES</code> for future per-room visual
-    variation. Source: <code>public/sprites/objects-raw/desks_&lt;r&gt;_&lt;c&gt;.png</code>.
-  </p>
-  <div id="desk-grid"></div>
-</section>
-
-<section class="tab-section" data-tab="plants">
-  <div class="section-header">
-    <h1>Plants</h1>
-    <span class="section-meta">20 variants from plants.png · 4 rows × 5 cols · 64×64 each</span>
-  </div>
-  <p>
-    Indoor-plant visual variants — snake plant, peace lily, pothos,
-    fern, succulent, fiddle-leaf, monstera, and more. Registered as
-    <code>h_plant_1</code>…<code>h_plant_20</code> in
-    <code>BootScene.OBJECT_SOURCES</code>. The default
-    <code>h_plant</code> still points at the original
-    <code>obj1_1_1</code> for backwards compatibility — opt into a
-    richer plant per-tile via the map editor or by referencing the
-    variant key directly. Source:
-    <code>public/sprites/objects-raw/plants_&lt;r&gt;_&lt;c&gt;.png</code>.
-  </p>
-  <div id="plant-grid"></div>
 </section>
 
 <script>
@@ -415,7 +446,7 @@
 // Click a tab → only that section is visible. URL hash mirrors the
 // active tab so refresh / deep-link / back-button all work.
 (function tabs() {
-  const VALID = new Set(['chloe', 'npcs', 'objects', 'desks', 'plants']);
+  const VALID = new Set(['chloe', 'npcs', 'objects']);
   function activate(name) {
     if (!VALID.has(name)) name = 'chloe';
     for (const btn of document.querySelectorAll('nav.tabs button')) {
@@ -436,6 +467,71 @@
   });
   activate(location.hash.replace(/^#/, '') || 'chloe');
 })();
+
+// ---------- Object sub-tabs (within Objects tab) ----------
+//
+// Filters the Mapped Objects grid by category. Persisted in
+// localStorage so reloads keep the user where they were. "All"
+// shows everything; the others filter on a hand-curated category
+// table (objCategoryFor). Desks and Plants are sub-tabs here
+// instead of top-level tabs because they're sub-collections of the
+// hospital-objects namespace.
+const OBJ_SUBTAB_KEY = 'obj-subtab-v1';
+let activeObjSubtab = (() => {
+  try { return localStorage.getItem(OBJ_SUBTAB_KEY) || 'all'; }
+  catch { return 'all'; }
+})();
+function setObjSubtab(name) {
+  activeObjSubtab = name;
+  try { localStorage.setItem(OBJ_SUBTAB_KEY, name); } catch {}
+  for (const btn of document.querySelectorAll('#obj-subtabs button')) {
+    btn.classList.toggle('active', btn.dataset.subtab === name);
+  }
+  if (typeof renderObjMappedGrid === 'function') renderObjMappedGrid();
+}
+
+// Hand-curated key → category. Anything not listed falls into
+// "misc" so the bucket is never empty for a new texture key.
+const OBJ_CATEGORY = {
+  // Clinical
+  h_bed: 'clinical', h_exam_table: 'clinical', h_iv_stand: 'clinical',
+  h_wheelchair: 'clinical', h_equipment: 'clinical', h_stool: 'clinical',
+  h_bedside: 'clinical', h_screen: 'clinical', h_med_cart: 'clinical',
+  h_crash_cart: 'clinical', h_sink: 'clinical', h_biohazard: 'clinical',
+  h_linen_cart: 'clinical', h_step: 'clinical', h_gurney: 'clinical',
+  h_supply_cart: 'clinical', h_equip_cart: 'clinical', h_sanitizer: 'clinical',
+  // Facilities
+  h_cleaning_cart: 'facilities', h_mop_bucket: 'facilities',
+  h_wet_floor: 'facilities', h_bin_cart: 'facilities',
+  h_paper_towels: 'facilities', h_supply_cart_2: 'facilities',
+  h_bin_cart_full: 'facilities', h_biohazard_sm: 'facilities',
+  h_linen_bin: 'facilities', h_elevator: 'facilities',
+  h_aed: 'facilities', h_payphone: 'facilities',
+  h_drink_counter: 'facilities', h_fountain: 'facilities',
+  h_arrow_sign: 'facilities', h_clock_office: 'facilities',
+  h_clock_wall: 'facilities',
+  // Admin / records
+  h_bookshelf: 'admin', h_file_cart: 'admin', h_cabinet: 'admin',
+  h_cabinet_open: 'admin', h_lamp: 'admin', h_fax: 'admin',
+  h_kiosk_admin: 'admin', h_kiosk: 'admin', h_intercom: 'admin',
+  h_pneumatic: 'admin', h_test_tubes: 'admin', h_printer_lab: 'admin',
+  h_med_vending: 'admin', h_reception_admin: 'admin', h_ticker: 'admin',
+  h_paper_stack: 'admin', h_shredder: 'admin', h_cashbox: 'admin',
+  h_box_stack: 'admin', h_directory: 'admin', h_signin: 'admin',
+  // Office / lobby
+  h_counter: 'office', h_chair: 'office', h_bulletin: 'office',
+  h_water: 'office', h_vending: 'office', h_computer: 'office',
+  h_printer: 'office', h_armchair: 'office', h_couch: 'office',
+  h_bench: 'office', h_side_table: 'office', h_brochure: 'office',
+  h_coat_rack: 'office', h_trash: 'office', h_recycle: 'office',
+  h_reception_bell: 'office', h_atm: 'office', h_monitor_wall: 'office',
+  h_tablet: 'office', h_umbrella_stand: 'office', h_stanchion: 'office',
+}
+function objCategoryFor(key) {
+  if (key === 'h_desk' || /^h_desk_\d+$/.test(key)) return 'desks';
+  if (key === 'h_plant' || key === 'h_plant_lobby' || /^h_plant_\d+$/.test(key)) return 'plants';
+  return OBJ_CATEGORY[key] || 'misc';
+}
 
 // ---------- Active-in-game registries ----------
 //
@@ -1110,26 +1206,55 @@ function objRefreshDropdowns() {
 function objRebuildAll() {
   objRefreshDropdowns();
   objRefreshSummary();
-  renderCustomObjList();
   renderObjMappedGrid();
 }
 
+// All known object slot files — needed by the per-card remap dropdown
+// so users can pick from any LoRA cell across all sheets (legacy
+// obj1..obj5, the new themed sheets, plus desks/plants variants).
+// Built once on page load by globbing the fetched filenames isn't
+// possible from a static page, so this list is hand-maintained.
+const ALL_OBJECT_SLOTS = (() => {
+  const list = [];
+  // Legacy obj1..obj5 (4×4 each).
+  for (let s = 1; s <= 5; s++)
+    for (let r = 0; r < 4; r++)
+      for (let c = 0; c < 4; c++)
+        list.push(`obj${s}_${r}_${c}`);
+  // New themed sheets — sized to match the extracted cell counts.
+  const themes = {
+    clinical:   [5, 5, 5, 4],
+    facilities: [5, 5, 5, 4],
+    admin:      [5, 5, 4, 5, 5, 6],
+    office:     [4, 4, 4, 4, 5, 6],
+  };
+  for (const [theme, rowSizes] of Object.entries(themes)) {
+    for (let r = 0; r < rowSizes.length; r++)
+      for (let c = 0; c < rowSizes[r]; c++)
+        list.push(`${theme}_${r}_${c}`);
+  }
+  // Desks (4×3) + plants (4×5).
+  for (let r = 0; r < 4; r++) for (let c = 0; c < 3; c++) list.push(`desks_${r}_${c}`);
+  for (let r = 0; r < 4; r++) for (let c = 0; c < 5; c++) list.push(`plants_${r}_${c}`);
+  return list;
+})();
+
 /** Card-grid view of every texture key currently bound to a slot.
- *  Sorted: active first, then placeable-but-inactive, then future
- *  (registered without a glyph mapping). Within each tier sorted by
- *  key alphabetically. Replaces the LoRA-sheet-oriented browse path
- *  as the primary view of "what's currently in this game." */
+ *  Filtered by the active sub-tab. Each card is clickable and shows
+ *  an inline dropdown to remap the slot — the active/inactive/future
+ *  badge re-renders live as the mapping changes.
+ *
+ *  Includes desk + plant variants when their sub-tab is selected, so
+ *  the entire "Objects" namespace lives under this single grid.
+ */
 function renderObjMappedGrid() {
   const root = document.getElementById('obj-mapped-grid');
   if (!root) return;
-  // Reverse the slot→key mapping so we can ask "which cell is h_desk?".
   const keyToSlot = {};
   for (const [slot, key] of Object.entries(objMapping)) {
     if (key) keyToSlot[key] = slot;
   }
-  // Build entries from canonical + custom registries; only include
-  // those that actually have a slot bound (otherwise there's nothing
-  // to preview).
+  // Build entries: canonical + custom + desk variants + plant variants.
   const entries = [];
   for (const n of OBJ_CANONICAL) {
     const slot = keyToSlot[n.key];
@@ -1139,58 +1264,120 @@ function renderObjMappedGrid() {
     const slot = keyToSlot[n.key];
     if (slot) entries.push({ key: n.key, label: n.label, slot, custom: true });
   }
-  // Order: active → inactive (placeable) → future, then by key.
+  // Desk variants — sourced from BootScene.OBJECT_SOURCES, hardcoded
+  // here since this is a static page. Keep in sync if the variant
+  // count changes.
+  for (let i = 1; i <= 12; i++) {
+    const r = Math.floor((i - 1) / 3), c = (i - 1) % 3;
+    entries.push({ key: `h_desk_${i}`, label: `Desk variant #${i}`, slot: `desks_${r}_${c}`, custom: false, builtin: true });
+  }
+  for (let i = 1; i <= 20; i++) {
+    const r = Math.floor((i - 1) / 5), c = (i - 1) % 5;
+    entries.push({ key: `h_plant_${i}`, label: `Plant variant #${i}`, slot: `plants_${r}_${c}`, custom: false, builtin: true });
+  }
+  // Filter by active sub-tab.
+  const subtab = activeObjSubtab;
+  const filtered = subtab === 'all'
+    ? entries
+    : entries.filter(e => objCategoryFor(e.key) === subtab);
+
+  // Order: active → inactive → future, then by key. (Desk/plant
+  // variants are mostly "future" since they aren't tied to a glyph.)
   const tier = { active: 0, inactive: 1, future: 2 };
-  entries.sort((a, b) => {
+  filtered.sort((a, b) => {
     const ta = tier[objStatus(a.key)] - tier[objStatus(b.key)];
     return ta !== 0 ? ta : a.key.localeCompare(b.key);
   });
 
-  if (!entries.length) {
-    root.innerHTML = '<p style="color:#5a6a7a">No texture keys mapped yet — pick assignments in the Source sheets section below.</p>';
+  if (!filtered.length) {
+    root.innerHTML = `<p style="color:#5a6a7a">No textures in this category yet.</p>`;
     return;
   }
-  let html = '';
-  for (const e of entries) {
+  root.innerHTML = '';
+  for (const e of filtered) {
     const status = objStatus(e.key);
-    const labelText = e.label.replace(/^h_[a-z0-9_]+ — /, ''); // drop key prefix in label
-    html += `<div class="obj-mapped-card" title="${e.slot}">` +
+    const labelText = e.label.replace(/^h_[a-z0-9_]+ — /, '');
+    const card = document.createElement('div');
+    card.className = 'obj-mapped-card';
+    card.title = e.slot;
+    card.dataset.key = e.key;
+    card.innerHTML =
       `<span class="badge ${status}">${status}</span>` +
       `<img src="/sprites/objects-raw/${e.slot}.png" alt="${e.slot}" />` +
       `<div class="key">${e.key}</div>` +
       `<div class="label">${labelText}</div>` +
-      `<div class="meta">${e.slot}${e.custom ? ' · custom' : ''}</div>` +
-      `</div>`;
+      `<div class="meta">${e.slot}${e.custom ? ' · custom' : e.builtin ? ' · variant' : ''}</div>` +
+      // Built-in desk/plant variants don't have an entry in objMapping —
+      // they're hardcoded in BootScene — so the remap button is hidden.
+      // For everything else, expose a "remap" toggle.
+      (e.builtin
+        ? ''
+        : `<button class="remap-toggle" data-key="${e.key}">change cell…</button>`);
+    root.appendChild(card);
   }
-  root.innerHTML = html;
+  // Wire up remap toggles. Click → swap the toggle for an inline
+  // <select> of every known slot; pick → write objMapping[slot] =
+  // key (and clear any other slot that previously had this key) →
+  // re-render. Active badge updates live because objStatus() reads
+  // the up-to-date GLYPH_TO_OBJ_KEY (slot mapping doesn't affect
+  // active status — that's a function of glyph references — but it
+  // DOES affect which sprite is shown so the card re-renders).
+  for (const btn of root.querySelectorAll('.remap-toggle')) {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      openRemapPopover(btn);
+    });
+  }
 }
 
-/** Inline chip-list of custom object keys with delete buttons. Same
- *  pattern as the NPC list above; deleting a key unmaps every slot
- *  currently pointing at it so the dropdowns don't show ghosts. */
-function renderCustomObjList() {
-  const root = document.getElementById('obj-custom-list');
-  if (!objCustom.length) {
-    root.style.display = 'none';
-    root.innerHTML = '';
-    return;
+function openRemapPopover(btn) {
+  const card = btn.closest('.obj-mapped-card');
+  if (!card) return;
+  // Tear any existing popover down first.
+  for (const c of document.querySelectorAll('.obj-mapped-card.editing')) {
+    c.classList.remove('editing');
+    const old = c.querySelector('.remap');
+    if (old) old.remove();
   }
-  root.style.display = 'flex';
-  let html = '<span class="label">Custom objects:</span>';
-  for (const n of objCustom) {
-    const safeKey = n.key.replace(/"/g, '&quot;');
-    html += `<span class="custom-chip">` +
-            `<span class="key">${n.key}</span>` +
-            (n.label && n.label !== n.key
-              ? `<span class="lbl">${n.label.replace(/</g, '&lt;')}</span>`
-              : '') +
-            `<button class="del" data-key="${safeKey}" title="Delete this custom object">×</button>` +
-            `</span>`;
+  const key = btn.dataset.key;
+  const currentSlot = Object.keys(objMapping).find(s => objMapping[s] === key) || '';
+  const select = document.createElement('select');
+  select.className = 'remap';
+  select.innerHTML =
+    `<option value="">— unassigned —</option>` +
+    ALL_OBJECT_SLOTS.map(s =>
+      `<option value="${s}"${s === currentSlot ? ' selected' : ''}>${s}</option>`
+    ).join('');
+  select.addEventListener('change', () => {
+    const newSlot = select.value;
+    // Drop any slot that was already pointing at this key to avoid
+    // duplicate assignments.
+    for (const s of Object.keys(objMapping)) {
+      if (objMapping[s] === key) delete objMapping[s];
+    }
+    if (newSlot) objMapping[newSlot] = key;
+    objSaveMapping(objMapping);
+    objRebuildAll();
+  });
+  card.classList.add('editing');
+  card.appendChild(select);
+  select.focus();
+}
+
+// Click outside an editing card collapses the popover.
+document.addEventListener('mousedown', e => {
+  const editing = document.querySelector('.obj-mapped-card.editing');
+  if (editing && !editing.contains(e.target)) {
+    editing.classList.remove('editing');
+    const sel = editing.querySelector('.remap');
+    if (sel) sel.remove();
   }
-  root.innerHTML = html;
-  for (const btn of root.querySelectorAll('button.del')) {
-    btn.addEventListener('click', () => deleteCustomObj(btn.dataset.key));
-  }
+});
+
+// Wire object sub-tab buttons (one-time on page load).
+for (const btn of document.querySelectorAll('#obj-subtabs button')) {
+  btn.addEventListener('click', () => setObjSubtab(btn.dataset.subtab));
+  if (btn.dataset.subtab === activeObjSubtab) btn.classList.add('active');
 }
 
 function deleteCustomObj(key) {
@@ -1333,75 +1520,9 @@ document.getElementById('obj-reset').addEventListener('click', () => {
 });
 
 objRebuildAll();
-
-// ---------- Desks (12 variants, 4×3 grid) ----------
-(function renderDesks() {
-  const root = document.getElementById('desk-grid');
-  const table = document.createElement('table');
-  // Header row labels columns; each body row labels with `h_desk_N`
-  // (1-indexed row-major) so users can match the texture key in
-  // BootScene.OBJECT_SOURCES at a glance.
-  const head = document.createElement('tr');
-  head.innerHTML = `<td class="lbl">slot</td>` +
-    [0, 1, 2].map(c => `<td class="lbl">col ${c}</td>`).join('');
-  table.appendChild(head);
-  for (let r = 0; r < 4; r++) {
-    const tr = document.createElement('tr');
-    const lblTd = document.createElement('td');
-    lblTd.className = 'lbl';
-    lblTd.style.minWidth = '180px';
-    lblTd.style.textAlign = 'left';
-    lblTd.innerHTML = `<div>row ${r}</div>` +
-      `<div class="meta">h_desk_${r * 3 + 1}…${r * 3 + 3}</div>`;
-    tr.appendChild(lblTd);
-    for (let c = 0; c < 3; c++) {
-      const slot = `desks_${r}_${c}`;
-      const key = `h_desk_${r * 3 + c + 1}`;
-      const td = document.createElement('td');
-      td.style.minWidth = '120px';
-      td.innerHTML =
-        `<img src="/sprites/objects-raw/${slot}.png" alt="${slot}">` +
-        `<div class="meta">${slot}</div>` +
-        `<div class="meta" style="color:#f4d06f">${key}</div>`;
-      tr.appendChild(td);
-    }
-    table.appendChild(tr);
-  }
-  root.appendChild(table);
-})();
-
-// ---------- Plants (20 variants, 4×5 grid) ----------
-(function renderPlants() {
-  const root = document.getElementById('plant-grid');
-  const table = document.createElement('table');
-  const head = document.createElement('tr');
-  head.innerHTML = `<td class="lbl">slot</td>` +
-    [0, 1, 2, 3, 4].map(c => `<td class="lbl">col ${c}</td>`).join('');
-  table.appendChild(head);
-  for (let r = 0; r < 4; r++) {
-    const tr = document.createElement('tr');
-    const lblTd = document.createElement('td');
-    lblTd.className = 'lbl';
-    lblTd.style.minWidth = '180px';
-    lblTd.style.textAlign = 'left';
-    lblTd.innerHTML = `<div>row ${r}</div>` +
-      `<div class="meta">h_plant_${r * 5 + 1}…${r * 5 + 5}</div>`;
-    tr.appendChild(lblTd);
-    for (let c = 0; c < 5; c++) {
-      const slot = `plants_${r}_${c}`;
-      const key = `h_plant_${r * 5 + c + 1}`;
-      const td = document.createElement('td');
-      td.style.minWidth = '110px';
-      td.innerHTML =
-        `<img src="/sprites/objects-raw/${slot}.png" alt="${slot}">` +
-        `<div class="meta">${slot}</div>` +
-        `<div class="meta" style="color:#f4d06f">${key}</div>`;
-      tr.appendChild(td);
-    }
-    table.appendChild(tr);
-  }
-  root.appendChild(table);
-})();
+// (Standalone Desks and Plants renderers were removed when those
+// became sub-tabs of Objects — the Mapped Objects grid handles
+// rendering h_desk_1..12 and h_plant_1..20 inline now.)
 </script>
 
 </body>
