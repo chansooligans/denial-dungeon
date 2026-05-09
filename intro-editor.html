@@ -149,6 +149,79 @@
     }
     .placeholder { color: #5a6a7a; font-style: italic; }
 
+    /* Background-art controls (cover/backdrop beats) */
+    .bg-preview-wrap {
+      position: relative;
+      background: #0a0e14;
+      border: 1px dashed #2a323d;
+      border-radius: 4px;
+      padding: 8px;
+      text-align: center;
+      transition: border-color 80ms;
+    }
+    .bg-preview-wrap.dragging {
+      border-color: #f4d06f;
+      background: #1f2630;
+    }
+    #bg-preview {
+      max-width: 100%; max-height: 240px;
+      image-rendering: auto;
+      border-radius: 2px;
+      pointer-events: none;
+    }
+    .bg-empty {
+      color: #5a6a7a; padding: 40px;
+      font-style: italic;
+    }
+    .drop-hint {
+      color: #5a6a7a; font-size: 10px;
+      margin-top: 6px;
+      pointer-events: none;
+    }
+    .bg-preview-wrap.dragging .drop-hint {
+      color: #f4d06f;
+    }
+    .override-row {
+      margin-top: 8px;
+      display: flex; gap: 8px; align-items: center;
+      font-size: 11px;
+    }
+    .override {
+      color: #f4d06f;
+    }
+    .beat-body .override {
+      font-size: 10px;
+    }
+    .bg-gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, 80px);
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .bg-card {
+      background: #15191f;
+      border: 1px solid #2a323d;
+      border-radius: 3px;
+      padding: 3px;
+      cursor: pointer;
+      text-align: center;
+      transition: border-color 80ms;
+    }
+    .bg-card:hover { border-color: #7ee2c1; }
+    .bg-card.selected { border-color: #f4d06f; background: #1f2630; }
+    .bg-card img {
+      width: 74px; height: 56px;
+      object-fit: cover;
+      border-radius: 2px;
+      display: block;
+    }
+    .bg-card .bg-label {
+      color: #8b95a5; font-size: 9px;
+      margin-top: 3px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .bg-card.selected .bg-label { color: #f4d06f; }
+
     /* Export pane */
     .toolbar {
       display: flex; justify-content: space-between; align-items: center;

@@ -26,6 +26,28 @@
 
 import { BEATS, type Beat, type SceneActionId } from '../scenes/introBeats'
 
+// All cover/backdrop comic-page images currently shipped with the
+// game. Hardcoded because browsers can't list `/public/intro/`
+// directly. If a new page is added, append it here AND make sure
+// BootScene preloads it under the same key.
+const INTRO_IMAGES: { key: string; path: string }[] = [
+  { key: 'intro_cover', path: '/intro/cover.png' },
+  { key: 'intro_page5', path: '/intro/page5.png' },
+  { key: 'intro_page6', path: '/intro/page6.png' },
+  { key: 'intro_page7', path: '/intro/page7.jpg' },
+  { key: 'intro_page8', path: '/intro/page8.jpg' },
+]
+function pathForKey(key: string): string | undefined {
+  return INTRO_IMAGES.find(i => i.key === key)?.path
+}
+
+/** Local-only image overrides — when the user drops a new file onto
+ *  the preview we stash a data URL here keyed by the texture key. The
+ *  editor swaps in the override for previews so authors can see the
+ *  new art in context, but the file isn't persisted until the user
+ *  clicks "Download" and saves it into public/intro/. */
+const imageOverrides = new Map<string, string>()
+
 // Working copy that the UI mutates. Cloned from BEATS so undo means
 // "reload the page". Cheap and tracks intent — this is a draft tool.
 const beats: Beat[] = BEATS.map(b => ({
@@ -127,15 +149,16 @@ function describeBeat(b: Beat): string {
     return `<span class="meta">action: <code>${b.actionId ?? '—'}()</code></span>`
   }
   if (b.type === 'cover' || b.type === 'backdrop') {
-    const thumb = b.key
-      ? `<img class="thumb" src="/intro/${b.key.replace(/^intro_/, '')}${b.key === 'intro_page7' || b.key === 'intro_page8' ? '.jpg' : '.png'}" />`
-      : ''
+    const src = b.key
+      ? imageOverrides.get(b.key) ?? pathForKey(b.key)
+      : undefined
+    const thumb = src ? `<img class="thumb" src="${src}" />` : ''
     return thumb +
       `<span class="meta">key: <code>${b.key}</code>${
         b.duration !== undefined ? ` · ${b.duration}ms` : ''
       }${b.voice ? ' · voice' : ''}${
         b.alpha !== undefined ? ` · α ${b.alpha}` : ''
-      }</span>`
+      }${imageOverrides.has(b.key ?? '') ? ' · <span class="override">overridden</span>' : ''}</span>`
   }
   if (b.type === 'title') return '<span class="meta">→ Title scene</span>'
   return ''
@@ -174,8 +197,38 @@ function renderEditor() {
     html += `<label>Scene action</label>` +
             sceneActionSelect(b.actionId, 'f-action')
   } else if (b.type === 'cover' || b.type === 'backdrop') {
-    html += `<label>Texture key</label>` +
-            `<input id="f-key" type="text" value="${escapeAttr(b.key ?? '')}" />`
+    const currentSrc = b.key
+      ? imageOverrides.get(b.key) ?? pathForKey(b.key)
+      : undefined
+    const overridden = b.key ? imageOverrides.has(b.key) : false
+
+    html += `<label>Background art</label>` +
+      `<div id="bg-preview-wrap" class="bg-preview-wrap">` +
+        (currentSrc
+          ? `<img id="bg-preview" src="${currentSrc}" />`
+          : `<div class="bg-empty">no key set</div>`) +
+        `<div class="drop-hint">Drop an image here to replace this background.</div>` +
+      `</div>` +
+      (overridden
+        ? `<div class="override-row">` +
+            `<span class="override">▲ replaced locally</span> ` +
+            `<button id="bg-download" type="button">Download as ${b.key}…</button> ` +
+            `<button id="bg-revert" type="button">Revert</button>` +
+          `</div>`
+        : '') +
+      `<label>Pick from library</label>` +
+      `<div class="bg-gallery">` +
+        INTRO_IMAGES.map(img => {
+          const src = imageOverrides.get(img.key) ?? img.path
+          const sel = img.key === b.key ? ' selected' : ''
+          return `<div class="bg-card${sel}" data-key="${escapeAttr(img.key)}">` +
+            `<img src="${src}" />` +
+            `<div class="bg-label">${img.key}</div>` +
+            `</div>`
+        }).join('') +
+      `</div>` +
+      `<label>Texture key (advanced — must match a BootScene preload)</label>` +
+      `<input id="f-key" type="text" value="${escapeAttr(b.key ?? '')}" />`
     if (b.type === 'cover') {
       html += `<label>Duration (ms)</label>` +
               `<input id="f-duration" type="number" min="0" step="100" value="${b.duration ?? 0}" />` +
@@ -232,6 +285,63 @@ function wireEditorInputs() {
   onText('f-alpha', v => { b.alpha = Number(v); renderTimeline(); renderExport() })
   onSelect('f-action', v => { b.actionId = (v || undefined) as SceneActionId | undefined; renderTimeline(); renderExport() })
   onSelect('f-sceneAction', v => { b.sceneActionId = (v || undefined) as SceneActionId | undefined; renderTimeline(); renderExport() })
+
+  // ---- Background-art controls (cover / backdrop beats) ----------------
+
+  // Gallery click — switch this beat to point at another existing key.
+  for (const card of editorEl.querySelectorAll('.bg-card')) {
+    card.addEventListener('click', () => {
+      const key = (card as HTMLElement).dataset.key
+      if (!key) return
+      b.key = key
+      render()
+    })
+  }
+
+  // Drag-and-drop: dropping an image onto the preview swaps in a
+  // local data-URL override. Persisted only for this session — the
+  // user has to download + replace the file in /public/intro/ to
+  // make it stick across reloads.
+  const wrap = document.getElementById('bg-preview-wrap')
+  if (wrap) {
+    const stop = (e: Event) => { e.preventDefault(); e.stopPropagation() }
+    wrap.addEventListener('dragover', e => { stop(e); wrap.classList.add('dragging') })
+    wrap.addEventListener('dragleave', e => { stop(e); wrap.classList.remove('dragging') })
+    wrap.addEventListener('drop', e => {
+      stop(e)
+      wrap.classList.remove('dragging')
+      const file = (e as DragEvent).dataTransfer?.files?.[0]
+      if (!file || !file.type.startsWith('image/')) return
+      if (!b.key) return
+      const reader = new FileReader()
+      reader.onload = () => {
+        imageOverrides.set(b.key!, reader.result as string)
+        render()
+      }
+      reader.readAsDataURL(file)
+    })
+  }
+
+  document.getElementById('bg-download')?.addEventListener('click', () => {
+    if (!b.key) return
+    const dataURL = imageOverrides.get(b.key)
+    if (!dataURL) return
+    // Pull the original file extension from INTRO_IMAGES so we
+    // suggest a filename that matches whatever's currently in
+    // /public/intro/ (page7/page8 are JPEG, others PNG).
+    const orig = pathForKey(b.key) ?? `/intro/${b.key.replace(/^intro_/, '')}.png`
+    const filename = orig.replace(/^.*\//, '')
+    const a = document.createElement('a')
+    a.href = dataURL
+    a.download = filename
+    a.click()
+  })
+
+  document.getElementById('bg-revert')?.addEventListener('click', () => {
+    if (!b.key) return
+    imageOverrides.delete(b.key)
+    render()
+  })
 
   document.getElementById('vo-play')?.addEventListener('click', () => {
     if (audioEl.src) { audioEl.currentTime = 0; audioEl.play() }
