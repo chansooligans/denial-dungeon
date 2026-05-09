@@ -147,12 +147,6 @@ export class HospitalScene extends Phaser.Scene {
   private miniMapTiles!: Phaser.GameObjects.Graphics
   private miniMapPlayer!: Phaser.GameObjects.Graphics
   private miniMapCell = 2
-  // Separate Y cell size so mobile can render a wide-and-short HUD
-  // strip at the top of the canvas (60×72 map is taller than wide,
-  // so a uniform cell can't be both phone-readable and not cover the
-  // play area). On desktop / expanded view, this stays equal to
-  // `miniMapCell`.
-  private miniMapCellY = 2
   private miniMapX = 0
   private miniMapY = 0
   private miniMapPad = 4
@@ -1021,27 +1015,15 @@ export class HospitalScene extends Phaser.Scene {
         Math.floor((screenW - 80) / mw),
         Math.floor((screenH - 100) / mh),
       ))
-      this.miniMapCellY = this.miniMapCell
-    } else if (isTouchDevice()) {
-      // Mobile: render as a wide-and-short HUD strip at the top of
-      // the canvas (analogous to the bottom-anchored dialogue box).
-      // Different cellX / cellY because the map is taller than
-      // wide — a uniform cell would either be too narrow horizontally
-      // or eat the play area vertically. ~25px/tile X × ~5px/tile Y
-      // → 1500 wide × 360 tall canvas-px, ~300×72 on a phone after
-      // Scale.FIT. Aspect-ratio compression distorts room shapes a
-      // little but keeps the top-bar feel.
-      this.miniMapCell = Math.max(12, Math.min(28, Math.floor(1500 / mw)))
-      this.miniMapCellY = Math.max(4, Math.min(8, Math.floor(380 / mh)))
     } else {
-      // Desktop — compact top-right HUD chip at 6px/tile (360px wide).
+      // Collapsed minimap — 6px per tile on the 60-wide map gives a
+      // 360px-wide HUD element. The bottom hint text stays at 18px
+      // regardless (set in buildMiniMap).
       this.miniMapCell = Math.max(1, Math.min(6, Math.floor(360 / mw))) || 1
-      this.miniMapCellY = this.miniMapCell
     }
     const cell = this.miniMapCell
-    const cellY = this.miniMapCellY
     const innerW = mw * cell
-    const innerH = mh * cellY
+    const innerH = mh * cell
     const pad = this.miniMapExpanded ? 12 : 4
     this.miniMapPad = pad
     const totalW = innerW + pad * 2
@@ -1115,7 +1097,7 @@ export class HospitalScene extends Phaser.Scene {
       const label = this.miniMapLabels[i]
       if (!label) continue
       const cx = ox + (r.x + r.w / 2) * cell
-      const cy = oy + (r.y + r.h / 2) * cellY
+      const cy = oy + (r.y + r.h / 2) * cell
       label.setPosition(cx, cy)
       label.setText(this.miniMapExpanded ? r.name : (r.shortName ?? r.name))
       label.setFontSize(this.miniMapExpanded ? 22 : 12)
@@ -1356,7 +1338,6 @@ export class HospitalScene extends Phaser.Scene {
     const { width: mw, height: mh, layout } = this.mapDef
     const g = this.miniMapTiles
     const cell = this.miniMapCell
-    const cellY = this.miniMapCellY
     const ox = this.miniMapX + this.miniMapPad
     const oy = this.miniMapY + this.miniMapPad
 
@@ -1375,7 +1356,7 @@ export class HospitalScene extends Phaser.Scene {
 
         const alpha = state === VIS_CURRENT ? 1 : 0.45
         g.fillStyle(color, alpha)
-        g.fillRect(ox + x * cell, oy + y * cellY, cell, cellY)
+        g.fillRect(ox + x * cell, oy + y * cell, cell, cell)
       }
     }
 
@@ -1399,16 +1380,15 @@ export class HospitalScene extends Phaser.Scene {
 
   private updateMiniMapPlayer() {
     const cell = this.miniMapCell
-    const cellY = this.miniMapCellY
     const ox = this.miniMapX + this.miniMapPad
     const oy = this.miniMapY + this.miniMapPad
     this.miniMapPlayer.clear()
     this.miniMapPlayer.fillStyle(0x7ee2c1, 1)
     this.miniMapPlayer.fillRect(
       ox + this.playerTileX * cell - 1,
-      oy + this.playerTileY * cellY - 1,
+      oy + this.playerTileY * cell - 1,
       cell + 2,
-      cellY + 2
+      cell + 2
     )
   }
 
