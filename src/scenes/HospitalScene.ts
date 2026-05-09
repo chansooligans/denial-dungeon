@@ -1637,8 +1637,27 @@ export class HospitalScene extends Phaser.Scene {
       }
 
       if (ns.currentFacing !== desired) {
-        ns.currentFacing = desired
-        ns.sprite.setTexture(`npc_${ns.npc.id}_${desired}`)
+        const key = `npc_${ns.npc.id}_${desired}`
+        // Defensive — only swap if the texture exists. Avoids
+        // dropping the sprite to a missing-texture box if some NPC
+        // doesn't have all four directional poses loaded.
+        if (this.textures.exists(key)) {
+          ns.currentFacing = desired
+          // Capture display state BEFORE setTexture and restore
+          // after — Phaser 3's setTexture has historically reset
+          // scale/origin in some configurations, and an NPC that
+          // suddenly renders at scale=1 instead of scale=2 reads
+          // as "shrunk to nothing" on a 64-tile grid.
+          const a = ns.sprite.alpha
+          ns.sprite.setTexture(key)
+          ns.sprite.setOrigin(0.5, 1).setScale(CHARACTER_SCALE).setAlpha(a)
+        } else {
+          // Log once per NPC so we don't spam the ribbon.
+          if (!ns.currentFacing) {
+            ns.currentFacing = 'down'
+            debugEvent(`face:miss ${ns.npc.id} ${desired}`)
+          }
+        }
       }
     }
   }
