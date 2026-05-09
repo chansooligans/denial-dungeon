@@ -244,8 +244,10 @@ export class BootScene extends Phaser.Scene {
     // Voiceover for the cinematic IntroScene — one MP3 per text beat,
     // pre-split via whisper transcription so each line plays its own
     // audio. Keys are 'intro_voice_NN' where NN matches the text-beat
-    // index (1-based, zero-padded). 18 beats total.
-    for (let i = 1; i <= 18; i++) {
+    // index (1-based, zero-padded). 17 lines total — the original
+    // beat 3 ("That's not a typo.") was cut and the rest renumbered
+    // down by one to keep the 1-to-1 alignment.
+    for (let i = 1; i <= 17; i++) {
       const nn = String(i).padStart(2, '0')
       this.load.audio(`intro_voice_${nn}`, `audio/intro/${nn}.mp3`)
     }

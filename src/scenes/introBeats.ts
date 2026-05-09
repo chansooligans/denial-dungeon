@@ -54,8 +54,10 @@ export const BEATS: Beat[] = [
   { type: 'wait', duration: 2200 },
   { type: 'text', lines: ['In Canada, it costs $6.'], color: '#f0a868' },
   { type: 'wait', duration: 2000 },
-  { type: 'text', lines: ["That's not a typo."], color: '#ef5b7b' },
-  { type: 'wait', duration: 2500 },
+  // ("That's not a typo." was removed — the $6 line lands the gut-
+  // punch on its own. The intro song's fade-in start is delayed by
+  // INTRO_SONG_START_DELAY_MS in IntroScene to keep the song's
+  // arrival pegged to the same later beat it used to.)
 
   // Beat 2: The System
   { type: 'scene', actionId: 'showHospitalPan' },
