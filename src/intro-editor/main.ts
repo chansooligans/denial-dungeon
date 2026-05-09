@@ -319,14 +319,12 @@ const COMPOSITION_SCALE = 1 / 4 // 480×320 canvas
 
 /** Resolve the working-copy objects array + tile grid size for the
  *  given scene action, or null if that action doesn't have a
- *  composition extracted yet. */
-function getComposition(action: SceneActionId | undefined): {
+ *  composition extracted yet. SCENE_OBJECTS is currently empty;
+ *  add a branch here when a future scene gets converted. */
+function getComposition(_action: SceneActionId | undefined): {
   objects: SceneObject[]
   gridSize: number
 } | null {
-  if (action === 'showHospitalPan') {
-    return { objects: sceneObjects.hospitalPan.objects, gridSize: sceneObjects.hospitalPan.gridSize }
-  }
   return null
 }
 

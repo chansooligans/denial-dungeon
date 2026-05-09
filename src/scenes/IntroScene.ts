@@ -1,7 +1,7 @@
 import Phaser from 'phaser'
 import { addFullscreenButton } from './fullscreenButton'
 import { addMuteButton } from './muteButton'
-import { BEATS, SCENE_OBJECTS, type SceneActionId } from './introBeats'
+import { BEATS, type SceneActionId } from './introBeats'
 
 export class IntroScene extends Phaser.Scene {
   private currentBeat = 0
@@ -551,43 +551,90 @@ export class IntroScene extends Phaser.Scene {
   }
 
   showHospitalPan() {
+    // Backdrop for the "Every day, thousands of claims..." beat.
+    // Pure black to start — the scene opens against void so the
+    // narration's first line lands on nothing. Then claim IDs fade
+    // in one by one across the canvas, density growing over the
+    // ~14s the beat sits on screen. By the third narration line
+    // ("...claims get lost.") the field is full and a few are
+    // tinted red, foreshadowing the loss the next scene shows.
+    //
+    // No walls, no floor tiles, no scattered desks. The previous
+    // version drew a literal corridor with a few isolated sprites
+    // that read as "this is supposed to be a hospital but the art
+    // got abandoned." The system the narration is describing is
+    // bigger than any one room, so the visual is now scale-of-data
+    // rather than scale-of-architecture.
     this.sceneContainer.removeAll(true)
     const { width, height } = this.scale
 
-    // Draw a simple hospital corridor.
-    // Each tile drawn at 32×32 to fill the doubled 1920×1280 canvas
-    // (60 cols * 32 = 1920, 40 rows * 32 = 1280). The wall/floor
-    // pattern stays procedural (boundary rectangle) — only the
-    // decorative objects on top come from SCENE_OBJECTS.hospitalPan,
-    // edited via /intro-editor.html.
-    for (let x = 0; x < 60; x++) {
-      for (let y = 0; y < 40; y++) {
-        const isWall = y < 8 || y > 32 || x < 2 || x > 57
-        const tile = this.add.image(
-          x * 32 + 16, y * 32 + 16,
-          isWall ? 'h_wall' : 'h_floor'
-        ).setDisplaySize(32, 32).setAlpha(0)
-        this.sceneContainer.add(tile)
-        this.tweens.add({ targets: tile, alpha: isWall ? 0.6 : 0.3, duration: 1000, delay: x * 10 })
-      }
-    }
+    const bg = this.add.rectangle(width / 2, height / 2, width, height, 0x0a0e14)
+    this.sceneContainer.add(bg)
 
-    // Decorative sprites (desks, plants, anything else added via the
-    // editor). Position is in tile-grid coords; world pixels are
-    // `x * gridSize`. setDisplaySize handles both the 16×16 procedural
-    // fallback and the 64×64 LoRA-loaded textures uniformly.
-    const cfg = SCENE_OBJECTS.hospitalPan
-    for (const o of cfg.objects) {
-      const obj = this.add.image(o.x * cfg.gridSize, o.y * cfg.gridSize, o.sprite)
-        .setDisplaySize(o.size ?? 64, o.size ?? 64).setAlpha(0)
-      this.sceneContainer.add(obj)
+    // Total spawn window — slightly less than the full beat duration
+    // so the last few claims have a moment to settle before the
+    // scene transitions to showDesk.
+    const TOTAL_DURATION_MS = 12000
+    const COUNT = 80
+
+    for (let i = 0; i < COUNT; i++) {
+      const id =
+        `CLM-2026-${String(Phaser.Math.Between(1, 12)).padStart(2, '0')}` +
+        `-${String(Phaser.Math.Between(1, 28)).padStart(2, '0')}` +
+        `-${String(Phaser.Math.Between(1, 99999)).padStart(5, '0')}`
+
+      // Tier roll — most claims are dim gray (routine), a small
+      // fraction are orange (in-process), a smaller fraction red
+      // (lost). Red ones spawn late so they line up with the third
+      // narration line about claims getting lost.
+      const r = Math.random()
+      const tier = r < 0.85 ? 'normal' : r < 0.95 ? 'inProcess' : 'lost'
+      const color = tier === 'normal' ? '#5a6a7a'
+                  : tier === 'inProcess' ? '#f0a868'
+                  : '#ef5b7b'
+      const targetAlpha = tier === 'normal' ? 0.25
+                        : tier === 'inProcess' ? 0.45
+                        : 0.6
+
+      // 60-px inset from edges so labels never clip the viewport.
+      const x = Phaser.Math.Between(60, width - 60)
+      const y = Phaser.Math.Between(60, height - 60)
+      const fontSize = Phaser.Math.Between(14, 22)
+
+      const t = this.add.text(x, y, id, {
+        fontSize: `${fontSize}px`,
+        fontFamily: 'monospace',
+        color,
+      }).setOrigin(0.5).setAlpha(0)
+      this.sceneContainer.add(t)
+
+      // Spawn-time distribution. Normal/in-process use a slight
+      // power-curve bias so density visibly accelerates as the beat
+      // progresses. Lost claims always spawn in the back third so
+      // they hit on cue.
+      const delay = tier === 'lost'
+        ? Phaser.Math.Between(8000, 11000)
+        : Math.pow(Math.random(), 1.5) * (TOTAL_DURATION_MS - 1500)
+
       this.tweens.add({
-        targets: obj, alpha: o.alpha ?? 0.5, duration: 800, delay: 500,
+        targets: t,
+        alpha: targetAlpha,
+        duration: 700,
+        delay,
+      })
+
+      // Subtle vertical drift so the field feels alive instead of
+      // statically painted on. Starts after the fade-in completes.
+      this.tweens.add({
+        targets: t,
+        y: y + Phaser.Math.FloatBetween(-12, 12),
+        duration: Phaser.Math.Between(4000, 7000),
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut',
+        delay: delay + 700,
       })
     }
-
-    // Slow camera pan
-    this.cameras.main.setBounds(0, 0, 1920, 1280)
   }
 
   showDesk() {
