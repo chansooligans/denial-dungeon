@@ -106,8 +106,15 @@ const SW_TROUGH_Y       = 49 // east-west corridor running just north of the sou
 // HospitalScene.tryMove.
 const STAIR_HUB_TO_2F   = { from: { x: 32, y: 10 }, to: { x: 33, y: 96 }, label: '↑ 2F' }
 const STAIR_2F_TO_HUB   = { from: { x: 33, y: 96 }, to: { x: 32, y: 10 }, label: '↓ 1F' }
-const EXIT_LOBBY_OUT    = { from: { x: 16, y: 40 }, to: { x: 16, y: 67 }, label: 'EXIT →' }
-const EXIT_OUT_LOBBY    = { from: { x: 16, y: 67 }, to: { x: 16, y: 40 }, label: '← LOBBY' }
+// Lobby ↔ outdoor parking-lot teleport. The lobby endpoint sits on
+// the *west* interior column (LOBBY dx=1, dy=4 → world (5, 36)) so
+// the parking-lot entrance reads as a side door, not a south
+// corridor (the south door already leads to the south wing). The
+// outdoor arrival tile stays where it was — geographically the
+// parking lot is south of everything else, but the teleport hides
+// that distance.
+const EXIT_LOBBY_OUT    = { from: { x: 5,  y: 36 }, to: { x: 16, y: 67 }, label: '← EXIT' }
+const EXIT_OUT_LOBBY    = { from: { x: 16, y: 67 }, to: { x: 5,  y: 36 }, label: '← LOBBY' }
 
 const { layout, tileMeta } = buildMap({
   width: WIDTH,
@@ -286,13 +293,14 @@ const { layout, tileMeta } = buildMap({
         { dx: 2,  dy: 7, ch: 'V' },
         { dx: 22, dy: 7, ch: 'w' }, // doubles as a tall lamp visually with the warm tint
         { dx: 24, dy: 7, ch: 'P' }, // corner plant
-        // Front-entrance exit mat — teleports to the outdoor parking
-        // lot (paired in stairs[]). Lobby keeps its existing south
-        // door into the south wing; the 'O' tile is a *separate*
-        // exit, on the bottom interior row.
-        // (Lobby origin is (4,32); dx=11/dy=7 → world (16, 40),
+        // Side-door exit mat — teleports to the outdoor parking
+        // lot (paired in stairs[]). Sits on the WEST interior wall
+        // column. The lobby's south door still leads to the south
+        // wing; this 'O' tile is a separate side exit. Officer
+        // Reyes stands one tile east, watching it.
+        // (Lobby origin is (4, 32); dx=1/dy=4 → world (5, 36),
         // matching EXIT_LOBBY_OUT.from.)
-        { dx: 11, dy: 7, ch: 'O' },
+        { dx: 1, dy: 4, ch: 'O' },
       ],
     },
 
@@ -675,7 +683,11 @@ export const LEVEL_1_MAP: MapDef = {
     // and Noah occupy the northern half.
     { npcId: 'walter',         tileX: LOBBY.x + 20, tileY: LOBBY.y + 2, ambient: true },
     { npcId: 'noah',           tileX: LOBBY.x + 18, tileY: LOBBY.y + 7, facing: 'left', ambient: true },
-    { npcId: 'officer_reyes',  tileX: LOBBY.x + 1,  tileY: LOBBY.y + 4, ambient: true },
+    // Officer Reyes shifted one tile east of his old spot — the
+    // 'O' exit-mat tile now sits at (LOBBY.x+1, LOBBY.y+4), and
+    // having him on top of it would block the teleport. Faces
+    // 'left' toward the door, watching who comes through.
+    { npcId: 'officer_reyes',  tileX: LOBBY.x + 2,  tileY: LOBBY.y + 4, facing: 'left', ambient: true },
     { npcId: 'flower_visitor', tileX: LOBBY.x + 24, tileY: LOBBY.y + 5, facing: 'left', ambient: true },
     { npcId: 'elder_patient',  tileX: LOBBY.x + 5,  tileY: LOBBY.y + 3, ambient: true },
 
