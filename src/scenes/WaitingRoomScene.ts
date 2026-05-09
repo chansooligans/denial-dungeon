@@ -237,6 +237,7 @@ export class WaitingRoomScene extends Phaser.Scene {
   }
 
   create() {
+    debugEvent(`wr:create encounter=${this.activeEncounterId ?? '-'}`)
     const state = getState()
     this.mapDef = HOSPITAL_MAP
 

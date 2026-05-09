@@ -301,7 +301,9 @@ export class HospitalScene extends Phaser.Scene {
         s.pendingHospitalSpawn = { x: this.playerTileX, y: this.playerTileY }
         saveGame()
         this.canMove = false
+        debugEvent(`descent:start ${descent.encounterId}`)
         showClaimPreview(this, descent.encounterId, () => {
+          debugEvent(`descent:preview-done ${descent.encounterId}`)
           this.descendThroughGap(descent.encounterId)
         })
       }
@@ -1522,6 +1524,7 @@ export class HospitalScene extends Phaser.Scene {
       const state = getState()
       state.inWaitingRoom = true
       saveGame()
+      debugEvent(`descent:starting-WR ${activeEncounterId} @ ${spawnTileX},${spawnTileY}`)
       this.scene.start('WaitingRoom', { activeEncounterId, spawnTileX, spawnTileY })
     })
   }
