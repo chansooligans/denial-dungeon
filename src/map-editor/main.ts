@@ -22,27 +22,34 @@
 import { LEVEL_1_MAP } from '../content/maps/level1'
 import {
   GLYPH_TO_OBJ_KEY,
-  OBJ_KEY_TO_SRC,
-  VARIANT_KEY_TO_SRC,
+  KEY_TO_COLOR_CSS,
+  DEFAULT_OBJECT_COLOR_CSS,
   GLYPH_LABEL,
 } from './data'
 
 const TILE = 24 // CSS px per tile in the editor view at zoom 1.0
 
-// All sprite keys the editor knows how to render. Combines:
-//   - OBJ_KEY_TO_SRC (canonical hospital + waiting-room textures
-//     mapped to their LoRA cell PNGs)
-//   - VARIANT_KEY_TO_SRC (h_desk_1..12 + h_plant_1..20)
-// The palette lists every key in here, so users can place objects
-// whose texture isn't yet glyph-bound (the "inactive" ones).
-const ALL_SPRITES: Record<string, string> = {
-  ...OBJ_KEY_TO_SRC,
-  ...VARIANT_KEY_TO_SRC,
-}
+// All texture keys the editor can place. Procedural era — there are
+// no sprite PNGs; every entry in KEY_TO_COLOR_CSS renders as a
+// tinted box. Build the palette from this lookup so glyph-mapped
+// keys + any extras with a fallback color are all available.
+const ALL_KEYS: string[] = Object.keys(KEY_TO_COLOR_CSS)
 
 // Reverse of GLYPH_TO_OBJ_KEY — used at bootstrap to derive each
 // existing tile's default sprite from its layout glyph.
 const OBJ_KEY_BY_GLYPH = GLYPH_TO_OBJ_KEY
+
+/** CSS color for a texture key, with sensible default for unknowns. */
+function colorForKey(key: string): string {
+  return KEY_TO_COLOR_CSS[key] ?? DEFAULT_OBJECT_COLOR_CSS
+}
+
+/** Glyph that maps to this texture key, or undefined if it's a
+ *  no-glyph (would-be-inactive) key. */
+function glyphForKey(key: string): string | undefined {
+  for (const [g, k] of Object.entries(OBJ_KEY_BY_GLYPH)) if (k === key) return g
+  return undefined
+}
 
 interface PlacedObj {
   x: number
@@ -164,33 +171,37 @@ function render() {
     }
   }
 
-  // Object sprites on top.
+  // Object boxes on top. Procedural era — every object renders as
+  // a tinted CSS div with the glyph centered (or '·' for no-glyph
+  // keys). Same bottom-anchored geometry HospitalScene uses, so the
+  // editor's drag/drop math + the in-game placement match exactly.
   for (const [key, obj] of state.objects) {
     if (state.removed.has(key)) continue
-    const src = ALL_SPRITES[obj.sprite]
-    if (!src) continue
-    const img = document.createElement('img')
-    img.className = 'obj'
-    img.src = `${import.meta.env.BASE_URL}${src}`
-    // Bottom-anchored at the tile's bottom edge, scaled by the
-    // size multiplier — same anchoring HospitalScene uses so the
-    // editor visual matches in-game. `obj.size` defaults to 1.0
-    // = 2× tile (the standard "overflows up into tile above" look).
     const sizeMult = obj.size ?? 1
     const dispPx = TILE * 2 * sizeMult
-    img.style.left = `${(obj.x + 0.5) * TILE - dispPx / 2}px`
-    img.style.top = `${(obj.y + 1) * TILE - dispPx}px`
-    img.style.width = `${dispPx}px`
-    img.style.height = `${dispPx}px`
-    img.dataset.x = String(obj.x)
-    img.dataset.y = String(obj.y)
+    const box = document.createElement('div')
+    box.className = 'obj'
+    box.style.left = `${(obj.x + 0.5) * TILE - dispPx / 2}px`
+    box.style.top = `${(obj.y + 1) * TILE - dispPx}px`
+    box.style.width = `${dispPx}px`
+    box.style.height = `${dispPx}px`
+    box.style.background = colorForKey(obj.sprite)
+    // Inset to mirror the procedural draw's 12×12 inner box vs the
+    // 16×16 cell — gives a small frame on each side so adjacent
+    // objects don't visually merge.
+    box.style.border = '2px solid rgba(0,0,0,0.55)'
+    box.style.boxSizing = 'border-box'
+    // Glyph in the center — clarifies what this is at a glance.
+    box.textContent = glyphForKey(obj.sprite) ?? '·'
+    box.dataset.x = String(obj.x)
+    box.dataset.y = String(obj.y)
     if (obj.flipX) {
-      img.style.transform = 'scaleX(-1)'
-      img.style.transformOrigin = '50% 75%'
+      box.style.transform = 'scaleX(-1)'
+      box.style.transformOrigin = '50% 75%'
     }
-    if (state.selectedKey === key) img.classList.add('selected')
-    img.addEventListener('mousedown', onObjMouseDown)
-    canvas.appendChild(img)
+    if (state.selectedKey === key) box.classList.add('selected')
+    box.addEventListener('mousedown', onObjMouseDown)
+    canvas.appendChild(box)
   }
 
   // Selection ring on the underlying tile.
@@ -383,22 +394,31 @@ function showPalette(clientX: number, clientY: number) {
   palette.style.top = `${clientY + 4}px`
   palette.style.display = 'grid'
 
-  // Reverse-lookup so we can show the active glyph alongside each
-  // palette cell (when one exists). Inactive textures display as
-  // "no glyph" — they'll go through tileMeta.sprite at export time.
-  const glyphForKey: Record<string, string> = {}
-  for (const [g, k] of Object.entries(OBJ_KEY_BY_GLYPH)) glyphForKey[k] = g
-
-  for (const [spriteKey, src] of Object.entries(ALL_SPRITES).sort()) {
+  for (const spriteKey of [...ALL_KEYS].sort()) {
     const cell = document.createElement('div')
     cell.className = 'palette-cell'
-    const glyph = glyphForKey[spriteKey]
+    const glyph = glyphForKey(spriteKey)
     cell.title = glyph
       ? `${spriteKey}  (active glyph '${glyph}')`
       : `${spriteKey}  (inactive — placed via tileMeta.sprite)`
-    cell.innerHTML =
-      `<img src="${import.meta.env.BASE_URL}${src}" />` +
-      `<span>${spriteKey.replace(/^h_/, '')}</span>`
+    // Procedural-era palette: each cell is a tinted box matching
+    // what the canvas + the in-game render show.
+    const swatch = document.createElement('div')
+    swatch.style.width = '32px'
+    swatch.style.height = '32px'
+    swatch.style.background = colorForKey(spriteKey)
+    swatch.style.border = '2px solid rgba(0,0,0,0.55)'
+    swatch.style.boxSizing = 'border-box'
+    swatch.style.display = 'flex'
+    swatch.style.alignItems = 'center'
+    swatch.style.justifyContent = 'center'
+    swatch.style.color = '#fff'
+    swatch.style.fontSize = '14px'
+    swatch.textContent = glyph ?? '·'
+    cell.appendChild(swatch)
+    const label = document.createElement('span')
+    label.textContent = spriteKey.replace(/^h_/, '')
+    cell.appendChild(label)
     if (!glyph) cell.classList.add('inactive')
     cell.addEventListener('click', () => placeFromPalette(spriteKey))
     palette.appendChild(cell)

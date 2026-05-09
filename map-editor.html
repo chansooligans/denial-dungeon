@@ -65,15 +65,25 @@
     .cell.door  { background: #4a3d24; }
     .cell.floor { background: #15191f; border: 1px solid #1a1e25; }
     .cell.floor:hover { background: #1f2630; }
-    img.obj {
+    /* Procedural-era objects: tinted CSS boxes (no PNGs to load).
+       Glyph centered for quick at-a-glance identification. The
+       border tint mimics the dark-frame outline the in-game
+       procedural fallback draws. */
+    .obj {
       position: absolute;
       pointer-events: auto;
       cursor: grab;
-      image-rendering: pixelated;
       transition: filter 80ms ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font: bold 14px ui-monospace, monospace;
+      text-shadow: 0 1px 0 rgba(0,0,0,0.6);
+      user-select: none;
     }
-    img.obj:hover { filter: brightness(1.4); }
-    img.obj.selected { filter: drop-shadow(0 0 4px #f4d06f) brightness(1.3); }
+    .obj:hover { filter: brightness(1.4); }
+    .obj.selected { filter: drop-shadow(0 0 4px #f4d06f) brightness(1.3); }
     .sel-ring {
       position: absolute;
       box-sizing: border-box;

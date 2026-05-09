@@ -1,7 +1,7 @@
 import Phaser from 'phaser'
 import { FACTION_COLOR } from '../types'
 import type { Faction } from '../types'
-import { OBJECT_SOURCES } from './objectSources'
+import { OBJECT_SOURCES, OBJECT_FALLBACK_COLORS } from './objectSources'
 
 /** Mix a hex color toward white by `amt` (0..1). Used for highlight ramps. */
 function lighten(hex: number, amt: number): number {
@@ -207,9 +207,41 @@ export class BootScene extends Phaser.Scene {
     this.makeNPCSprites()
     this.makeHospitalTiles()
     this.makeWaitingRoomTiles()
+    // After detailed procs, fill in tinted-box fallbacks for any
+    // hospital-object key that wasn't already drawn (the orphan
+    // Phase-C keys: h_aed, h_iv_stand, etc.). Lets level1.ts use
+    // those glyphs without rendering as missing-texture in the
+    // procedural era.
+    this.ensureFallbackObjectTextures()
     this.makeUIElements()
     this.makeDocumentSprites()
     this.makeEncounterPortraits()
+  }
+
+  /** Generate a simple tinted-box procedural for every key in
+   *  OBJECT_FALLBACK_COLORS that doesn't already have a texture.
+   *  16×16 base size to match `makeHospitalTiles`; bottom-anchored
+   *  rendering at runtime scales each up to the standard 2-tile
+   *  display via `setDisplaySize(TILE * 2, TILE * 2)`.
+   *
+   *  Box shape: dark outline frame, tinted body, single-row top
+   *  highlight. Crude but readable — enough that the player can
+   *  tell two adjacent items are different objects, and the editor
+   *  can mirror the same look. */
+  private ensureFallbackObjectTextures() {
+    const g = this.add.graphics()
+    for (const [key, color] of Object.entries(OBJECT_FALLBACK_COLORS)) {
+      if (this.textures.exists(key)) continue
+      g.clear()
+      g.fillStyle(darken(color, 0.5))
+      g.fillRect(2, 2, 12, 12)
+      g.fillStyle(color)
+      g.fillRect(3, 3, 10, 10)
+      g.fillStyle(lighten(color, 0.35))
+      g.fillRect(4, 4, 8, 1)
+      g.generateTexture(key, 16, 16)
+    }
+    g.destroy()
   }
 
   /**

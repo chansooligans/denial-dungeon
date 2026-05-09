@@ -1,11 +1,14 @@
-// Editor-side mirror of the two mapping tables that drive in-game
-// rendering. Glyph→key duplicates HospitalScene.TILE_TEXTURES (kept
-// here because the Phaser-laden scene module would bloat the editor
-// bundle). Key→sprite-path is now derived from the canonical
-// `OBJECT_SOURCES` table in `../scenes/objectSources`, so the editor
-// and BootScene can't drift on which slot backs each texture key.
+// Editor-side data tables. The map editor renders objects as
+// CSS-tinted boxes (no PNG `<img>` tags) since the game is back to
+// fully-procedural object rendering — there are no sprite files
+// to load. Each table mirrors a source-of-truth in the scenes
+// module:
+//   - GLYPH_TO_OBJ_KEY mirrors HospitalScene.TILE_TEXTURES (glyph
+//     → object texture key). Hand-maintained.
+//   - KEY_TO_COLOR_CSS is derived from OBJECT_FALLBACK_COLORS in
+//     `../scenes/objectSources`, converted to CSS hex strings.
 
-import { OBJECT_SOURCES } from '../scenes/objectSources'
+import { OBJECT_FALLBACK_COLORS } from '../scenes/objectSources'
 
 /** Map glyph → object texture key (matches HospitalScene.TILE_TEXTURES).
  *  Keep in sync if a new glyph or object key is added there. */
@@ -51,25 +54,19 @@ export const OBJ_KEY_TO_GLYPH: Record<string, string> = Object.fromEntries(
   Object.entries(GLYPH_TO_OBJ_KEY).map(([g, k]) => [k, g])
 )
 
-/** Map object texture key → relative sprite path under `/public/`.
- *  Auto-derived from the canonical OBJECT_SOURCES so the editor
- *  always renders whatever cell BootScene is currently loading.
- *  Includes the 12 desk variants + 20 plant variants since
- *  OBJECT_SOURCES merges those in. */
-export const OBJ_KEY_TO_SRC: Record<string, string> = Object.fromEntries(
-  Object.entries(OBJECT_SOURCES).map(([key, slot]) =>
-    [key, `sprites/objects-raw/${slot}.png`]
+/** Texture key → CSS hex color for the editor's box rendering.
+ *  Derived from the runtime fallback colors so editor + game can't
+ *  drift on what each object's tint should be. */
+export const KEY_TO_COLOR_CSS: Record<string, string> = Object.fromEntries(
+  Object.entries(OBJECT_FALLBACK_COLORS).map(([k, n]) =>
+    [k, '#' + n.toString(16).padStart(6, '0')]
   )
 )
 
-/** Variant-only keys (h_desk_1..12, h_plant_1..20). Subset of
- *  OBJ_KEY_TO_SRC, exposed separately for the variant browsers in
- *  the intro / map editors that want them grouped. */
-export const VARIANT_KEY_TO_SRC: Record<string, string> = Object.fromEntries(
-  Object.entries(OBJ_KEY_TO_SRC).filter(([key]) =>
-    /^h_(desk|plant)_\d+$/.test(key)
-  )
-)
+/** Default CSS color when the editor encounters an unknown key.
+ *  Should rarely fire — every key in `GLYPH_TO_OBJ_KEY` is also in
+ *  `OBJECT_FALLBACK_COLORS`. */
+export const DEFAULT_OBJECT_COLOR_CSS = '#6a7a8a'
 
 /** Human label per glyph for the palette / status line. */
 export const GLYPH_LABEL: Record<string, string> = {
