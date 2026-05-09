@@ -347,12 +347,14 @@
 <section class="tab-section" data-tab="npcs">
   <div class="section-header">
     <h1>NPCs</h1>
-    <span class="section-meta">5 LoRA sheets × 4 characters × 4 directions · 64×64 each</span>
+    <span class="section-meta">20 LoRA sheets · 85 characters · 64×64 each</span>
   </div>
   <p>
-    All 80 LoRA-generated NPC frames from <code>public/sprites/npcs-raw/</code>.
+    Every NPC frame from <code>public/sprites/npcs-raw/</code>, grouped by
+    character type (not by source sheet). Each row shows the slot id
+    (<code>npc&lt;N&gt;_&lt;R&gt;</code>) so you can still trace it back.
     Pick which slot becomes which game NPC using the dropdowns under each
-    row. Choices saved as you click (local storage). The
+    row. Choices save as you click (local storage). The
     <span class="badge active" style="position:relative;top:0;right:0">active</span>
     badge marks NPCs whose texture key is referenced by a placement in
     <code>level1.ts</code>; <span class="badge inactive" style="position:relative;top:0;right:0">inactive</span>
@@ -367,6 +369,25 @@
     <button id="reset">Reset all</button>
     <span class="summary" id="summary"></span>
   </div>
+
+  <!-- Category sub-tabs. "All" shows the full grouped grid; specific
+       categories filter to that group. -->
+  <nav class="tabs subtabs" id="npc-subtabs">
+    <button data-subtab="all">All</button>
+    <button data-subtab="doctors">Doctors</button>
+    <button data-subtab="nurses-techs">Nurses & Techs</button>
+    <button data-subtab="admin-frontdesk">Admin / Front Desk</button>
+    <button data-subtab="coding-it">Coding / IT</button>
+    <button data-subtab="exec-compliance">Exec / Compliance</button>
+    <button data-subtab="payer">Payer</button>
+    <button data-subtab="security">Security</button>
+    <button data-subtab="facilities">Facilities</button>
+    <button data-subtab="cafeteria-service">Cafeteria / Service</button>
+    <button data-subtab="ems">EMS</button>
+    <button data-subtab="patients-visitors">Patients / Visitors</button>
+    <button data-subtab="smokers">Smokers (outdoor)</button>
+    <button data-subtab="misc">Misc</button>
+  </nav>
 
   <!-- Live list of custom NPCs with per-item delete buttons. Hidden when empty. -->
   <div class="custom-list" id="custom-list" style="display:none"></div>
@@ -969,11 +990,190 @@ function refreshDropdowns() {
   }
 }
 
+// === NPC categories =====================================================
+//
+// Each NPC slot belongs to one display category. Categories drive the
+// sub-tab filter and the section grouping in the rendered grid. This
+// replaces the old "group by source sheet (npc1..npc20)" layout —
+// authors care about character TYPE more than which contact-sheet PNG
+// it came from.
+//
+// Order of NPC_CATEGORIES is the order they render top-to-bottom in
+// the "All" view. Add new categories here + add slot mappings to
+// CATEGORY_BY_SLOT below.
+
+const NPC_CATEGORIES = [
+  { id: 'doctors',          label: 'Doctors',                 gloss: 'White-coat physicians.' },
+  { id: 'nurses-techs',     label: 'Nurses & Techs',          gloss: 'Scrubs — nurses, orderlies, lab/imaging techs, pharmacists.' },
+  { id: 'admin-frontdesk',  label: 'Admin / Front Desk',      gloss: 'Registration, PFS, denials, billing, records — clipboard-and-clerk roles.' },
+  { id: 'coding-it',        label: 'Coding / IT',             gloss: 'Back-office data: CDI, EDI, clearinghouse.' },
+  { id: 'exec-compliance',  label: 'Exec / Compliance',       gloss: 'Senior suits, audit team, compliance officers, hospital exec.' },
+  { id: 'payer',            label: 'Payer',                   gloss: 'Phone-bank reps and payer-side workers (Aetna / Anthem-equivalents).' },
+  { id: 'security',         label: 'Security',                gloss: 'Uniformed officers, hospital security, alt police.' },
+  { id: 'facilities',       label: 'Facilities',              gloss: 'Janitors, maintenance, couriers, deliveries.' },
+  { id: 'cafeteria-service',label: 'Cafeteria / Service',     gloss: 'Kitchen, servers, cashiers.' },
+  { id: 'ems',              label: 'EMS',                     gloss: 'Paramedics, bike EMTs, ambulance crew.' },
+  { id: 'patients-visitors',label: 'Patients / Visitors',     gloss: 'Civilians — patients, visitors, family, walk-ins.' },
+  { id: 'smokers',          label: 'Smokers (outdoor only)',  gloss: 'Cigarette is part of the sprite — outdoor placements only.' },
+  { id: 'misc',             label: 'Misc',                    gloss: 'Anything that didn\'t slot anywhere else.' },
+];
+
+// Slot id (`npc<N>_<row>`) → category id. Hand-curated; if a slot is
+// missing from this map it falls into "misc" and the user can re-
+// classify by editing this table.
+const CATEGORY_BY_SLOT = {
+  // Round 1 — npc1..npc5
+  'npc1_0': 'doctors',          // dr_marcus / martinez (resident, white coat)
+  'npc1_1': 'nurses-techs',     // liana (nurse, blue scrubs)
+  'npc1_2': 'doctors',          // dr_priya (surgeon, green scrubs)
+  'npc1_3': 'nurses-techs',     // dev (orderly, teal scrubs)
+  'npc2_0': 'patients-visitors',// walter (elderly patient)
+  'npc2_1': 'patients-visitors',// anjali (patient)
+  'npc2_2': 'exec-compliance',  // chen (audit / data analytics)
+  'npc2_3': 'exec-compliance',  // eddi (audit observer)
+  'npc3_0': 'exec-compliance',  // rivera (audit / compliance)
+  'npc3_1': 'admin-frontdesk',  // kim (registration)
+  'npc3_2': 'admin-frontdesk',  // jordan (PFS)
+  'npc3_3': 'admin-frontdesk',  // sam (denials)
+  'npc4_0': 'doctors',          // dr_ethan (physician, white coat)
+  'npc4_1': 'security',         // officer_reyes
+  'npc4_2': 'facilities',       // joe (janitor)
+  'npc4_3': 'patients-visitors',// noah (visitor)
+  'npc5_0': 'coding-it',        // pat (coding)
+  'npc5_1': 'admin-frontdesk',  // dana (revenue cycle mentor)
+  'npc5_2': 'coding-it',        // alex (IT/EDI)
+  'npc5_3': 'exec-compliance',  // carl (audit partner)
+
+  // Round 2 — npc6..npc15
+  'npc6_0': 'nurses-techs',     // nadia (nurse, bun)
+  'npc6_1': 'doctors',          // dr_okafor
+  'npc6_2': 'admin-frontdesk',  // celine
+  'npc6_3': 'admin-frontdesk',  // omar (navy polo + tan slacks staff)
+  'npc7_0': 'nurses-techs',     // rad_tech / Adaeze
+  'npc7_1': 'doctors',          // dr_park
+  'npc7_2': 'nurses-techs',     // esme (nurse, dark scrubs)
+  'npc7_3': 'nurses-techs',     // caleb (tech, teal scrubs)
+  'npc8_0': 'admin-frontdesk',  // rosa (clerk, tan jacket + ID)
+  'npc8_1': 'doctors',          // dr_haddad
+  'npc8_2': 'admin-frontdesk',  // priya_admin (navy blazer)
+  'npc8_3': 'admin-frontdesk',  // imani (olive jacket)
+  'npc9_0': 'facilities',       // janitor_b
+  'npc9_1': 'security',         // security_b
+  'npc9_2': 'facilities',       // maintenance (toolbox)
+  'npc9_3': 'cafeteria-service',// cafeteria worker
+  'npc10_0':'admin-frontdesk',  // naomi (clerk)
+  'npc10_1':'nurses-techs',     // pharm_b (pharmacist, green apron)
+  'npc10_2':'nurses-techs',     // lab_tech (dark scrubs, glasses)
+  'npc10_3':'exec-compliance',  // lena (exec, dark blazer)
+  'npc11_0':'admin-frontdesk',  // records_clerk / Marisol
+  'npc11_1':'doctors',          // dr_grant (sweater + glasses physician)
+  'npc11_2':'admin-frontdesk',  // helena (admin badge)
+  'npc11_3':'exec-compliance',  // compliance_officer / Theo
+  'npc11_4':'patients-visitors',// amaya
+  'npc12_0':'coding-it',        // tech_isaac
+  'npc12_1':'admin-frontdesk',  // jamal (general staff)
+  'npc12_2':'facilities',       // delivery / courier
+  'npc12_3':'admin-frontdesk',  // jada (clerk, green polo)
+  'npc12_4':'nurses-techs',     // orderly_b
+  'npc13_0':'facilities',       // janitor_c
+  'npc13_1':'cafeteria-service',// cashier
+  'npc13_2':'patients-visitors',// mrs_holloway (senior patient)
+  'npc13_3':'patients-visitors',// florist / volunteer
+  'npc13_4':'cafeteria-service',// server (waiter vest)
+  'npc14_0':'security',         // security_c
+  'npc14_1':'admin-frontdesk',  // admin_papers
+  'npc14_2':'exec-compliance',  // mr_okonkwo (exec)
+  'npc14_3':'payer',            // payer_supervisor / Diane
+  'npc14_4':'smokers',          // smoker_visitor / Earl
+  'npc15_0':'exec-compliance',  // sloane (exec)
+  'npc15_1':'exec-compliance',  // dr_alvarez (exec/physician)
+  'npc15_2':'admin-frontdesk',  // beatrice (clerk)
+  'npc15_3':'admin-frontdesk',  // andre (admin)
+  'npc15_4':'payer',            // payer_rep / Theresa (headset)
+
+  // Round 3 — npc16..npc20
+  'npc16_0':'security',         // security_d (dark navy uniform)
+  'npc16_1':'smokers',          // smoker_outdoor_a_alt (lavender coat, cigarette)
+  'npc16_2':'patients-visitors',// leo (visitor with coffee)
+  'npc16_3':'patients-visitors',// casual_man (bearded visitor + cap)
+  'npc17_0':'security',         // officer_dress
+  'npc17_1':'patients-visitors',// flower_visitor / Greta
+  'npc17_2':'ems',              // bike_emt
+  'npc17_3':'patients-visitors',// visitor_gift
+  'npc18_0':'facilities',       // maintenance_b (alt jumpsuit)
+  'npc18_1':'smokers',          // smoker_outdoor_c_alt
+  'npc18_2':'facilities',       // maintenance_c (gray jumpsuit + tool)
+  'npc18_3':'security',         // officer_bodycam
+  'npc19_0':'patients-visitors',// phone_visitor
+  'npc19_1':'ems',              // paramedic / Cassie
+  'npc19_2':'patients-visitors',// visitor_bags
+  'npc19_3':'facilities',       // bike_courier
+  'npc20_0':'patients-visitors',// veteran
+  'npc20_1':'security',         // security_e (urban hoodie)
+  'npc20_2':'smokers',          // smoker_outdoor_b / Sandra
+  'npc20_3':'patients-visitors',// elder_patient / Mr. Beck
+};
+
+function categoryForSlot(slot) {
+  return CATEGORY_BY_SLOT[slot] || 'misc';
+}
+
+// === Sub-tab state ======================================================
+
+const NPC_SUBTAB_KEY = 'npc-subtab-v1';
+let activeNpcSubtab = (() => {
+  try { return localStorage.getItem(NPC_SUBTAB_KEY) || 'all'; }
+  catch { return 'all'; }
+})();
+function setNpcSubtab(name) {
+  activeNpcSubtab = name;
+  try { localStorage.setItem(NPC_SUBTAB_KEY, name); } catch {}
+  for (const btn of document.querySelectorAll('#npc-subtabs button')) {
+    btn.classList.toggle('active', btn.dataset.subtab === name);
+  }
+  // Show/hide each category section based on the active filter.
+  for (const sec of document.querySelectorAll('.npc-cat-section')) {
+    sec.style.display = (name === 'all' || sec.dataset.cat === name) ? '' : 'none';
+  }
+}
+
+// Bucket every slot by its category so the grid render iterates
+// categories in NPC_CATEGORIES order.
+function slotsByCategory() {
+  const buckets = new Map();
+  for (const cat of NPC_CATEGORIES) buckets.set(cat.id, []);
+  for (const s of sheets) {
+    for (let r = 0; r < s.rows; r++) {
+      const slot = `${s.name}_${r}`;
+      const cat = categoryForSlot(slot);
+      if (!buckets.has(cat)) buckets.set(cat, []);
+      buckets.get(cat).push(slot);
+    }
+  }
+  return buckets;
+}
+
+// === Render =============================================================
+
 const root = document.getElementById('grids');
-for (const s of sheets) {
+const buckets = slotsByCategory();
+for (const cat of NPC_CATEGORIES) {
+  const slots = buckets.get(cat.id) || [];
+  if (slots.length === 0) continue;
+  const section = document.createElement('div');
+  section.className = 'npc-cat-section';
+  section.dataset.cat = cat.id;
+
   const h = document.createElement('h2');
-  h.textContent = s.name;
-  root.appendChild(h);
+  h.textContent = `${cat.label} (${slots.length})`;
+  section.appendChild(h);
+
+  const gloss = document.createElement('p');
+  gloss.style.color = '#5a6a7a';
+  gloss.style.fontSize = '11px';
+  gloss.style.margin = '0 0 8px';
+  gloss.textContent = cat.gloss;
+  section.appendChild(gloss);
 
   const table = document.createElement('table');
   const head = document.createElement('tr');
@@ -981,8 +1181,8 @@ for (const s of sheets) {
     [0,1,2,3].map(c => `<td class="lbl">col ${c}</td>`).join('');
   table.appendChild(head);
 
-  for (let r = 0; r < s.rows; r++) {
-    const slot = `${s.name}_${r}`;
+  for (const slot of slots) {
+    const r = parseInt(slot.split('_')[1], 10);
     const tr = document.createElement('tr');
 
     // Slot label cell with dropdown. The label text is rendered into
@@ -1017,13 +1217,22 @@ for (const s of sheets) {
     // <select> from scratch — wiping the change listener attached above.
     for (let c = 0; c < 4; c++) {
       const td = document.createElement('td');
-      td.innerHTML = `<img src="/sprites/npcs-raw/${slot}_${c}.png" alt="${slot}_${c}"><div class="meta">${r}_${c}</div>`;
+      td.innerHTML = `<img src="/sprites/npcs-raw/${slot}_${c}.png" alt="${slot}_${c}"><div class="meta">${slot.split('_')[0]}_${r}_${c}</div>`;
       tr.appendChild(td);
     }
     table.appendChild(tr);
   }
-  root.appendChild(table);
+  section.appendChild(table);
+  root.appendChild(section);
 }
+
+// Wire NPC sub-tab buttons.
+for (const btn of document.querySelectorAll('#npc-subtabs button')) {
+  btn.addEventListener('click', () => setNpcSubtab(btn.dataset.subtab));
+  if (btn.dataset.subtab === activeNpcSubtab) btn.classList.add('active');
+}
+// Apply the persisted filter (if not "all") on first render.
+if (activeNpcSubtab !== 'all') setNpcSubtab(activeNpcSubtab);
 
 document.getElementById('show-export').addEventListener('click', () => {
   const wrap = document.getElementById('export-wrap');
