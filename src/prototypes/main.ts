@@ -166,10 +166,13 @@ const prototypes: Prototype[] = [
   {
     id: 'doppelganger',
     title: 'Duplicate Claim Doppelgänger',
-    subtitle: '@ L6 — ninth-sibling prototype',
+    // Promoted from free-roam → L9 main flow (took Hydra's old slot)
+    // because the prototype is shipped and the rest of L9's
+    // story (registration, Kim) fits cleanly.
+    subtitle: '@ L9 — promoted from free-roam',
     archetype: 'Doppelgänger',
     carc: 'CO-18',
-    level: 6,
+    level: 9,
     status: 'shipped',
     verbs: 'REPLACE + CONFIRM',
     testing: 'New verb: REPLACE. A claim came back denied for a transposed subscriber ID; the biller fixed it and resubmitted as a fresh 837 instead of a frequency-7 replacement; now both claims are flagged duplicate. Resolution: set Box 22 to frequency 7 + reference the original ICN. First version-control encounter — the puzzle isn\'t what\'s on the claim, it\'s how the claim relates to other claims that already exist.',
@@ -180,7 +183,13 @@ const prototypes: Prototype[] = [
   {
     id: 'hydra',
     title: 'Coordination Hydra',
-    subtitle: '@ L9 — sixth-sibling prototype',
+    // Pulled out of L9 main rotation 2026-05 — the COB-sequencing
+    // mechanic is solid as a sketch but overlapped Kim's other
+    // teaching beats and didn't read as a satisfying late-game
+    // climax. Prototype HTML stays available; archetype is in the
+    // freezer until we revisit (likely as a side-case on the Payer
+    // floor, not a primary level handoff).
+    subtitle: 'archived from L9 — prototype-only',
     archetype: 'Hydra',
     carc: 'OA-23',
     level: 9,
@@ -204,6 +213,82 @@ const prototypes: Prototype[] = [
     href: './gatekeeper-prototype.html',
     district: 'eligibility',
     accent: '#7ee2c1',
+  },
+
+  // ===== Planned — concept sketches, not yet built =====
+  // Five new cases pitched 2026-05 to fill thematic gaps and give the
+  // new 2F rooms (Payer office, Compliance) load-bearing gameplay
+  // reasons to exist. None has a prototype HTML yet; mark `shipped`
+  // and add `href` once the encounter is built.
+
+  {
+    id: 'phantom-patient',
+    title: 'Phantom Patient',
+    subtitle: 'TBD — wrong-patient identity mix-up',
+    archetype: 'Phantom',
+    carc: 'CO-31',
+    level: 9,
+    status: 'planned',
+    verbs: 'TRACE + UNMERGE',
+    testing: 'New verb: TRACE. Two patients with the same DOB at the same hospital; chart-merge stuck the wrong DOS on the wrong MRN; CO-31 ("patient cannot be identified") follows. Player walks the audit trail backwards through registration to find the merge point, splits the records, and refiles each claim against the right MRN. First case where the puzzle is "whose record is this," not "what code is wrong."',
+    district: 'eligibility',
+    accent: '#7ee2c1',
+  },
+
+  {
+    id: 'risk-adj-hollow',
+    title: 'Risk Adjustment Hollow',
+    subtitle: 'TBD — incomplete HCC capture for value-based contract',
+    archetype: 'Hollow',
+    carc: 'RAF gap (no denial)',
+    level: 5,
+    status: 'planned',
+    verbs: 'ENRICH + QUERY',
+    testing: 'New verb: ENRICH. The chart documents diabetes with neuropathy, CKD stage 3, and morbid obesity; the encoder captured only E11.9. The Medicare Advantage contract is risk-adjusted; under-coded HCCs leave 6-figure money on the table per panel. Player reads the chart, identifies missing HCC categories supported by documentation, and routes a CDI query for any condition the doc didn\'t fully document. Like the Wraith but inverted: the missing piece is in the hospital, not in the payer\'s file.',
+    district: 'coding',
+    accent: '#f0a868',
+  },
+
+  {
+    id: 'credentialing-lattice',
+    title: 'Credentialing Lattice',
+    subtitle: 'TBD — provider not enrolled with payer for DOS',
+    archetype: 'Lattice',
+    carc: 'CO-242',
+    level: 9,
+    status: 'planned',
+    verbs: 'VERIFY + ENROLL + BACKDATE',
+    testing: 'New verb: VERIFY-NETWORK. Dr. Patel\'s claim denies CO-242 ("services not provided by network/primary care providers") because her payer-by-payer effective dates landed 11 days after the DOS. Player walks the credentialing matrix (CAQH profile, payer rosters, effective-date letters), finds the gap, files a backdated enrollment + reconsideration. First case set in the Payer office on 2F — the player physically goes upstairs to fight it.',
+    district: 'eligibility',
+    accent: '#7ee2c1',
+  },
+
+  {
+    id: 'hipaa-spider',
+    title: 'HIPAA Spider',
+    subtitle: 'TBD — privacy breach during the audit window',
+    archetype: 'Spider',
+    carc: 'compliance event (no claim)',
+    level: 10,
+    status: 'planned',
+    verbs: 'ASSESS + CONTAIN + NOTIFY',
+    testing: 'New verb: ASSESS. Three lab reports faxed to the wrong number two weeks before the audit lands. Player runs the four-factor breach risk assessment, decides notify-vs-not (under/over 500-record threshold changes timing + recipients), drafts the letter + log entry. First non-claim encounter that\'s not patient-facing — pure compliance procedure. Set in the new Compliance room; thematically the dragon\'s-lair-of-binders pays off.',
+    district: 'appeals',
+    accent: '#b18bd6',
+  },
+
+  {
+    id: 'no-show-bill',
+    title: 'No-Show Bill',
+    subtitle: 'TBD — release-valve patient-facing companion to Lighthouse',
+    archetype: 'Lighthouse',
+    carc: 'patient-facing (no CARC)',
+    level: 6,
+    status: 'planned',
+    verbs: 'LISTEN + INVESTIGATE + WAIVE',
+    testing: 'Patient calls about a $75 no-show fee. She did call to cancel — the front desk just never logged it. Verbs are LISTEN (right follow-up question, not assumption), INVESTIGATE (pull the call log + cancellation policy), WAIVE (post adjustment + retrain note). First mid-game release-valve encounter; proves the Lighthouse pattern scales beyond the L8 charity beat.',
+    district: 'release-valve',
+    accent: '#e8c074',
   },
 ]
 
