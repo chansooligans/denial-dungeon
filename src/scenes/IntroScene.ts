@@ -534,89 +534,199 @@ export class IntroScene extends Phaser.Scene {
   }
 
   showHospitalPan() {
-    // Backdrop for the "Every day, thousands of claims..." beat.
-    // Pure black to start — the scene opens against void so the
-    // narration's first line lands on nothing. Then claim IDs fade
-    // in one by one across the canvas, density growing over the
-    // ~14s the beat sits on screen. By the third narration line
-    // ("...claims get lost.") the field is full and a few are
-    // tinted red, foreshadowing the loss the next scene shows.
+    // Three-phase backdrop synced to this beat's three narration
+    // lines (~19s total). Replaces the previous claim-ID text field
+    // — readable text behind the narration overlay was reading as a
+    // second narration layer and competing for attention.
     //
-    // No walls, no floor tiles, no scattered desks. The previous
-    // version drew a literal corridor with a few isolated sprites
-    // that read as "this is supposed to be a hospital but the art
-    // got abandoned." The system the narration is describing is
-    // bigger than any one room, so the visual is now scale-of-data
-    // rather than scale-of-architecture.
+    //   Phase 1 (0–7.5s): "Every day, thousands of claims... a system
+    //     so complex that no single person understands all of it."
+    //     ~60 dim filler nodes scatter onto the canvas with a power-
+    //     curve delay distribution; thin edges fade in connecting
+    //     random nearby pairs. Result reads as a sprawling anonymous
+    //     network.
+    //
+    //   Phase 2 (~8–14s): "Doctors document. Coders translate. Billers
+    //     submit. Payers decide. Patients pay." Five brighter "anchor"
+    //     nodes pulse in sequence ~1.4s apart at curated zigzag
+    //     positions. After the fifth pulse a teal path draws through
+    //     them in order — Doctor → Coder → Biller → Payer → Patient.
+    //     The viewer connects "five highlighted nodes" with "five
+    //     named roles" from the narration; no on-screen labels.
+    //
+    //   Phase 3 (15–19s): "And somewhere between all of them, claims
+    //     get lost." Small gold dots spawn at the Doctor node and
+    //     travel segment-by-segment along the path. ~40% flicker red
+    //     and fade out mid-segment instead of arriving — the loss
+    //     happens BETWEEN nodes, mirroring the "between all of them"
+    //     phrasing.
     this.sceneContainer.removeAll(true)
     const { width, height } = this.scale
 
     const bg = this.add.rectangle(width / 2, height / 2, width, height, 0x0a0e14)
     this.sceneContainer.add(bg)
 
-    // Total spawn window — slightly less than the full beat duration
-    // so the last few claims have a moment to settle before the
-    // scene transitions to showDesk.
-    const TOTAL_DURATION_MS = 12000
-    const COUNT = 80
-
-    for (let i = 0; i < COUNT; i++) {
-      const id =
-        `CLM-2026-${String(Phaser.Math.Between(1, 12)).padStart(2, '0')}` +
-        `-${String(Phaser.Math.Between(1, 28)).padStart(2, '0')}` +
-        `-${String(Phaser.Math.Between(1, 99999)).padStart(5, '0')}`
-
-      // Tier roll — most claims are dim gray (routine), a small
-      // fraction are orange (in-process), a smaller fraction red
-      // (lost). Red ones spawn late so they line up with the third
-      // narration line about claims getting lost.
-      const r = Math.random()
-      const tier = r < 0.85 ? 'normal' : r < 0.95 ? 'inProcess' : 'lost'
-      const color = tier === 'normal' ? '#5a6a7a'
-                  : tier === 'inProcess' ? '#f0a868'
-                  : '#ef5b7b'
-      const targetAlpha = tier === 'normal' ? 0.25
-                        : tier === 'inProcess' ? 0.45
-                        : 0.6
-
-      // 60-px inset from edges so labels never clip the viewport.
-      const x = Phaser.Math.Between(60, width - 60)
-      const y = Phaser.Math.Between(60, height - 60)
-      const fontSize = Phaser.Math.Between(14, 22)
-
-      const t = this.add.text(x, y, id, {
-        fontSize: `${fontSize}px`,
-        fontFamily: 'monospace',
-        color,
-      }).setOrigin(0.5).setAlpha(0)
-      this.sceneContainer.add(t)
-
-      // Spawn-time distribution. Normal/in-process use a slight
-      // power-curve bias so density visibly accelerates as the beat
-      // progresses. Lost claims always spawn in the back third so
-      // they hit on cue.
-      const delay = tier === 'lost'
-        ? Phaser.Math.Between(8000, 11000)
-        : Math.pow(Math.random(), 1.5) * (TOTAL_DURATION_MS - 1500)
-
+    // ----- Phase 1: filler network ---------------------------------
+    const FILLER_COUNT = 60
+    const filler: Phaser.GameObjects.Arc[] = []
+    for (let i = 0; i < FILLER_COUNT; i++) {
+      // 80px inset so nodes never sit flush against the viewport edge.
+      const x = Phaser.Math.Between(80, width - 80)
+      const y = Phaser.Math.Between(80, height - 80)
+      const r = Phaser.Math.Between(3, 5)
+      const node = this.add.circle(x, y, r, 0x5a6a7a, 0)
+      this.sceneContainer.add(node)
+      filler.push(node)
+      // Power-curve delay so density visibly accelerates: most nodes
+      // arrive in the back half of the spawn window.
       this.tweens.add({
-        targets: t,
-        alpha: targetAlpha,
+        targets: node,
+        alpha: Phaser.Math.FloatBetween(0.18, 0.35),
         duration: 700,
-        delay,
+        delay: Math.pow(Math.random(), 1.5) * 5000,
       })
+    }
 
-      // Subtle vertical drift so the field feels alive instead of
-      // statically painted on. Starts after the fade-in completes.
+    // Edges between nearby filler-node pairs. Drawn into a single
+    // graphics object (one draw call beats 100 line objects) and
+    // alpha-tweened in over 3s starting at t=2s so the eye sees
+    // nodes-first → connections-next.
+    const edges = this.add.graphics().setAlpha(0)
+    edges.lineStyle(1, 0x5a6a7a, 1)
+    let edgeCount = 0
+    for (let i = 0; i < 200 && edgeCount < 90; i++) {
+      const a = filler[Phaser.Math.Between(0, filler.length - 1)]
+      const b = filler[Phaser.Math.Between(0, filler.length - 1)]
+      if (a === b) continue
+      // Cap edge length so the graph doesn't read as a starburst —
+      // we want a web of local connections, not a fan.
+      const dx = a.x - b.x, dy = a.y - b.y
+      if (dx * dx + dy * dy > 360_000) continue
+      edges.lineBetween(a.x, a.y, b.x, b.y)
+      edgeCount += 1
+    }
+    this.sceneContainer.add(edges)
+    this.tweens.add({ targets: edges, alpha: 0.18, duration: 3000, delay: 2000 })
+
+    // ----- Phase 2: 5 role anchor nodes ----------------------------
+    // Curated zigzag positions across the canvas. Order = the
+    // narration order so the connecting path reads left-to-right
+    // even though the y-coords zigzag.
+    const PHASE2_START_MS = 8000
+    const PHASE2_INTERVAL_MS = 1400
+    const roleNodes: Array<{ x: number; y: number }> = [
+      { x: 280,  y: 380 },  // Doctor
+      { x: 580,  y: 920 },  // Coder
+      { x: 960,  y: 340 },  // Biller
+      { x: 1380, y: 860 },  // Payer
+      { x: 1700, y: 480 },  // Patient
+    ]
+    const roleSprites = roleNodes.map(r => {
+      const c = this.add.circle(r.x, r.y, 8, 0xe6edf3, 0)
+      this.sceneContainer.add(c)
+      return c
+    })
+    // Subtle dim presence during Phase 1 so they don't materialize
+    // out of nothing when the pulse hits — they blend with the
+    // filler dots until the pulse promotes them.
+    for (const c of roleSprites) {
       this.tweens.add({
-        targets: t,
-        y: y + Phaser.Math.FloatBetween(-12, 12),
-        duration: Phaser.Math.Between(4000, 7000),
-        yoyo: true,
-        repeat: -1,
-        ease: 'Sine.easeInOut',
-        delay: delay + 700,
+        targets: c,
+        alpha: 0.25,
+        duration: 700,
+        delay: 1500 + Math.random() * 2500,
       })
+    }
+    // Sequential brighten + scale + ring-pulse. The ring is a
+    // stroked circle expanding outward; gives each anchor node a
+    // beat of its own as the narration names that role.
+    for (let i = 0; i < roleSprites.length; i++) {
+      const t0 = PHASE2_START_MS + i * PHASE2_INTERVAL_MS
+      this.tweens.add({
+        targets: roleSprites[i],
+        alpha: 1,
+        scale: 1.8,
+        duration: 350,
+        delay: t0,
+        ease: 'Sine.easeOut',
+      })
+      const ring = this.add.circle(roleNodes[i].x, roleNodes[i].y, 8, 0xe6edf3, 0)
+        .setStrokeStyle(2, 0x7ee2c1)
+        .setAlpha(0)
+      this.sceneContainer.add(ring)
+      this.tweens.add({
+        targets: ring,
+        scale: 4.5,
+        alpha: 0,
+        duration: 900,
+        delay: t0,
+        ease: 'Sine.easeOut',
+        onStart: () => ring.setAlpha(0.9),
+      })
+    }
+    // Path through the 5 nodes — drawn after all five have lit up so
+    // the chain only appears once every link is established. Slightly
+    // brighter than filler edges so it reads as the real route.
+    const path = this.add.graphics().setAlpha(0)
+    path.lineStyle(2, 0x7ee2c1, 1)
+    for (let i = 0; i < roleNodes.length - 1; i++) {
+      path.lineBetween(roleNodes[i].x, roleNodes[i].y,
+                        roleNodes[i + 1].x, roleNodes[i + 1].y)
+    }
+    this.sceneContainer.add(path)
+    this.tweens.add({
+      targets: path,
+      alpha: 0.5,
+      duration: 1500,
+      delay: PHASE2_START_MS + roleSprites.length * PHASE2_INTERVAL_MS,
+    })
+
+    // ----- Phase 3: claims travel + some get lost ------------------
+    // Claim dots spawn at the Doctor node and tween segment-by-
+    // segment through the path. ~40% flagged "lost": at a random
+    // intermediate segment, recolor red and fade-to-zero mid-tween
+    // instead of arriving at the next node.
+    const PHASE3_START_MS = 15000
+    const CLAIM_COUNT = 9
+    const SEGMENT_MS = 700
+    for (let i = 0; i < CLAIM_COUNT; i++) {
+      const dot = this.add.circle(roleNodes[0].x, roleNodes[0].y, 4, 0xf4d06f, 0)
+      this.sceneContainer.add(dot)
+      const startDelay = PHASE3_START_MS + i * 350
+      this.tweens.add({ targets: dot, alpha: 0.95, duration: 200, delay: startDelay })
+
+      const lostAt = Math.random() < 0.4
+        ? Phaser.Math.Between(1, roleNodes.length - 1)
+        : -1
+
+      let segStart = startDelay + 200
+      for (let n = 1; n < roleNodes.length; n++) {
+        this.tweens.add({
+          targets: dot,
+          x: roleNodes[n].x,
+          y: roleNodes[n].y,
+          duration: SEGMENT_MS,
+          delay: segStart,
+          ease: 'Sine.easeInOut',
+        })
+        if (lostAt === n) {
+          // Mid-segment: recolor red and fade-to-zero. The dot keeps
+          // moving toward the destination during the fade, so the
+          // visual reads as "it was on its way and then disappeared
+          // between nodes" — which is exactly the narration phrase.
+          this.time.delayedCall(segStart + 350, () => {
+            dot.setFillStyle(0xef5b7b)
+          })
+          this.tweens.add({
+            targets: dot,
+            alpha: 0,
+            duration: 350,
+            delay: segStart + 400,
+          })
+          break
+        }
+        segStart += SEGMENT_MS
+      }
     }
   }
 
