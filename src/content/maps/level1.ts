@@ -1051,20 +1051,22 @@ export const LEVEL_1_MAP: MapDef = {
     { npcId: 'lab_tech', tileX: LAB.x + 6, tileY: LAB.y + 3, facing: 'right', ambient: true },
 
     // Data Sandbox — R&D bullpen on 2F. Four-person team standing
-    // in pairs on the open floor south of the workstation row, so
-    // they read as "in standup" rather than "stuck at a desk."
-    // Pair 1: Chansoo + Monika talking shop (regression model).
-    // Pair 2: Nick + Nicole talking shop (sandbox env / PRD).
-    { npcId: 'chansoo', tileX: DATA_SANDBOX.x + 1, tileY: DATA_SANDBOX.y + 5, facing: 'right', ambient: true },
-    { npcId: 'monika',  tileX: DATA_SANDBOX.x + 4, tileY: DATA_SANDBOX.y + 5, facing: 'left',  ambient: true },
-    { npcId: 'nick',    tileX: DATA_SANDBOX.x + 7, tileY: DATA_SANDBOX.y + 5, facing: 'right', ambient: true },
-    { npcId: 'nicole',  tileX: DATA_SANDBOX.x + 10, tileY: DATA_SANDBOX.y + 5, facing: 'left',  ambient: true },
+    // in a row on the open floor south of the workstation row.
+    // All four default to 'down' (front-facing the camera) — read
+    // as "team meeting facing the door" rather than internal
+    // sub-conversations. Editor-confirmed pose: 2026-05-09.
+    { npcId: 'chansoo', tileX: DATA_SANDBOX.x + 1,  tileY: DATA_SANDBOX.y + 5, ambient: true },
+    { npcId: 'monika',  tileX: DATA_SANDBOX.x + 4,  tileY: DATA_SANDBOX.y + 5, ambient: true },
+    { npcId: 'nick',    tileX: DATA_SANDBOX.x + 7,  tileY: DATA_SANDBOX.y + 5, ambient: true },
+    { npcId: 'nicole',  tileX: DATA_SANDBOX.x + 10, tileY: DATA_SANDBOX.y + 5, ambient: true },
 
     // Turquoise Lounge — partner-vendor break room. Chris and Adam
-    // are across the coffee table from each other, mid-disagreement
-    // about a chargemaster diff. Interior dy=1 = couch row.
-    { npcId: 'chris', tileX: TURQUOISE_LOUNGE.x + 7,  tileY: TURQUOISE_LOUNGE.y + 2, facing: 'right', ambient: true },
-    { npcId: 'adam',  tileX: TURQUOISE_LOUNGE.x + 14, tileY: TURQUOISE_LOUNGE.y + 2, facing: 'left',  ambient: true },
+    // standing on the couch row at dy=1; both default 'down' so
+    // they read as "facing the door / available to talk" rather
+    // than locked in a side conversation. Editor-confirmed pose:
+    // 2026-05-09.
+    { npcId: 'chris', tileX: TURQUOISE_LOUNGE.x + 7,  tileY: TURQUOISE_LOUNGE.y + 2, ambient: true },
+    { npcId: 'adam',  tileX: TURQUOISE_LOUNGE.x + 14, tileY: TURQUOISE_LOUNGE.y + 2, ambient: true },
 
     // (Kitchen + 1F Lounge / 2F Staff Lounge are unpopulated for
     // now — small rooms saved for a future cast pass.)
