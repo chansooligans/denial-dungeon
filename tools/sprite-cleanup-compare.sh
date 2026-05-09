@@ -45,44 +45,46 @@ run_variant() {
   echo
 }
 
-# Round-5 variants — halo locked at 85 × 2 (user's pick); sweep
-# global erase min_excess 120 → 124 in 1-unit steps. Lower
-# min_excess = more aggressive global erase (more pixels match
-# the dominance pattern); higher = more skin/clothing-safe.
+# Round-6 variants — halo still locked at 85 × 2 (user's pick).
+# Sweep global erase min_excess 120 → 112 in 2-unit steps (going
+# *more aggressive* than the round-5 anchor). Skin r-excess hovers
+# around 60 across light/dark tones, so values down to ~75 are
+# still safely above skin's signature; below that we'd start
+# eating warm clothing patches.
 
-# A — global 120 (most aggressive in this sweep).
+# A — global 120 (round-5 anchor, mildest in this sweep).
 run_variant A "halo 85 × 2, global 120" \
   --fuzz 60 \
   --halo-fuzz 85 \
   --halo-passes 2 \
   --warm-min-excess 120
 
-# B — global 121.
-run_variant B "halo 85 × 2, global 121" \
+# B — global 118.
+run_variant B "halo 85 × 2, global 118" \
   --fuzz 60 \
   --halo-fuzz 85 \
   --halo-passes 2 \
-  --warm-min-excess 121
+  --warm-min-excess 118
 
-# C — global 122.
-run_variant C "halo 85 × 2, global 122" \
+# C — global 116.
+run_variant C "halo 85 × 2, global 116" \
   --fuzz 60 \
   --halo-fuzz 85 \
   --halo-passes 2 \
-  --warm-min-excess 122
+  --warm-min-excess 116
 
-# D — global 123.
-run_variant D "halo 85 × 2, global 123" \
+# D — global 114.
+run_variant D "halo 85 × 2, global 114" \
   --fuzz 60 \
   --halo-fuzz 85 \
   --halo-passes 2 \
-  --warm-min-excess 123
+  --warm-min-excess 114
 
-# E — global 124 (least aggressive in this sweep).
-run_variant E "halo 85 × 2, global 124" \
+# E — global 112 (most aggressive in this sweep).
+run_variant E "halo 85 × 2, global 112" \
   --fuzz 60 \
   --halo-fuzz 85 \
   --halo-passes 2 \
-  --warm-min-excess 124
+  --warm-min-excess 112
 
 echo "✓ done — open /sprite-cleanup-compare.html in the dev server"
