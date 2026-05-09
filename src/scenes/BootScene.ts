@@ -311,7 +311,19 @@ export class BootScene extends Phaser.Scene {
     // Every page reload lands on the cover — which is the splash at
     // the start of the cinematic intro. Players can hit Skip on the
     // splash to jump to the title menu.
-    this.scene.start('Intro')
+    //
+    // Dev shortcut: `?introBeat=N` in the URL deep-links to a
+    // specific beat. Used by /intro-editor.html "open at beat" so
+    // authors can iterate on a single scene without sitting through
+    // the prior cinematic. Clamped + ignored if not a positive int.
+    const params = new URLSearchParams(window.location.search)
+    const beatRaw = params.get('introBeat')
+    const beatNum = beatRaw !== null ? parseInt(beatRaw, 10) : NaN
+    if (Number.isFinite(beatNum) && beatNum > 0) {
+      this.scene.start('Intro', { skipToBeat: beatNum })
+    } else {
+      this.scene.start('Intro')
+    }
   }
 
   /** Register the four directional walk-cycle animations. Anims are

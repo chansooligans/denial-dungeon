@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Intro editor — The Waiting Room</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <style>
+    html, body {
+      margin: 0; padding: 0;
+      background: #0e1116; color: #d0d8e0;
+      font: 13px/1.45 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      height: 100%;
+    }
+    #app {
+      display: grid;
+      grid-template-columns: 380px 1fr 420px;
+      height: 100vh;
+    }
+    #left, #middle, #right {
+      overflow: auto;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    #left   { background: #0a0e14; border-right: 1px solid #2a323d; }
+    #middle { background: #0e1116; }
+    #right  { background: #0a0e14; border-left: 1px solid #2a323d; }
+
+    h1 {
+      color: #7ee2c1; font-size: 14px; margin: 0 0 12px;
+      letter-spacing: 0.04em;
+    }
+    h2 {
+      color: #f4d06f; font-size: 13px; margin: 0 0 12px;
+    }
+    .summary {
+      color: #8b95a5; font-size: 11px;
+      margin: 0 0 12px;
+    }
+
+    /* Timeline */
+    .beat {
+      background: #15191f;
+      border: 1px solid #2a323d;
+      border-radius: 4px;
+      padding: 8px 10px;
+      margin-bottom: 6px;
+      cursor: pointer;
+      transition: background 80ms;
+    }
+    .beat:hover { background: #1f2630; }
+    .beat.selected {
+      border-color: #f4d06f;
+      background: #1f2630;
+    }
+    .beat-head {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 11px;
+      margin-bottom: 4px;
+    }
+    .beat-head .idx { color: #5a6a7a; min-width: 32px; }
+    .beat-head .type {
+      color: #7ee2c1; text-transform: uppercase; font-size: 10px;
+      background: #0e1116;
+      border: 1px solid #2a323d;
+      border-radius: 3px;
+      padding: 1px 6px;
+    }
+    .beat-head .voice {
+      color: #f4d06f; font-size: 10px;
+      background: rgba(244,208,111,0.1);
+      border: 1px solid rgba(244,208,111,0.3);
+      border-radius: 3px;
+      padding: 1px 6px;
+    }
+    .beat-head .flag {
+      color: #ef5b7b; font-size: 10px;
+    }
+    .beat-text  { border-left: 3px solid #7ee2c1; }
+    .beat-cover { border-left: 3px solid #f4d06f; }
+    .beat-scene { border-left: 3px solid #8b95a5; }
+    .beat-wait  { border-left: 3px solid #2a323d; }
+    .beat-title { border-left: 3px solid #ef5b7b; }
+    .beat-backdrop { border-left: 3px solid #5a6a7a; }
+    .beat-body {
+      font-size: 11px; color: #d0d8e0;
+      display: flex; align-items: flex-start; gap: 8px;
+    }
+    .beat-body .text-preview { flex: 1; }
+    .beat-body .meta { color: #8b95a5; }
+    .beat-body code {
+      color: #f4d06f; font-size: 11px;
+    }
+    .beat-body .swatch {
+      display: inline-block; width: 12px; height: 12px;
+      border: 1px solid #2a323d;
+      border-radius: 2px; flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .beat-body img.thumb {
+      width: 64px; height: auto;
+      max-height: 48px;
+      object-fit: cover;
+      image-rendering: auto;
+      border: 1px solid #2a323d;
+      border-radius: 2px;
+    }
+
+    /* Editor pane */
+    #editor label {
+      display: block;
+      color: #7ee2c1; font-size: 11px;
+      margin: 12px 0 4px;
+      letter-spacing: 0.04em;
+    }
+    #editor input[type=text],
+    #editor input[type=number],
+    #editor textarea,
+    #editor select {
+      width: 100%; box-sizing: border-box;
+      background: #0a0e14;
+      color: #d0d8e0;
+      border: 1px solid #2a323d;
+      border-radius: 3px;
+      padding: 6px 8px;
+      font: inherit;
+    }
+    #editor input[type=checkbox] {
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+    #editor textarea { resize: vertical; min-height: 90px; }
+    #editor button {
+      background: #1f262f;
+      color: #7ee2c1;
+      border: 1px solid #2a323d;
+      border-radius: 3px;
+      padding: 6px 12px;
+      font: inherit;
+      cursor: pointer;
+      margin-right: 6px;
+    }
+    #editor button:hover {
+      background: #2a323d; color: #fff;
+    }
+    .vo-row {
+      display: flex; gap: 8px;
+      margin-bottom: 8px;
+    }
+    .placeholder { color: #5a6a7a; font-style: italic; }
+
+    /* Export pane */
+    .toolbar {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 8px;
+    }
+    .toolbar button {
+      background: #1f262f; color: #7ee2c1;
+      border: 1px solid #2a323d; border-radius: 3px;
+      padding: 6px 12px; font: inherit; cursor: pointer;
+    }
+    .toolbar button:hover { background: #2a323d; color: #fff; }
+    textarea#export {
+      width: 100%; box-sizing: border-box;
+      height: calc(100vh - 160px);
+      background: #0a0e14;
+      color: #d0d8e0;
+      border: 1px solid #2a323d;
+      border-radius: 3px;
+      padding: 8px;
+      font: 11px/1.5 ui-monospace, monospace;
+      resize: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="left">
+      <h1>Intro timeline</h1>
+      <div class="summary" id="summary"></div>
+      <div id="timeline"></div>
+    </div>
+    <div id="middle">
+      <div id="editor"></div>
+    </div>
+    <div id="right">
+      <div class="toolbar">
+        <h1 style="margin:0">Export</h1>
+        <button id="copy-export">Copy</button>
+      </div>
+      <textarea id="export" spellcheck="false" readonly></textarea>
+    </div>
+  </div>
+  <!-- Hidden audio element, src swapped per selected beat. -->
+  <audio id="voice-audio" preload="none"></audio>
+  <script type="module" src="/src/intro-editor/main.ts"></script>
+</body>
+</html>
