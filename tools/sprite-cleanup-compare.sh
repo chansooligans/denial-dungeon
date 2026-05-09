@@ -45,44 +45,43 @@ run_variant() {
   echo
 }
 
-# Round-2 variants — fill the space between old-D ("looks ok") and
-# old-E ("not ok") to find the sweet spot. Variables: halo_fuzz,
-# halo_passes, and chroma_key_global_erase min_excess. Each step
-# nudges one knob slightly more aggressive.
+# Round-3 variants — global erase fixed at min_excess 120 (per user
+# preference); only halo_fuzz and halo_passes vary. C from round 2
+# (halo 80 × 2) was the closest pick; this sweep brackets it.
 
-# A — old D (mildest, anchor): halo 70 × 2, global 130.
-run_variant A "anchor (old D) — halo 70 × 2, global 130" \
+# A — slightly less halo (70 vs 80) but otherwise C's params.
+run_variant A "halo 70 × 2, global 120" \
   --fuzz 60 \
   --halo-fuzz 70 \
   --halo-passes 2 \
-  --warm-min-excess 130
+  --warm-min-excess 120
 
-# B — slight halo bump.
-run_variant B "halo 75 × 2, global 125" \
+# B — between A and C.
+run_variant B "halo 75 × 2, global 120" \
   --fuzz 60 \
   --halo-fuzz 75 \
   --halo-passes 2 \
-  --warm-min-excess 125
+  --warm-min-excess 120
 
-# C — halo 80, still 2 passes.
-run_variant C "halo 80 × 2, global 120" \
+# C — round-2 C, the current pick (anchor).
+run_variant C "anchor — halo 80 × 2, global 120 (current pick)" \
   --fuzz 60 \
   --halo-fuzz 80 \
   --halo-passes 2 \
   --warm-min-excess 120
 
-# D — bump passes to 3 to chew an extra ring.
-run_variant D "halo 80 × 3, global 115" \
+# D — same halo as C, one more pass (more aggressive depth-wise).
+run_variant D "halo 80 × 3, global 120" \
   --fuzz 60 \
   --halo-fuzz 80 \
   --halo-passes 3 \
-  --warm-min-excess 115
+  --warm-min-excess 120
 
-# E — old E (most aggressive, anchor; current production / "not ok").
-run_variant E "anchor (old E) — halo 90 × 3, global 100" \
+# E — wider halo (85), still 2 passes (more aggressive width-wise).
+run_variant E "halo 85 × 2, global 120" \
   --fuzz 60 \
-  --halo-fuzz 90 \
-  --halo-passes 3 \
-  --warm-min-excess 100
+  --halo-fuzz 85 \
+  --halo-passes 2 \
+  --warm-min-excess 120
 
 echo "✓ done — open /sprite-cleanup-compare.html in the dev server"
