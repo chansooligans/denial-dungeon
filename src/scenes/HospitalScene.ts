@@ -1645,15 +1645,26 @@ export class HospitalScene extends Phaser.Scene {
         // pose authored on the placement.
         desired = ns.defaultFacing
       } else {
-        // Player in same room — face them.
+        // Player in same room — face them, but never show the
+        // back-of-head ('up') pose. When the player is due north
+        // we pick a lateral direction by dx sign, falling back to
+        // the resting pose if the player is exactly aligned.
         const dx = this.playerTileX - ns.tileX
         const dy = this.playerTileY - ns.tileY
         if (dx === 0 && dy === 0) {
           desired = ns.defaultFacing
         } else if (Math.abs(dx) > Math.abs(dy)) {
           desired = dx < 0 ? 'left' : 'right'
+        } else if (dy >= 0) {
+          // Player south of NPC — face 'down' toward them.
+          desired = 'down'
         } else {
-          desired = dy < 0 ? 'up' : 'down'
+          // Player due (or mostly) north. Avoid 'up' back-facing —
+          // lean to whichever side they're offset toward, or
+          // settle into the resting pose if perfectly aligned.
+          if (dx < 0) desired = 'left'
+          else if (dx > 0) desired = 'right'
+          else desired = ns.defaultFacing
         }
       }
 

@@ -598,9 +598,10 @@ export const LEVEL_1_MAP: MapDef = {
     // animates her in from the lobby's north door at runtime.)
     // Default 'down' so she greets Chloe head-on.
     { npcId: 'anjali',   tileX: LOBBY.x + 10,        tileY: LOBBY.y + 4 },
-    // Kim faces 'up' — she's working at the registration counter
-    // (R glyphs on the north interior row).
-    { npcId: 'kim',      tileX: REGISTRATION.x + 4,  tileY: REGISTRATION.y + 4, facing: 'up' },
+    // Kim faces 'right' — looking east across the registration desks
+    // toward Pat (when on L1-3) / the rest of the workstations.
+    // Avoiding 'up' (back-of-head) per the no-back-facing rule.
+    { npcId: 'kim',      tileX: REGISTRATION.x + 4,  tileY: REGISTRATION.y + 4, facing: 'right' },
     // Martinez looks 'left' across the hub toward Alex / the
     // bulletin board, not back at the wall.
     { npcId: 'martinez', tileX: MAIN_HUB.x + 14,     tileY: MAIN_HUB.y + 4, facing: 'left' },
@@ -612,16 +613,19 @@ export const LEVEL_1_MAP: MapDef = {
     // across the table from the auditors, facing 'up' to look at them.
     { npcId: 'dana', tileX: PATIENT_SVC.x + 6, tileY: PATIENT_SVC.y + 4,
       levels: [1, 2, 3, 4, 5, 6, 7, 8, 9] },
-    { npcId: 'dana', tileX: AUDIT.x + 14, tileY: AUDIT.y + 5, facing: 'up',
+    // Dana at AUDIT — south side of the table looking west along
+    // the conference table toward the rest of the audit team.
+    { npcId: 'dana', tileX: AUDIT.x + 14, tileY: AUDIT.y + 5, facing: 'left',
       levels: [10] },
 
     // Jordan — Eligibility for L1-7 (covers the early-game
     // patient-side beats), then PFS for L8 (where her phone-bank
-    // case lives). Both spots she's facing 'up' — at the kiosk
-    // (eligibility) or at the desk row (PFS).
-    { npcId: 'jordan', tileX: ELIGIBILITY.x + 5, tileY: ELIGIBILITY.y + 3, facing: 'up',
+    // case lives). At Eligibility she's facing right toward the F
+    // cabinet on the east wall (filing); at PFS she's facing right
+    // toward the water cooler.
+    { npcId: 'jordan', tileX: ELIGIBILITY.x + 5, tileY: ELIGIBILITY.y + 3, facing: 'right',
       levels: [1, 2, 3, 4, 5, 6, 7] },
-    { npcId: 'jordan', tileX: PFS.x + 6, tileY: PFS.y + 5, facing: 'up',
+    { npcId: 'jordan', tileX: PFS.x + 6, tileY: PFS.y + 5, facing: 'right',
       levels: [8, 9, 10] },
 
     // Pat — Registration for L1-3 (close to the coding workflow at
@@ -667,18 +671,17 @@ export const LEVEL_1_MAP: MapDef = {
     // doesn't read as a row of greeters.
     //  - Walter has been waiting two hours; faces 'left' looking
     //    around at the others.
-    //  - Noah is lost; faces 'up' looking toward registration for
-    //    direction.
+    //  - Noah is lost; faces 'left' scanning the lobby for a sign.
     //  - Officer Reyes faces 'down' toward the south door entrance,
     //    on duty.
     //  - Greta carrying flowers heads east toward the corridor.
-    //  - Mr. Beck can't read the wayfinding signs; faces 'up'
-    //    squinting at the bulletin board on the north wall.
+    //  - Mr. Beck can't read the wayfinding signs; faces 'left'
+    //    squinting toward the bulletin board on the north-west wall.
     { npcId: 'walter',         tileX: LOBBY.x + 18, tileY: LOBBY.y + 5, facing: 'left',  ambient: true },
-    { npcId: 'noah',           tileX: LOBBY.x + 14, tileY: LOBBY.y + 7, facing: 'up',    ambient: true },
+    { npcId: 'noah',           tileX: LOBBY.x + 14, tileY: LOBBY.y + 7, facing: 'left',  ambient: true },
     { npcId: 'officer_reyes',  tileX: LOBBY.x + 22, tileY: LOBBY.y + 2, facing: 'down',  ambient: true },
     { npcId: 'flower_visitor', tileX: LOBBY.x + 4,  tileY: LOBBY.y + 5, facing: 'right', ambient: true },
-    { npcId: 'elder_patient',  tileX: LOBBY.x + 7,  tileY: LOBBY.y + 7, facing: 'up',    ambient: true },
+    { npcId: 'elder_patient',  tileX: LOBBY.x + 7,  tileY: LOBBY.y + 7, facing: 'left',  ambient: true },
 
     // PFS — Dev faces 'left' toward the water cooler at PFS dy=5
     // dx=9 (one tile west + one tile south of him).
@@ -699,23 +702,24 @@ export const LEVEL_1_MAP: MapDef = {
     //    side of the pharmacy (formulary inventory).
     //  - Joe (janitor) faces 'right' toward the pull-desks the
     //    chart room is built around.
-    //  - Marisol the records clerk faces 'up' toward the binder
-    //    wall on the north side — pulling a chart.
+    //  - Marisol the records clerk faces 'right' toward the
+    //    pull-desk one tile east (where charts get reviewed).
     { npcId: 'rad_tech',      tileX: RADIOLOGY.x + 6,   tileY: RADIOLOGY.y + 5,   facing: 'right', ambient: true },
     { npcId: 'liana',         tileX: PHARMACY.x + 6,    tileY: PHARMACY.y + 4,    facing: 'down',  ambient: true },
     { npcId: 'joe',           tileX: MED_RECORDS.x + 7, tileY: MED_RECORDS.y + 5, facing: 'right', ambient: true },
-    { npcId: 'records_clerk', tileX: MED_RECORDS.x + 4, tileY: MED_RECORDS.y + 5, facing: 'up',    ambient: true },
+    { npcId: 'records_clerk', tileX: MED_RECORDS.x + 4, tileY: MED_RECORDS.y + 5, facing: 'right', ambient: true },
 
     // 2F — Payer office gets two reps; Compliance gets the privacy
     // officer. AUDIT (also 2F) only spawns the L10 audit team and Dana,
     // already wired above.
-    //  - Theresa (payer rep) faces 'up' working at her desk row.
-    //  - Diane (supervisor) faces 'left' toward Theresa.
-    //  - Theo faces 'up' reviewing the binder wall (compliance
-    //    binders on the north side of the room).
-    { npcId: 'payer_rep',          tileX: PAYER.x + 5,      tileY: PAYER.y + 3,      facing: 'up',   ambient: true },
-    { npcId: 'payer_supervisor',   tileX: PAYER.x + 12,     tileY: PAYER.y + 3,      facing: 'left', ambient: true },
-    { npcId: 'compliance_officer', tileX: COMPLIANCE.x + 6, tileY: COMPLIANCE.y + 5, facing: 'up',   ambient: true },
+    //  - Theresa (payer rep) faces 'right' toward Diane —
+    //    they're mid-conversation about a denial pattern.
+    //  - Diane (supervisor) faces 'left' toward Theresa, mirror.
+    //  - Theo faces 'right' from the desk toward the east cluster
+    //    of binders (alt: toward the policy board on the south wall).
+    { npcId: 'payer_rep',          tileX: PAYER.x + 5,      tileY: PAYER.y + 3,      facing: 'right', ambient: true },
+    { npcId: 'payer_supervisor',   tileX: PAYER.x + 12,     tileY: PAYER.y + 3,      facing: 'left',  ambient: true },
+    { npcId: 'compliance_officer', tileX: COMPLIANCE.x + 6, tileY: COMPLIANCE.y + 5, facing: 'right', ambient: true },
 
     // Outdoor — parking lot ambient. Smoker NPCs are *outdoor-only*
     // by design (cigarette is part of the sprite); placing them
@@ -723,10 +727,10 @@ export const LEVEL_1_MAP: MapDef = {
     //  - Earl looks 'left' (random — out into the lot).
     //  - Sandra looks 'right' (different direction from Earl for
     //    visual variety).
-    //  - Cassie the paramedic faces 'up' toward the hospital
-    //    entrance — just rolled in with a transfer.
+    //  - Cassie the paramedic faces 'right' across the lot toward
+    //    the smokers (waiting on a bed assignment).
     { npcId: 'smoker_visitor',     tileX: OUTDOOR.x + 25,   tileY: OUTDOOR.y + 10,   facing: 'left',  ambient: true },
     { npcId: 'smoker_outdoor_b',   tileX: OUTDOOR.x + 35,   tileY: OUTDOOR.y + 14,   facing: 'right', ambient: true },
-    { npcId: 'paramedic',          tileX: OUTDOOR.x + 8,    tileY: OUTDOOR.y + 14,   facing: 'up',    ambient: true },
+    { npcId: 'paramedic',          tileX: OUTDOOR.x + 8,    tileY: OUTDOOR.y + 14,   facing: 'right', ambient: true },
   ],
 }
