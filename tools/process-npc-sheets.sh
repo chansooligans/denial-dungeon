@@ -69,5 +69,79 @@ run_grid "$SRC/npc18.png" npc18
 run_grid "$SRC/npc19.png" npc19
 run_grid "$SRC/npc20.png" npc20
 
+# === Round 5 — single-character sheets for the R&D / Turquoise team
+# (May 2026 batch 3). Unlike the multi-char sheets above, these come
+# from the LoRA in two layouts:
+#   - 4×1 horizontal strip on orange chroma  (Chansoo, Chris, Adam)
+#   - 2×2 grid on green chroma                (Nicole, Nick, Monika)
+# Both cases collapse to a single "row" in the slot scheme — i.e.
+# slot `npc<N>_0` with four directional poses. The python extractor
+# emits flat `_0..._3` for 1-row mode and `_<r>_<c>` for grid mode;
+# we rename both into the canonical `npc<N>_0_<dir>.png` shape so
+# BootScene can reach them via the existing `{slot}_<dir>.png`
+# convention.
+#
+# Direction order (matches the BootScene swap):
+#   _0 = front (down)          col 0 of the source layout
+#   _1 = facing screen-RIGHT   col 1 (top-right cell of a 2×2)
+#   _2 = facing screen-LEFT    col 0, row 1 of a 2×2 (or col 2 flat)
+#   _3 = back (up)             col 1, row 1 of a 2×2 (or col 3 flat)
+run_strip_one() {
+  local input="$1" prefix="$2"
+  if [[ ! -f "$input" ]]; then
+    echo "missing: $input — skipping $prefix"
+    return
+  fi
+  python3 tools/sprite-sheet-to-frames.py \
+    --input "$input" --rows 1 --frames 4 \
+    --prefix "$prefix" --size "$SIZE" \
+    --fuzz 30 --halo-fuzz 28 --halo-passes 1 --dilate 4 \
+    --out "$OUT"
+  # Re-shape `<prefix>_<i>.png` → `<prefix>_0_<i>.png` so the slot
+  # is `npc<N>_0` like every other multi-character sheet.
+  for i in 0 1 2 3; do
+    if [[ -f "$OUT/${prefix}_${i}.png" ]]; then
+      mv -f "$OUT/${prefix}_${i}.png" "$OUT/${prefix}_0_${i}.png"
+    fi
+  done
+}
+
+run_grid_2x2_one() {
+  local input="$1" prefix="$2"
+  if [[ ! -f "$input" ]]; then
+    echo "missing: $input — skipping $prefix"
+    return
+  fi
+  python3 tools/sprite-sheet-to-frames.py \
+    --input "$input" --rows 2 --frames 2 \
+    --prefix "$prefix" --size "$SIZE" \
+    --fuzz 30 --halo-fuzz 28 --halo-passes 1 --dilate 4 \
+    --out "$OUT"
+  # Row-major flatten of (row,col) → directional pose:
+  #   (0,0) → _0_0 (front)         (already correct)
+  #   (0,1) → _0_1 (screen-right)  (already correct)
+  #   (1,0) → _0_2 (screen-left)
+  #   (1,1) → _0_3 (back)
+  # Stage via .tmp suffix so we can reuse names safely.
+  [[ -f "$OUT/${prefix}_0_0.png" ]] && mv -f "$OUT/${prefix}_0_0.png" "$OUT/${prefix}_0_0.tmp.png" || true
+  [[ -f "$OUT/${prefix}_0_1.png" ]] && mv -f "$OUT/${prefix}_0_1.png" "$OUT/${prefix}_0_1.tmp.png" || true
+  [[ -f "$OUT/${prefix}_1_0.png" ]] && mv -f "$OUT/${prefix}_1_0.png" "$OUT/${prefix}_0_2.tmp.png" || true
+  [[ -f "$OUT/${prefix}_1_1.png" ]] && mv -f "$OUT/${prefix}_1_1.png" "$OUT/${prefix}_0_3.tmp.png" || true
+  for i in 0 1 2 3; do
+    if [[ -f "$OUT/${prefix}_0_${i}.tmp.png" ]]; then
+      mv -f "$OUT/${prefix}_0_${i}.tmp.png" "$OUT/${prefix}_0_${i}.png"
+    fi
+  done
+}
+
+# Data Sandbox cast (Chansoo + R&D peers).
+run_strip_one    "$SRC/npc21.png" npc21   # Chansoo (4×1 strip — orange chroma)
+run_grid_2x2_one "$SRC/npc22.png" npc22   # Nicole  (2×2 grid — green chroma)
+run_grid_2x2_one "$SRC/npc23.png" npc23   # Nick    (2×2 grid — green chroma)
+run_grid_2x2_one "$SRC/npc24.png" npc24   # Monika  (2×2 grid — green chroma)
+# Turquoise Lounge cast.
+run_strip_one    "$SRC/npc25.png" npc25   # Chris   (4×1 strip — orange chroma)
+run_strip_one    "$SRC/npc26.png" npc26   # Adam    (4×1 strip — orange chroma)
+
 echo
 echo "✓ done — outputs in $OUT/ ($(ls "$OUT"/*.png 2>/dev/null | wc -l | xargs) PNGs)"

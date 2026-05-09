@@ -308,4 +308,59 @@ export const NPCS: Record<string, NPC> = {
     dialogueKey: 'lab_tech_intro',
     description: 'Med-tech, dark scrubs + glasses. Annotates her samples in three colors.',
   },
+
+  // === Round 5 — Data Sandbox (R&D team) and Turquoise Lounge.
+  //     The Sandbox lives upstairs alongside Audit/Payer/Compliance;
+  //     it's the team that ships the tools the rest of the hospital
+  //     pretends not to need. The Lounge is the partner-vendor break
+  //     room — Turquoise Health's two embedded staff. Sprites map to
+  //     NPC_SOURCES → contact-sheets npc21–26. ===
+  chansoo: {
+    id: 'chansoo',
+    name: 'Chansoo',
+    department: 'R&D / Data Science',
+    spriteKey: 'npc_chansoo',
+    dialogueKey: 'chansoo_intro',
+    description: 'Data scientist. Tracks the denial regression model that flagged this hospital.',
+  },
+  nicole: {
+    id: 'nicole',
+    name: 'Nicole',
+    department: 'R&D / Solutions Architecture',
+    spriteKey: 'npc_nicole',
+    dialogueKey: 'nicole_intro',
+    description: 'Solutions architect. Translates payer schemas into something the rest of the team can ship against.',
+  },
+  nick: {
+    id: 'nick',
+    name: 'Nick',
+    department: 'R&D / Product',
+    spriteKey: 'npc_nick',
+    dialogueKey: 'nick_intro',
+    description: "Product manager. Carries the roadmap in his head and the deadlines in his calendar.",
+  },
+  monika: {
+    id: 'monika',
+    name: 'Monika',
+    department: 'R&D / Data Science',
+    spriteKey: 'npc_monika',
+    dialogueKey: 'monika_intro',
+    description: 'Data scientist. Joins claim-adjudication tables five LEFT JOINs deep without flinching.',
+  },
+  chris: {
+    id: 'chris',
+    name: 'Chris',
+    department: 'Turquoise Health / Business',
+    spriteKey: 'npc_chris',
+    dialogueKey: 'chris_intro',
+    description: 'Business side of the partnership. Knows what every CFO in the region pays for an MRI.',
+  },
+  adam: {
+    id: 'adam',
+    name: 'Adam',
+    department: 'Turquoise Health / Engineering',
+    spriteKey: 'npc_adam',
+    dialogueKey: 'adam_intro',
+    description: 'Engineering side of the partnership. Diffs chargemasters across 4,000 hospitals in his sleep.',
+  },
 }

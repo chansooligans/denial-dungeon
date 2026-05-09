@@ -618,6 +618,9 @@ const ACTIVE_NPC_KEYS = new Set([
   'cafeteria_worker', 'cashier', 'server', 'bike_emt', 'dr_park',
   // Round 5 — west-wing relocate.
   'lab_tech',
+  // Round 6 — Data Sandbox (R&D) + Turquoise Lounge (single-character
+  // sheets npc21–26; one row per sheet so slot is always _0).
+  'chansoo', 'nicole', 'nick', 'monika', 'chris', 'adam',
 ]);
 
 /** Return 'active' | 'inactive' | 'future' for an object texture key. */
@@ -842,6 +845,19 @@ const SUGGESTED_CUSTOMS = {
   'npc20_1': { key: 'security_e',     label: 'Security — black hoodie (urban, alt)' },
   'npc20_2': { key: 'smoker_outdoor_b', label: 'Sandra — woman in overalls (OUTDOOR ONLY)' },
   'npc20_3': { key: 'elder_patient',  label: 'Mr. Beck — elderly patient with cane' },
+
+  // === Round 6 — single-character sheets npc21..npc26 (one row each).
+  //     The build script normalizes both 4×1 strips and 2×2 grids
+  //     into the canonical `npc<N>_0_<dir>.png` filename so the slot
+  //     is always `npc<N>_0`. ===
+  // Data Sandbox cast (2F R&D team):
+  'npc21_0': { key: 'chansoo', label: 'Chansoo — data scientist (bearded, glasses, dark coat)' },
+  'npc22_0': { key: 'nicole',  label: 'Nicole — solutions architect (blonde, navy cardigan, ID)' },
+  'npc23_0': { key: 'nick',    label: 'Nick — product manager (stubble, dark sweater, ID)' },
+  'npc24_0': { key: 'monika',  label: 'Monika — data scientist (brunette, black turtleneck, lanyard)' },
+  // Turquoise Lounge cast (2F partner-vendor break room):
+  'npc25_0': { key: 'chris', label: 'Chris — Turquoise business (light-blue button-up, jeans)' },
+  'npc26_0': { key: 'adam',  label: 'Adam — Turquoise engineering (bearded, gray button-up)' },
 };
 
 // Mapping: slot ("npc1_0") → game NPC key ("dana"), or unset
@@ -1016,6 +1032,7 @@ const NPC_CATEGORIES = [
   { id: 'security',         label: 'Security',                gloss: 'Uniformed officers, hospital security, alt police.' },
   { id: 'facilities',       label: 'Facilities',              gloss: 'Janitors, maintenance, couriers, deliveries.' },
   { id: 'cafeteria-service',label: 'Cafeteria / Service',     gloss: 'Kitchen, servers, cashiers.' },
+  { id: 'rd-product',       label: 'R&D / Product / Vendor',  gloss: 'Data scientists, solutions architects, PMs, partner-vendor staff (Turquoise).' },
   { id: 'ems',              label: 'EMS',                     gloss: 'Paramedics, bike EMTs, ambulance crew.' },
   { id: 'patients-visitors',label: 'Patients / Visitors',     gloss: 'Civilians — patients, visitors, family, walk-ins.' },
   { id: 'smokers',          label: 'Smokers (outdoor only)',  gloss: 'Cigarette is part of the sprite — outdoor placements only.' },
@@ -1116,6 +1133,14 @@ const CATEGORY_BY_SLOT = {
   'npc20_1':'security',         // security_e (urban hoodie)
   'npc20_2':'smokers',          // smoker_outdoor_b / Sandra
   'npc20_3':'patients-visitors',// elder_patient / Mr. Beck
+
+  // Round 6 — single-character sheets (npc21..npc26).
+  'npc21_0':'rd-product',       // chansoo (data science)
+  'npc22_0':'rd-product',       // nicole  (solutions architecture)
+  'npc23_0':'rd-product',       // nick    (product management)
+  'npc24_0':'rd-product',       // monika  (data science)
+  'npc25_0':'rd-product',       // chris   (Turquoise — business)
+  'npc26_0':'rd-product',       // adam    (Turquoise — engineering)
 };
 
 function categoryForSlot(slot) {
