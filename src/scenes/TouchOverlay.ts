@@ -125,11 +125,20 @@ function ensureStyles() {
   document.head.appendChild(style)
 }
 
+/** Latest hidden-state requested via `setTouchOverlayHidden`. Persists
+ *  across mounts so that if a modal scene (Dialogue) calls
+ *  `setTouchOverlayHidden(true)` BEFORE TouchOverlay.create() has
+ *  mounted the root, the hidden state still applies once the root
+ *  exists. Without this the d-pad would briefly appear during
+ *  dialogue if scene-creation order raced. */
+let overlayHiddenRequested = false
+
 /** Hide or show the entire touch overlay (d-pad + interact + ESC).
  *  Used by full-screen modal scenes (Dialogue, Form) where the
  *  controls would otherwise overlap the modal UI and aren't useful
  *  anyway — those scenes are advanced by tapping the modal itself. */
 export function setTouchOverlayHidden(hidden: boolean) {
+  overlayHiddenRequested = hidden
   const root = document.getElementById(ROOT_ID)
   if (!root) return
   root.classList.toggle('tc-hidden', hidden)
@@ -141,6 +150,9 @@ function mountRoot(): HTMLDivElement {
   ensureStyles()
   root = document.createElement('div')
   root.id = ROOT_ID
+  // Apply any hidden-state request that arrived before mount —
+  // happens when a modal scene's create() runs before TouchOverlay's.
+  if (overlayHiddenRequested) root.classList.add('tc-hidden')
   document.body.appendChild(root)
   return root
 }

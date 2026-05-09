@@ -59,12 +59,14 @@ export class DialogueScene extends Phaser.Scene {
     // without fullscreen. The box still anchors to the bottom of the
     // viewport so the player's view of the world is preserved above.
     const m = isTouchDevice()
-    // Bumped from 13/12px desktop and 17/16px mobile so dialogue
-    // reads cleanly at the 1920×1280 canvas without leaning in.
-    // Box gets taller too to accommodate the larger lines.
-    const speakerSize = m ? 22 : 20
-    const bodySize    = m ? 20 : 18
-    const boxHeight   = m ? 260 : 200
+    // Mobile sizes are huge because Phaser.Scale.FIT downscales the
+    // 1920×1280 canvas to fit a phone viewport (typically ~5×).
+    // 64/56 native → ~13/11 on a 390px-wide phone, ~22/19 on iPad
+    // portrait. Was 36/32 last revision and still reading too small,
+    // so bumping to "absurd-looking on desktop, correct on phone."
+    const speakerSize = m ? 64 : 20
+    const bodySize    = m ? 56 : 18
+    const boxHeight   = m ? 560 : 200
     const speakerY    = height - boxHeight - 10
     const bodyY       = speakerY + speakerSize + 6
 
@@ -104,10 +106,12 @@ export class DialogueScene extends Phaser.Scene {
     const { width, height } = this.scale
 
     const m = isTouchDevice()
-    // Choice text + spacing scaled to match the bumped body size.
-    const choiceSize = m ? 19 : 17
-    const choiceStep = m ? 36 : 30
-    const choiceTopOffset = m ? 140 : 100
+    // Choice text matches the body bump: 52px native ≈ 11px on a
+    // phone, 18px on iPad. Step + top-offset scaled up so multi-
+    // choice menus don't overlap the bigger lines.
+    const choiceSize = m ? 52 : 17
+    const choiceStep = m ? 88 : 30
+    const choiceTopOffset = m ? 340 : 100
 
     if (node.choices && node.choices.length > 0) {
       node.choices.forEach((choice, i) => {
@@ -124,7 +128,7 @@ export class DialogueScene extends Phaser.Scene {
       })
     } else if (node.next) {
       const advanceText = this.add.text(width - 60, height - 30, 'click or space ▸', {
-        fontSize: m ? '16px' : '14px', fontFamily: 'monospace', color: '#5a6a7a',
+        fontSize: m ? '40px' : '14px', fontFamily: 'monospace', color: '#5a6a7a',
       }).setOrigin(1, 0.5)
       this.choiceTexts.push(advanceText)
 
@@ -157,7 +161,7 @@ export class DialogueScene extends Phaser.Scene {
       // after setText, so single-line atmosphere dialogues like the
       // L10 auditors flashed and vanished.)
       const closeText = this.add.text(width - 60, height - 30, 'click or space to close ▸', {
-        fontSize: m ? '16px' : '14px', fontFamily: 'monospace', color: '#5a6a7a',
+        fontSize: m ? '40px' : '14px', fontFamily: 'monospace', color: '#5a6a7a',
       }).setOrigin(1, 0.5)
       this.choiceTexts.push(closeText)
 

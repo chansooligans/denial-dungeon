@@ -237,6 +237,7 @@ export class WaitingRoomScene extends Phaser.Scene {
   }
 
   create() {
+    debugEvent(`wr:create encounter=${this.activeEncounterId ?? '-'}`)
     const state = getState()
     this.mapDef = HOSPITAL_MAP
 
@@ -447,7 +448,7 @@ export class WaitingRoomScene extends Phaser.Scene {
           const px = x * TILE + TILE / 2
           const py = y * TILE + TILE / 2 - 6
           this.ticketText = this.add.text(px, py, 'NOW SERVING\n     ?', {
-            fontSize: '8px', fontFamily: 'monospace', color: '#ff3050',
+            fontSize: '14px', fontFamily: 'monospace', color: '#ff3050',
           }).setOrigin(0.5).setDepth(5)
           counterFound = true
         }
@@ -557,8 +558,8 @@ export class WaitingRoomScene extends Phaser.Scene {
     })
 
     this.engagePrompt = this.add.text(0, 0, '', {
-      fontSize: '9px', fontFamily: 'monospace', color: '#f0d090',
-      backgroundColor: '#1a0608', padding: { x: 4, y: 2 },
+      fontSize: '16px', fontFamily: 'monospace', color: '#f0d090',
+      backgroundColor: '#1a0608', padding: { x: 8, y: 4 },
     }).setOrigin(0.5).setDepth(20).setVisible(false)
   }
 
@@ -595,9 +596,10 @@ export class WaitingRoomScene extends Phaser.Scene {
       })
 
       const labelText = enc.archetype ?? enc.title
-      const label = this.add.text(px, py - 28, labelText, {
-        fontSize: '9px', fontFamily: 'monospace', color: '#ff8090',
-        backgroundColor: '#1a0608cc', padding: { x: 4, y: 2 },
+      const label = this.add.text(px, py - 36, labelText, {
+        fontSize: '16px', fontFamily: 'monospace', color: '#ff8090',
+        backgroundColor: '#1a0608cc', padding: { x: 8, y: 4 },
+        stroke: '#0e1116', strokeThickness: 2,
       }).setOrigin(0.5).setDepth(5)
 
       this.obstacleSprites.push({ marker, graphics: g, label })
@@ -683,20 +685,20 @@ export class WaitingRoomScene extends Phaser.Scene {
     const level = LEVELS[state.currentLevel - 1]
 
     this.hudLevel = this.add.text(10, 10, `THE WAITING ROOM — ${level?.title ?? ''}`, {
-      fontSize: '10px', fontFamily: 'monospace', color: '#f0d090',
-      backgroundColor: '#1a060880', padding: { x: 4, y: 2 },
+      fontSize: '16px', fontFamily: 'monospace', color: '#f0d090',
+      backgroundColor: '#1a060880', padding: { x: 8, y: 4 },
     }).setScrollFactor(0).setDepth(100)
 
-    this.add.text(10, 28, '"Your number will be called."', {
-      fontSize: '9px', fontFamily: 'monospace', color: '#a8806a',
+    this.add.text(10, 44, '"Your number will be called."', {
+      fontSize: '14px', fontFamily: 'monospace', color: '#a8806a',
       fontStyle: 'italic',
-      backgroundColor: '#1a060880', padding: { x: 4, y: 2 },
+      backgroundColor: '#1a060880', padding: { x: 8, y: 4 },
     }).setScrollFactor(0).setDepth(100)
 
     const r = state.resources
-    this.add.text(10, 46, `HP: ${r.hp}/${r.maxHp}  Rep: ${r.reputation}  Audit: ${r.auditRisk}%  Stress: ${r.stress}`, {
-      fontSize: '9px', fontFamily: 'monospace', color: '#ff8090',
-      backgroundColor: '#1a060880', padding: { x: 4, y: 2 },
+    this.add.text(10, 76, `HP: ${r.hp}/${r.maxHp}  Rep: ${r.reputation}  Audit: ${r.auditRisk}%  Stress: ${r.stress}`, {
+      fontSize: '14px', fontFamily: 'monospace', color: '#ff8090',
+      backgroundColor: '#1a060880', padding: { x: 8, y: 4 },
     }).setScrollFactor(0).setDepth(100)
   }
 
