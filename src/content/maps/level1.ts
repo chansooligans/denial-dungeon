@@ -79,16 +79,21 @@ const BILLING  = { x: 22, y: 50, w: 14, h: 10 } // clearinghouse / claim queue
 const PFS      = { x: 40, y: 50, w: 16, h: 10 } // patient financial services / phones
 
 // === West wing — north of Patient Services, west of MAIN_HUB.
-//     Reached by extending the main north-south corridor (the one
-//     that goes from the lobby up to MAIN_HUB) further north past
-//     the bend, then branching west. Three rooms cluster around
-//     that branch.
-//   - CAFETERIA: big public space in the NW corner.
-//   - LAB:       small clinical lab (microscope-y) below cafeteria.
-//   - LOUNGE:    staff break room east of the lab.
-const CAFETERIA = { x: 2,  y: 2,  w: 12, h: 8 } // 10×6 interior
-const LAB       = { x: 2,  y: 11, w: 6,  h: 6 } // 4×4 interior
-const LOUNGE    = { x: 8,  y: 11, w: 6,  h: 6 } // 4×4 interior
+//     Reached by extending the main north-south corridor past the
+//     bend, then branching west. Three rooms cluster around that
+//     branch:
+//   - CAFETERIA: public dining area in the NW corner (big).
+//   - KITCHEN:   back-of-house prep room below cafeteria. Used to
+//                be a generic LAB before — kitchen reads more
+//                naturally next to a cafeteria + lounge.
+//   - LOUNGE:    staff break room east of the kitchen.
+//
+// Cafeteria expanded from 12×8 → 12×10 by pushing its south wall
+// down two rows; kitchen + lounge shrunk from h=6 → h=4 to make
+// room. Cross-corridor moved from y=10 → y=12 to keep the topology.
+const CAFETERIA = { x: 2,  y: 2,  w: 12, h: 10 } // 10×8 interior
+const KITCHEN   = { x: 2,  y: 13, w: 6,  h: 4  } // 4×2 interior
+const LOUNGE    = { x: 8,  y: 13, w: 6,  h: 4  } // 4×2 interior
 
 // === Outdoor — parking lot, reached via 'O' teleport from the lobby ===
 const OUTDOOR  = { x: 4,  y: 65, w: 50, h: 22 } // big sparse exterior
@@ -207,10 +212,11 @@ const { layout, tileMeta } = buildMap({
       // main north-south corridor (extended north from the bend
       // at (14, 13) up to (14, 4)).
       doors: [{ side: 'E', offset: 2 }],
-      // Public lounge / cafeteria. Service counter (R) on the
-      // north interior row, two rows of tables, vending wall.
-      // Sized for a 12×8 footprint (interior 10×6); valid item
-      // dx is 1..9, dy is 1..6.
+      // Public dining area. Service counter (R) on the north
+      // interior row, three rows of tables (1 added when the
+      // room grew from h=8 → h=10), vending + water cooler on
+      // the east interior column. 12×10 footprint = 10×8 interior;
+      // valid item dx is 1..9, dy is 1..8.
       items: [
         // Service counter — north row, west cluster.
         { dx: 1, dy: 1, ch: 'R' }, { dx: 2, dy: 1, ch: 'R' }, { dx: 3, dy: 1, ch: 'R' },
@@ -220,49 +226,48 @@ const { layout, tileMeta } = buildMap({
         { dx: 7, dy: 1, ch: 'B' },
         // Bulletin (community board).
         { dx: 9, dy: 1, ch: 'b' },
-        // Dining tables — two rows of paired desk + chair.
+        // Dining tables — three rows of paired desk + chair.
+        // Row 1
         { dx: 1, dy: 3, ch: 'c' }, { dx: 1, dy: 4, ch: 'h' },
         { dx: 4, dy: 3, ch: 'c' }, { dx: 4, dy: 4, ch: 'h' },
         { dx: 7, dy: 3, ch: 'c' }, { dx: 7, dy: 4, ch: 'h' },
-        // South-row tables — chairs north of desks for variety.
-        { dx: 1, dy: 6, ch: 'h' },
-        { dx: 4, dy: 6, ch: 'h' },
-        { dx: 7, dy: 6, ch: 'h' },
-        // Vending + water cooler on the west side.
+        // Row 2 — chairs north of desks for variety.
+        { dx: 1, dy: 6, ch: 'h' }, { dx: 1, dy: 7, ch: 'c' },
+        { dx: 4, dy: 6, ch: 'h' }, { dx: 4, dy: 7, ch: 'c' },
+        { dx: 7, dy: 6, ch: 'h' }, { dx: 7, dy: 7, ch: 'c' },
+        // East-side amenities: vending, water cooler, plant.
         { dx: 9, dy: 3, ch: 'V' },
         { dx: 9, dy: 5, ch: 'w' },
-        // Corner plants.
-        { dx: 9, dy: 6, ch: 'P' },
+        { dx: 9, dy: 7, ch: 'P' },
       ],
     },
     {
-      id: 'lab',
-      ...LAB,
-      // North door at offset 3 → world (5, 11). Opens onto the
-      // east-west cross-corridor at y=10.
+      id: 'kitchen',
+      ...KITCHEN,
+      // North door at offset 3 → world (5, 13). Opens onto the
+      // east-west cross-corridor at y=12.
       doors: [{ side: 'N', offset: 3 }],
-      // Clinical lab / pathology. Microscope-bench + cabinet of
-      // sample binders + a fax for results. Small (4×4 interior).
+      // Back-of-house prep area for the cafeteria. Counter row
+      // + fridge + ice machine. Door is at offset 3 → interior
+      // dx=2 dy=0, so that cell stays open (player walks straight
+      // through). Interior is 4×2 (valid dx 0..3, dy 0..1).
       items: [
-        { dx: 1, dy: 2, ch: 'c' }, { dx: 1, dy: 3, ch: 'h' }, // bench + chair
-        { dx: 3, dy: 2, ch: 'X' },                            // bench-side terminal / fax
-        { dx: 3, dy: 4, ch: 'F' },                            // sample binders cabinet
-        { dx: 1, dy: 4, ch: 'P' },                            // plant
+        { dx: 0, dy: 0, ch: 'R' }, { dx: 1, dy: 0, ch: 'R' }, // prep counters (left of entry)
+        { dx: 3, dy: 0, ch: 'F' },                            // fridge in the back corner
+        { dx: 3, dy: 1, ch: 'V' },                            // ice / drinks machine
       ],
     },
     {
       id: 'lounge',
       ...LOUNGE,
-      // North door at offset 3 → world (11, 11).
+      // North door at offset 3 → world (11, 13).
       doors: [{ side: 'N', offset: 3 }],
-      // Staff break room: water cooler, soft chairs (using 'h'),
-      // a small cabinet of mugs, plant in the corner.
+      // Staff break room. Two soft chairs ('h' stand-in), a water
+      // cooler in the corner, a plant in the back. Interior 4×2.
       items: [
-        { dx: 1, dy: 2, ch: 'h' },
-        { dx: 1, dy: 3, ch: 'h' },
-        { dx: 3, dy: 2, ch: 'w' }, // water cooler
-        { dx: 3, dy: 4, ch: 'F' }, // mug cabinet
-        { dx: 1, dy: 4, ch: 'P' }, // plant
+        { dx: 0, dy: 0, ch: 'h' }, { dx: 1, dy: 0, ch: 'h' },
+        { dx: 3, dy: 0, ch: 'w' }, // water cooler
+        { dx: 3, dy: 1, ch: 'P' }, // corner plant
       ],
     },
 
@@ -617,9 +622,10 @@ const { layout, tileMeta } = buildMap({
     // new wing:
     //   1. North extension at x=14 from the bend (14, 13) up to
     //      (14, 4) — passes the cafeteria's east door at (13, 4).
-    //   2. East-west cross-corridor at y=10, from the main corridor
-    //      west to (5, 10) — connects the cafeteria south + lab +
-    //      lounge north doors.
+    //   2. East-west cross-corridor at y=12, from the main corridor
+    //      west to (5, 12) — connects the kitchen + lounge north
+    //      doors. (Was y=10 when the cafeteria was shorter; moved
+    //      with the cafeteria south wall when it expanded.)
     {
       points: [
         [CORRIDOR_BEND.x, CORRIDOR_BEND.y], // (14, 13) — bend (already on the lobby↔hub corridor)
@@ -629,8 +635,8 @@ const { layout, tileMeta } = buildMap({
     },
     {
       points: [
-        [CORRIDOR_BEND.x, LAB.y - 1], // (14, 10) — junction with the north-extension
-        [LAB.x + 3,       LAB.y - 1], // (5, 10) — just north of the lab's N door
+        [CORRIDOR_BEND.x, KITCHEN.y - 1], // (14, 12) — junction with the north-extension
+        [KITCHEN.x + 3,   KITCHEN.y - 1], // (5, 12)  — just north of the kitchen N door
       ],
       width: 1,
     },
@@ -713,7 +719,7 @@ export const LEVEL_1_MAP: MapDef = {
     { name: 'PRIOR AUTH',       shortName: 'AUTH', ...PRIOR_AUTH },
     // West wing (north-of-PS).
     { name: 'CAFETERIA',        shortName: 'CAF',  ...CAFETERIA },
-    { name: 'LAB',              shortName: 'LAB',  ...LAB },
+    { name: 'KITCHEN',          shortName: 'KIT',  ...KITCHEN },
     { name: 'LOUNGE',           shortName: 'LNG',  ...LOUNGE },
     // Mid + south rows.
     { name: 'PATIENT SERVICES', shortName: 'PT',   ...PATIENT_SVC },
@@ -879,9 +885,10 @@ export const LEVEL_1_MAP: MapDef = {
     { npcId: 'cashier',          tileX: CAFETERIA.x + 9, tileY: CAFETERIA.y + 2, facing: 'left', ambient: true },
     { npcId: 'server',           tileX: CAFETERIA.x + 7, tileY: CAFETERIA.y + 5, ambient: true },
 
-    // Lab — single tech at the bench. Faces 'right' toward the
-    // sample-binders cabinet on the east wall.
-    { npcId: 'lab_tech',         tileX: LAB.x + 2, tileY: LAB.y + 3, facing: 'right', ambient: true },
+    // (Kitchen + Lounge are unpopulated for now — small rooms,
+    // saving for a future cast. Roni / lab_tech is still defined
+    // in npcSources + npcs.ts but unplaced; relocate her when a
+    // future room fits.)
 
     // Main Hub — extra hospitalist, joins the existing physician
     // crowd. Faces 'right' toward the hub bulletin / colleagues.
