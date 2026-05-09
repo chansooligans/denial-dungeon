@@ -36,7 +36,7 @@ run_grid() {
     --size "$SIZE" \
     --fuzz 30 \
     --halo-fuzz 28 \
-    --halo-passes 3 \
+    --halo-passes 1 \
     --dilate 4 \
     --out "$OUT"
 }
