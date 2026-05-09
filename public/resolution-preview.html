@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Resolution preview — The Waiting Room</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <style>
+    body {
+      margin: 0; padding: 24px;
+      background: #0e1116; color: #d0d8e0;
+      font: 13px/1.5 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    }
+    h1 { color: #7ee2c1; font-size: 18px; margin: 0 0 4px; }
+    h2 { color: #f4d06f; font-size: 14px; margin: 24px 0 8px; }
+    p  { color: #8b95a5; max-width: 760px; margin: 4px 0 16px; }
+    code { color: #d0d8e0; }
+    .panel {
+      background: #1a1e25; border: 1px solid #2a323d;
+      padding: 16px; border-radius: 6px;
+      display: inline-block; margin-right: 24px; margin-bottom: 24px;
+      vertical-align: top;
+    }
+    .panel .label { color: #7ee2c1; font-size: 13px; margin-bottom: 6px; }
+    .panel .meta  { color: #5a6a7a; font-size: 11px; margin-top: 6px; }
+    canvas {
+      image-rendering: pixelated;
+      display: block;
+      background: #0a0e14;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Resolution preview</h1>
+<p>
+  Same tile layout, two render scales. Shows what the hospital looks
+  like at the current <code>TILE = 32</code> game-pixel grid (left)
+  versus an upgraded <code>TILE = 64</code> grid (right). Objects
+  pulled live from <code>public/sprites/objects-raw/</code>; characters
+  from <code>player/</code> and <code>npcs-raw/</code>. Both panels
+  display the same world coordinates, so the right panel is literally
+  twice as wide / tall in screen pixels.
+</p>
+<p>
+  At 32: objects are downsampled from their 64×64 LoRA source via
+  <code>setDisplaySize(32, 32)</code> — fits the existing tile grid
+  but loses detail. At 64: objects render at native source resolution,
+  full LoRA detail visible. Characters are 64-px native at both
+  scales, but they read more naturally at 64-tile because they fit
+  one tile instead of overflowing into the tile above.
+</p>
+
+<div id="panels"></div>
+
+<script>
+const FLOOR  = '#c8b090'; // matches HospitalScene's TINT.floor
+const WALL   = '#4a3220'; // walnut wood paneling
+const SEAM   = 'rgba(0,0,0,0.10)';
+
+// Placement plan — same logical scene rendered at two scales.
+// Layout fits roughly within an interior 14-wide × 8-tall room.
+const SCENE = {
+  cols: 16, rows: 10,
+  walls: [
+    // top row + bottom row
+    ...Array.from({ length: 16 }, (_, x) => [x, 0]),
+    ...Array.from({ length: 16 }, (_, x) => [x, 9]),
+    // left/right columns
+    ...Array.from({ length: 10 }, (_, y) => [0, y]),
+    ...Array.from({ length: 10 }, (_, y) => [15, y]),
+  ],
+  // Objects: { x, y, src } — src is filename in objects-raw or special key
+  objects: [
+    // North wall amenities — counter, AED, brochure
+    { x: 2, y: 1, src: 'obj1_0_0' }, // reception counter
+    { x: 5, y: 1, src: 'obj4_3_0' }, // AED on wall
+    { x: 7, y: 1, src: 'obj1_1_0' }, // bulletin board
+    { x: 9, y: 1, src: 'obj2_0_3' }, // brochure rack
+    { x: 12, y: 1, src: 'obj1_1_1' }, // potted plant
+    // Mid-room — desks, a vending machine, water cooler
+    { x: 2, y: 4, src: 'obj1_0_1' }, // wood desk
+    { x: 4, y: 4, src: 'obj1_0_2' }, // office chair
+    { x: 13, y: 3, src: 'obj1_2_2' }, // vending
+    { x: 13, y: 5, src: 'obj1_2_1' }, // water cooler
+    // South side — patient bay
+    { x: 2,  y: 7, src: 'obj3_0_0' }, // hospital bed
+    { x: 4,  y: 7, src: 'obj3_0_2' }, // IV stand
+    { x: 6,  y: 7, src: 'obj3_0_3' }, // wheelchair
+    { x: 11, y: 7, src: 'obj1_2_0' }, // file boxes
+  ],
+  characters: [
+    // x, y, src — characters render at native 64 px height with bottom anchor
+    { x: 8,  y: 4, src: 'player/idle_down', kind: 'player' }, // Chloe in middle
+    { x: 6,  y: 5, src: 'npc1_0_0',         kind: 'npc' },    // Dr. resident
+    { x: 11, y: 4, src: 'npc1_1_0',         kind: 'npc' },    // Liana (nurse)
+    { x: 13, y: 7, src: 'npc4_2_0',         kind: 'npc' },    // Joe (janitor)
+  ],
+};
+
+function drawScene(canvas, tile) {
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+
+  // Floor
+  ctx.fillStyle = FLOOR;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Subtle floor seams
+  ctx.strokeStyle = SEAM;
+  ctx.lineWidth = 1;
+  for (let x = 0; x <= SCENE.cols; x++) {
+    ctx.beginPath();
+    ctx.moveTo(x * tile, 0);
+    ctx.lineTo(x * tile, SCENE.rows * tile);
+    ctx.stroke();
+  }
+  for (let y = 0; y <= SCENE.rows; y++) {
+    ctx.beginPath();
+    ctx.moveTo(0, y * tile);
+    ctx.lineTo(SCENE.cols * tile, y * tile);
+    ctx.stroke();
+  }
+
+  // Walls
+  ctx.fillStyle = WALL;
+  for (const [x, y] of SCENE.walls) {
+    ctx.fillRect(x * tile, y * tile, tile, tile);
+  }
+
+  // Object loading + rendering — drawn at setDisplaySize(tile, tile)
+  // semantics: scaled to fit the tile box regardless of source size.
+  const drawCalls = [];
+  for (const obj of SCENE.objects) {
+    drawCalls.push({
+      type: 'obj',
+      x: obj.x, y: obj.y,
+      src: `/sprites/objects-raw/${obj.src}.png`,
+    });
+  }
+  // Characters layered on top, bottom-anchored.
+  for (const ch of SCENE.characters) {
+    let url;
+    if (ch.kind === 'player') {
+      url = `/sprites/${ch.src}.png`;
+    } else {
+      url = `/sprites/npcs-raw/${ch.src}.png`;
+    }
+    drawCalls.push({ type: 'char', x: ch.x, y: ch.y, src: url });
+  }
+
+  let pending = drawCalls.length;
+  const img = new Map();
+  for (const call of drawCalls) {
+    const im = new Image();
+    im.onload = () => {
+      img.set(call.src, im);
+      if (--pending === 0) finish();
+    };
+    im.onerror = () => {
+      if (--pending === 0) finish();
+    };
+    im.src = call.src;
+  }
+
+  function finish() {
+    // First pass: tile objects
+    for (const call of drawCalls) {
+      if (call.type !== 'obj') continue;
+      const im = img.get(call.src);
+      if (!im) continue;
+      ctx.drawImage(im, call.x * tile, call.y * tile, tile, tile);
+    }
+    // Second pass: characters at native 64-px height, bottom-anchored
+    // Native size scaled to tile height:
+    // - At tile=32: char source 64 px → display height = tile * 2 = 64 px (so visually 2 tiles tall — same as in-game)
+    // - At tile=64: char source 64 px → display height = tile = 64 px (one tile)
+    const charDisplay = tile === 32 ? 64 : 64;
+    for (const call of drawCalls) {
+      if (call.type !== 'char') continue;
+      const im = img.get(call.src);
+      if (!im) continue;
+      // Bottom-center anchor on the tile's bottom edge
+      const cx = call.x * tile + tile / 2;
+      const cy = (call.y + 1) * tile;
+      ctx.drawImage(im, cx - charDisplay / 2, cy - charDisplay, charDisplay, charDisplay);
+    }
+  }
+}
+
+const root = document.getElementById('panels');
+function makePanel(label, tile, meta) {
+  const panel = document.createElement('div');
+  panel.className = 'panel';
+  panel.innerHTML = `
+    <div class="label">${label}</div>
+    <canvas width="${SCENE.cols * tile}" height="${SCENE.rows * tile}"></canvas>
+    <div class="meta">${meta}</div>
+  `;
+  root.appendChild(panel);
+  drawScene(panel.querySelector('canvas'), tile);
+  return panel;
+}
+
+makePanel(
+  'Current — TILE = 32',
+  32,
+  '16×10 tiles · canvas 512×320 · objects downsampled 64→32 · characters 64-px overflow up'
+);
+makePanel(
+  'Upgraded — TILE = 64',
+  64,
+  '16×10 tiles · canvas 1024×640 · objects native 64-px detail · characters fit one tile'
+);
+</script>
+
+</body>
+</html>
