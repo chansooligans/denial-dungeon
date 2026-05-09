@@ -1,14 +1,19 @@
-// Prototype catalog — index page for the encounter-redesign
-// prototypes. Replaces the older battles.html catalog.
+// Case Prototypes — index page for the per-encounter playable
+// sketches. Replaces the older battles.html / "prototype catalog"
+// nomenclature; the things in this catalog are now called *Cases*
+// (each Case is the player-side problem they solve in one
+// encounter — what we used to call a "problem").
 //
-// Each prototype is a standalone single-encounter sketch testing
-// what battles look like in this game once HP / tools-as-damage /
-// multiple choice are off the table. They share a framework
-// (Hospital intro → dreamlike fall → claim form + workbench +
-// builder) but each tunes the verb-space to the encounter.
+// Each Case Prototype is a standalone single-encounter sketch
+// testing what battles look like in this game once HP / tools-as-
+// damage / multiple choice are off the table. They share a
+// framework (Hospital intro → dreamlike fall → claim form +
+// workbench + builder) but each tunes the verb-space to the
+// encounter.
 //
-// New prototypes get added to PROTOTYPES below; the page renders
-// itself from that list.
+// New Cases get added to PROTOTYPES below; the page renders itself
+// from that list. URL stays at /prototypes.html for link
+// stability — only the visible labels change.
 
 interface Prototype {
   id: string
@@ -290,6 +295,154 @@ const prototypes: Prototype[] = [
     district: 'release-valve',
     accent: '#e8c074',
   },
+
+  // === Round 2 of planned Cases — pricing-methodology, MRF /
+  //     transparency, and contract-interpretation puzzles. Mostly
+  //     billing-district; they fill out the under-populated
+  //     billing column on the catalog. Each is set in a real
+  //     payer/contract artifact (chargemaster, MRF, GFE, contract
+  //     stoploss clause) so the player learns the document, not
+  //     just the verb. Author: Chansoo, May 2026. ===
+
+  {
+    id: 'case-rate-specter',
+    title: 'Case Rate Specter',
+    subtitle: 'TBD — case rate vs percent-of-charge outlier',
+    archetype: 'Specter',
+    carc: 'contractual underpayment (no CARC)',
+    level: 7,
+    status: 'planned',
+    verbs: 'COMPARE-CONTRACT + REPRICE',
+    testing: 'Anthem contract pays a $14k case rate for DRG 470 (joint replacement, no comp/comorb). This claim is DRG 470 with a 9-day stay (normal threshold = 5 days). The contract\'s outlier provision flips payment to 75% of charges over the threshold. Player walks the contract clauses, reprices line-by-line against the 835, identifies the threshold trip, and files a corrected expected. First Case where the puzzle is "which pricing methodology applies" rather than "which code is wrong."',
+    district: 'billing',
+    accent: '#ef5b7b',
+  },
+
+  {
+    id: 'mrf-cartographer',
+    title: 'MRF Cartographer',
+    subtitle: 'TBD — soft-coded estimate generation from claim history',
+    archetype: 'Cartographer',
+    carc: 'pricing transparency compliance (no claim)',
+    level: 8,
+    status: 'planned',
+    verbs: 'MAP + ESTIMATE + RECONCILE',
+    testing: 'New verb: MAP. Mercy\'s machine-readable file (MRF) is due in 30 days. Hard-coded services (room/board, surgical case rates) come straight off the chargemaster. Soft-coded services — the lab/imaging/pharmacy that bill per item — don\'t have a stable code-rate pair, so the player pulls 12 months of claims, infers the median negotiated rate per CPT/HCPCS, and populates those MRF rows from the data. Tests "reconcile two pricing systems" as a puzzle. First non-claim Case where the deliverable is a regulatory file, not a packet.',
+    district: 'billing',
+    accent: '#ef5b7b',
+  },
+
+  {
+    id: 'gfe-oracle',
+    title: 'GFE Oracle',
+    subtitle: 'TBD — Good Faith Estimate / AEOB pre-service',
+    archetype: 'Oracle',
+    carc: 'NSA pre-service compliance',
+    level: 8,
+    status: 'planned',
+    verbs: 'ESTIMATE + ITEMIZE + COMMIT',
+    testing: 'Self-pay patient scheduling a planned C-section. NSA requires a Good Faith Estimate within 3 business days. Player builds it: facility fees off the chargemaster + co-providers (anesthesia, pediatrics) as separate GFEs because they\'re separately contracted. Tests "what to include / what to disclose / what counts as a co-provider." Different from the Surprise Bill Specter (which is post-encounter); this is the prevention case — ship the patient an honest number before the procedure.',
+    district: 'billing',
+    accent: '#ef5b7b',
+  },
+
+  {
+    id: 'carveout-phantom',
+    title: 'Carve-out Phantom',
+    subtitle: 'TBD — directly contracted facility, indirect physician group',
+    archetype: 'Phantom',
+    carc: 'dual billing (patient complaint, no CARC)',
+    level: 9,
+    status: 'planned',
+    verbs: 'TRACE-CONTRACT + DISCLOSE',
+    testing: 'Patient walks in with two bills for one ER visit — the Mercy facility bill (in-network) plus a separate ER physician group bill (out-of-network because the group isn\'t directly contracted with the patient\'s payer). Player walks the contract chain — facility roster, physician group roster, payer participation — finds the boundary, and either applies the NSA carve-out (if the visit qualifies as emergency) or routes the second bill into balance-billing protections. Cousin to Surprise Bill but the lever is "who is contracted with whom," not "who knew what when."',
+    district: 'billing',
+    accent: '#ef5b7b',
+  },
+
+  {
+    id: 'form-mirror',
+    title: 'Form Mirror — UB-04 vs CMS-1500',
+    subtitle: 'TBD — institutional claim filed on professional form',
+    archetype: 'Mirror',
+    carc: 'CO-95 (wrong claim type)',
+    level: 4,
+    status: 'planned',
+    verbs: 'REROUTE + RECODE',
+    testing: 'A facility claim was filed on a CMS-1500 (professional) instead of a UB-04 (institutional). Revenue codes don\'t fit on the 1500\'s line layout, the DRG box has no equivalent, and the claim came back unprocessable. Player identifies the form mismatch, maps each affected element to the correct UB-04 box (revenue codes → form locator 42, DRG → 71, occurrence codes → 31-34), and refiles. First Case where the answer is "you filed the wrong form," not "you used the wrong code."',
+    district: 'coding',
+    accent: '#f0a868',
+  },
+
+  {
+    id: 'cpt-licensure-mire',
+    title: 'CPT Licensure Mire',
+    subtitle: 'TBD — meta-Case on the CPT licensing system',
+    archetype: 'Mire',
+    carc: 'meta — coding compliance audit',
+    level: 6,
+    status: 'planned',
+    verbs: 'SOURCE + LICENSE + ALTERNATIVE',
+    testing: 'Audit pulls Mercy\'s charity clinic and questions whether the clinic paid the AMA\'s CPT licensing fees to use the codes on submitted claims. Player walks the license trail (institutional license vs per-coder, per-vendor flow-through), evaluates HCPCS Level II as a partial fallback for some services, and surfaces the systemic critique — that a private association charges hospitals to use the codes Medicare requires them to use. First Case where the puzzle pushes against the system rather than working within it.',
+    district: 'coding',
+    accent: '#f0a868',
+  },
+
+  {
+    id: 'asp-wac-apothecary',
+    title: 'ASP / WAC Apothecary',
+    subtitle: 'TBD — drug pricing reconciliation (Part B J-codes)',
+    archetype: 'Apothecary',
+    carc: 'CO-204 (J-code mispricing)',
+    level: 5,
+    status: 'planned',
+    verbs: 'PRICE + CONVERT',
+    testing: 'Part B drug claim. Medicare pays J-codes at ASP+6% (Average Sales Price plus 6%). Hospital chargemaster billed at WAC (Wholesale Acquisition Cost), got underpaid 22%. Player walks the quarterly ASP file, identifies the correct rate for the date of service, converts units (vial vs unit vs milligram), and refiles a corrected. Tests "the same drug has three different prices depending on who is asking" — ASP, WAC, AWP — and that the right one depends on payer + benefit.',
+    district: 'billing',
+    accent: '#ef5b7b',
+  },
+
+  {
+    id: 'implant-carveout-specter',
+    title: 'Implant Carve-out Specter',
+    subtitle: 'TBD — high-cost implant outside the case rate',
+    archetype: 'Specter',
+    carc: 'contractual line-level underpayment',
+    level: 6,
+    status: 'planned',
+    verbs: 'ITEMIZE + INVOICE-MATCH + APPEND',
+    testing: '$48k spinal hardware on a lumbar-fusion case. Contract has an implant carve-out: any single implant invoiced over $5k pays at invoice cost +20%, separate from the DRG case rate. Hospital didn\'t flag the carve-out at billing; the whole stay rolled into the case rate and the hardware was effectively unpaid. Player matches the manufacturer invoice to the claim line, identifies the carve-out-eligible item, attaches the invoice, refiles. Cousin to Case Rate Specter — same contract, different clause.',
+    district: 'billing',
+    accent: '#ef5b7b',
+  },
+
+  {
+    id: 'stoploss-reckoner',
+    title: 'Stoploss Reckoner',
+    subtitle: 'TBD — high-cost claim trips the stoploss provision',
+    archetype: 'Reckoner',
+    carc: 'contractual underpayment',
+    level: 7,
+    status: 'planned',
+    verbs: 'TRIP + RECALCULATE',
+    testing: 'Long ICU stay. Charges $312k, paid $48k case rate. Contract has a stoploss provision: when total charges exceed 4× the case rate, payment converts from case rate to 65% of charges. Player verifies the threshold trip ($192k vs $312k → tripped), recalculates expected ($312k × 0.65 = $202.8k), files the difference. First Case that asks the player to do real arithmetic against the sheet — the math is the puzzle, not just the lookup.',
+    district: 'billing',
+    accent: '#ef5b7b',
+  },
+
+  {
+    id: 'ob-perdiem-specter',
+    title: 'OB Per-Diem Specter',
+    subtitle: 'TBD — obstetrics case rate + per diem hybrid',
+    archetype: 'Specter',
+    carc: 'contractual underpayment (low-acuity OB)',
+    level: 7,
+    status: 'planned',
+    verbs: 'PARSE-CONTRACT + SPLIT-DAYS',
+    testing: 'Vaginal delivery. Contract pays a $7,200 case rate covering 2 inpatient days; subsequent days bill at $1,400/day per diem. Patient stayed 5 days (chorioamnionitis complication). Hospital applied case rate alone, came out underpaid. Player splits the stay into "case-rate window" + "per-diem days," applies the right rule to each, rebills the per-diem portion. Tests "two pricing rules can apply to one stay" — same building block as the Reckoner but in a different shape.',
+    district: 'billing',
+    accent: '#ef5b7b',
+  },
 ]
 
 function escape(s: string): string {
@@ -305,16 +458,17 @@ function renderHeader(): string {
   return `
     <header class="page-h">
       <div class="title-row">
-        <h1>The Waiting Room · Prototype Catalog</h1>
+        <h1>The Waiting Room · Case Prototypes</h1>
         <a class="back-link" href="./">← back to game</a>
       </div>
       <p class="lede">
-        Encounter-redesign prototypes. Each one is a single
-        playable sketch testing what battles look like in this
-        game without HP, without tools-as-damage, and without
-        multiple choice. Share a framework
+        One playable sketch per <em>Case</em> — the player-side
+        problem they solve in a single encounter. Each prototype
+        tests what battles look like in this game without HP,
+        without tools-as-damage, and without multiple choice.
+        They share a framework
         (<em>Hospital intro → dreamlike fall → claim form +
-        middle work + checklist</em>); differ in verb-space
+        middle work + checklist</em>); they differ in verb-space
         and rhythm.
       </p>
       <p class="meta">
@@ -385,7 +539,7 @@ function renderCard(p: Prototype): string {
 function renderFramework(): string {
   return `
     <section class="framework">
-      <h2>The framework these prototypes share</h2>
+      <h2>The framework these Cases share</h2>
       <ol>
         <li>
           <strong>Hospital intro.</strong> Warm, slow,
@@ -425,7 +579,7 @@ function renderFramework(): string {
         </li>
       </ol>
       <p class="framework-cta">
-        Each prototype tunes <em>what's in</em> each part to the
+        Each Case tunes <em>what's in</em> each part to its own
         encounter. The shape stays the same; the rhythm doesn't.
         That's the framework working.
       </p>
@@ -437,10 +591,10 @@ function renderFooter(): string {
   return `
     <footer class="page-f">
       <p>
-        Prototype source lives in
+        Case-prototype source lives in
         <code>src/wraith-prototype/</code>,
-        <code>src/bundle-prototype/</code>, etc.
-        Design notes for each encounter live in
+        <code>src/bundle-prototype/</code>, etc. — one folder per
+        Case. Design notes for each Case live in
         <a href="https://github.com/chansooligans/the-waiting-room/tree/main/reference/puzzles">reference/puzzles/</a>;
         the curriculum spine is in
         <a href="https://github.com/chansooligans/the-waiting-room/tree/main/reference/curriculum">reference/curriculum/</a>.

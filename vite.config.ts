@@ -10,9 +10,11 @@ export default defineConfig({
       input: {
         // Game: the existing entry point.
         main: resolve(__dirname, 'index.html'),
-        // Prototype catalog: index page listing the encounter-
-        // redesign prototypes. Lives at /prototypes.html on
-        // GitHub Pages.
+        // Case Prototypes catalog: index page listing one playable
+        // sketch per Case (the player-side problem solved in a
+        // single encounter). Lives at /prototypes.html on GitHub
+        // Pages — URL kept for link stability; visible label is
+        // "Case Prototypes."
         prototypes: resolve(__dirname, 'prototypes.html'),
         // Wraith prototype: a single-encounter sketch demonstrating
         // the no-HP / no-tools / no-multiple-choice redesign. Lives
