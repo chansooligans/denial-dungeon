@@ -45,46 +45,45 @@ run_variant() {
   echo
 }
 
-# Round-6 variants — halo still locked at 85 × 2 (user's pick).
-# Sweep global erase min_excess 120 → 112 in 2-unit steps (going
-# *more aggressive* than the round-5 anchor). Skin r-excess hovers
-# around 60 across light/dark tones, so values down to ~75 are
-# still safely above skin's signature; below that we'd start
-# eating warm clothing patches.
+# Round-7 variants — halo and global both locked (85 / 120). Sweep
+# halo_passes 1 → 5 to see how deep the edge erosion can go before
+# it starts eating into the character. Each pass eats one pixel
+# ring of edge pixels matching halo_fuzz. Effects compound — the
+# Nth pass operates on edges revealed by pass N-1.
 
-# A — global 120 (round-5 anchor, mildest in this sweep).
-run_variant A "halo 85 × 2, global 120" \
+# A — passes 1 (single ring).
+run_variant A "halo 85 × 1, global 120" \
+  --fuzz 60 \
+  --halo-fuzz 85 \
+  --halo-passes 1 \
+  --warm-min-excess 120
+
+# B — passes 2 (round-3 anchor / current pick).
+run_variant B "halo 85 × 2, global 120 (current pick)" \
   --fuzz 60 \
   --halo-fuzz 85 \
   --halo-passes 2 \
   --warm-min-excess 120
 
-# B — global 118.
-run_variant B "halo 85 × 2, global 118" \
+# C — passes 3.
+run_variant C "halo 85 × 3, global 120" \
   --fuzz 60 \
   --halo-fuzz 85 \
-  --halo-passes 2 \
-  --warm-min-excess 118
+  --halo-passes 3 \
+  --warm-min-excess 120
 
-# C — global 116.
-run_variant C "halo 85 × 2, global 116" \
+# D — passes 4.
+run_variant D "halo 85 × 4, global 120" \
   --fuzz 60 \
   --halo-fuzz 85 \
-  --halo-passes 2 \
-  --warm-min-excess 116
+  --halo-passes 4 \
+  --warm-min-excess 120
 
-# D — global 114.
-run_variant D "halo 85 × 2, global 114" \
+# E — passes 5.
+run_variant E "halo 85 × 5, global 120" \
   --fuzz 60 \
   --halo-fuzz 85 \
-  --halo-passes 2 \
-  --warm-min-excess 114
-
-# E — global 112 (most aggressive in this sweep).
-run_variant E "halo 85 × 2, global 112" \
-  --fuzz 60 \
-  --halo-fuzz 85 \
-  --halo-passes 2 \
-  --warm-min-excess 112
+  --halo-passes 5 \
+  --warm-min-excess 120
 
 echo "✓ done — open /sprite-cleanup-compare.html in the dev server"

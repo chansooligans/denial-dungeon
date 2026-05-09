@@ -129,13 +129,13 @@
   </p>
 
   <div class="legend">
-    <h2>Variants — round 6 (global sweep 120 → 112, halo locked at 85 × 2)</h2>
+    <h2>Variants — round 7 (passes sweep 1 → 5, halo 85 / global 120 fixed)</h2>
     <dl>
-      <dt>A</dt><dd>halo 85 × 2, global min_excess 120 — round-5 anchor, mildest in this sweep.</dd>
-      <dt>B</dt><dd>halo 85 × 2, global 118.</dd>
-      <dt>C</dt><dd>halo 85 × 2, global 116.</dd>
-      <dt>D</dt><dd>halo 85 × 2, global 114.</dd>
-      <dt>E</dt><dd>halo 85 × 2, global 112 — most aggressive in this sweep.</dd>
+      <dt>A</dt><dd>halo 85 × 1 pass, global 120 — single edge ring.</dd>
+      <dt>B</dt><dd>halo 85 × 2 passes, global 120 — current pick.</dd>
+      <dt>C</dt><dd>halo 85 × 3 passes, global 120.</dd>
+      <dt>D</dt><dd>halo 85 × 4 passes, global 120.</dd>
+      <dt>E</dt><dd>halo 85 × 5 passes, global 120 — deepest erosion; risk of eating character edges.</dd>
     </dl>
   </div>
 
@@ -152,11 +152,11 @@
       { col: 3, label: 'Back' },
     ];
     const VARIANTS = [
-      { id: 'A', desc: 'g120 (anchor)' },
-      { id: 'B', desc: 'g118' },
-      { id: 'C', desc: 'g116' },
-      { id: 'D', desc: 'g114' },
-      { id: 'E', desc: 'g112' },
+      { id: 'A', desc: '85×1 / g120' },
+      { id: 'B', desc: '85×2 / g120 (anchor)' },
+      { id: 'C', desc: '85×3 / g120' },
+      { id: 'D', desc: '85×4 / g120' },
+      { id: 'E', desc: '85×5 / g120' },
     ];
     // Friendly labels for each row (order matches npc15 cells).
     const ROW_LABELS = [
