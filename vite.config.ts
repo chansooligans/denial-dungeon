@@ -126,6 +126,14 @@ export default defineConfig({
         // 837I. Verbs: DETECT / MAP / REROUTE. Lives at
         // /form-mirror-prototype.html.
         formMirror: resolve(__dirname, 'form-mirror-prototype.html'),
+        // CPT Licensure Mire: meta-Case on AMA's CPT licensing
+        // system. Charity clinic audit; player walks the
+        // licensing chain, picks the right tier, finds HCPCS
+        // Level II alternatives where they exist. First Case
+        // where the puzzle pushes against the system rather than
+        // working within it. Verbs: SOURCE / LICENSE /
+        // ALTERNATIVE. Lives at /cpt-licensure-mire-prototype.html.
+        cptLicensureMire: resolve(__dirname, 'cpt-licensure-mire-prototype.html'),
         // Map editor: a dev-only authoring tool for level1's object
         // placement and orientation. Click any object to select it,
         // then rotate/flip via keyboard or drag to move. Outputs a
