@@ -7,7 +7,7 @@
 // QA on the deployed site without shipping a new build. Anything
 // other than `0`/`false`/empty enables it.
 
-import { getState, loadGame, newGame } from '../state'
+import { getState, loadGame, newGame, saveGame } from '../state'
 import { clearHospitalFog } from '../scenes/HospitalScene'
 import type { GameState } from '../types'
 
@@ -107,7 +107,23 @@ function renderPanel(): string {
       <div class="devp-section-h">Jump to scene</div>
       <button class="devp-btn" data-dev-action="scene" data-dev-arg="Title">Title</button>
       <button class="devp-btn" data-dev-action="scene" data-dev-arg="Hospital">Hospital</button>
-      <button class="devp-btn" data-dev-action="scene" data-dev-arg="WaitingRoom">Waiting Room</button>
+      <button class="devp-btn" data-dev-action="scene" data-dev-arg="WaitingRoom">Waiting Room (free-roam)</button>
+      <button class="devp-btn" data-dev-action="wr-boss">Waiting Room @ AUDIT (boss)</button>
+    </section>
+    <section>
+      <div class="devp-section-h">Jump to room</div>
+      ${ROOM_JUMPS.map(r => `
+        <button class="devp-btn" data-dev-action="jump-room" data-dev-arg="${r.id}">
+          ${r.label} <span class="devp-id">(${r.x},${r.y})</span>
+        </button>
+      `).join('')}
+    </section>
+    <section>
+      <div class="devp-section-h">Chart pulls</div>
+      <button class="devp-btn" data-dev-action="charts" data-dev-arg="pull-all">Pull all charts</button>
+      <button class="devp-btn" data-dev-action="charts" data-dev-arg="pull-co_97">Pull L4 op-note (co_97)</button>
+      <button class="devp-btn" data-dev-action="charts" data-dev-arg="pull-co_50">Pull L5 echo (co_50)</button>
+      <button class="devp-btn warn" data-dev-action="charts" data-dev-arg="clear">Clear all charts</button>
     </section>
     <section>
       <div class="devp-section-h">Skip into intro</div>
@@ -143,9 +159,13 @@ function renderStateInspector(): string {
   const pd = s.pendingDescent ? s.pendingDescent.encounterId : '—'
   const phs = s.pendingHospitalSpawn ? `(${s.pendingHospitalSpawn.x},${s.pendingHospitalSpawn.y})` : '—'
   const plb = s.pendingLevelBanner ?? '—'
+  const charts = s.chartsPulled ?? {}
+  const chartIds = Object.keys(charts).filter(k => charts[k])
+  const chartsLabel = chartIds.length ? chartIds.join(', ') : '—'
   return [
     row('currentLevel', String(s.currentLevel)),
     row('defeats', `${s.defeatedObstacles.length} · last: ${lastDefeat}`),
+    row('chartsPulled', chartsLabel),
     row('pendingClaimSubmitted', pcs),
     row('pendingDescent', String(pd)),
     row('pendingHospitalSpawn', phs),
@@ -178,6 +198,38 @@ const LEVEL_PRESETS: LevelPreset[] = [
   { level: 10, label: 'L10 — The Audit',             note: 'Dana · boss' },
 ]
 
+/** Hospital-scene room teleports. Each entry sets
+ *  `state.pendingHospitalSpawn` to a known interior tile then restarts
+ *  the Hospital scene — the scene's create() reads pendingHospitalSpawn
+ *  and drops the player there. Coordinates mirror level1.ts; verify
+ *  these stay inside room interiors when rooms move.
+ *
+ *  All charted encounters that need the chart pull live near
+ *  MED_RECORDS so the dev workflow is: jump to Med Records, press
+ *  E on any F binder, jump to the relevant case-handing NPC's room. */
+const ROOM_JUMPS: { id: string; label: string; x: number; y: number }[] = [
+  // Ground floor
+  { id: 'lobby',         label: 'Lobby (spawn)',     x: 14, y: 39 },
+  { id: 'mainHub',       label: 'Main Hub',          x: 28, y: 8  },
+  { id: 'patientSvc',    label: 'Patient Services',  x: 8,  y: 21 },
+  { id: 'registration',  label: 'Registration',      x: 22, y: 21 },
+  { id: 'eligibility',   label: 'Eligibility',       x: 28, y: 27 },
+  { id: 'him',           label: 'HIM / Coding',      x: 11, y: 55 },
+  { id: 'billing',       label: 'Billing',           x: 29, y: 55 },
+  { id: 'pfs',           label: 'PFS / Phones',      x: 48, y: 55 },
+  // East wing
+  { id: 'radiology',     label: 'Radiology',         x: 58, y: 20 },
+  { id: 'pharmacy',      label: 'Pharmacy',          x: 58, y: 31 },
+  { id: 'medRecords',    label: 'Medical Records',   x: 58, y: 42 },
+  // Second floor
+  { id: 'landing2F',     label: '2F Landing',        x: 32, y: 96 },
+  { id: 'audit',         label: 'AUDIT Conference',  x: 18, y: 105 },
+  { id: 'payer',         label: 'Payer Office',      x: 44, y: 105 },
+  { id: 'compliance',    label: 'Compliance',        x: 32, y: 117 },
+  // Outdoor
+  { id: 'outdoor',       label: 'Parking Lot',       x: 16, y: 78 },
+]
+
 /** Encounter id used to mark the "previous level done" for each
  *  level transition. Order matches LEVEL_DEFEAT_THRESHOLD = [1,2,…]. */
 const PRESET_DEFEAT_SEQUENCE = [
@@ -193,20 +245,25 @@ const PRESET_DEFEAT_SEQUENCE = [
   'boss_audit',            // L10
 ]
 
-/** Intro skip-to anchors. Indexes into BEATS in IntroScene.ts —
- *  pick a beat and IntroScene.init reads `skipToBeat: N` from the
- *  scene-start payload and jumps in. Voice counter is pre-advanced
- *  so the right narration MP3 still fires. */
+/** Intro skip-to anchors. Indexes into BEATS in introBeats.ts — pick
+ *  a beat and IntroScene.init reads `skipToBeat: N` from the scene-
+ *  start payload and jumps in. Voice counter is pre-advanced so the
+ *  right narration MP3 still fires.
+ *
+ *  Indices were stale (off by 2–4) after showGap was removed from the
+ *  beat list and the WR-section narration was rewritten — these now
+ *  map to the actual scene-action / cover beat positions in
+ *  introBeats.ts.BEATS as of 2026-05. Re-verify whenever beats
+ *  change. */
 const INTRO_BEATS: { beat: number; label: string }[] = [
   { beat: 0,  label: 'Cover splash' },
   { beat: 1,  label: '"$215" hook' },
-  { beat: 7,  label: 'Hospital pan' },
-  { beat: 14, label: 'Your desk' },
-  { beat: 19, label: 'The vanishing' },
-  { beat: 28, label: 'The gap' },
-  { beat: 30, label: 'The waiting room' },
-  { beat: 39, label: '"They call it"' },
-  { beat: 41, label: 'End covers' },
+  { beat: 5,  label: 'Hospital pan' },
+  { beat: 12, label: 'Your desk' },
+  { beat: 17, label: 'The vanishing' },
+  { beat: 26, label: 'Waiting Room reveal' },
+  { beat: 35, label: '"They call it"' },
+  { beat: 37, label: 'End covers' },
 ]
 
 function buildPresetSave(targetLevel: number): string {
@@ -242,6 +299,10 @@ function buildPresetSave(targetLevel: number): string {
     // up to you).
     pendingLevelBanner: lvl > 1 ? lvl : null,
     pendingClaimSubmitted: null,
+    // Preset starts with no charts pulled — QA testing the gated
+    // descent loop should walk to Medical Records explicitly. Use
+    // the "Pull all charts" button to bypass when that's the goal.
+    chartsPulled: {},
   }
   return JSON.stringify(state)
 }
@@ -351,8 +412,68 @@ function handleAction(action: string, arg?: string) {
       if (slot) slot.innerHTML = renderStateInspector()
       return
     }
+    case 'jump-room': {
+      if (!arg) return
+      const room = ROOM_JUMPS.find(r => r.id === arg)
+      if (!room) return
+      try {
+        const state = getState()
+        state.pendingHospitalSpawn = { x: room.x, y: room.y }
+        // Save so the new spawn survives a reload — also lets the
+        // running Hospital.create() pick it up via getState() rather
+        // than relying on a side channel.
+        // (saveGame imported below.)
+        saveGame()
+        stopAllScenes(sm)
+        sm.start('Hospital')
+        hidePanel()
+      } catch (err) {
+        alert('Could not jump: ' + (err as Error).message)
+      }
+      return
+    }
+    case 'wr-boss': {
+      // 2F obstacles are unreachable from WR free-roam (WR doesn't
+      // process stairs), so the boss has its own jump that starts
+      // WR with the boss as the active encounter and spawns the
+      // player inside the audit mirror room.
+      try {
+        stopAllScenes(sm)
+        sm.start('WaitingRoom', {
+          activeEncounterId: 'boss_audit',
+          spawnTileX: 18,
+          spawnTileY: 105,
+        })
+        hidePanel()
+      } catch (err) {
+        alert('Could not jump to boss: ' + (err as Error).message)
+      }
+      return
+    }
+    case 'charts': {
+      if (!arg) return
+      const state = getState()
+      state.chartsPulled ??= {}
+      if (arg === 'pull-all') {
+        for (const id of GATED_CHART_ENCOUNTERS) state.chartsPulled[id] = true
+      } else if (arg === 'clear') {
+        state.chartsPulled = {}
+      } else if (arg.startsWith('pull-')) {
+        const id = arg.slice('pull-'.length)
+        state.chartsPulled[id] = true
+      }
+      saveGame()
+      const slot = document.getElementById('__devp_state__')
+      if (slot) slot.innerHTML = renderStateInspector()
+      return
+    }
   }
 }
+
+/** Encounter ids whose descent is gated on a chart pull. Mirrors the
+ *  `PULL_BY_LEVEL` map in HospitalScene.tryChartPull — keep in sync
+ *  when adding new gated cases. */
+const GATED_CHART_ENCOUNTERS: string[] = ['co_97', 'co_50']
 
 function promptCopyFallback(text: string) {
   const ta = document.createElement('textarea')
