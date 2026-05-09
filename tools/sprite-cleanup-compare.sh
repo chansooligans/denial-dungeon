@@ -45,36 +45,41 @@ run_variant() {
   echo
 }
 
-# A — minimal: just flood-fill, no halo, no global erase.
-run_variant A "minimal — flood only, no halo, no global erase" \
-  --fuzz 50 \
-  --halo-fuzz 0 \
-  --halo-passes 0 \
-  --no-global-erase
+# Round-2 variants — fill the space between old-D ("looks ok") and
+# old-E ("not ok") to find the sweet spot. Variables: halo_fuzz,
+# halo_passes, and chroma_key_global_erase min_excess. Each step
+# nudges one knob slightly more aggressive.
 
-# B — gentle: small halo, no global erase.
-run_variant B "gentle — halo 50, passes 2, no global erase" \
-  --fuzz 55 \
-  --halo-fuzz 50 \
-  --halo-passes 2 \
-  --no-global-erase
-
-# C — medium (likely best for faces): halo 70, passes 2, no global erase.
-run_variant C "medium — halo 70, passes 2, no global erase" \
-  --fuzz 60 \
-  --halo-fuzz 70 \
-  --halo-passes 2 \
-  --no-global-erase
-
-# D — medium + safe global erase (high min_excess).
-run_variant D "medium + safe global — halo 70, passes 2, global min_excess 130" \
+# A — old D (mildest, anchor): halo 70 × 2, global 130.
+run_variant A "anchor (old D) — halo 70 × 2, global 130" \
   --fuzz 60 \
   --halo-fuzz 70 \
   --halo-passes 2 \
   --warm-min-excess 130
 
-# E — current production (PR #169 — too aggressive).
-run_variant E "current production — halo 90, passes 3, global min_excess 100" \
+# B — slight halo bump.
+run_variant B "halo 75 × 2, global 125" \
+  --fuzz 60 \
+  --halo-fuzz 75 \
+  --halo-passes 2 \
+  --warm-min-excess 125
+
+# C — halo 80, still 2 passes.
+run_variant C "halo 80 × 2, global 120" \
+  --fuzz 60 \
+  --halo-fuzz 80 \
+  --halo-passes 2 \
+  --warm-min-excess 120
+
+# D — bump passes to 3 to chew an extra ring.
+run_variant D "halo 80 × 3, global 115" \
+  --fuzz 60 \
+  --halo-fuzz 80 \
+  --halo-passes 3 \
+  --warm-min-excess 115
+
+# E — old E (most aggressive, anchor; current production / "not ok").
+run_variant E "anchor (old E) — halo 90 × 3, global 100" \
   --fuzz 60 \
   --halo-fuzz 90 \
   --halo-passes 3 \

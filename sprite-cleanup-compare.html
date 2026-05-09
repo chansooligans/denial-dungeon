@@ -129,13 +129,13 @@
   </p>
 
   <div class="legend">
-    <h2>Variants</h2>
+    <h2>Variants — round 2 (between old D and old E)</h2>
     <dl>
-      <dt>A</dt><dd>Minimal — flood-fill only, no halo eroder, no global erase. fuzz 50.</dd>
-      <dt>B</dt><dd>Gentle — fuzz 55, halo 50 × 2 passes, no global erase.</dd>
-      <dt>C</dt><dd>Medium — fuzz 60, halo 70 × 2 passes, no global erase.</dd>
-      <dt>D</dt><dd>Medium + safe global — same as C but global erase with min_excess 130.</dd>
-      <dt>E</dt><dd>Current production (PR #169) — fuzz 60, halo 90 × 3 passes, global erase min_excess 100.</dd>
+      <dt>A</dt><dd>Anchor (old D) — halo 70 × 2 passes, global erase min_excess 130. Mildest.</dd>
+      <dt>B</dt><dd>halo 75 × 2 passes, global 125.</dd>
+      <dt>C</dt><dd>halo 80 × 2 passes, global 120.</dd>
+      <dt>D</dt><dd>halo 80 × 3 passes, global 115.</dd>
+      <dt>E</dt><dd>Anchor (old E) — halo 90 × 3 passes, global 100. Current production / "not ok."</dd>
     </dl>
   </div>
 
@@ -152,10 +152,10 @@
       { col: 3, label: 'Back' },
     ];
     const VARIANTS = [
-      { id: 'A', desc: 'flood only · fuzz 50' },
-      { id: 'B', desc: 'halo 50×2 · no global' },
-      { id: 'C', desc: 'halo 70×2 · no global' },
-      { id: 'D', desc: 'halo 70×2 · global 130' },
+      { id: 'A', desc: 'halo 70×2 · global 130 (= old D)' },
+      { id: 'B', desc: 'halo 75×2 · global 125' },
+      { id: 'C', desc: 'halo 80×2 · global 120' },
+      { id: 'D', desc: 'halo 80×3 · global 115' },
       { id: 'E', desc: 'halo 90×3 · global 100 (current)' },
     ];
     // Friendly labels for each row (order matches npc15 cells).
