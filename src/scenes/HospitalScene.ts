@@ -225,6 +225,7 @@ export class HospitalScene extends Phaser.Scene {
     this.buildMap()
     this.applyAmbientPulse()
     this.placeStairLabels()
+    this.addGothicSilhouettes()
     this.placePlayer()
     this.placeNPCs()
     this.setupInput()
@@ -1259,6 +1260,60 @@ export class HospitalScene extends Phaser.Scene {
         fontSize: '14px', fontFamily: 'monospace', color: '#f4d06f',
         stroke: '#0e1116', strokeThickness: 3,
       }).setOrigin(0.5).setDepth(5)
+    }
+  }
+
+  /**
+   * Intro callback — "gothic figures lurking in Mercy General" (intro
+   * page7 cover). A handful of cloaked silhouettes drifting through
+   * the second-floor corridor; pulse alpha low so they read as just-
+   * barely-visible, with a slow sway so they feel alive. Player walks
+   * past / through them; depth is set below the player so the figures
+   * stay behind. Placed at fixed corridor tiles on 2F (the upstairs is
+   * thematically the part of the hospital where things "watch").
+   */
+  private addGothicSilhouettes() {
+    const COORDS: Array<{ x: number; y: number }> = [
+      { x: 28, y: 99 },  // 2F trunk corridor, west of landing
+      { x: 37, y: 99 },  // 2F trunk corridor, east of landing
+      { x: 34, y: 105 }, // long vertical corridor between AUDIT and PAYER
+      { x: 34, y: 110 }, // same corridor, near COMPLIANCE
+    ]
+    for (const c of COORDS) {
+      const px = c.x * TILE + TILE / 2
+      const py = c.y * TILE + TILE / 2
+      const g = this.add.graphics().setDepth(2)
+      // Tall hooded figure: trapezoidal "cloak" body + small head.
+      g.fillStyle(0x0a0608, 1)
+      // Body (cloak)
+      g.fillRoundedRect(px - 18, py - 24, 36, 60, 6)
+      // Head
+      g.fillCircle(px, py - 30, 10)
+      // Eye-glints — two tiny dots that catch the camera, very faint.
+      g.fillStyle(0xffefc4, 0.85)
+      g.fillCircle(px - 4, py - 30, 1.4)
+      g.fillCircle(px + 4, py - 30, 1.4)
+      g.setAlpha(0)
+      // Slow pulse — alpha 0 ↔ 0.18, with random offset so figures
+      // don't synchronize.
+      this.tweens.add({
+        targets: g,
+        alpha: 0.18,
+        duration: Phaser.Math.Between(2400, 4200),
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut',
+        delay: Phaser.Math.Between(0, 2000),
+      })
+      // Tiny sway — ±6px horizontal, slow.
+      this.tweens.add({
+        targets: g,
+        x: { from: -6, to: 6 },
+        duration: Phaser.Math.Between(3500, 5500),
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut',
+      })
     }
   }
 

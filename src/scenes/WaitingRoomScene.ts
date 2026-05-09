@@ -272,6 +272,7 @@ export class WaitingRoomScene extends Phaser.Scene {
     this.buildMap()
     this.placePlayer()
     this.addAtmosphere()
+    this.addIntroCallbacks()
     this.placeObstacles()
     this.setupInput()
     this.buildHUD()
@@ -572,6 +573,140 @@ export class WaitingRoomScene extends Phaser.Scene {
       fontSize: '16px', fontFamily: 'monospace', color: '#f0d090',
       backgroundColor: '#1a0608', padding: { x: 8, y: 4 },
     }).setOrigin(0.5).setDepth(20).setVisible(false)
+  }
+
+  /**
+   * Intro-narration callbacks. Each places a fixed environmental
+   * moment that pays off a specific line from the cinematic:
+   *
+   *   "The number on the ticket counter never seems to change."
+   *     → frozen NOW SERVING widget at a designated tile (the global
+   *       widget over the lobby counter cycles aggressively; this one
+   *       sits over the PFS-mirror counter and is locked to "0042").
+   *
+   *   "Somewhere, a phone rings that no one answers."
+   *     → pulsing red ring + faint ring text drifting up from a
+   *       designated PFS tile. Visual-only for now (no audio loop —
+   *       deferred until we have a phone-ring sample); the pulse +
+   *       drifting "ring..." text reads in silence as a phone left
+   *       off the hook.
+   *
+   *   "Forms fill out themselves, then unfill."
+   *     → a Patient-Services-mirror tile with an animated CMS-1500
+   *       stand-in that types itself in then erases on a long loop.
+   *
+   * These are WR-only. Each is placed at a fixed tile and rendered
+   * at depth between floor and player. Player walks past / through.
+   */
+  private addIntroCallbacks() {
+    this.addFrozenTicket()
+    this.addRingingPhone()
+    this.addUnfillingForm()
+  }
+
+  /** Frozen ticket counter — partner to the cycling global ticketText.
+   *  Locked to "0042" forever. Sits in the PFS-mirror's interior so the
+   *  player encounters it during late-game phone-bank encounters. */
+  private addFrozenTicket() {
+    const TX = 48, TY = 51 // PFS interior, near the north wall
+    const px = TX * TILE + TILE / 2
+    const py = TY * TILE + TILE / 2 - 6
+    this.add.text(px, py, 'NOW SERVING\n    0042', {
+      fontSize: '14px', fontFamily: 'monospace', color: '#ff3050',
+    }).setOrigin(0.5).setDepth(5)
+    // No tween — the entire point of this widget is that it doesn't
+    // change. The cycling ticketText already provides the contrast.
+  }
+
+  /** Ringing phone — pulsing red ring at a designated tile, plus
+   *  drifting "ring..." text that fades upward and recycles. Reads as
+   *  a phone left off the hook in an empty room. */
+  private addRingingPhone() {
+    const TX = 45, TY = 55 // PFS-mirror interior, mid-room
+    const px = TX * TILE + TILE / 2
+    const py = TY * TILE + TILE / 2
+    // Ring marker — pulses outward. Two nested rings out of sync so
+    // the cadence reads as "ringing".
+    for (let i = 0; i < 2; i++) {
+      const ring = this.add.graphics().setDepth(3)
+      ring.lineStyle(2, 0xff3050, 0.7)
+      ring.strokeCircle(0, 0, 6)
+      ring.setPosition(px, py)
+      this.tweens.add({
+        targets: ring,
+        scale: 5,
+        alpha: 0,
+        duration: 1600,
+        repeat: -1,
+        delay: i * 800,
+        ease: 'Cubic.easeOut',
+        onRepeat: () => { ring.setScale(1).setAlpha(0.7) },
+      })
+    }
+    // Drifting "ring..." text — appears at the tile, drifts up and
+    // fades, then recycles. Spacer time so it's not constantly on
+    // screen.
+    const spawnRing = () => {
+      const t = this.add.text(px, py - 8, 'ring...', {
+        fontSize: '13px', fontFamily: 'monospace', color: '#ff8090',
+      }).setOrigin(0.5).setDepth(6).setAlpha(0)
+      this.tweens.add({
+        targets: t,
+        y: py - 60,
+        alpha: { from: 0.9, to: 0 },
+        duration: 2400,
+        ease: 'Sine.easeOut',
+        onComplete: () => t.destroy(),
+      })
+    }
+    spawnRing()
+    this.time.addEvent({ delay: 3200, loop: true, callback: spawnRing })
+  }
+
+  /** Unfilling form — a small CMS-1500 stand-in that types itself in
+   *  then erases on a loop. Reads as the intro line "forms fill out
+   *  themselves, then unfill." */
+  private addUnfillingForm() {
+    const TX = 8, TY = 20 // Patient Services interior
+    const px = TX * TILE + TILE / 2
+    const py = TY * TILE + TILE / 2 - 8
+    // Background paper rect for the form
+    const paper = this.add.graphics().setDepth(3)
+    paper.fillStyle(0xd8cfc4, 0.85)
+    paper.fillRoundedRect(px - 36, py - 28, 72, 56, 3)
+    paper.lineStyle(1, 0x1a0608, 0.6)
+    paper.strokeRoundedRect(px - 36, py - 28, 72, 56, 3)
+    // The form text — three short lines that fill in serially then
+    // erase together. Each character of `target` types in over a
+    // tween on a typewriter-style text widget.
+    const formText = this.add.text(px, py - 22, '', {
+      fontSize: '9px', fontFamily: 'monospace', color: '#1a0608',
+      lineSpacing: 1,
+    }).setOrigin(0.5, 0).setDepth(4)
+    const target =
+      'PATIENT NAME: J.DOE\n' +
+      'POLICY #: 8429-XX\n' +
+      'DOS: 11/__/____\n' +
+      'DX: K35.80\n' +
+      'CPT: 44970'
+    let chIndex = 0
+    const tickType = () => {
+      if (chIndex < target.length) {
+        chIndex++
+        formText.setText(target.slice(0, chIndex))
+      } else {
+        // Pause briefly with the form filled, then erase.
+        this.time.delayedCall(1400, () => {
+          formText.setText('')
+          chIndex = 0
+          this.time.delayedCall(900, scheduleNext)
+        })
+        return
+      }
+      this.time.delayedCall(60, tickType)
+    }
+    const scheduleNext = () => tickType()
+    scheduleNext()
   }
 
   private placeObstacles() {
