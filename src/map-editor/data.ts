@@ -11,7 +11,9 @@
 import { OBJECT_FALLBACK_COLORS } from '../scenes/objectSources'
 
 /** Map glyph → object texture key (matches HospitalScene.TILE_TEXTURES).
- *  Keep in sync if a new glyph or object key is added there. */
+ *  Procedural-era set: only the 12 keys with detailed pixel-art
+ *  generators in BootScene.makeHospitalTiles. Keep in sync if
+ *  TILE_TEXTURES changes. */
 export const GLYPH_TO_OBJ_KEY: Record<string, string> = {
   c: 'h_desk',
   h: 'h_chair',
@@ -25,28 +27,6 @@ export const GLYPH_TO_OBJ_KEY: Record<string, string> = {
   b: 'h_bulletin',
   H: 'h_bed',
   X: 'h_fax',
-  // Phase-C
-  A: 'h_aed',
-  a: 'h_sanitizer',
-  C: 'h_couch',
-  d: 'h_bench',
-  r: 'h_brochure',
-  i: 'h_signin',
-  p: 'h_payphone',
-  '>': 'h_arrow_sign',
-  T: 'h_trash',
-  I: 'h_iv_stand',
-  y: 'h_wheelchair',
-  g: 'h_gurney',
-  K: 'h_bookshelf',
-  s: 'h_shredder',
-  k: 'h_kiosk',
-  '#': 'h_directory',
-  '%': 'h_pneumatic',
-  e: 'h_elevator',
-  f: 'h_fountain',
-  '!': 'h_wet_floor',
-  M: 'h_mop_bucket',
 }
 
 /** Reverse — used by the palette. */
@@ -82,25 +62,4 @@ export const GLYPH_LABEL: Record<string, string> = {
   b: 'Bulletin',
   H: 'Hospital bed',
   X: 'Fax / kiosk',
-  A: 'AED',
-  a: 'Sanitizer',
-  C: 'Couch',
-  d: 'Bench',
-  r: 'Brochure rack',
-  i: 'Sign-in stand',
-  p: 'Payphone',
-  '>': 'Arrow sign',
-  T: 'Trash',
-  I: 'IV stand',
-  y: 'Wheelchair',
-  g: 'Gurney',
-  K: 'Bookshelf',
-  s: 'Shredder',
-  k: 'Kiosk',
-  '#': 'Directory',
-  '%': 'Pneumatic tube',
-  e: 'Elevator',
-  f: 'Fountain',
-  '!': 'Wet floor',
-  M: 'Mop bucket',
 }

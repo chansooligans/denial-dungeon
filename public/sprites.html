@@ -548,9 +548,10 @@ function objCategoryFor(key) {
 // fragile and adds no real value while the game is single-level.
 
 // Object glyphs that appear in any room's items[] in level1.ts.
+// Procedural-era set: only the 12 keys that have detailed pixel-art
+// generators in BootScene.makeHospitalTiles.
 const ACTIVE_OBJECT_GLYPHS = new Set([
-  'c', 'h', 'P', 'b', '#', 'X', 'F', 'R', 'B', 'V', 'w',
-  'I', 'y', 'A', 'r', 'p', 'T', 'K', 's', '%',
+  'c', 'h', 'P', 'b', 'X', 'F', 'R', 'B', 'V', 'w',
 ]);
 
 // Glyph → texture-key map mirrors HospitalScene.TILE_TEXTURES (only
@@ -562,14 +563,6 @@ const GLYPH_TO_OBJ_KEY = {
   P: 'h_plant',       w: 'h_water',       F: 'h_cabinet',
   B: 'h_whiteboard',  R: 'h_counter',     V: 'h_vending',
   b: 'h_bulletin',    H: 'h_bed',         X: 'h_fax',
-  A: 'h_aed',         a: 'h_sanitizer',   C: 'h_couch',
-  d: 'h_bench',       r: 'h_brochure',    i: 'h_signin',
-  p: 'h_payphone',   '>': 'h_arrow_sign', T: 'h_trash',
-  I: 'h_iv_stand',    y: 'h_wheelchair',  g: 'h_gurney',
-  K: 'h_bookshelf',   s: 'h_shredder',    k: 'h_kiosk',
- '#': 'h_directory', '%': 'h_pneumatic',
-  e: 'h_elevator',    f: 'h_fountain',   '!': 'h_wet_floor',
-  M: 'h_mop_bucket',
 };
 
 const ACTIVE_OBJECT_KEYS = new Set();
@@ -1025,104 +1018,15 @@ renderCustomNpcList();
 // Mapped Objects card grid; localStorage `objMapping` (set by the
 // per-card "change cell…" dropdown or the source-sheet pickers) is
 // a *user override* layer on top of these defaults.
-const BOOT_OBJECT_SOURCES = {
-  // Canonical hospital + waiting-room object textures
-  h_counter:    'obj1_0_0',
-  h_desk:       'desks_0_2',
-  h_chair:      'obj1_0_2',
-  h_cabinet:    'obj1_0_3',
-  h_bulletin:   'obj1_1_0',
-  h_plant:      'obj1_1_1',
-  h_water:      'obj1_2_1',
-  h_vending:    'obj1_2_2',
-  h_bed:        'obj3_0_0',
-  h_equipment:  'obj3_1_3',
-  h_fax:        'obj5_1_0',
-  // Sheet 1 — office / lobby
-  h_computer:        'obj1_1_2',
-  h_printer:         'obj1_1_3',
-  h_box_stack:       'obj1_2_0',
-  h_armchair:        'obj1_2_3',
-  h_stanchion:       'obj1_3_0',
-  h_clock_wall:      'obj1_3_1',
-  h_supply_cart:     'obj1_3_2',
-  h_kiosk:           'obj1_3_3',
-  // Sheet 2 — waiting / lobby
-  h_couch:           'obj2_0_0',
-  h_bench:           'obj2_0_1',
-  h_side_table:      'obj2_0_2',
-  h_brochure:        'obj2_0_3',
-  h_directory:       'obj2_1_0',
-  h_sanitizer:       'obj2_1_1',
-  h_coat_rack:       'obj2_1_2',
-  h_trash:           'obj2_1_3',
-  h_recycle:         'obj2_2_0',
-  h_plant_lobby:     'obj2_2_1',
-  h_reception_bell:  'obj2_2_2',
-  h_atm:             'obj2_2_3',
-  h_monitor_wall:    'obj2_3_0',
-  h_tablet:          'obj2_3_1',
-  h_umbrella_stand:  'obj2_3_2',
-  h_signin:          'obj2_3_3',
-  // Sheet 3 — clinical / medical
-  h_exam_table:      'obj3_0_1',
-  h_iv_stand:        'obj3_0_2',
-  h_wheelchair:      'obj3_0_3',
-  h_stool:           'obj3_1_0',
-  h_bedside:         'obj3_1_1',
-  h_screen:          'obj3_1_2',
-  h_med_cart:        'obj3_2_0',
-  h_crash_cart:      'obj3_2_1',
-  h_sink:            'obj3_2_2',
-  h_biohazard:       'obj3_2_3',
-  h_linen_cart:      'obj3_3_0',
-  h_step:            'obj3_3_1',
-  h_equip_cart:      'obj3_3_2',
-  h_gurney:          'obj3_3_3',
-  // Sheet 4 — facilities / safety
-  h_cleaning_cart:   'obj4_0_0',
-  h_mop_bucket:      'obj4_0_1',
-  h_wet_floor:       'obj4_0_2',
-  h_bin_cart:        'obj4_0_3',
-  h_supply_cart_2:   'obj4_1_0',
-  h_bin_cart_full:   'obj4_1_1',
-  h_biohazard_sm:    'obj4_1_2',
-  h_linen_bin:       'obj4_1_3',
-  h_paper_towels:    'obj4_2_0',
-  h_elevator:        'obj4_2_1',
-  h_drink_counter:   'obj4_2_2',
-  h_fountain:        'obj4_2_3',
-  h_aed:             'obj4_3_0',
-  h_payphone:        'obj4_3_1',
-  h_arrow_sign:      'obj4_3_2',
-  h_clock_office:    'obj4_3_3',
-  // Sheet 5 — admin / records
-  h_bookshelf:       'obj5_0_0',
-  h_file_cart:       'obj5_0_1',
-  h_cabinet_open:    'obj5_0_2',
-  h_lamp:            'obj5_0_3',
-  h_kiosk_admin:     'obj5_1_1',
-  h_intercom:        'obj5_1_2',
-  h_pneumatic:       'obj5_1_3',
-  h_test_tubes:      'obj5_2_0',
-  h_printer_lab:     'obj5_2_1',
-  h_shredder:        'obj5_2_2',
-  h_cashbox:         'obj5_2_3',
-  h_med_vending:     'obj5_3_0',
-  h_reception_admin: 'obj5_3_1',
-  h_ticker:          'obj5_3_2',
-  h_paper_stack:     'obj5_3_3',
-};
-// Variant texture keys (h_desk_1..12, h_plant_1..20) — generated
-// programmatically below since they follow a simple row-major rule.
-for (let i = 1; i <= 12; i++) {
-  const r = Math.floor((i - 1) / 3), c = (i - 1) % 3;
-  BOOT_OBJECT_SOURCES[`h_desk_${i}`] = `desks_${r}_${c}`;
-}
-for (let i = 1; i <= 20; i++) {
-  const r = Math.floor((i - 1) / 5), c = (i - 1) % 5;
-  BOOT_OBJECT_SOURCES[`h_plant_${i}`] = `plants_${r}_${c}`;
-}
+// Empty by design — the procedural era doesn't bind any texture key
+// to a sprite slot. The Mapped Objects card grid below uses the
+// glyph→key map (and falls back to an empty grid since nothing
+// maps to a slot). Keep the const so the rest of the page's
+// override-merge logic still has something to spread over.
+const BOOT_OBJECT_SOURCES = {};
+// (Variant texture keys h_desk_1..12 / h_plant_1..20 used to be
+// generated here, but the procedural revert doesn't ship variant
+// art — there's just one h_desk + one h_plant.)
 
 // Tile keys that exist as Phaser textures but aren't in the object
 // sheets (they're floor / wall / door / WR-tile bases). Listed here

@@ -76,8 +76,6 @@ const { layout, tileMeta } = buildMap({
         { dx: 2,  dy: 6, ch: 'P' },
         { dx: 13, dy: 6, ch: 'P' },
         { dx: 5,  dy: 5, ch: 'b' },  // signage
-        // Phase-C: directory sign in the middle of the hub for wayfinding
-        { dx: 8, dy: 5, ch: '#' },
       ],
     },
     {
@@ -103,10 +101,6 @@ const { layout, tileMeta } = buildMap({
         { dx: 5, dy: 1, ch: 'B' },
         { dx: 8, dy: 5, ch: 'F' },
         { dx: 3, dy: 5, ch: 'P' },
-        // Phase-C clinical props — IV stand at the back, wheelchair
-        // parked along a wall.
-        { dx: 9, dy: 5, ch: 'I' },
-        { dx: 9, dy: 1, ch: 'y' },
       ],
     },
     {
@@ -138,10 +132,6 @@ const { layout, tileMeta } = buildMap({
     {
       id: 'lobby',
       ...LOBBY,
-      // Phase-C ambient props for the LoRA art upgrade. Single AED on
-      // the north wall (visual public-safety beat), a brochure rack
-      // beside the counter, a payphone in the SW corner, a trash can
-      // SE. Tuned for atmosphere — none of them gate movement.
       // North to the corridor / hospital interior, south to the new wing.
       doors: [
         { side: 'N', offset: 10 },
@@ -176,17 +166,9 @@ const { layout, tileMeta } = buildMap({
         { dx: 14, dy: 6, ch: 'h' }, { dx: 16, dy: 6, ch: 'h' },
         { dx: 9,  dy: 6, ch: 'h' }, // Chloe's chair (player spawns here)
         // South wall amenities — vending, water cooler ("lamp"), bulletin.
-        // dx=13 was a bulletin print but the new south door at offset 14
-        // lands on dx=13 — relocate the print east to dx=10.
         { dx: 2,  dy: 7, ch: 'V' },
         { dx: 22, dy: 7, ch: 'w' }, // doubles as a tall lamp visually with the warm tint
         { dx: 24, dy: 7, ch: 'P' }, // corner plant
-        { dx: 10, dy: 8, ch: 'b' }, // framed print over a chair row
-        // Phase-C LoRA props
-        { dx: 20, dy: 1, ch: 'A' }, // AED on north wall
-        { dx: 4,  dy: 1, ch: 'r' }, // brochure rack
-        { dx: 1,  dy: 8, ch: 'p' }, // payphone (SW corner)
-        { dx: 24, dy: 8, ch: 'T' }, // trash can (SE corner)
       ],
     },
 
@@ -204,9 +186,6 @@ const { layout, tileMeta } = buildMap({
         { dx: 8, dy: 5, ch: 'B' }, // whiteboard with code-of-the-week
         { dx: 11, dy: 1, ch: 'P' },
         { dx: 11, dy: 7, ch: 'P' },
-        // Phase-C admin props — binder shelves + paper shredder
-        { dx: 11, dy: 5, ch: 'K' },
-        { dx: 12, dy: 7, ch: 's' },
       ],
     },
     {
@@ -222,8 +201,6 @@ const { layout, tileMeta } = buildMap({
         { dx: 8, dy: 5, ch: 'B' }, // claim-queue board
         { dx: 11, dy: 1, ch: 'F' },
         { dx: 11, dy: 7, ch: 'P' },
-        // Phase-C: pneumatic-tube station (sends claims upstream)
-        { dx: 11, dy: 5, ch: '%' },
       ],
     },
     {
