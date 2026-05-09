@@ -168,6 +168,9 @@ export default defineConfig({
         // hospital missed the per-diem days. Verbs: PARSE-CONTRACT /
         // SPLIT-DAYS / APPEAL.
         obPerdiemSpecter: resolve(__dirname, 'ob-perdiem-specter-prototype.html'),
+        // Phantom Patient: wrong-MRN identity merge. Verbs: TRACE /
+        // UNMERGE / REFILE.
+        phantomPatient: resolve(__dirname, 'phantom-patient-prototype.html'),
         // Map editor: a dev-only authoring tool for level1's object
         // placement and orientation. Click any object to select it,
         // then rotate/flip via keyboard or drag to move. Outputs a
