@@ -876,9 +876,9 @@ export class HospitalScene extends Phaser.Scene {
 
   private buildUI() {
     this.interactPrompt = this.add.text(0, 0, '[E] Talk', {
-      fontSize: '9px', fontFamily: 'monospace', color: '#f4d06f',
+      fontSize: '16px', fontFamily: 'monospace', color: '#f4d06f',
       backgroundColor: '#1f1208',
-      padding: { x: 4, y: 2 },
+      padding: { x: 8, y: 4 },
     }).setOrigin(0.5).setDepth(20).setVisible(false)
   }
 
@@ -1013,7 +1013,10 @@ export class HospitalScene extends Phaser.Scene {
         Math.floor((screenH - 100) / mh),
       ))
     } else {
-      this.miniMapCell = Math.max(1, Math.min(3, Math.floor(180 / mw))) || 1
+      // Collapsed minimap. Bumped from 3px → 5px per tile for a
+      // chunkier read that doesn't get squinted at on large displays.
+      // 60-wide map × 5 = 300px wide HUD element.
+      this.miniMapCell = Math.max(1, Math.min(5, Math.floor(300 / mw))) || 1
     }
     const cell = this.miniMapCell
     const innerW = mw * cell
@@ -1086,7 +1089,7 @@ export class HospitalScene extends Phaser.Scene {
       const cy = oy + (r.y + r.h / 2) * cell
       label.setPosition(cx, cy)
       label.setText(this.miniMapExpanded ? r.name : (r.shortName ?? r.name))
-      label.setFontSize(this.miniMapExpanded ? 14 : 7)
+      label.setFontSize(this.miniMapExpanded ? 18 : 11)
       // Use setWordWrapWidth instead of setStyle({ wordWrap }) — the
       // latter tripped a Phaser internal "Cannot read properties of
       // null (reading 'drawImage')" on first paint, on at least one

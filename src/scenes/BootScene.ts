@@ -627,16 +627,19 @@ export class BootScene extends Phaser.Scene {
 
     // Chair — neutral body so TINT.chair in HospitalScene controls
     // the actual color (Phaser tints multiply against the texture).
+    // Shorter than its predecessor (body 6 rows instead of 8) and
+    // sits lower in the tile so chairs read as waist-high seating
+    // rather than podium-blocks dominating each cell.
     g = this.make.graphics({ x: 0, y: 0 })
     g.fillStyle(0xffffff)
-    g.fillRect(3, 2, 10, 8)
+    g.fillRect(3, 6, 10, 6)         // body 10×6 starting row 6
     g.fillStyle(0xd8d8d8, 0.4)
-    g.fillRect(4, 2, 8, 2)
+    g.fillRect(4, 6, 8, 1)           // top highlight
     g.fillStyle(0x404040)
-    g.fillRect(6, 10, 4, 3)
+    g.fillRect(6, 12, 4, 2)          // dark stem rows 12–13
     g.fillStyle(0x808080)
-    g.fillRect(4, 13, 2, 2)
-    g.fillRect(10, 13, 2, 2)
+    g.fillRect(4, 14, 2, 2)          // feet rows 14–15
+    g.fillRect(10, 14, 2, 2)
     if (!this.textures.exists('h_chair')) g.generateTexture('h_chair', 16, 16)
     g.destroy()
 
@@ -727,16 +730,18 @@ export class BootScene extends Phaser.Scene {
     g.generateTexture('h_whiteboard', 16, 16)
     g.destroy()
 
-    // Reception counter — polished wood
+    // Reception counter — polished wood. Lowered to occupy the
+    // bottom half of the tile (was rows 4–13, now 8–15) so it
+    // reads as waist-high front-of-house furniture, not a wall.
     g = this.make.graphics({ x: 0, y: 0 })
     g.fillStyle(0x6a5030)
-    g.fillRect(0, 4, 16, 10)
+    g.fillRect(0, 8, 16, 8)
     g.fillStyle(0x7a6040, 0.6)
-    g.fillRect(0, 4, 16, 3)
+    g.fillRect(0, 8, 16, 2)            // top edge highlight
     g.fillStyle(0x8a7050, 0.2)
-    g.fillRect(2, 5, 12, 1)
+    g.fillRect(2, 9, 12, 1)
     g.lineStyle(1, 0x5a4020, 0.6)
-    g.strokeRect(0, 4, 16, 10)
+    g.strokeRect(0, 8, 16, 8)
     if (!this.textures.exists('h_counter')) g.generateTexture('h_counter', 16, 16)
     g.destroy()
 

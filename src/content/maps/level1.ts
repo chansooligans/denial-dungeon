@@ -385,10 +385,10 @@ export const LEVEL_1_MAP: MapDef = {
     { npcId: 'walter',        tileX: LOBBY.x + 18, tileY: LOBBY.y + 5, ambient: true },
     { npcId: 'noah',          tileX: LOBBY.x + 14, tileY: LOBBY.y + 7, ambient: true },
     { npcId: 'officer_reyes', tileX: LOBBY.x + 22, tileY: LOBBY.y + 2, ambient: true },
-    { npcId: 'dev',           tileX: LOBBY.x + 5,  tileY: LOBBY.y + 8, ambient: true },
 
-    // Patient Services — clinical-adjacent staff
-    { npcId: 'liana',         tileX: PATIENT_SVC.x + 3, tileY: PATIENT_SVC.y + 5, ambient: true },
+    // PFS — moved here from the lobby; dev (orderly) reads as
+    // back-office staff so the south wing makes more sense.
+    { npcId: 'dev',           tileX: PFS.x + 11, tileY: PFS.y + 5, ambient: true },
 
     // Main Hub — physician floor (Martinez + Alex are here for
     // story; ambient docs sit further into the room)
