@@ -87,13 +87,13 @@ const indicators: FormIndicator[] = [
   },
   {
     id: 'drg',
-    text: `The case is grouped to MS-DRG ${DRG} (Major depressive disorder w/o MCC).`,
+    text: `The case is grouped to MS-DRG ${DRG} (Kidney and Urinary Tract Infections w/o MCC).`,
     wrongForm: true,
     reason: 'DRG codes are institutional. UB-04 carries the DRG in form locator 71; CMS-1500 has no DRG field at all. Outpatient claims don\'t group to DRG, so a DRG\'s presence is itself evidence the claim is institutional.',
   },
   {
     id: 'cpts',
-    text: 'Procedures are listed with CPT codes (99221 initial hospital E&M, 90834 psychotherapy 45-min).',
+    text: 'Procedures are listed with CPT codes (99221 initial hospital E&M, 99232 subsequent hospital care).',
     wrongForm: false,
     reason: 'CPT codes appear on both forms — CMS-1500 box 24D and UB-04 form locator 44. Their presence by itself doesn\'t indicate a mismatch; the form mismatch is in the *other* fields.',
   },
@@ -105,7 +105,7 @@ const indicators: FormIndicator[] = [
   },
   {
     id: 'diagnoses',
-    text: 'Primary diagnosis F32.1 (Major depressive disorder, single episode, moderate) is recorded.',
+    text: 'Primary diagnosis N39.0 (Urinary tract infection, site not specified) is recorded.',
     wrongForm: false,
     reason: 'ICD-10 diagnosis codes appear on both forms — CMS-1500 box 21 and UB-04 form locator 67. Diagnoses by themselves don\'t indicate which form is right; the form mismatch is in the institutional-only fields above.',
   },
@@ -450,7 +450,7 @@ function renderClaimSummary(): string {
       <table class="cs-table">
         <tr><th>Patient</th><td>${escape(PATIENT)}</td></tr>
         <tr><th>Visit</th><td>${escape(VISIT_TYPE)}, ${DOS_ADMIT} → ${DOS_DISCHARGE}</td></tr>
-        <tr><th>${term('DRG')}</th><td><code>${DRG}</code> (Major depressive disorder, no MCC)</td></tr>
+        <tr><th>${term('DRG')}</th><td><code>${DRG}</code> (Kidney/UTI infections, no MCC)</td></tr>
         <tr><th>Total charges</th><td>${money(TOTAL_CHARGES)}</td></tr>
         <tr><th>Filed as</th><td><code>${term('837P')}</code> (professional) — clearinghouse returned ${CARC}</td></tr>
       </table>

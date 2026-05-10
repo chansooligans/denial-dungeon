@@ -201,6 +201,10 @@ const glossary: Record<string, GlossaryEntry> = {
     term: 'NSA (No Surprises Act)',
     plain: "Federal law in effect since Jan 1, 2022. Caps patient cost-share at the in-network amount for emergency services and for non-emergency services at in-network facilities. Removes the patient from balance-billing disputes between payers and out-of-network providers. The disputes themselves still happen — they just happen between the payer and the provider through federal Independent Dispute Resolution (IDR), without the patient in the middle.",
   },
+  'state surprise-billing laws': {
+    term: 'State surprise-billing laws (CA / NY / TX / others)',
+    plain: "Many states had surprise-billing protection laws BEFORE the federal NSA, and most kept their state laws in force. Common patterns: California AB-72 (uses state IDR for fully-insured commercial; NSA preempts for self-funded ERISA plans), New York DFS Surprise Bill law, Texas HB-1714 / SB-1264 (state IDR for state-regulated plans). When a Case lands in California or NY, the state law and federal NSA layer; the right forum can be state IDR, federal IDR, or both. This Case treats federal NSA as the only framework for clarity; reality involves checking state law first and filing in the right forum (state vs federal IDR mechanism) based on whether the plan is state-regulated or self-funded.",
+  },
   'IDR': {
     term: 'IDR (Independent Dispute Resolution)',
     plain: "Federal arbitration process for payer-provider rate disputes under the NSA. Either side initiates; both submit best-and-final offers; a CMS-certified IDR entity picks one. The decision is binding for 90 days. Most disputes settle before IDR; a meaningful chunk go through. The patient is never a party to IDR — that's the whole point.",

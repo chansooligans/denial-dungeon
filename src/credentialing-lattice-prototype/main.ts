@@ -182,7 +182,11 @@ const glossary: Record<string, GlossaryEntry> = {
   },
   'backdating': {
     term: 'Backdating (effective date correction)',
-    plain: "Asking the payer to retroactively change a provider's enrollment effective date. Allowed when the provider was credentialed under the group contract and the delay was internal payer processing. Most major payers process backdating routinely with the right documentation; some impose 90-day or 180-day caps on retroactivity.",
+    plain: "Asking the payer to retroactively change a provider's enrollment effective date. Allowed when the provider was credentialed under the group contract and the delay was internal payer processing. Most major payers process backdating routinely with the right documentation; **most impose 90-day or 180-day caps on retroactivity** — beyond that window, backdating is denied and the claim has to be written off or pursued through escalation. This Case's 11-day gap is well within the typical cap; real-world backdating fights run longer when the gap is older than the cap.",
+  },
+  'NCQA': {
+    term: 'NCQA credentialing standards',
+    plain: "National Committee for Quality Assurance maintains the standard credentialing framework most commercial payers follow. Three-year recredentialing cycle, primary-source verification (verify license and education directly with the issuing institutions, not through the provider), sanctions monitoring (OIG / SAM / state board exclusion lists). Hospitals and group practices operate inside the NCQA framework even when individual payers add their own twists. Background context for this Case; the actual gap here is internal payer processing speed, not NCQA-side delay.",
   },
 }
 

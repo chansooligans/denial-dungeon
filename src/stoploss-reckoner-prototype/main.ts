@@ -177,7 +177,7 @@ const issues: Issue[] = [
 const glossary: Record<string, GlossaryEntry> = {
   'stoploss': {
     term: 'Stoploss provision',
-    plain: "Contract clause that protects the provider from catastrophic losses on individual cases. When total billed charges on a single stay exceed a threshold (typically 3-5× the contracted case rate, or a flat dollar amount like $150k or $200k), the payment basis converts from case rate to a percentage of charges (typically 60-75%). Stoploss is mutually exclusive with the case rate — once it trips, the case rate doesn't apply at all. Catastrophic ICU stays, multi-organ transplants, and burn cases are common stoploss territory.",
+    plain: "Contract clause that protects the provider from catastrophic losses on individual cases. When total billed charges on a single stay exceed a threshold (typically 3-5× the contracted case rate, or a flat dollar amount like $150k or $200k), the payment basis converts from case rate to a percentage of charges (typically 60-75%). Stoploss is mutually exclusive with the case rate — once it trips, the case rate doesn't apply at all. Catastrophic ICU stays, multi-organ transplants, and burn cases are common stoploss territory. NOTE: this Case demonstrates PER-CLAIM stoploss (one stay trips it). Many contracts also have an AGGREGATE stoploss clause (if total losses on this contract year exceed $X, the payer kicks in additional payments) — that's a different mechanism, calculated annually rather than per-stay. Real contracts often have both layers.",
   },
   'DRG case rate': {
     term: 'DRG case rate',

@@ -202,7 +202,11 @@ const issues: Issue[] = [
 const glossary: Record<string, GlossaryEntry> = {
   'HCC': {
     term: 'HCC (Hierarchical Condition Category)',
-    plain: "Risk-adjustment categories used by Medicare Advantage and ACO contracts to set per-member capitated rates. ICD-10 codes map to HCCs; HCCs roll up into a Risk Adjustment Factor (RAF). Under-coding leaves payment on the table; over-coding gets you audited. Annual recapture cycle — a condition has to be coded each calendar year to count.",
+    plain: "Risk-adjustment categories used by Medicare Advantage and ACO contracts to set per-member capitated rates. ICD-10 codes map to HCCs; HCCs roll up into a Risk Adjustment Factor (RAF). Under-coding leaves payment on the table; over-coding gets you audited. ANNUAL RECAPTURE: every chronic condition has to be coded again each calendar year to count toward the next year's RAF — capture isn't a one-shot. Even diabetes, CKD, etc. need a fresh encounter-level claim each year. Missed recapture is the most common reason a stable patient's RAF drops.",
+  },
+  'CMS-HCC v24 vs v28': {
+    term: 'CMS-HCC v24 vs v28',
+    plain: "CMS is phasing in a new risk-adjustment model. v24 (used 2020-2023) and v28 (phasing in 2024-2027 with blended weights — 33%/67%/100% across the three years) renumber and redefine many HCC categories. This Case uses v24 numbering (HCC 18 diabetes-with-complications, HCC 138 CKD-moderate, HCC 22 morbid-obesity, HCC 85 HFrEF) for readability. Real 2026 work blends both models; the conditions and clinical reasoning stay the same but RAF weights and category boundaries shift. Verify against your plan's contract year for actual capture numbers.",
   },
   'RAF': {
     term: 'RAF (Risk Adjustment Factor)',

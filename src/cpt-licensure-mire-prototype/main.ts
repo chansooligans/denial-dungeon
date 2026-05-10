@@ -194,7 +194,7 @@ const glossary: Record<string, GlossaryEntry> = {
   },
   'AMA': {
     term: 'AMA (American Medical Association)',
-    plain: "Private, non-profit professional association of US physicians. Holds the copyright on CPT and licenses its use through tiered fee structures. Roughly half of AMA's annual revenue comes from CPT-related licensing. The fact that a private association charges hospitals to use the codes a federal program requires is a long-standing critique of US healthcare administration.",
+    plain: "Private, non-profit professional association of US physicians. Holds the copyright on CPT and licenses its use through tiered fee structures. CPT-related licensing is a substantial share of AMA's annual revenue (estimates range from ~35% to over 50% depending on what's counted; AMA's IRS Form 990 disaggregates differently than industry critique often does). The fact that a private association charges hospitals to use the codes a federal program requires is a long-standing critique of US healthcare administration; the exact revenue share is debated, the structural arrangement is not.",
   },
   'license tiers': {
     term: 'CPT license tiers',

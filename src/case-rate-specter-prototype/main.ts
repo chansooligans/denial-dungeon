@@ -222,7 +222,11 @@ const glossary: Record<string, GlossaryEntry> = {
   },
   'outlier provision': {
     term: 'Outlier provision',
-    plain: "The escape clause inside a case-rate contract. Once the stay exceeds an agreed length-of-stay or charge threshold, payment converts from the flat case rate to a percentage of total charges (or per-diem, or stoploss). The number itself doesn't matter — what matters is which formula governs.",
+    plain: "The escape clause inside a case-rate contract. Once the stay exceeds an agreed length-of-stay or charge threshold, payment converts from the flat case rate to a percentage of total charges (or per-diem, or stoploss). The number itself doesn't matter — what matters is which formula governs. NOTE: this Case uses a pure LENGTH-OF-STAY trigger, which is one common shape but not the only one. Medicare's DRG outlier system, for contrast, is COST-OUTLIER based (charges × cost-to-charge ratio compared to a fixed-loss threshold). Most commercial outlier provisions are charge-threshold based (stoploss, see Stoploss Reckoner) or LOS-based; pure-LOS is a teaching simplification — the actual contract clause shape varies.",
+  },
+  'LOS outlier vs cost outlier': {
+    term: 'LOS outlier vs cost outlier vs stoploss',
+    plain: "Three flavors of escape clause: LOS outlier (stay length crosses inlier ceiling — this Case), cost outlier (charges × CCR exceeds fixed-loss threshold — Medicare DRG outlier), stoploss (charges exceed multiple of case rate — see Stoploss Reckoner). All three replace the case rate when triggered; each has a different trigger metric and a different post-trigger formula. Real contracts often have all three, applied in priority order. Reading the contract clause carefully matters; misciting the wrong outlier type even with right math gets the appeal denied.",
   },
   '835': {
     term: '835 (electronic remittance advice)',

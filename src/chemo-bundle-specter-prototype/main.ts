@@ -242,7 +242,11 @@ const glossary: Record<string, GlossaryEntry> = {
   },
   'CDM': {
     term: 'CDM (Chargemaster)',
-    plain: "Hospital master price list and configuration table. Every billable service has a CDM line specifying: charge description, gross charge, revenue code, default CPT/HCPCS, and (often) per-payer bundling rules. When charges drop into an encounter, the CDM determines what claim lines get generated. The CDM is where hard-coding rules live; misconfigured CDM = misconfigured claims at scale.",
+    plain: "Hospital master price list and configuration table. Every billable service has a CDM line specifying: charge description, gross charge, revenue code, default CPT/HCPCS, and sometimes per-payer bundling rules. When charges drop into an encounter, the CDM determines what claim lines get generated. The CDM is where hard-coding rules live; misconfigured CDM = misconfigured claims at scale. NOTE: in many real hospital tech stacks, the per-payer bundling rules actually live in a separate Contract Management System rather than in the CDM directly — the CDM just drops the lines and the contract engine reconciles against the 835. The Case treats them as the same surface for simplicity; in your actual environment, check both.",
+  },
+  'contract management system': {
+    term: 'Contract management system (CMS — confusingly)',
+    plain: "Software downstream of the chargemaster that holds payer-specific contract terms (case rates, bundling rules, fee schedules, carve-out clauses) and reconciles 835 adjudications against expected. Larger hospital systems separate the chargemaster (does the charge drop right?) from contract management (was this paid right?). The fix in this Case lives at one of those two layers depending on your stack — the chargemaster (if it drops payer-aware lines) or the contract management system (if it tells the chargemaster what to drop on each payer). Don't confuse with CDM or with CMS the federal agency.",
   },
   'case rate': {
     term: 'Case rate',
@@ -753,6 +757,15 @@ function renderDesignNotes(): string {
             bundling.</strong> CO-234 is contractual; CO-97 is
             NCCI. Different mechanisms, different fixes.
             Modifier 59 won't break a contractual case rate.</li>
+            <li><strong>Frequency caveat:</strong> bundled-drug
+            chemo case rates exist (capitated arrangements, some
+            commercial contracts, CMMI episode-based payment
+            demos) but are <em>uncommon</em>. Most chemo in the
+            wild bills admin (96413) at OPG/APC tier separately
+            and J-codes at ASP+6%. Don't leave this Case thinking
+            bundled-drug is the default — it isn't. The
+            chargemaster-fix muscle generalizes; the bundle
+            structure is one specific shape it can take.</li>
           </ul>
         </div>
         <div>

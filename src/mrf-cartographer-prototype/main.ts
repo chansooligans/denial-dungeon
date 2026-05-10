@@ -35,7 +35,8 @@
 //   - CLASSIFY: 4 services; mark each hard-coded or soft-coded.
 //   - SOURCE: 4 services; pick CDM or claim history per service.
 //   - AGGREGATE: for claim-priced services, pick the right
-//     summary statistic (median per payer).
+//     publication structure (per-payer-discrete + de-identified
+//     min/max per 45 CFR 180.50).
 //
 // Author: May 2026.
 import { BASE_CSS, districtVars, escape } from '../shared/prototype-base'
@@ -165,41 +166,47 @@ const services: Service[] = [
 
 // Aggregation options — same as before; player makes one pick that
 // applies across all claim-priced services.
+// MRF schema (45 CFR 180.50) requires per-payer-per-plan negotiated
+// rates as DISCRETE rows/columns, plus a de-identified min/max
+// computed across all payers. There's no single aggregation
+// statistic in the spec. The decoys here are common rookie
+// mistakes: collapsing per-payer rates into a single average,
+// publishing CDM, etc.
 const aggregations: AggregationOption[] = [
   {
     id: 'cdm-charge',
-    label: 'Chargemaster charge — publish the CDM line as the negotiated rate',
+    label: 'Publish CDM gross charge as the negotiated rate',
     amount: 48,
     correct: false,
-    feedback: 'CDM is the rack rate. Publishing CDM as the negotiated rate misrepresents the contract — the MRF is supposed to show what payers actually pay. This is exactly what got Mercy flagged in the first place.',
+    feedback: 'CDM is the rack rate, not the negotiated rate. Publishing CDM as the negotiated rate misrepresents the contract — the MRF requires the actual payer-specific rates. This is exactly what got Mercy flagged in the first place.',
   },
   {
-    id: 'mean',
-    label: 'Mean of all sample claims (charge-weighted)',
+    id: 'single-mean',
+    label: 'Collapse to one negotiated-rate column = mean across payers',
     amount: 16.0,
     correct: false,
-    feedback: 'Mean of charges is dominated by the highest-volume payers. CMS guidance asks for the per-payer negotiated rate, summarized as a representative central tendency *per payer* — not a weighted average across them.',
+    feedback: 'MRF schema requires per-payer-per-plan rates as DISCRETE columns/rows — one rate per payer-plan, not one rate across all. Collapsing to a single mean fails the schema validator and misrepresents what each payer actually pays.',
   },
   {
-    id: 'max',
-    label: 'Max negotiated rate',
+    id: 'single-median',
+    label: 'Collapse to one negotiated-rate column = median across payers',
+    amount: 16,
+    correct: false,
+    feedback: 'Median is a fine summary statistic for internal analytics but not for the MRF. CMS requires per-payer-per-plan rates discretely. A single median collapses the per-payer detail the file is supposed to publish.',
+  },
+  {
+    id: 'max-only',
+    label: 'Publish only de-identified max',
     amount: 22,
     correct: false,
-    feedback: "Max overstates and benefits the hospital at the patient's expense. The MRF is a transparency document, not a bargaining tool. Wrong direction.",
+    feedback: "Min/max alone aren't sufficient. The MRF schema requires per-payer-per-plan rates DISCRETELY *plus* the de-identified min and max as separate fields. You need both layers.",
   },
   {
-    id: 'mode',
-    label: 'Mode (most-paid contract level)',
-    amount: 16,
-    correct: false,
-    feedback: "Mode requires repeated values across payers. Each payer here pays a different number; mode collapses to undefined. Median is the right summary.",
-  },
-  {
-    id: 'median',
-    label: 'Median of per-payer negotiated rates',
-    amount: 16,
+    id: 'discrete-plus-minmax',
+    label: 'Discrete per-payer-plan rates ($16 Anthem, $14 BCBS, $18 Aetna…) + de-identified min/max ($8 / $22) across all',
+    amount: 0, // not a single number; the structure is the answer
     correct: true,
-    feedback: 'Right. Median per payer is robust to outliers, matches the CMS hospital-price-transparency guidance for "estimated allowed amount," and is what every other transparency vendor publishes. Lock this method across the claim-priced rows.',
+    feedback: 'Right schema. The MRF (45 CFR 180.50) requires per-payer-per-plan negotiated rates as discrete fields, plus de-identified min ($8) and max ($22) calculated across all payers. No single aggregation collapses the detail. Lock this structure across all claim-priced rows; the schema validator passes.',
   },
 ]
 
@@ -218,8 +225,8 @@ const issues: Issue[] = [
   },
   {
     id: 'aggregate',
-    label: 'Aggregate: for claim-priced services, pick the right statistic.',
-    recap: `Median per payer locked across claim-priced rows. CMP → $16, IV saline → $6. Robust to outliers, matches CMS guidance.`,
+    label: 'Aggregate: for claim-priced services, publish per-payer-discrete rates + de-identified min/max.',
+    recap: `Per-payer-per-plan rates published discretely (one row per payer): $16 Anthem, $14 BCBS, $18 Aetna, $22 UHC, $20 Cigna, $12 Medicare Adv, $8 Medicaid MCO. De-identified min ($8) and max ($22) computed across all payers. Schema-correct per 45 CFR 180.50.`,
     verb: 'aggregate',
   },
 ]
@@ -234,16 +241,24 @@ const glossary: Record<string, GlossaryEntry> = {
     plain: "Hospital master price list and code-mapping table. For hard-coded services, the CDM auto-assigns CPT/HCPCS + revenue code + gross charge at the moment a charge drops. For soft-coded services, the CDM doesn't drive coding — HIM does — but it still carries the gross charge per service. The CDM is half source-of-truth (for codes + rack rates) and half configuration table (for billing rules).",
   },
   'hard-coded': {
-    term: 'Hard-coded service (RCM context)',
-    plain: "A service whose CPT/HCPCS code is auto-assigned by the chargemaster when the charge drops — no per-encounter human review. Most outpatient ancillaries (lab, radiology, pharmacy, supplies) are hard-coded because their service-to-code mapping is stable. Hard-coding is about *who codes*, not whether the rate is stable. See Chemo Bundle Specter (PR #200) for the chargemaster-rule-update version of this concept.",
+    term: 'Hard-coded service (chargemaster-side meaning)',
+    plain: "A service whose CPT/HCPCS code is auto-assigned by the chargemaster when the charge drops — no per-encounter human review. Most outpatient ancillaries (lab, radiology, pharmacy, supplies) are hard-coded because their service-to-code mapping is stable. Hard-coding is about *who codes*, not whether the rate is stable. NOTE: this is a different concept than 'CDM-priced MRF rate' below — same term, different layer. See Chemo Bundle Specter (PR #200) for the chargemaster-rule-update version of this concept.",
   },
   'soft-coded': {
-    term: 'Soft-coded service (RCM context)',
+    term: 'Soft-coded service (chargemaster-side meaning)',
     plain: "A service whose codes are assigned by a HIM (Health Information Management) coder after the encounter, reviewing the chart manually. Used for inpatient stays (DRG assignment), complex outpatient surgeries, and any encounter where the codes can't be reliably auto-derived from the charge entry. Slower and more expensive than hard-coding; necessary when documentation drives coding rather than the other way around. Distinct from rate source — soft-coded services often have stable rates (case rates per DRG).",
   },
   'rate source': {
     term: 'MRF rate source (CDM vs claim history)',
-    plain: "Where a published MRF rate comes from. CDM-pull works when the contract sets a stable rate per service per payer (most fixed-fee schedules, DRG case rates, inpatient per-diems). Claim-history-pull is required when per-payer rates vary enough that no single posted number is honest — most lab panels, supplies, and pharmacy lines, even though they're hard-coded. The rate-source decision is *separate* from the hard/soft coding decision.",
+    plain: "Where a published MRF rate comes from. CDM-pull works when the contract sets a stable rate per service per payer (most fixed-fee schedules, DRG case rates, inpatient per-diems). Claim-history-pull is required when per-payer rates vary enough that no single posted number is honest — most lab panels, supplies, and pharmacy lines, even though they're hard-coded on the chargemaster side. The rate-source decision is *separate* from the hard/soft coding decision.",
+  },
+  'two meanings of hard-coding': {
+    term: 'Two meanings of "hard-coded" in this catalog',
+    plain: "(a) HARD-CODED SERVICE = chargemaster auto-assigns the CPT/HCPCS at charge drop (Cancer Center chemo session, X-ray, CMP lab — most outpatient ancillaries). The opposite is SOFT-CODED SERVICE (HIM coder reviews the chart after discharge — most inpatient stays). (b) HARD-CODED MRF RATE = the published MRF rate comes straight from the chargemaster / fee schedule because it's stable per payer (X-ray, DRG case rate). The opposite is CLAIM-PRICED MRF RATE (rate has to come from claim history because per-payer prices vary — CMP, IV saline). The two axes are CORRELATED but INDEPENDENT — hard-coded services can be claim-priced (CMP); soft-coded services can be CDM-priced (DRG case rate). Don't conflate them.",
+  },
+  'MRF schema': {
+    term: 'MRF schema fields (45 CFR 180.50)',
+    plain: "Per-row fields the MRF must publish: gross charge, discounted cash price, per-payer-per-plan negotiated rate (one row/column per payer-plan pair), de-identified min negotiated rate (across all payers), and de-identified max negotiated rate (across all payers). There's no single 'aggregated' rate; the per-payer detail is required as discrete fields. CMS audits this schema against published files.",
   },
   'CMS': {
     term: 'CMS (Centers for Medicare & Medicaid Services)',
@@ -253,9 +268,9 @@ const glossary: Record<string, GlossaryEntry> = {
     term: 'Hospital price transparency',
     plain: "Federal rule (effective 2021, sharpened 2024) requiring hospitals to publish a machine-readable file of standard charges plus a consumer-friendly display of 300 shoppable services. The intent: let patients compare prices. The reality: most files are inconsistently formatted; most patients don't read them. Compliance is the floor.",
   },
-  'median per payer': {
-    term: 'Median per payer',
-    plain: "Right central-tendency for claim-priced MRF rows. For each unique payer in the claim history, take the rate they paid; sort the per-payer rates; pick the middle one. Robust to high-volume single-payer outliers (which would skew a charge-weighted mean) and to single-claim oddities (which would skew a max or min).",
+  'de-identified min/max': {
+    term: 'De-identified min/max negotiated rate',
+    plain: "Two MRF fields (per 45 CFR 180.50) that report the lowest and highest negotiated rates for a service across ALL payer-plans, without naming the payers. Calculated alongside the discrete per-payer-plan rates; both layers are required. The de-identification serves patients shopping a service at multiple facilities — they can compare ranges without each hospital revealing each payer's specific rate.",
   },
   'HIM': {
     term: 'HIM (Health Information Management)',
@@ -457,10 +472,12 @@ function briefingContent(): string {
         </li>
         <li>
           <strong>Aggregate.</strong> For claim-sourced rows, pick
-          the right summary statistic. Mean, mode, max, CDM are
-          all wrong; ${term('median per payer')} is what CMS expects
-          and what every transparency vendor publishes. One pick
-          locks across all claim-sourced rows. <em>New verb: AGGREGATE.</em>"
+          the right ${term('MRF schema', 'MRF publication structure')}.
+          The CMS spec wants per-payer-per-plan rates as DISCRETE
+          fields plus a de-identified min/max — not a single
+          collapsed statistic. CDM, single mean, single median,
+          max-only — all collapse the per-payer detail and fail the
+          schema. <em>New verb: AGGREGATE.</em>"
         </li>
       </ul>
       <p>
@@ -651,7 +668,7 @@ function renderAggregatePanel(): string {
     <section class="estimate-panel done">
       <div class="ep-h">
         <span class="ep-tag done">AGGREGATION METHOD</span>
-        <span class="ep-sub">Median per payer locked across claim-priced rows. CMP → ${money(16)}. IV saline → ${money(6)}.</span>
+        <span class="ep-sub">Per-payer-discrete + de-identified min/max locked across claim-priced rows. CMP: per-payer rates published; min ${money(8)} / max ${money(22)}. IV saline: similar shape; min ${money(4)} / max ${money(8)}.</span>
       </div>
       ${renderRecap('aggregate')}
     </section>
@@ -685,7 +702,7 @@ function renderInspector(): string {
         </tbody>
       </table>
       <div class="ip-aggregations">
-        <p class="ip-prompt">Pick the right aggregation. Locks across all claim-priced rows.</p>
+        <p class="ip-prompt">Pick the right MRF publication structure. Locks across all claim-priced rows.</p>
         <ul class="agg-list">
           ${aggregations.map(a => renderAggregation(a)).join('')}
         </ul>
@@ -845,7 +862,7 @@ function renderDesignNotes(): string {
           <ul>
             <li><strong>Three new verbs:</strong> CLASSIFY (coding
             mode — hard vs soft), SOURCE (rate source — CDM vs
-            claims), AGGREGATE (median per payer).</li>
+            claims), AGGREGATE (per-payer-discrete + de-identified min/max per 45 CFR 180.50).</li>
             <li><strong>Two axes, not one.</strong> Hard/soft
             coding and CDM/claims source are correlated but
             independent. Hard-coded services can be claim-priced

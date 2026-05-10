@@ -234,7 +234,7 @@ const issues: Issue[] = [
 const glossary: Record<string, GlossaryEntry> = {
   'implant carve-out': {
     term: 'Implant carve-out',
-    plain: "Contract clause that pulls high-cost implantable devices out of the DRG case rate and pays them separately, usually at manufacturer invoice cost plus a small markup (+20% is typical; some contracts use +15% or +25%). Common for spine, joint replacement, cardiac (pacemakers, ICDs), and high-cost neuro/ortho hardware. The threshold (often $5,000-$10,000 per item) keeps small supplies in the case rate. The clause matters because the case rate alone wouldn't cover a $24,000 piece of hardware.",
+    plain: "Contract clause that pulls high-cost implantable devices out of the DRG case rate and pays them separately. Formula varies by contract: +20% over invoice (this Case), +15% or +25% in others, invoice-only (no markup) in some, capped at $25k or $50k per device in others. Threshold also varies ($5k-$10k per item). Common for spine, joint replacement, cardiac (pacemakers, ICDs), and high-cost neuro/ortho hardware. STACKING WITH STOPLOSS: many contracts net the implant carve-out from total charges *before* applying stoploss/outlier — so a $312k case with a $24k implant becomes a $288k base for the stoploss trigger calculation. Order of operations matters; misreading it skews the math.",
   },
   'DRG case rate': {
     term: 'DRG case rate',
