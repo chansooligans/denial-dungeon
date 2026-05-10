@@ -343,7 +343,7 @@ const { layout, tileMeta, rooms: BUILT_ROOMS } = buildMap({
     },
     {
       id: 'registration',
-      lockedUntilLevel: 3,
+      lockedUntilLevel: 2,
       ...REGISTRATION,
       doors: [
         { side: 'W', offset: 3 },                                                  // west into corridor
