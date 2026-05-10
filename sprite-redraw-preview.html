@@ -1,0 +1,1379 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Sprite redraw preview — The Waiting Room</title>
+<style>
+  :root {
+    --bg: #1a1d22;
+    --panel: #23272d;
+    --ink: #d8d4cc;
+    --sub: #8a8680;
+    --accent: #c8a040;
+    --tile-bg: #8a7e6e; /* matches h_floor base */
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 14px/1.5 -apple-system, system-ui, sans-serif;
+  }
+  header {
+    padding: 24px 32px 8px;
+    border-bottom: 1px solid #2c3036;
+  }
+  header h1 { margin: 0 0 4px; font-size: 18px; letter-spacing: 0.02em; }
+  header p  { margin: 0; color: var(--sub); }
+  main { padding: 24px 32px 64px; }
+  section { margin: 32px 0 48px; }
+  section h2 {
+    margin: 0 0 4px;
+    font-size: 16px;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+  }
+  section p.note {
+    margin: 0 0 16px;
+    color: var(--sub);
+    max-width: 640px;
+  }
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    align-items: flex-start;
+    margin: 12px 0 24px;
+  }
+  .swatch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    background: var(--panel);
+    padding: 12px 12px 10px;
+    border-radius: 6px;
+    border: 1px solid #2c3036;
+    min-width: 168px;
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.08s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+  }
+  .swatch:hover {
+    border-color: #4a5260;
+    transform: translateY(-1px);
+  }
+  .swatch.is-current { border-color: var(--accent); }
+  .swatch.is-selected {
+    border-color: #5fb878;
+    box-shadow: 0 0 0 2px rgba(95, 184, 120, 0.25);
+  }
+  .swatch.is-selected .label::after {
+    content: " ✓";
+    color: #5fb878;
+    font-weight: 700;
+  }
+  .swatch canvas {
+    width: 144px;
+    height: 144px;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    background: var(--tile-bg);
+    border: 1px solid #3a3e44;
+  }
+  .swatch .label {
+    font-size: 12px;
+    color: var(--ink);
+    text-align: center;
+  }
+  .swatch .label small {
+    color: var(--sub);
+    display: block;
+    font-size: 11px;
+  }
+  .swatch.is-current .label::before {
+    content: "current ";
+    color: var(--accent);
+  }
+  .legend {
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+    margin: 8px 0 0;
+    padding: 0;
+    list-style: none;
+    color: var(--sub);
+    font-size: 12px;
+  }
+  .legend li::before {
+    content: "▣  ";
+    color: var(--accent);
+  }
+  /* Sticky summary bar at bottom */
+  #summary {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(20, 22, 26, 0.96);
+    border-top: 1px solid #2c3036;
+    padding: 14px 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    z-index: 50;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+  #summary .picks {
+    flex: 1;
+    font-size: 12px;
+    color: var(--sub);
+    line-height: 1.4;
+  }
+  #summary .picks strong { color: var(--ink); margin-right: 4px; }
+  #summary .picks .pick {
+    display: inline-block;
+    background: #2c3036;
+    color: #5fb878;
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin: 2px 8px 2px 0;
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 11px;
+  }
+  #summary .picks .pick em {
+    color: var(--sub);
+    font-style: normal;
+    margin-right: 4px;
+  }
+  #summary button {
+    background: var(--accent);
+    color: #1a1d22;
+    border: 0;
+    padding: 8px 14px;
+    border-radius: 4px;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  #summary button:hover { background: #d8b050; }
+  #summary button.secondary {
+    background: transparent;
+    color: var(--sub);
+    border: 1px solid #3a3e44;
+    font-weight: 400;
+  }
+  #summary button.secondary:hover { color: var(--ink); border-color: var(--ink); }
+  main { padding-bottom: 120px; }
+  /* Toast */
+  #toast {
+    position: fixed;
+    bottom: 84px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #5fb878;
+    color: #0e1410;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease;
+    z-index: 60;
+  }
+  #toast.is-shown { opacity: 1; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Sprite redraw preview</h1>
+  <p>Each canvas is a 16×16 procedural sprite (the same primitives BootScene uses), rendered at 9× scale. <strong style="color:var(--ink)">Click a tile to select it</strong> as your pick for that row — the orange border shows what's currently in the game; the green border + check shows your selection. Use the bar at the bottom to copy your picks back to me.</p>
+</header>
+
+<main>
+
+  <!-- ============== PARKING LOT ============== -->
+  <section>
+    <h2>Parking lot — cars</h2>
+    <p class="note">Today, parked cars use the filing-cabinet sprite (<code>h_cabinet</code>) — a gray steel slab. Proposing a dedicated <code>h_car</code> texture so the lot reads as a parking lot instead of a row of lockers.</p>
+    <div class="row" data-render="cars"></div>
+
+    <h2 style="margin-top:32px">Parking lot — lampposts</h2>
+    <p class="note">Lampposts currently reuse the water-cooler sprite (<code>h_water</code>) — a translucent jug. Proposing a tall <code>h_lamppost</code> for outdoor.</p>
+    <div class="row" data-render="lamps"></div>
+  </section>
+
+  <!-- ============== LECTURE HALL ============== -->
+  <section>
+    <h2>Lecture hall — auditorium seats</h2>
+    <p class="note">Audience uses the standard waiting-room <code>h_chair</code>. Variants below show seat-with-armrest and theater-style options that read as "lecture hall."</p>
+    <div class="row" data-render="seats"></div>
+
+    <h2 style="margin-top:32px">Lecture hall — projector screen</h2>
+    <p class="note">The "big screen" today is a whiteboard with colored sticky-notes. Proposing a proper projection screen.</p>
+    <div class="row" data-render="screens"></div>
+  </section>
+
+  <!-- ============== CANCER CENTER ============== -->
+  <section>
+    <h2>Cancer center — infusion recliners</h2>
+    <p class="note">Infusion bays use the hospital-bed sprite (<code>h_bed</code>) — flat, supine. Real infusion bays are reclining chairs with an IV pole. Proposing a dedicated <code>h_recliner</code>.</p>
+    <div class="row" data-render="recliners"></div>
+  </section>
+
+  <!-- ============== LOBBY ============== -->
+  <section>
+    <h2>Lobby — 70s armchairs</h2>
+    <p class="note">Lobby seating is the same minimalist clinic chair as everywhere else. Proposing a heavier, upholstered <code>h_armchair</code> just for the lobby + south wing — supports the "70s Lynch lobby" tone.</p>
+    <div class="row" data-render="armchairs"></div>
+  </section>
+
+  <!-- ============== CAFETERIA ============== -->
+  <section>
+    <h2>Cafeteria — dining table (single tile)</h2>
+    <p class="note">Today, cafeteria tables are <code>h_desk</code> + adjacent <code>h_chair</code> — reads more "office workstation." Proposing a single-tile <code>h_diningtable</code> with a tray + place setting.</p>
+    <div class="row" data-render="tables"></div>
+
+    <h2 style="margin-top:32px">Cafeteria — steam table / hot line</h2>
+    <p class="note">The hot-line uses <code>h_cabinet</code>. Proposing a dedicated <code>h_steamtable</code> with steaming food trays.</p>
+    <div class="row" data-render="steam"></div>
+  </section>
+
+</main>
+
+<div id="summary">
+  <div class="picks" id="picks-readout">
+    <strong>Selections:</strong>
+    <span class="empty" style="color:var(--sub)">Click any tile to select it for that row.</span>
+  </div>
+  <button class="secondary" id="btn-clear">Clear</button>
+  <button id="btn-copy">Copy picks</button>
+</div>
+<div id="toast"></div>
+
+<script>
+// ============================================================
+// Drawing helpers — mirrors Phaser Graphics primitives so the
+// preview matches what BootScene.makeHospitalTiles will produce.
+// ============================================================
+
+const TILE = 16;
+const SCALE = 9;
+const PX = TILE * SCALE; // 144
+
+function hex(n) { return '#' + n.toString(16).padStart(6, '0'); }
+
+function makeTile(drawFn, { floorBg } = {}) {
+  const cv = document.createElement('canvas');
+  cv.width = PX; cv.height = PX;
+  const ctx = cv.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+
+  // Optional per-tile floor (for outdoor sprites we use asphalt)
+  if (floorBg) {
+    ctx.fillStyle = floorBg;
+    ctx.fillRect(0, 0, PX, PX);
+  }
+
+  // API objects: rect / circle / line — operate in 16×16 tile coords
+  const api = {
+    fill(color, alpha = 1) {
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = (typeof color === 'number') ? hex(color) : color;
+    },
+    rect(x, y, w, h) {
+      ctx.fillRect(x * SCALE, y * SCALE, w * SCALE, h * SCALE);
+    },
+    stroke(color, alpha = 1) {
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = (typeof color === 'number') ? hex(color) : color;
+      ctx.lineWidth = SCALE;
+    },
+    strokeRect(x, y, w, h) {
+      // Inset so the stroke doesn't bleed outside; +0.5 not needed because we use SCALE px lines
+      ctx.strokeRect(x * SCALE + SCALE/2, y * SCALE + SCALE/2, w * SCALE - SCALE, h * SCALE - SCALE);
+    },
+    circle(cx, cy, r) {
+      ctx.beginPath();
+      ctx.arc(cx * SCALE + SCALE/2, cy * SCALE + SCALE/2, r * SCALE, 0, Math.PI * 2);
+      ctx.fill();
+    },
+    line(x1, y1, x2, y2) {
+      ctx.beginPath();
+      ctx.moveTo(x1 * SCALE + SCALE/2, y1 * SCALE + SCALE/2);
+      ctx.lineTo(x2 * SCALE + SCALE/2, y2 * SCALE + SCALE/2);
+      ctx.stroke();
+    },
+  };
+
+  drawFn(api);
+  ctx.globalAlpha = 1;
+  return cv;
+}
+
+// Human-readable row labels for the summary bar.
+const ROW_TITLES = {
+  cars:      'Parking · cars',
+  lamps:     'Parking · lampposts',
+  seats:     'Lecture · seats',
+  screens:   'Lecture · screen',
+  recliners: 'Cancer · recliners',
+  armchairs: 'Lobby · armchairs',
+  tables:    'Cafeteria · table',
+  steam:     'Cafeteria · steam table',
+};
+
+const selections = {}; // rowKey → { letter, name }
+
+function mount(rowKey, swatches) {
+  const row = document.querySelector(`[data-render="${rowKey}"]`);
+  swatches.forEach((s, i) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'swatch' + (s.current ? ' is-current' : '');
+    wrap.dataset.row = rowKey;
+    // Letter label: 'current' for the existing sprite, else A/B/C/...
+    const letters = ['A', 'B', 'C', 'D', 'E'];
+    const letter = s.current ? 'current' : letters[i - 1] || `#${i}`;
+    wrap.dataset.letter = letter;
+    wrap.dataset.name = s.name;
+
+    const cv = makeTile(s.draw, { floorBg: s.floorBg });
+    wrap.appendChild(cv);
+    const lbl = document.createElement('div');
+    lbl.className = 'label';
+    lbl.innerHTML = `<strong>${s.name}</strong><small>${s.note || ''}</small>`;
+    wrap.appendChild(lbl);
+
+    wrap.addEventListener('click', () => {
+      // Single-select per row: clear any other selection in this row first.
+      row.querySelectorAll('.swatch.is-selected').forEach(el => el.classList.remove('is-selected'));
+      wrap.classList.add('is-selected');
+      selections[rowKey] = { letter, name: s.name };
+      renderPicks();
+    });
+
+    row.appendChild(wrap);
+  });
+}
+
+function renderPicks() {
+  const el = document.getElementById('picks-readout');
+  const keys = Object.keys(selections);
+  if (keys.length === 0) {
+    el.innerHTML = `<strong>Selections:</strong> <span class="empty" style="color:var(--sub)">Click any tile to select it for that row.</span>`;
+    return;
+  }
+  const parts = keys.map(k => {
+    const { letter, name } = selections[k];
+    const title = ROW_TITLES[k] || k;
+    return `<span class="pick"><em>${title}:</em>${letter}${letter === 'current' ? '' : ` (${name})`}</span>`;
+  });
+  el.innerHTML = `<strong>Selections (${keys.length}/${Object.keys(ROW_TITLES).length}):</strong> ${parts.join(' ')}`;
+}
+
+function buildSummaryText() {
+  const keys = Object.keys(selections);
+  if (keys.length === 0) return '';
+  const lines = ['Sprite redraw picks:', ''];
+  for (const k of Object.keys(ROW_TITLES)) {
+    const sel = selections[k];
+    const title = ROW_TITLES[k];
+    lines.push(`- ${title}: ${sel ? `${sel.letter} (${sel.name})` : '— (no pick)'}`);
+  }
+  return lines.join('\n');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('is-shown');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => t.classList.remove('is-shown'), 1600);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('btn-clear').addEventListener('click', () => {
+    for (const k of Object.keys(selections)) delete selections[k];
+    document.querySelectorAll('.swatch.is-selected').forEach(el => el.classList.remove('is-selected'));
+    renderPicks();
+    showToast('Cleared');
+  });
+  document.getElementById('btn-copy').addEventListener('click', async () => {
+    const text = buildSummaryText();
+    if (!text) { showToast('Nothing selected yet'); return; }
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast('Copied to clipboard — paste it back to me');
+    } catch {
+      // Fallback: select-and-copy via a hidden textarea
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+      showToast('Copied (fallback)');
+    }
+  });
+});
+
+// ============================================================
+// CURRENT SPRITES — copied from BootScene.makeHospitalTiles
+// ============================================================
+
+const drawCabinet_current = ({ fill, rect, stroke, line }) => {
+  fill(0x708090); rect(2, 0, 12, 16);
+  stroke(0x607080); line(3, 5, 13, 5); line(3, 10, 13, 10);
+  fill(0xa0a8b0);  rect(7, 2, 3, 1); rect(7, 7, 3, 1); rect(7, 12, 3, 1);
+  fill(0x7888a0, 0.3); rect(3, 0, 2, 5);
+};
+
+const drawWater_current = ({ fill, rect }) => {
+  fill(0xd8e0e8); rect(5, 0, 6, 12);
+  fill(0x70b8e8); rect(6, 1, 4, 4);
+  fill(0x90d0f0, 0.3); rect(6, 1, 2, 2);
+  fill(0x909898); rect(4, 12, 8, 4);
+  fill(0xf05050); rect(9, 7, 2, 1);
+  fill(0x5080e0); rect(5, 7, 2, 1);
+};
+
+const drawChair_current = ({ fill, rect }) => {
+  fill(0x3a3a4a); rect(3, 6, 10, 6);     // body (tinted in-game; here using TINT.chair)
+  fill(0xd8d8d8, 0.4); rect(4, 6, 8, 1);
+  fill(0x404040); rect(6, 12, 4, 2);
+  fill(0x808080); rect(4, 14, 2, 2); rect(10, 14, 2, 2);
+};
+
+const drawWhiteboard_current = ({ fill, rect, stroke, strokeRect }) => {
+  fill(0xf0f0e8); rect(1, 1, 14, 12);
+  stroke(0xa0a0a0); strokeRect(1, 1, 14, 12);
+  fill(0x606060); rect(1, 13, 14, 2);
+  fill(0xe05050, 0.6); rect(3, 3, 7, 1);
+  fill(0x3080e0, 0.6); rect(3, 5, 5, 1);
+  fill(0x40a050, 0.6); rect(3, 7, 9, 1);
+  fill(0xe0a020, 0.6); rect(3, 9, 4, 1);
+};
+
+const drawBed_current = ({ fill, rect }) => {
+  fill(0xe0e8f0); rect(1, 3, 14, 11);
+  fill(0x80b8e0); rect(1, 6, 14, 8);
+  fill(0xf0f0f0); rect(2, 3, 5, 3);
+  fill(0x505860); rect(0, 14, 3, 2); rect(13, 14, 3, 2);
+                  rect(0, 2, 3, 2);  rect(13, 2, 3, 2);
+};
+
+const drawDesk_current = ({ fill, rect }) => {
+  fill(0x7a6040); rect(0, 6, 16, 10);
+  fill(0x8a7050, 0.5); rect(1, 6, 14, 2);
+  fill(0x303840); rect(2, 0, 6, 5);
+  fill(0x5090c0); rect(3, 1, 4, 3);
+  fill(0x404850); rect(4, 5, 2, 1);
+};
+
+// ============================================================
+// PROPOSED VARIANTS
+// ============================================================
+
+const ASPHALT = '#3a3a3e';      // cracked dark asphalt
+const FLOOR   = '#8a7e6e';
+
+// ---------- CARS ----------
+const drawCar_sedan = ({ fill, rect }) => {
+  // tire shadows under the car (asphalt darkening)
+  fill(0x000000, 0.3); rect(2, 1, 12, 14);
+  // body — light slate
+  fill(0xc0c8d4); rect(3, 1, 10, 14);
+  fill(0xa8b0bc); rect(3, 1, 10, 1); rect(3, 14, 10, 1); // top + bottom edge shading
+  // door panels divider (a center seam)
+  fill(0x808890); rect(3, 7, 10, 1); rect(3, 8, 10, 1);
+  fill(0x707880, 0.5); rect(3, 7, 10, 1);
+  // roof darker w/ subtle gradient
+  fill(0x7a8290); rect(4, 4, 8, 8);
+  fill(0x6a7280); rect(4, 4, 8, 1);    // roof leading edge
+  fill(0x90989c, 0.4); rect(5, 5, 6, 1);  // roof highlight stripe
+  // windshields (front + back) — angled feel
+  fill(0x1a1e26); rect(4, 2, 8, 2);
+  fill(0x1a1e26); rect(4, 12, 8, 2);
+  fill(0x303a48, 0.7); rect(5, 2, 6, 1);   // glass reflection
+  fill(0x303a48, 0.5); rect(5, 13, 6, 1);
+  // side windows
+  fill(0x202830); rect(3, 5, 1, 6); rect(12, 5, 1, 6);
+  fill(0x404a58, 0.6); rect(3, 5, 1, 1); rect(12, 5, 1, 1);
+  // side mirrors
+  fill(0x707880); rect(2, 4, 1, 1); rect(13, 4, 1, 1);
+  // door handles
+  fill(0xa0a8b0); rect(3, 6, 1, 1); rect(12, 6, 1, 1);
+  fill(0xa0a8b0); rect(3, 9, 1, 1); rect(12, 9, 1, 1);
+  // wheels — black with hub highlight
+  fill(0x101014); rect(2, 2, 1, 3); rect(13, 2, 1, 3);
+                  rect(2, 11, 1, 3); rect(13, 11, 1, 3);
+  fill(0x4a4a52); rect(2, 3, 1, 1); rect(13, 3, 1, 1);
+                  rect(2, 12, 1, 1); rect(13, 12, 1, 1);
+  // headlights (front)
+  fill(0xfff4b8); rect(4, 0, 2, 1); rect(10, 0, 2, 1);
+  fill(0xffffff, 0.7); rect(5, 0, 1, 1); rect(11, 0, 1, 1);
+  // grille
+  fill(0x1a1a1e); rect(6, 0, 4, 1);
+  // taillights (back)
+  fill(0xc02020); rect(4, 15, 2, 1); rect(10, 15, 2, 1);
+  // license plate
+  fill(0xe0d8a0); rect(7, 15, 2, 1);
+};
+
+const drawCar_suv = ({ fill, rect }) => {
+  // shadow
+  fill(0x000000, 0.3); rect(1, 0, 14, 16);
+  // body — deeper navy/charcoal
+  fill(0x3a4050); rect(2, 0, 12, 16);
+  fill(0x4a5060, 0.4); rect(3, 1, 10, 1);   // top highlight
+  // roof rack rails
+  fill(0x202630); rect(3, 1, 10, 1);
+  fill(0x202630); rect(2, 3, 1, 1); rect(13, 3, 1, 1);  // rack mounts
+  fill(0x202630); rect(2, 12, 1, 1); rect(13, 12, 1, 1);
+  // panoramic glass — front + back
+  fill(0x10141a); rect(3, 3, 10, 3); rect(3, 10, 10, 3);
+  fill(0x303848, 0.6); rect(3, 3, 10, 1); rect(3, 12, 10, 1);
+  fill(0x505868, 0.4); rect(4, 4, 1, 1); rect(11, 4, 1, 1); // glass corner gleam
+  fill(0x505868, 0.4); rect(4, 11, 1, 1); rect(11, 11, 1, 1);
+  // body color band w/ door seams
+  fill(0x4a5060); rect(3, 7, 10, 2);
+  fill(0x303640); rect(7, 7, 1, 2); rect(8, 7, 1, 2);   // door seam center
+  fill(0x5a6070, 0.5); rect(3, 7, 10, 1);
+  // side mirrors (chunky on SUV)
+  fill(0x202630); rect(1, 5, 1, 1); rect(14, 5, 1, 1);
+  fill(0x404858); rect(1, 4, 1, 1); rect(14, 4, 1, 1);
+  // door handles
+  fill(0x808890); rect(2, 6, 1, 1); rect(13, 6, 1, 1);
+  fill(0x808890); rect(2, 9, 1, 1); rect(13, 9, 1, 1);
+  // wheels — bigger than sedan
+  fill(0x0a0a0e); rect(0, 2, 2, 4); rect(14, 2, 2, 4);
+                  rect(0, 10, 2, 4); rect(14, 10, 2, 4);
+  fill(0x404048); rect(1, 3, 1, 2); rect(14, 3, 1, 2);
+                  rect(1, 11, 1, 2); rect(14, 11, 1, 2);
+  // headlights — wider strip
+  fill(0xfff6c0); rect(3, 0, 3, 1); rect(10, 0, 3, 1);
+  fill(0xffffff, 0.6); rect(4, 0, 1, 1); rect(11, 0, 1, 1);
+  // grille (vertical bars)
+  fill(0x1a1a20); rect(6, 0, 4, 1);
+  fill(0x303848); rect(7, 0, 1, 1); rect(8, 0, 1, 1);
+  // taillights — full-width LED bar
+  fill(0xa01818); rect(3, 15, 10, 1);
+  fill(0xe04040, 0.6); rect(4, 15, 2, 1); rect(10, 15, 2, 1);
+};
+
+const drawCar_beater = ({ fill, rect }) => {
+  // shadow w/ leak puddle
+  fill(0x000000, 0.4); rect(2, 1, 12, 14);
+  fill(0x202018, 0.6); rect(7, 14, 4, 1);   // oil leak stain
+  // muddy beige base — uneven (peeling paint zones)
+  fill(0x8a7860); rect(3, 1, 10, 14);
+  fill(0xa08868, 0.5); rect(3, 1, 10, 1);
+  // rusted roof w/ holes / oxidation patches
+  fill(0x6a4838); rect(4, 4, 8, 8);
+  fill(0x4a2a18); rect(5, 5, 2, 1); rect(9, 6, 2, 2); rect(6, 9, 1, 2); rect(10, 10, 2, 1);
+  fill(0x8a5a3a, 0.6); rect(7, 7, 2, 2);   // primer patch where rust bubbled
+  // duct-tape-repaired side
+  fill(0x9aa098); rect(3, 6, 1, 4);
+  fill(0x707068, 0.5); rect(3, 7, 1, 1); rect(3, 9, 1, 1);
+  // cracked windshields — spider crack
+  fill(0x2a2628); rect(4, 2, 8, 2); rect(4, 12, 8, 2);
+  fill(0x6a6868); rect(7, 2, 1, 1); rect(8, 3, 1, 1); rect(6, 3, 1, 1); // crack web
+  fill(0x6a6868); rect(7, 13, 1, 1);
+  // missing trim — gap exposing primer
+  fill(0xc8a878); rect(12, 8, 1, 2);
+  // duct tape on hood (silver patch)
+  fill(0xa0a8a8); rect(8, 1, 3, 1);
+  // mismatched door (dent + different shade)
+  fill(0x6a5848, 0.5); rect(3, 9, 4, 3);
+  // wheels — one flat, one missing hubcap
+  fill(0x101010); rect(2, 2, 1, 3); rect(13, 2, 1, 3);
+  fill(0x101010); rect(2, 10, 2, 4); // back-left = flat
+  fill(0x101010); rect(13, 11, 1, 2);
+  fill(0x4a4a40); rect(13, 3, 1, 1);  // worn rim
+  // bumper sticker (red square, faded)
+  fill(0xa03020); rect(8, 14, 3, 1);
+  fill(0xe0d8a0, 0.4); rect(8, 14, 3, 1);
+  // dim headlight (one out)
+  fill(0xa89060); rect(4, 0, 2, 1);
+  fill(0x303030); rect(10, 0, 2, 1);
+  // tilted license plate
+  fill(0xc8c0a0); rect(7, 15, 3, 1);
+};
+
+mount('cars', [
+  { name: 'h_cabinet (today)', current: true, draw: drawCabinet_current,
+    note: 'filing-cabinet stand-in', floorBg: ASPHALT },
+  { name: 'A. Sedan',  draw: drawCar_sedan,  note: 'top-down, two-tone', floorBg: ASPHALT },
+  { name: 'B. SUV',    draw: drawCar_suv,    note: 'boxy, fills the tile', floorBg: ASPHALT },
+  { name: 'C. Beater', draw: drawCar_beater, note: 'rusted, dented, Lynch-y', floorBg: ASPHALT },
+]);
+
+// ---------- LAMPPOSTS ----------
+const drawLamp_simple = ({ fill, rect }) => {
+  // glow corona (large soft halo)
+  fill(0xfff5c8, 0.15); rect(3, 0, 10, 6);
+  fill(0xfff5c8, 0.25); rect(4, 1, 8, 4);
+  // lamp housing — rectangular fixture w/ shroud
+  fill(0x1a1a1e); rect(4, 1, 8, 4);    // housing back
+  fill(0x303034); rect(5, 1, 6, 1);    // top trim
+  // bulb glow inside housing
+  fill(0xfff080); rect(5, 2, 6, 2);
+  fill(0xffffff, 0.7); rect(7, 2, 2, 1);
+  // shroud (housing front bottom)
+  fill(0x202024); rect(4, 4, 8, 1);
+  // pole — tapered with seams
+  fill(0x303034); rect(7, 4, 2, 11);
+  fill(0x404044, 0.6); rect(7, 4, 1, 11);   // pole highlight
+  fill(0x1a1a1e); rect(8, 4, 1, 11);        // pole shadow
+  // banding rings
+  fill(0x202024); rect(7, 8, 2, 1);
+  fill(0x202024); rect(7, 12, 2, 1);
+  // base — wider plinth
+  fill(0x1a1a1e); rect(5, 14, 6, 2);
+  fill(0x303034); rect(5, 14, 6, 1);
+  fill(0x0a0a0e); rect(4, 15, 8, 1);        // ground line
+};
+
+const drawLamp_arched = ({ fill, rect }) => {
+  // glow halo (offset to the globe position)
+  fill(0xfff5c8, 0.2); rect(1, 1, 8, 8);
+  fill(0xfff5c8, 0.3); rect(2, 2, 6, 6);
+  // tall fluted pole
+  fill(0x2a2a2e); rect(8, 5, 1, 10);
+  fill(0x404044, 0.6); rect(8, 5, 1, 10);
+  fill(0x1a1a1e); rect(9, 5, 1, 10);        // pole back-shadow
+  // ornamental base — stepped plinth
+  fill(0x1a1a1e); rect(6, 14, 4, 2);
+  fill(0x2a2a2e); rect(7, 13, 2, 1);
+  fill(0x404044); rect(6, 14, 4, 1);
+  fill(0x0a0a0e); rect(5, 15, 6, 1);        // ground line
+  // shepherd's-crook arch (ornamental scroll)
+  fill(0x2a2a2e); rect(8, 4, 1, 1); rect(7, 3, 1, 1); rect(6, 2, 1, 1); rect(5, 2, 1, 1); rect(4, 3, 1, 1);
+  fill(0x404044, 0.6); rect(7, 3, 1, 1); rect(5, 2, 1, 1);
+  // decorative finial above pole
+  fill(0x404044); rect(8, 4, 1, 1);
+  // glass globe — clear sphere with bulb inside
+  fill(0xfff5c8, 0.5); rect(3, 4, 5, 4);
+  fill(0xfff5c8, 0.3); rect(2, 5, 7, 2);
+  fill(0xffe880); rect(4, 5, 3, 2);          // bulb core
+  fill(0xffffff, 0.8); rect(4, 5, 1, 1);     // hot spot
+  // metal cap on globe top + bottom
+  fill(0x303034); rect(3, 3, 5, 1);
+  fill(0x202028); rect(3, 8, 5, 1);
+};
+
+const drawLamp_double = ({ fill, rect }) => {
+  // dual glow halos
+  fill(0xfff5c8, 0.2); rect(0, 0, 6, 6); rect(10, 0, 6, 6);
+  fill(0xfff5c8, 0.3); rect(1, 1, 4, 4); rect(11, 1, 4, 4);
+  // central pole
+  fill(0x2a2a2e); rect(7, 5, 2, 10);
+  fill(0x404044, 0.6); rect(7, 5, 1, 10);
+  fill(0x1a1a1e); rect(8, 5, 1, 10);
+  // banding ring
+  fill(0x404044); rect(7, 9, 2, 1);
+  // crossbar with scroll-work ends
+  fill(0x2a2a2e); rect(2, 4, 12, 1);
+  fill(0x404044, 0.5); rect(2, 4, 12, 1);
+  fill(0x2a2a2e); rect(2, 3, 1, 1); rect(13, 3, 1, 1);   // upturned ends
+  fill(0x2a2a2e); rect(7, 3, 2, 2);                      // central knob
+  fill(0x404044); rect(7, 3, 1, 1);
+  // two glass globes (clear with bulbs inside)
+  fill(0xfff5c8, 0.5); rect(2, 1, 4, 4); rect(10, 1, 4, 4);
+  fill(0xfff5c8, 0.3); rect(1, 2, 6, 2); rect(9, 2, 6, 2);
+  fill(0xffe880); rect(3, 2, 2, 2); rect(11, 2, 2, 2);
+  fill(0xffffff, 0.8); rect(3, 2, 1, 1); rect(11, 2, 1, 1);
+  // metal globe caps
+  fill(0x303034); rect(2, 0, 4, 1); rect(10, 0, 4, 1);
+  fill(0x202028); rect(2, 5, 4, 1); rect(10, 5, 4, 1);
+  // base — wider, ornamental
+  fill(0x1a1a1e); rect(5, 14, 6, 2);
+  fill(0x303034); rect(5, 14, 6, 1);
+  fill(0x404044); rect(6, 13, 4, 1);
+  fill(0x0a0a0e); rect(4, 15, 8, 1);
+};
+
+mount('lamps', [
+  { name: 'h_water (today)', current: true, draw: drawWater_current,
+    note: 'water-cooler stand-in', floorBg: ASPHALT },
+  { name: 'A. Single lamp',  draw: drawLamp_simple,  note: 'rectangular fixture', floorBg: ASPHALT },
+  { name: 'B. Arched globe', draw: drawLamp_arched,  note: 'shepherd\'s crook',   floorBg: ASPHALT },
+  { name: 'C. Twin globe',   draw: drawLamp_double,  note: 'civic / hospital dr.', floorBg: ASPHALT },
+]);
+
+// ---------- LECTURE-HALL SEATS ----------
+const drawSeat_armrest = ({ fill, rect }) => {
+  // back (taller, with cushion contour)
+  fill(0x4a3a48); rect(3, 1, 10, 5);
+  fill(0x5a4a58, 0.6); rect(4, 1, 8, 1);    // top highlight
+  fill(0x3a2a38); rect(3, 5, 10, 1);        // back-to-seat shadow
+  // headrest dimple (tufting button)
+  fill(0x2a1a28); rect(7, 3, 1, 1); rect(8, 3, 1, 1);
+  // back seam down center
+  fill(0x3a2a38, 0.6); rect(7, 1, 2, 4);
+  // seat cushion (rounded look — lighter in center)
+  fill(0x4a3a48); rect(3, 6, 10, 4);
+  fill(0x6a5a68, 0.4); rect(4, 6, 8, 1);    // cushion top edge
+  fill(0x5a4a58, 0.3); rect(5, 7, 6, 2);    // cushion bowl
+  fill(0x3a2a38); rect(3, 9, 10, 1);        // seat-to-pedestal shadow
+  // armrests w/ padding
+  fill(0x2a1a28); rect(2, 5, 1, 5); rect(13, 5, 1, 5);
+  fill(0x3a2a38); rect(2, 5, 1, 1); rect(13, 5, 1, 1);   // armrest top
+  fill(0x4a3a48, 0.5); rect(2, 6, 1, 1); rect(13, 6, 1, 1);
+  // pedestal w/ chrome stem
+  fill(0x404048); rect(7, 10, 2, 3);
+  fill(0x606068); rect(7, 10, 1, 3);        // chrome highlight
+  fill(0x202028); rect(8, 10, 1, 3);
+  // floor mount disc
+  fill(0x1a1a1e); rect(5, 13, 6, 1);
+  fill(0x303038); rect(5, 14, 6, 2);
+  fill(0x0a0a0e); rect(4, 15, 8, 1);
+};
+
+const drawSeat_theater = ({ fill, rect }) => {
+  // tall folding back — velvet
+  fill(0x6a3030); rect(2, 1, 12, 6);
+  fill(0x8a4040, 0.5); rect(3, 1, 10, 1);    // top edge highlight
+  fill(0x4a2020); rect(2, 6, 12, 1);         // bottom shadow
+  // velvet panel seam down center
+  fill(0x4a2020); rect(7, 1, 2, 6);
+  fill(0x8a4040, 0.3); rect(8, 1, 1, 6);     // pile catching light
+  // tufted dots (theater seat back)
+  fill(0x4a1a1a); rect(4, 3, 1, 1); rect(11, 3, 1, 1);
+  fill(0x4a1a1a); rect(4, 5, 1, 1); rect(11, 5, 1, 1);
+  // top trim (gold piping)
+  fill(0xa07840); rect(2, 0, 12, 1);
+  fill(0xc89860, 0.5); rect(3, 0, 10, 1);
+  // seat (folded, narrower)
+  fill(0x6a3030); rect(3, 8, 10, 3);
+  fill(0x8a4040, 0.4); rect(4, 8, 8, 1);
+  fill(0x4a1a1a); rect(3, 10, 10, 1);
+  // armrests with rounded wood/brass
+  fill(0x2a1a14); rect(1, 7, 2, 5); rect(13, 7, 2, 5);
+  fill(0x4a3020); rect(1, 7, 2, 1); rect(13, 7, 2, 1);   // wood top
+  fill(0xa07840); rect(1, 7, 1, 1); rect(13, 7, 1, 1);   // brass cap
+  // seat number plaque
+  fill(0xc89860); rect(7, 11, 2, 1);
+  fill(0x4a2020); rect(7, 11, 2, 1);   // dim numerals
+  // floor mount
+  fill(0x1a1a1e); rect(4, 12, 8, 2);
+  fill(0x303038); rect(3, 14, 10, 2);
+  fill(0x0a0a0e); rect(2, 15, 12, 1);
+};
+
+const drawSeat_tablet = ({ fill, rect }) => {
+  // chair back w/ headrest contour
+  fill(0x3a3a4a); rect(4, 1, 8, 5);
+  fill(0x4a4a5a, 0.5); rect(5, 1, 6, 1);
+  fill(0x2a2a38); rect(4, 5, 8, 1);
+  // tufting buttons in back
+  fill(0x1a1a28); rect(6, 3, 1, 1); rect(9, 3, 1, 1);
+  // seat cushion
+  fill(0x3a3a4a); rect(4, 6, 8, 3);
+  fill(0x5a5a6a, 0.4); rect(5, 6, 6, 1);
+  fill(0x2a2a38); rect(4, 8, 8, 1);
+  // pedestal (chrome stem)
+  fill(0x404048); rect(7, 9, 2, 4);
+  fill(0x606068); rect(7, 9, 1, 4);
+  fill(0x202028); rect(8, 9, 1, 4);
+  // 5-star base
+  fill(0x1a1a1e); rect(4, 13, 8, 1);
+  fill(0x303038); rect(3, 14, 10, 2);
+  // wheels at base
+  fill(0x101014); rect(3, 15, 1, 1); rect(7, 15, 2, 1); rect(12, 15, 1, 1);
+  // tablet arm desk swung out (right side) w/ notebook on it
+  fill(0x5a4030); rect(10, 5, 1, 4);                     // arm support
+  fill(0x7a6040); rect(11, 4, 5, 5);                     // tablet surface
+  fill(0x8a7050, 0.5); rect(11, 4, 5, 1);                // wood highlight
+  fill(0x5a4030); rect(11, 8, 5, 1);                     // bottom edge shadow
+  // notebook (open) on the tablet
+  fill(0xf0e8d8); rect(12, 5, 3, 3);
+  fill(0xa0a0a0); rect(13, 5, 1, 3);                     // spiral binding
+  fill(0x4a4a5a, 0.4); rect(12, 6, 3, 1);                // ruled lines
+  fill(0x4a4a5a, 0.4); rect(12, 7, 3, 1);
+};
+
+mount('seats', [
+  { name: 'h_chair (today)', current: true, draw: drawChair_current,
+    note: 'minimal clinic chair' },
+  { name: 'A. Padded armrest', draw: drawSeat_armrest, note: 'upholstered, fixed' },
+  { name: 'B. Theater seat',   draw: drawSeat_theater, note: 'red velvet, folding' },
+  { name: 'C. Tablet-arm',     draw: drawSeat_tablet,  note: 'note-taking flap' },
+]);
+
+// ---------- LECTURE-HALL SCREENS ----------
+const drawScreen_projector = ({ fill, rect, stroke, strokeRect }) => {
+  // mounting bracket / wall plate
+  fill(0x202028); rect(0, 0, 16, 2);
+  fill(0x303038); rect(1, 0, 14, 1);
+  // case (rolled-up portion, end caps)
+  fill(0x101014); rect(0, 1, 1, 2); rect(15, 1, 1, 2);
+  // screen surface — bright matte
+  fill(0xf8f4e6); rect(1, 2, 14, 11);
+  fill(0xe8e0c8, 0.5); rect(1, 12, 14, 1);     // bottom slight shadow
+  stroke(0x8a8478); strokeRect(1, 2, 14, 11);
+  // projected slide (blue rectangle)
+  fill(0x3a5a98); rect(2, 3, 12, 9);
+  fill(0x5a7ab8, 0.3); rect(2, 3, 12, 1);      // top of slide brighter
+  fill(0x2a4080, 0.4); rect(2, 11, 12, 1);     // slide bottom darker
+  // slide title bar
+  fill(0xe8b840); rect(3, 4, 10, 1);
+  // slide content — bullet text
+  fill(0xffffff, 0.85); rect(3, 6, 8, 1);
+  fill(0xffffff, 0.7); rect(3, 7, 6, 1);
+  fill(0xffffff, 0.85); rect(3, 9, 9, 1);
+  fill(0xffffff, 0.6); rect(3, 10, 5, 1);
+  // small icon / chart in corner
+  fill(0xe06040); rect(11, 8, 1, 1); rect(12, 7, 1, 2); rect(11, 6, 1, 1);
+  // weighted bottom bar w/ pull-cord
+  fill(0x202028); rect(0, 13, 16, 2);
+  fill(0x303038); rect(0, 13, 16, 1);
+  fill(0xc89860); rect(8, 15, 1, 1);            // tassel
+};
+
+const drawScreen_chalk = ({ fill, rect, stroke, strokeRect }) => {
+  // wood frame top + sides
+  fill(0x4a3018); rect(0, 0, 16, 2);
+  fill(0x6a4a30); rect(0, 0, 16, 1);
+  fill(0x4a3018); rect(0, 1, 1, 13); rect(15, 1, 1, 13);
+  fill(0x6a4a30); rect(0, 1, 1, 1); rect(15, 1, 1, 1);   // corner highlight
+  // dark slate green chalkboard surface
+  fill(0x1a2a20); rect(1, 2, 14, 11);
+  fill(0x2a3a30); rect(1, 2, 14, 1);              // top edge lighter
+  fill(0x0a1a10, 0.3); rect(2, 3, 12, 9);         // slight darker center
+  // dusty smudges (uneven erasing)
+  fill(0xe0e8d8, 0.15); rect(3, 4, 10, 2);
+  fill(0xe0e8d8, 0.1); rect(2, 8, 12, 2);
+  // chalk-written equation lines
+  fill(0xf0f0e0, 0.85); rect(3, 4, 4, 1);
+  fill(0xf0f0e0, 0.7); rect(8, 4, 1, 1); rect(10, 4, 2, 1);   // = + 2
+  fill(0xf0f0e0, 0.8); rect(3, 6, 6, 1);
+  fill(0xf0f0e0, 0.6); rect(10, 6, 3, 1);
+  fill(0xf0f0e0, 0.75); rect(3, 8, 5, 1);
+  fill(0xf0f0e0, 0.5); rect(9, 8, 4, 1);
+  // colored chalk circle (diagram)
+  fill(0xe07060, 0.8); rect(11, 9, 2, 2);
+  fill(0xf0f0e0, 0.4); rect(3, 10, 7, 1);
+  // chalk tray
+  fill(0x6a4a30); rect(0, 13, 16, 2);
+  fill(0x8a6a44, 0.5); rect(1, 13, 14, 1);        // tray top edge
+  fill(0x4a3018); rect(0, 14, 16, 1);
+  // chalk pieces (two)
+  fill(0xf0f0e0); rect(3, 13, 2, 1);              // white chalk
+  fill(0xe0a050); rect(11, 13, 2, 1);             // yellow chalk
+  fill(0xa05858); rect(7, 13, 1, 1);              // red chalk stub
+  // eraser
+  fill(0x4a3a30); rect(13, 13, 2, 1);
+};
+
+const drawScreen_anatomy = ({ fill, rect, stroke, strokeRect, circle, line }) => {
+  // mounting bar w/ end finials
+  fill(0x202028); rect(0, 0, 16, 1);
+  fill(0x303038); rect(1, 0, 14, 1);
+  fill(0x404048); rect(0, 0, 1, 2); rect(15, 0, 1, 2);
+  // chart paper — aged off-white
+  fill(0xf0e8d0); rect(1, 1, 14, 12);
+  fill(0xd8c8a0, 0.3); rect(1, 12, 14, 1);            // bottom yellowing
+  stroke(0x8a7050); strokeRect(1, 1, 14, 12);
+  // chart title bar
+  fill(0xa84030); rect(2, 2, 12, 1);
+  // human silhouette — anatomical
+  fill(0xe09078); rect(7, 4, 2, 2);                    // head
+  fill(0xc87060, 0.6); rect(7, 4, 2, 1);               // hairline shadow
+  fill(0xe09078); rect(8, 5, 1, 1);                    // neck
+  fill(0xd88068); rect(6, 6, 4, 4);                    // torso
+  fill(0xb86048, 0.5); rect(6, 6, 4, 1);               // chest highlight
+  fill(0xa05038); rect(7, 7, 2, 2);                    // organ outline (heart-ish)
+  fill(0xd88068); rect(5, 6, 1, 3); rect(10, 6, 1, 3); // upper arms
+  fill(0xc87058); rect(4, 9, 1, 2); rect(11, 9, 1, 2); // forearms
+  fill(0xd88068); rect(7, 10, 1, 3); rect(8, 10, 1, 3);// legs
+  // labels with leader lines (anatomical chart vibes)
+  fill(0x202028); rect(2, 4, 2, 1);                    // label "head"
+  fill(0x202028); rect(4, 4, 1, 2);                    // leader line
+  fill(0x202028); rect(12, 7, 2, 1);                   // label "torso"
+  fill(0x202028); rect(11, 7, 1, 1);                   // leader
+  fill(0x202028); rect(2, 11, 2, 1);                   // label "leg"
+  // weighted bottom bar w/ pull cord
+  fill(0x202028); rect(1, 13, 14, 2);
+  fill(0x303038); rect(1, 13, 14, 1);
+  fill(0xc89860); rect(7, 15, 2, 1);                   // tassel
+};
+
+mount('screens', [
+  { name: 'h_whiteboard (today)', current: true, draw: drawWhiteboard_current,
+    note: 'whiteboard with sticky notes' },
+  { name: 'A. Pull-down screen', draw: drawScreen_projector, note: 'blue slide projecting' },
+  { name: 'B. Chalkboard',       draw: drawScreen_chalk,     note: 'old-school clinical' },
+  { name: 'C. Anatomy chart',    draw: drawScreen_anatomy,   note: 'pull-down diagram' },
+]);
+
+// ---------- CANCER CENTER — RECLINERS ----------
+const drawRecliner_basic = ({ fill, rect }) => {
+  // shadow under chair
+  fill(0x000000, 0.25); rect(1, 13, 14, 2);
+  // reclined seat back (top-down view, headrest left)
+  fill(0xc0c8d8); rect(2, 4, 12, 8);
+  fill(0xd0d8e8, 0.6); rect(2, 4, 12, 1);          // top edge
+  fill(0xa0a8b8); rect(2, 11, 12, 1);              // bottom shadow
+  // tufting buttons in back
+  fill(0x808898); rect(5, 6, 1, 1); rect(8, 6, 1, 1); rect(11, 6, 1, 1);
+  fill(0x808898); rect(5, 9, 1, 1); rect(8, 9, 1, 1); rect(11, 9, 1, 1);
+  // headrest pillow (left end) w/ pillowcase
+  fill(0xe0e8f0); rect(1, 5, 2, 5);
+  fill(0xc0c8d0); rect(1, 9, 2, 1);                // pillow shadow
+  fill(0xa8b0bc, 0.4); rect(1, 5, 1, 5);           // pillow seam
+  // foot rest (right end)
+  fill(0xb0b8c8); rect(13, 6, 2, 4);
+  fill(0xc0c8d8, 0.5); rect(13, 6, 2, 1);
+  // armrests (front + back) — taupe leather
+  fill(0x4a4055); rect(2, 3, 12, 1); rect(2, 12, 12, 1);
+  fill(0x6a5a75, 0.6); rect(3, 3, 10, 1);          // armrest highlight
+  // armrest tip caps
+  fill(0x303040); rect(2, 3, 1, 1); rect(13, 3, 1, 1);
+  fill(0x303040); rect(2, 12, 1, 1); rect(13, 12, 1, 1);
+  // chair-side controls (small panel)
+  fill(0x202028); rect(11, 12, 2, 1);
+  fill(0x40d080); rect(11, 12, 1, 1);              // green LED
+  // base — chrome legs + casters
+  fill(0x808890); rect(3, 13, 10, 1);
+  fill(0x404048); rect(3, 14, 2, 2); rect(7, 14, 2, 2); rect(11, 14, 2, 2);
+  fill(0x101014); rect(3, 15, 2, 1); rect(7, 15, 2, 1); rect(11, 15, 2, 1);
+  // IV pole (top-left, taller w/ extending arm)
+  fill(0xa0a8b0); rect(1, 0, 1, 5);                // pole
+  fill(0x707078); rect(2, 0, 1, 5);                // pole shadow
+  fill(0xc0c0c8); rect(0, 0, 3, 1);                // T-arm
+  // saline bag (clear)
+  fill(0xc8e0f0, 0.7); rect(0, 1, 2, 3);
+  fill(0xa0c8e0, 0.5); rect(0, 2, 2, 1);           // fluid line
+  fill(0x303038); rect(0, 1, 2, 1);                // bag header
+  fill(0x707078); rect(0, 4, 1, 1);                // drip chamber
+  // IV tubing snaking down to chair
+  fill(0x707078); rect(1, 5, 1, 1); rect(2, 5, 1, 1); rect(2, 6, 1, 1);
+};
+
+const drawRecliner_lazyboy = ({ fill, rect }) => {
+  // shadow
+  fill(0x000000, 0.25); rect(1, 13, 14, 2);
+  // chunky upholstered recliner — facing right (foot to right)
+  fill(0x6a4a3a); rect(2, 3, 11, 9);                // main body
+  fill(0x8a6a4a, 0.5); rect(3, 3, 9, 1);            // top edge highlight
+  fill(0x4a2a18); rect(2, 11, 11, 1);               // shadow under
+  // headrest bulge w/ doily / antimacassar
+  fill(0x7a5a48); rect(2, 2, 4, 2);
+  fill(0xd8c8a0); rect(2, 2, 4, 1);                 // crocheted doily
+  fill(0xa89878, 0.5); rect(2, 2, 4, 1);
+  // tufting buttons (residential look)
+  fill(0x4a2a18); rect(5, 5, 1, 1); rect(8, 5, 1, 1); rect(11, 5, 1, 1);
+  fill(0x4a2a18); rect(5, 8, 1, 1); rect(8, 8, 1, 1); rect(11, 8, 1, 1);
+  // seat cushion seam
+  fill(0x4a2a18); rect(2, 7, 11, 1);
+  fill(0x8a6a4a, 0.4); rect(3, 8, 9, 1);            // cushion top highlight
+  // armrest (front)
+  fill(0x4a2a18); rect(2, 11, 11, 2);
+  fill(0x6a3a28); rect(3, 11, 9, 1);                // armrest top
+  // footrest (extended right)
+  fill(0x6a4a3a); rect(13, 5, 2, 6);
+  fill(0x4a2a18); rect(13, 11, 2, 1);
+  // crocheted blanket draped over right armrest
+  fill(0x80a070); rect(11, 4, 4, 4);
+  fill(0xa0c090, 0.4); rect(11, 4, 4, 1);
+  fill(0x607048); rect(13, 6, 2, 1);                // blanket fold shadow
+  // base — wood feet
+  fill(0x2a1810); rect(3, 13, 2, 2); rect(11, 13, 2, 2);
+  fill(0x202028); rect(5, 13, 6, 2);
+  // IV pole (top-right)
+  fill(0xa0a8b0); rect(14, 0, 1, 5);
+  fill(0x707078); rect(15, 0, 1, 5);
+  fill(0xc0c0c8); rect(13, 0, 3, 1);
+  // clear-fluid bag w/ label
+  fill(0xc8e0f0, 0.7); rect(13, 1, 2, 3);
+  fill(0xffffff); rect(13, 2, 2, 1);                // label band
+  fill(0x303038); rect(13, 1, 2, 1);                // bag header
+  fill(0x707078); rect(14, 4, 1, 1);                // drip chamber
+  // tubing curling down to patient
+  fill(0x707078); rect(13, 5, 1, 1); rect(13, 6, 1, 1); rect(12, 6, 1, 1);
+};
+
+const drawRecliner_clinical = ({ fill, rect }) => {
+  // shadow under base
+  fill(0x000000, 0.25); rect(2, 13, 12, 2);
+  // sleek modern infusion recliner — teal upholstery
+  fill(0x3a7888); rect(3, 3, 10, 7);
+  fill(0x5a98a8, 0.5); rect(3, 3, 10, 1);           // top edge highlight
+  fill(0x2a5868, 0.6); rect(3, 9, 10, 1);           // bottom shadow
+  // contour seams (modern look)
+  fill(0x2a5868); rect(3, 6, 10, 1);
+  fill(0x4a8898, 0.4); rect(4, 4, 8, 1);
+  // headrest pillow (white) w/ subtle shadow
+  fill(0xe8eef0); rect(2, 4, 2, 3);
+  fill(0xc8d0d0); rect(2, 6, 2, 1);                 // pillow shadow
+  fill(0xa8b0b0, 0.4); rect(2, 4, 1, 3);            // pillow seam
+  // seat cushion
+  fill(0x3a7888); rect(3, 9, 10, 3);
+  fill(0x2a5868, 0.7); rect(3, 9, 10, 1);
+  fill(0x4a8898, 0.3); rect(4, 10, 8, 1);
+  // armrests w/ side panel
+  fill(0x202830); rect(2, 3, 1, 9); rect(13, 3, 1, 9);
+  fill(0x303a40); rect(2, 3, 1, 1); rect(13, 3, 1, 1);
+  // armrest control pad (right side)
+  fill(0x101418); rect(13, 8, 2, 3);
+  fill(0x40d080); rect(14, 8, 1, 1);                // green button
+  fill(0xe04040); rect(14, 9, 1, 1);                // red button
+  fill(0xe0a020); rect(14, 10, 1, 1);               // yellow button
+  // base — chrome plate w/ casters
+  fill(0xa0a8b0); rect(4, 12, 8, 2);
+  fill(0xc0c8d0, 0.4); rect(4, 12, 8, 1);
+  fill(0x202028); rect(3, 14, 3, 2); rect(10, 14, 3, 2);
+  fill(0x101014); rect(3, 15, 3, 1); rect(10, 15, 3, 1);
+  // IV pole + bag, with tubing
+  fill(0xa0a8b0); rect(0, 0, 1, 7);                 // pole
+  fill(0x707078); rect(0, 0, 1, 7);
+  fill(0xc0c0c8); rect(0, 0, 3, 1);                 // T-arm
+  fill(0xc0c0c8); rect(2, 0, 1, 1);                 // S-hook
+  // amber chemo bag w/ warning label
+  fill(0xfae0a8); rect(1, 1, 2, 3);
+  fill(0xffd870, 0.5); rect(1, 1, 2, 1);            // bag highlight
+  fill(0xa07020); rect(1, 1, 2, 1);                 // header band
+  fill(0xe04040); rect(1, 3, 2, 1);                 // red warning sticker
+  fill(0x707078); rect(1, 4, 1, 1);                 // drip chamber
+  // tubing path (goes down + into patient arm)
+  fill(0x707078); rect(1, 5, 1, 1); rect(2, 5, 1, 1); rect(2, 6, 1, 1); rect(3, 6, 1, 1);
+};
+
+mount('recliners', [
+  { name: 'h_bed (today)', current: true, draw: drawBed_current,
+    note: 'flat hospital bed' },
+  { name: 'A. Pale linen',     draw: drawRecliner_basic,    note: 'recliner + saline bag' },
+  { name: 'B. Brown La-Z-Boy', draw: drawRecliner_lazyboy,  note: 'chunky, residential' },
+  { name: 'C. Clinical teal',  draw: drawRecliner_clinical, note: 'modern + amber chemo bag' },
+]);
+
+// ---------- LOBBY — ARMCHAIRS ----------
+const drawArmchair_70s = ({ fill, rect }) => {
+  // floor shadow
+  fill(0x000000, 0.2); rect(2, 14, 12, 2);
+  // mustard-orange tweed armchair — high back
+  fill(0xb88030); rect(2, 3, 12, 10);
+  fill(0xd0a050, 0.5); rect(3, 3, 10, 1);          // top highlight
+  fill(0x9a6a20, 0.6); rect(2, 12, 12, 1);         // bottom shadow
+  // back cushion seam (curved suggestion)
+  fill(0x804a18); rect(2, 8, 12, 1);
+  fill(0xa07028, 0.4); rect(3, 9, 10, 1);          // seat cushion top edge
+  // tweed nap pattern (scattered specks)
+  fill(0xc89040, 0.6); rect(3, 5, 1, 1); rect(6, 4, 1, 1); rect(9, 6, 1, 1);
+  fill(0xc89040, 0.6); rect(11, 5, 1, 1); rect(4, 7, 1, 1); rect(8, 8, 1, 1);
+  fill(0x8a5a18, 0.5); rect(5, 6, 1, 1); rect(10, 7, 1, 1); rect(7, 10, 1, 1);
+  fill(0x8a5a18, 0.5); rect(4, 11, 1, 1); rect(11, 11, 1, 1);
+  // tufted buttons in back
+  fill(0x6a3a10); rect(6, 5, 1, 1); rect(9, 5, 1, 1);
+  // armrests w/ rolled top
+  fill(0x804a18); rect(2, 4, 1, 9); rect(13, 4, 1, 9);
+  fill(0x9a5a20); rect(2, 4, 1, 1); rect(13, 4, 1, 1);    // armrest crown highlight
+  // throw pillow on seat (avocado green for contrast)
+  fill(0x607038); rect(9, 9, 4, 3);
+  fill(0x788848, 0.5); rect(9, 9, 4, 1);
+  fill(0x405020); rect(11, 10, 1, 1);
+  // wood legs (tapered mid-century)
+  fill(0x3a2018); rect(3, 13, 2, 2); rect(11, 13, 2, 2);
+  fill(0x4a3020); rect(3, 13, 1, 1); rect(11, 13, 1, 1);  // leg highlight
+  fill(0x1a0a00); rect(3, 15, 2, 1); rect(11, 15, 2, 1);  // leg tips
+};
+
+const drawArmchair_lounge = ({ fill, rect }) => {
+  // shadow
+  fill(0x000000, 0.2); rect(2, 14, 12, 2);
+  // brown leather wingback — taller back, wing flares
+  fill(0x4a2a18); rect(3, 2, 10, 11);
+  fill(0x6a3a28, 0.5); rect(4, 2, 8, 1);
+  fill(0x2a1810, 0.5); rect(3, 12, 10, 1);
+  // wing flares (sides extend higher than back)
+  fill(0x3a1f10); rect(2, 1, 1, 10); rect(13, 1, 1, 10);
+  fill(0x4a2a18); rect(2, 1, 1, 1); rect(13, 1, 1, 1);    // wing top
+  fill(0x6a3a28, 0.4); rect(2, 2, 1, 1); rect(13, 2, 1, 1); // wing highlight
+  // tufted buttons in back (deep diamond pattern)
+  fill(0x1a0a00); rect(5, 4, 1, 1); rect(7, 4, 1, 1); rect(9, 4, 1, 1); rect(11, 4, 1, 1);
+  fill(0x1a0a00); rect(5, 7, 1, 1); rect(7, 7, 1, 1); rect(9, 7, 1, 1); rect(11, 7, 1, 1);
+  fill(0x1a0a00); rect(6, 5, 1, 1); rect(8, 5, 1, 1); rect(10, 5, 1, 1);
+  fill(0x6a3a28, 0.3); rect(6, 6, 1, 1); rect(8, 6, 1, 1); rect(10, 6, 1, 1); // tuft sheen
+  // leather sheen highlight (vertical reflection band)
+  fill(0x8a5040, 0.3); rect(11, 3, 1, 8);
+  // armrest fronts (rolled, polished)
+  fill(0x6a3a28); rect(3, 9, 10, 1);                       // armrest band
+  fill(0x8a5040, 0.4); rect(4, 9, 8, 1);
+  // seat cushion
+  fill(0x5a3a28); rect(4, 10, 8, 3);
+  fill(0x8a5040, 0.3); rect(4, 10, 8, 1);                  // cushion top
+  fill(0x2a1810); rect(4, 12, 8, 1);
+  fill(0x6a3a28); rect(7, 11, 1, 1); rect(8, 11, 1, 1);    // center crease
+  // brass nailhead trim along the front
+  fill(0xc89860); rect(4, 13, 1, 1); rect(6, 13, 1, 1); rect(8, 13, 1, 1); rect(10, 13, 1, 1);
+  // wood legs (cabriole-suggestion)
+  fill(0x2a1810); rect(4, 13, 1, 2); rect(11, 13, 1, 2);
+  fill(0x3a2018); rect(4, 13, 1, 1); rect(11, 13, 1, 1);
+};
+
+const drawArmchair_avocado = ({ fill, rect }) => {
+  // shadow
+  fill(0x000000, 0.2); rect(2, 14, 12, 2);
+  // avocado-green tufted club chair
+  fill(0x607038); rect(2, 4, 12, 9);
+  fill(0x788848, 0.5); rect(3, 4, 10, 1);
+  fill(0x405020); rect(2, 12, 12, 1);
+  // back-cushion seam
+  fill(0x405020); rect(2, 8, 12, 1);
+  fill(0x788848, 0.3); rect(3, 9, 10, 1);
+  // tufts in diamond pattern
+  fill(0x2a3818); rect(5, 6, 1, 1); rect(8, 6, 1, 1); rect(11, 6, 1, 1);
+  fill(0x2a3818); rect(4, 7, 1, 1); rect(7, 7, 1, 1); rect(10, 7, 1, 1); rect(12, 7, 1, 1);
+  fill(0x788848, 0.4); rect(5, 6, 1, 1); rect(8, 6, 1, 1); // tuft highlights
+  fill(0x2a3818); rect(5, 10, 1, 1); rect(8, 10, 1, 1); rect(11, 10, 1, 1);
+  // armrests (rolled)
+  fill(0x506028); rect(2, 4, 1, 9); rect(13, 4, 1, 9);
+  fill(0x788848); rect(2, 4, 1, 1); rect(13, 4, 1, 1);
+  // doily on the back / antimacassar (white lace)
+  fill(0xe0e0d0); rect(5, 4, 6, 1);
+  fill(0x788848, 0.2); rect(5, 4, 6, 1);                    // semi-transparent
+  // throw blanket draped over right armrest
+  fill(0xa05030); rect(11, 4, 3, 5);
+  fill(0xc06040, 0.4); rect(11, 4, 3, 1);
+  fill(0x804030); rect(11, 8, 3, 1);                        // fold shadow
+  // skirt (pleated)
+  fill(0x405020); rect(2, 13, 12, 1);
+  fill(0x506028, 0.5); rect(3, 13, 1, 1); rect(7, 13, 1, 1); rect(11, 13, 1, 1); // pleats
+  // wood legs (peeking under skirt)
+  fill(0x3a2818); rect(3, 14, 2, 1); rect(11, 14, 2, 1);
+  fill(0x1a0a00); rect(3, 15, 2, 1); rect(11, 15, 2, 1);
+};
+
+mount('armchairs', [
+  { name: 'h_chair (today)', current: true, draw: drawChair_current,
+    note: 'minimal clinic chair' },
+  { name: 'A. Mustard tweed',   draw: drawArmchair_70s,      note: '70s armchair' },
+  { name: 'B. Leather wingback',draw: drawArmchair_lounge,   note: 'lobby club chair' },
+  { name: 'C. Avocado tufted',  draw: drawArmchair_avocado,  note: 'mid-century green' },
+]);
+
+// ---------- CAFETERIA — DINING TABLE ----------
+const drawDtable_round = ({ fill, rect, circle }) => {
+  // floor shadow under table
+  fill(0x000000, 0.2); circle(7.5, 8.5, 7);
+  // round laminate table top — top-down view
+  fill(0xe8e0c8); circle(7.5, 7.5, 6.8);
+  fill(0xd0c8a8, 0.7); circle(7.5, 7.5, 6.0);          // ring shadow
+  fill(0xf0e8d0, 0.5); circle(7.5, 7.0, 5.5);          // top sheen
+  // table edge band (chrome trim)
+  fill(0x808890); circle(7.5, 7.5, 7.0);
+  fill(0xc0c8d0, 0.6); circle(7.5, 7.5, 6.8);
+  // brown tray (left half of table)
+  fill(0x8a6a48); rect(2, 5, 6, 5);
+  fill(0xa07a58, 0.5); rect(2, 5, 6, 1);                // tray top edge
+  fill(0x6a4a30); rect(2, 9, 6, 1);                     // tray bottom shadow
+  // food on plate (plate inside tray)
+  fill(0xfafaf0); circle(5, 7.5, 1.6);                  // plate
+  fill(0xe8e0d0, 0.6); circle(5, 7.0, 1.2);             // plate rim sheen
+  fill(0x8a4030); rect(4, 7, 2, 1);                     // entrée (meat)
+  fill(0x607030); rect(4, 8, 1, 1);                     // greens
+  fill(0xc8a040); rect(5, 8, 1, 1);                     // mash
+  // utensils on tray
+  fill(0xc0c0c8); rect(2, 6, 1, 3);                     // fork
+  fill(0x808890); rect(2, 6, 1, 1);                     // fork tines
+  fill(0xc0c0c8); rect(7, 6, 1, 3);                     // knife
+  // beverage glass (right side)
+  fill(0xa0c8e0, 0.7); circle(11, 6, 1.4);              // glass
+  fill(0xe0f0f8, 0.5); circle(11, 5.5, 1.0);            // liquid sheen
+  fill(0xc0c8d0); circle(11, 6, 1.6);                   // glass rim ring (drawn last so visible)
+  fill(0xa0c8e0, 0.8); circle(11, 6, 1.2);
+  // napkin (small, square, folded)
+  fill(0xf0e0d0); rect(10, 9, 3, 2);
+  fill(0xd0c0a8, 0.5); rect(10, 9, 3, 1);
+  // chair backs around (N S W E)
+  fill(0x3a3a4a); rect(6, 0, 4, 2); rect(6, 14, 4, 2);
+  fill(0x3a3a4a); rect(0, 6, 2, 4); rect(14, 6, 2, 4);
+  fill(0x4a4a5a, 0.5); rect(7, 0, 2, 1); rect(7, 14, 2, 1); // chair top highlights
+  fill(0x4a4a5a, 0.5); rect(0, 7, 1, 2); rect(15, 7, 1, 2);
+};
+
+const drawDtable_square = ({ fill, rect, stroke, strokeRect }) => {
+  // floor shadow
+  fill(0x000000, 0.2); rect(2, 14, 12, 2);
+  // square formica top with chrome edge band
+  fill(0xc8c8d0); rect(2, 2, 12, 12);                   // outer chrome ring
+  fill(0xe8e0c8); rect(3, 3, 10, 10);                   // formica
+  fill(0xf0e8d0, 0.5); rect(3, 3, 10, 1);               // top sheen
+  fill(0xd0c8a8, 0.5); rect(3, 12, 10, 1);              // bottom shading
+  stroke(0x808890); strokeRect(3, 3, 10, 10);
+  // boomerang pattern (atomic-era formica detail)
+  fill(0xa07040, 0.5); rect(4, 5, 2, 1); rect(5, 4, 2, 1);
+  fill(0xa07040, 0.5); rect(9, 11, 2, 1); rect(10, 10, 2, 1);
+  // place setting — plate w/ rim
+  fill(0xc0c0c8); rect(5, 5, 6, 6);                     // plate ring (chrome rim)
+  fill(0xfafaf0); rect(6, 6, 4, 4);                     // plate well
+  fill(0xeae0d0, 0.6); rect(6, 6, 4, 1);                // plate sheen
+  // food blob (sandwich + side)
+  fill(0xc89060); rect(7, 7, 2, 2);                     // sandwich top
+  fill(0x4a3018); rect(7, 7, 2, 1);                     // crust
+  fill(0xb0a060); rect(7, 9, 2, 1);                     // bread bottom
+  // utensils
+  fill(0xc0c0c8); rect(4, 6, 1, 3); rect(11, 6, 1, 3);  // fork + knife shafts
+  fill(0x808890); rect(4, 5, 1, 1); rect(11, 5, 1, 1);  // tines / blade
+  fill(0x4a3a20); rect(4, 9, 1, 1); rect(11, 9, 1, 1);  // wood handles
+  // glass (top-right corner)
+  fill(0xa0c8e0, 0.6); rect(11, 4, 2, 2);
+  fill(0xe0f0f8, 0.5); rect(11, 4, 2, 1);               // liquid line
+  // napkin (bottom-left corner)
+  fill(0xe0a060); rect(4, 11, 2, 2);
+  fill(0xf0c080, 0.5); rect(4, 11, 2, 1);
+  // bench seats N + S w/ visible cushion seam
+  fill(0x6a4a3a); rect(3, 0, 10, 2);
+  fill(0x8a6a4a, 0.4); rect(3, 0, 10, 1);
+  fill(0x4a2a18); rect(3, 1, 10, 1);
+  fill(0x6a4a3a); rect(3, 14, 10, 2);
+  fill(0x8a6a4a, 0.4); rect(3, 14, 10, 1);
+};
+
+const drawDtable_diner = ({ fill, rect }) => {
+  // floor shadow
+  fill(0x000000, 0.2); rect(2, 14, 12, 2);
+  // booth back (top)
+  fill(0x803020); rect(2, 0, 12, 5);
+  fill(0xa04830, 0.5); rect(3, 0, 10, 1);               // top piping
+  fill(0x4a1a10); rect(2, 4, 12, 1);                    // booth shadow
+  // tufted booth back (vertical pleats)
+  fill(0x4a1a10); rect(4, 1, 1, 3); rect(7, 1, 1, 3); rect(10, 1, 1, 3);
+  fill(0xa04830, 0.4); rect(5, 1, 1, 3); rect(8, 1, 1, 3); rect(11, 1, 1, 3);
+  // chrome edge band of table
+  fill(0xc0c8d0); rect(1, 5, 14, 1);
+  fill(0xe0e8f0, 0.5); rect(1, 5, 14, 1);
+  fill(0xc8c8d0); rect(1, 9, 14, 1);                    // bottom edge band
+  // orange laminate top
+  fill(0xe09040); rect(2, 6, 12, 3);
+  fill(0xf0a050, 0.5); rect(2, 6, 12, 1);
+  fill(0xc8702a, 0.5); rect(2, 8, 12, 1);
+  // chrome legs (visible mid-tile)
+  fill(0xa0a8b0); rect(3, 9, 1, 3); rect(12, 9, 1, 3);
+  fill(0xc0c8d0, 0.6); rect(3, 9, 1, 1); rect(12, 9, 1, 1);
+  // diner tray w/ classic tray ridges
+  fill(0x8a6a48); rect(4, 6, 5, 3);
+  fill(0xa07a58, 0.5); rect(4, 6, 5, 1);
+  fill(0x6a4a30); rect(4, 7, 5, 1);                     // ridge
+  // napkin dispenser (chrome)
+  fill(0xc0c8d0); rect(11, 6, 2, 3);
+  fill(0xe0e8f0); rect(11, 6, 2, 1);                    // top opening
+  fill(0xf0e0d0); rect(11, 7, 2, 1);                    // napkin peeking out
+  // ketchup + mustard bottles
+  fill(0xc02020); rect(9, 6, 1, 3);                     // ketchup
+  fill(0x303030); rect(9, 6, 1, 1);                     // cap
+  fill(0xe0a020); rect(10, 7, 1, 2);                    // mustard
+  fill(0x303030); rect(10, 7, 1, 1);
+  // booth front (bottom)
+  fill(0x803020); rect(2, 11, 12, 4);
+  fill(0xa04830, 0.5); rect(3, 11, 10, 1);
+  fill(0x4a1a10); rect(2, 14, 12, 1);
+  // tufted booth front
+  fill(0x4a1a10); rect(4, 12, 1, 2); rect(7, 12, 1, 2); rect(10, 12, 1, 2);
+};
+
+mount('tables', [
+  { name: 'h_desk (today)', current: true, draw: drawDesk_current,
+    note: 'office desk + monitor' },
+  { name: 'A. Round cafeteria', draw: drawDtable_round,  note: 'tray + plate, top-down' },
+  { name: 'B. Formica square',  draw: drawDtable_square, note: 'place setting + benches' },
+  { name: 'C. Diner booth',     draw: drawDtable_diner,  note: '70s orange laminate' },
+]);
+
+// ---------- CAFETERIA — STEAM TABLE ----------
+const drawSteam_modern = ({ fill, rect, circle, stroke, strokeRect }) => {
+  // sneeze-guard glass posts (top)
+  fill(0xa0a8b0); rect(1, 0, 1, 6); rect(14, 0, 1, 6);
+  fill(0xc0c8d0, 0.6); rect(1, 0, 1, 1); rect(14, 0, 1, 1);    // post tops
+  // sneeze-guard horizontal bar
+  fill(0xa0a8b0); rect(1, 0, 14, 1);
+  // glass panel (semi-transparent)
+  fill(0xa0d0e8, 0.18); rect(2, 1, 12, 4);
+  fill(0xffffff, 0.15); rect(2, 1, 12, 1);                     // glass top sheen
+  fill(0xa0d0e8, 0.08); rect(3, 2, 10, 3);
+  // steam puffs (rising into glass area)
+  fill(0xffffff, 0.5); circle(3.5, 4, 1.4); circle(8, 3.5, 1.5); circle(12.5, 4, 1.4);
+  fill(0xffffff, 0.35); circle(4.5, 2.5, 1); circle(9, 2, 1.2); circle(13, 2.5, 0.9);
+  fill(0xffffff, 0.2); circle(5, 1.5, 0.8); circle(10, 1, 0.8); circle(13.5, 1.5, 0.8);
+  // stainless steel body
+  fill(0xb8c0c8); rect(1, 6, 14, 9);
+  fill(0xd8e0e8, 0.5); rect(1, 6, 14, 1);                      // top edge highlight
+  fill(0x707880, 0.4); rect(1, 14, 14, 1);                     // bottom shadow
+  stroke(0x808890); strokeRect(1, 6, 14, 9);
+  // brushed-steel vertical lines
+  fill(0xc0c8d0, 0.3); rect(2, 13, 1, 1); rect(6, 13, 1, 1); rect(10, 13, 1, 1); rect(13, 13, 1, 1);
+  // 3 wells (recessed) w/ rim shadow
+  fill(0x707880); rect(2, 7, 4, 1); rect(7, 7, 4, 1); rect(12, 7, 3, 1);    // top rim shadow
+  fill(0x303840); rect(2, 8, 4, 5); rect(7, 8, 4, 5); rect(12, 8, 3, 5);
+  // food in wells with highlights
+  fill(0xc05030); rect(2, 9, 4, 2);                           // tomato sauce
+  fill(0xe06040, 0.4); rect(2, 9, 4, 1);
+  fill(0xa08838); rect(7, 9, 4, 2);                           // mac
+  fill(0xc0a050, 0.4); rect(7, 9, 4, 1);
+  fill(0x607030); rect(12, 9, 3, 2);                          // greens
+  fill(0x809040, 0.4); rect(12, 9, 3, 1);
+  // serving utensils sticking out of wells
+  fill(0xc0c0c8); rect(4, 8, 1, 1);                           // ladle handle 1
+  fill(0xc0c0c8); rect(9, 8, 1, 1);                           // serving spoon 2
+  fill(0xc0c0c8); rect(13, 8, 1, 1);                          // tongs handle 3
+  // label cards under each well
+  fill(0xf0e8d0); rect(2, 12, 4, 1); rect(7, 12, 4, 1); rect(12, 12, 3, 1);
+  fill(0x202028); rect(3, 12, 2, 1); rect(8, 12, 2, 1); rect(12, 12, 2, 1);  // label text
+  // control panel right side
+  fill(0x202028); rect(13, 13, 2, 1);
+  fill(0x40d080); rect(13, 13, 1, 1);                         // status LED
+};
+
+const drawSteam_buffet = ({ fill, rect, circle, stroke, strokeRect }) => {
+  // heat-lamp warmer rod (top, glowing red)
+  fill(0xa05020); rect(1, 0, 14, 1);                          // bracket
+  fill(0xe06030); rect(2, 1, 12, 1);                          // lamp tube
+  fill(0xff8050, 0.6); rect(2, 1, 12, 1);                     // glow
+  fill(0xffa080, 0.4); rect(3, 1, 10, 1);                     // hot-spot
+  // steam puffs rising
+  fill(0xffffff, 0.45); circle(3.5, 4, 1.2); circle(7.5, 3.5, 1.3); circle(11.5, 4, 1.2);
+  fill(0xffffff, 0.3); circle(4, 2.5, 0.9); circle(8, 2, 1); circle(12, 2.5, 0.9);
+  fill(0xffffff, 0.2); circle(5, 1.5, 0.7); circle(9, 1, 0.8); circle(12.5, 1.5, 0.7);
+  // brassy housing — fancier hotel-pan style
+  fill(0xa07030); rect(1, 6, 14, 9);
+  fill(0xc09040, 0.5); rect(1, 6, 14, 1);                     // top edge highlight
+  fill(0x804018); rect(1, 14, 14, 1);                         // bottom shadow
+  stroke(0x804018); strokeRect(1, 6, 14, 9);
+  // ornamental ridge (decorative band)
+  fill(0xc09040); rect(1, 13, 14, 1);
+  fill(0xe0a060, 0.4); rect(1, 13, 14, 1);
+  // 4 wells (recessed) w/ rim
+  fill(0x6a4818); rect(2, 7, 3, 1); rect(5, 7, 3, 1); rect(8, 7, 3, 1); rect(11, 7, 3, 1); // rim shadow
+  fill(0x303030); rect(2, 8, 3, 5); rect(5, 8, 3, 5); rect(8, 8, 3, 5); rect(11, 8, 3, 5);
+  // food in wells
+  fill(0x9a3a20); rect(2, 9, 3, 2);                           // tomato red
+  fill(0xc05030, 0.4); rect(2, 9, 3, 1);
+  fill(0xa08038); rect(5, 9, 3, 2);                           // mac & cheese
+  fill(0xc0a050, 0.4); rect(5, 9, 3, 1);
+  fill(0x507028); rect(8, 9, 3, 2);                           // greens
+  fill(0x708840, 0.4); rect(8, 9, 3, 1);
+  fill(0xb8a060); rect(11, 9, 3, 2);                          // mashed potato
+  fill(0xd8c080, 0.4); rect(11, 9, 3, 1);
+  // serving spoons (one per well, sticking out)
+  fill(0xc0c0c8); rect(3, 8, 1, 1); rect(6, 8, 1, 1); rect(9, 8, 1, 1); rect(12, 8, 1, 1);
+  fill(0x808890); rect(3, 7, 1, 1); rect(6, 7, 1, 1); rect(9, 7, 1, 1); rect(12, 7, 1, 1);
+  // hand-written tag cards beneath
+  fill(0xf0e0c0); rect(2, 12, 3, 1); rect(5, 12, 3, 1); rect(8, 12, 3, 1); rect(11, 12, 3, 1);
+  fill(0x402a18); rect(3, 12, 1, 1); rect(6, 12, 1, 1); rect(9, 12, 1, 1); rect(12, 12, 1, 1);
+};
+
+mount('steam', [
+  { name: 'h_cabinet (today)', current: true, draw: drawCabinet_current,
+    note: 'filing cabinet stand-in' },
+  { name: 'A. Modern stainless', draw: drawSteam_modern, note: '3 wells + sneeze guard' },
+  { name: 'B. Brass buffet',     draw: drawSteam_buffet, note: '4 wells, warmer tone' },
+]);
+
+</script>
+</body>
+</html>

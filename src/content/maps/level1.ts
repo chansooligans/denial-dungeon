@@ -268,33 +268,31 @@ const { layout, tileMeta } = buildMap({
       // main north-south corridor (extended north from the bend
       // at (14, 13) up to (14, 4)).
       doors: [{ side: 'E', offset: 2 }],
-      // Public dining area. Service counter (R) on the north
-      // interior row, three rows of tables (1 added when the
-      // room grew from h=8 → h=10), vending + water cooler on
-      // the east interior column. 12×10 footprint = 10×8 interior;
+      // Public dining area. Service line on the north interior row,
+      // round dining tables filling the floor, vending + water on
+      // the east column. 12×10 footprint = 10×8 interior;
       // valid item dx is 1..9, dy is 1..8.
+      // 2026-05: replaced two-tile desk+chair "tables" with single-
+      // tile round dining tables ('T'); replaced the F-cabinet hot
+      // line with the modern stainless ('m') + brass buffet ('M')
+      // pair so the service line reads as a real cafeteria.
       items: [
-        // Service counter — north row, west cluster.
-        { dx: 1, dy: 1, ch: 'R' }, { dx: 2, dy: 1, ch: 'R' }, { dx: 3, dy: 1, ch: 'R' },
-        // Hot-line / steam tray (cabinet stand-in).
-        { dx: 5, dy: 1, ch: 'F' },
-        // Whiteboard with daily menu.
-        { dx: 7, dy: 1, ch: 'B' },
-        // Bulletin (community board).
-        { dx: 9, dy: 1, ch: 'b' },
-        // Dining tables — three rows of paired desk + chair.
-        // Row 1
-        { dx: 1, dy: 3, ch: 'c' }, { dx: 1, dy: 4, ch: 'h' },
-        { dx: 4, dy: 3, ch: 'c' }, { dx: 4, dy: 4, ch: 'h' },
-        { dx: 7, dy: 3, ch: 'c' }, { dx: 7, dy: 4, ch: 'h' },
-        // Row 2 — chairs north of desks for variety.
-        { dx: 1, dy: 6, ch: 'h' }, { dx: 1, dy: 7, ch: 'c' },
-        { dx: 4, dy: 6, ch: 'h' }, { dx: 4, dy: 7, ch: 'c' },
-        { dx: 7, dy: 6, ch: 'h' }, { dx: 7, dy: 7, ch: 'c' },
+        // Service line — counter at the west, then steam tables
+        // (modern + brass), then menu board, then bulletin.
+        { dx: 1, dy: 1, ch: 'R' }, { dx: 2, dy: 1, ch: 'R' },
+        { dx: 4, dy: 1, ch: 'm' }, // modern stainless steam table
+        { dx: 5, dy: 1, ch: 'M' }, // brass buffet
+        { dx: 7, dy: 1, ch: 'B' }, // whiteboard / daily menu
+        { dx: 9, dy: 1, ch: 'b' }, // community bulletin
+        // Round dining tables — six 1-tile tables in two rows of
+        // three, with the second row offset for visual rhythm.
+        // (Tables are solid; gaps between them are the dining aisles.)
+        { dx: 1, dy: 4, ch: 'T' }, { dx: 4, dy: 4, ch: 'T' }, { dx: 7, dy: 4, ch: 'T' },
+        { dx: 2, dy: 7, ch: 'T' }, { dx: 5, dy: 7, ch: 'T' },
         // East-side amenities: vending, water cooler, plant.
-        { dx: 9, dy: 3, ch: 'V' },
-        { dx: 9, dy: 5, ch: 'w' },
-        { dx: 9, dy: 7, ch: 'P' },
+        { dx: 9, dy: 4, ch: 'V' },
+        { dx: 9, dy: 6, ch: 'w' },
+        { dx: 9, dy: 8, ch: 'P' },
       ],
     },
     {
@@ -450,16 +448,21 @@ const { layout, tileMeta } = buildMap({
         // Side tables (with magazines / ashtrays — implied)
         { dx: 5,  dy: 4, ch: 'c' },
         { dx: 19, dy: 4, ch: 'c' },
-        // Two rows of patient chairs flanking Chloe's intern station.
+        // Two rows of patient seating flanking Chloe's intern station.
         // Chloe's desk sits at (dx=9, dy=5) — between the rows on
         // the player's spawn column — with her chair directly south
         // at (dx=9, dy=6). The patient row at dy=6 leaves dx=9 open
         // so it reads as "her chair," not part of public seating.
-        { dx: 7,  dy: 4, ch: 'h' }, { dx: 9,  dy: 4, ch: 'h' }, { dx: 11, dy: 4, ch: 'h' },
-        { dx: 14, dy: 4, ch: 'h' }, { dx: 16, dy: 4, ch: 'h' },
+        // 2026-05: patient seating uses 'A' (avocado tufted armchair)
+        // — heavier, solid, lobby-feeling. Chloe's chair stays 'h'
+        // (walkable) since the player spawns on it.
+        // NOTE: 'A' is solid; the gaps at dx=8/10/12/13/15 keep the
+        // N→S path through the lobby clear.
+        { dx: 7,  dy: 4, ch: 'A' }, { dx: 9,  dy: 4, ch: 'A' }, { dx: 11, dy: 4, ch: 'A' },
+        { dx: 14, dy: 4, ch: 'A' }, { dx: 16, dy: 4, ch: 'A' },
         { dx: 9,  dy: 5, ch: 'c' }, // Chloe's desk
-        { dx: 7,  dy: 6, ch: 'h' },                              { dx: 11, dy: 6, ch: 'h' },
-        { dx: 14, dy: 6, ch: 'h' }, { dx: 16, dy: 6, ch: 'h' },
+        { dx: 7,  dy: 6, ch: 'A' },                              { dx: 11, dy: 6, ch: 'A' },
+        { dx: 14, dy: 6, ch: 'A' }, { dx: 16, dy: 6, ch: 'A' },
         { dx: 9,  dy: 6, ch: 'h' }, // Chloe's chair (player spawns here)
         // South wall amenities — vending, water cooler ("lamp"), bulletin.
         { dx: 2,  dy: 7, ch: 'V' },
@@ -611,28 +614,32 @@ const { layout, tileMeta } = buildMap({
         { dx: 0,  dy: 0, ch: 'P' },
         { dx: 17, dy: 0, ch: 'P' },
         // Audience rows (dy=1..6), facing south toward the stage.
+        // 2026-05: 'h' (waiting-room chair) → 's' (auditorium seat
+        // with padded armrest). Walkable like h_chair so the path-
+        // finding is identical.
         // Two aisles: center along dx=9 (clear) and east along
         // dx=11 (clear, also serves as the door entry path from the
         // north door at offset 12 → interior dx=11 dy=0).
-        { dx: 1,  dy: 1, ch: 'h' }, { dx: 3,  dy: 1, ch: 'h' }, { dx: 5,  dy: 1, ch: 'h' },
-        { dx: 7,  dy: 1, ch: 'h' },
-        { dx: 13, dy: 1, ch: 'h' }, { dx: 15, dy: 1, ch: 'h' }, { dx: 17, dy: 1, ch: 'h' },
-        { dx: 1,  dy: 2, ch: 'h' }, { dx: 3,  dy: 2, ch: 'h' }, { dx: 5,  dy: 2, ch: 'h' },
-        { dx: 7,  dy: 2, ch: 'h' },
-        { dx: 13, dy: 2, ch: 'h' }, { dx: 15, dy: 2, ch: 'h' }, { dx: 17, dy: 2, ch: 'h' },
-        { dx: 1,  dy: 3, ch: 'h' }, { dx: 3,  dy: 3, ch: 'h' }, { dx: 5,  dy: 3, ch: 'h' },
-        { dx: 7,  dy: 3, ch: 'h' },
-        { dx: 13, dy: 3, ch: 'h' }, { dx: 15, dy: 3, ch: 'h' }, { dx: 17, dy: 3, ch: 'h' },
-        { dx: 1,  dy: 5, ch: 'h' }, { dx: 3,  dy: 5, ch: 'h' }, { dx: 5,  dy: 5, ch: 'h' },
-        { dx: 7,  dy: 5, ch: 'h' },
-        { dx: 13, dy: 5, ch: 'h' }, { dx: 15, dy: 5, ch: 'h' }, { dx: 17, dy: 5, ch: 'h' },
-        { dx: 1,  dy: 6, ch: 'h' }, { dx: 3,  dy: 6, ch: 'h' }, { dx: 5,  dy: 6, ch: 'h' },
-        { dx: 7,  dy: 6, ch: 'h' },
-        { dx: 13, dy: 6, ch: 'h' }, { dx: 15, dy: 6, ch: 'h' }, { dx: 17, dy: 6, ch: 'h' },
-        // South-end stage at dy=8..9: podium + screen + flanking
-        // counters.
+        { dx: 1,  dy: 1, ch: 's' }, { dx: 3,  dy: 1, ch: 's' }, { dx: 5,  dy: 1, ch: 's' },
+        { dx: 7,  dy: 1, ch: 's' },
+        { dx: 13, dy: 1, ch: 's' }, { dx: 15, dy: 1, ch: 's' }, { dx: 17, dy: 1, ch: 's' },
+        { dx: 1,  dy: 2, ch: 's' }, { dx: 3,  dy: 2, ch: 's' }, { dx: 5,  dy: 2, ch: 's' },
+        { dx: 7,  dy: 2, ch: 's' },
+        { dx: 13, dy: 2, ch: 's' }, { dx: 15, dy: 2, ch: 's' }, { dx: 17, dy: 2, ch: 's' },
+        { dx: 1,  dy: 3, ch: 's' }, { dx: 3,  dy: 3, ch: 's' }, { dx: 5,  dy: 3, ch: 's' },
+        { dx: 7,  dy: 3, ch: 's' },
+        { dx: 13, dy: 3, ch: 's' }, { dx: 15, dy: 3, ch: 's' }, { dx: 17, dy: 3, ch: 's' },
+        { dx: 1,  dy: 5, ch: 's' }, { dx: 3,  dy: 5, ch: 's' }, { dx: 5,  dy: 5, ch: 's' },
+        { dx: 7,  dy: 5, ch: 's' },
+        { dx: 13, dy: 5, ch: 's' }, { dx: 15, dy: 5, ch: 's' }, { dx: 17, dy: 5, ch: 's' },
+        { dx: 1,  dy: 6, ch: 's' }, { dx: 3,  dy: 6, ch: 's' }, { dx: 5,  dy: 6, ch: 's' },
+        { dx: 7,  dy: 6, ch: 's' },
+        { dx: 13, dy: 6, ch: 's' }, { dx: 15, dy: 6, ch: 's' }, { dx: 17, dy: 6, ch: 's' },
+        // South-end stage at dy=8..9: lectern + chalkboard + flanking
+        // counters. 2026-05: 'B' (whiteboard) → 'k' (chalkboard).
+        // Old-school clinical teaching read.
         { dx: 8,  dy: 8, ch: 'c' }, // lectern
-        { dx: 9,  dy: 9, ch: 'B' }, // big screen
+        { dx: 9,  dy: 9, ch: 'k' }, // chalkboard
         { dx: 0,  dy: 9, ch: 'R' }, { dx: 1,  dy: 9, ch: 'R' },
         { dx: 16, dy: 9, ch: 'R' }, { dx: 17, dy: 9, ch: 'R' },
       ],
@@ -691,26 +698,53 @@ const { layout, tileMeta } = buildMap({
       // No doors — the player arrives + leaves via 'O' teleport tile.
       // The room is a sealed walled rectangle so the perimeter reads
       // as building-edge / fence.
+      // Floor fill: ',' = asphalt instead of the default '.' (cream
+      // linoleum). Empty cells between cars + lampposts now read as
+      // dark pavement, matching the tint already used under those
+      // objects. Trees + benches still draw their own props on top.
+      fill: ',',
+      // 2026-05: cars (1=sedan, 2=SUV, 3=beater) and lampposts
+      // (4=simple, 5=arched, 6=double) replaced the F-cabinet stand-ins
+      // and water-cooler "lamps". See /sprite-redraw-preview.html.
       items: [
         // Arrival tile (teleport partner of the lobby 'O').
         // Outdoor origin is (4,65); dx=11/dy=1 → world (16, 67),
         // matching EXIT_OUT_LOBBY.from.
         { dx: 11, dy: 1, ch: 'O' },
-        // Sparse decoration — trees along the perimeter, a couple of
-        // benches in the middle. Real population (smoker NPC, security
-        // guard, ambient cars) lands in a follow-up.
+        // Perimeter trees (north + south rows).
         { dx: 2,  dy: 2, ch: 'P' }, { dx: 6,  dy: 2, ch: 'P' },
         { dx: 22, dy: 2, ch: 'P' }, { dx: 32, dy: 2, ch: 'P' },
         { dx: 42, dy: 2, ch: 'P' }, { dx: 46, dy: 2, ch: 'P' },
         { dx: 2,  dy: 18, ch: 'P' }, { dx: 6,  dy: 18, ch: 'P' },
         { dx: 22, dy: 18, ch: 'P' }, { dx: 32, dy: 18, ch: 'P' },
         { dx: 42, dy: 18, ch: 'P' }, { dx: 46, dy: 18, ch: 'P' },
-        // Benches (using chair glyph) facing the entrance
+        // North row of cars — mixed sedans, SUVs, one beater. Sit at
+        // dy=4 (one row south of trees) so they don't overlap.
+        { dx: 2,  dy: 4, ch: '1' }, { dx: 5,  dy: 4, ch: '2' },
+        { dx: 8,  dy: 4, ch: '1' }, { dx: 14, dy: 4, ch: '3' },
+        { dx: 17, dy: 4, ch: '2' }, { dx: 20, dy: 4, ch: '1' },
+        { dx: 26, dy: 4, ch: '1' }, { dx: 29, dy: 4, ch: '2' },
+        { dx: 35, dy: 4, ch: '3' }, { dx: 38, dy: 4, ch: '1' },
+        { dx: 44, dy: 4, ch: '2' }, { dx: 47, dy: 4, ch: '1' },
+        // Drop-off curb area mid-lot, just south of the arrival mat:
+        // benches flanking the door path. Player enters at (dx=11,
+        // dy=1) and walks south to the lobby teleport mat.
         { dx: 8,  dy: 8,  ch: 'h' }, { dx: 10, dy: 8,  ch: 'h' },
+        // Middle row of cars at dy=14 — denser, a couple beaters.
+        { dx: 2,  dy: 14, ch: '2' }, { dx: 5,  dy: 14, ch: '1' },
+        { dx: 8,  dy: 14, ch: '3' }, { dx: 14, dy: 14, ch: '1' },
+        { dx: 17, dy: 14, ch: '1' }, { dx: 20, dy: 14, ch: '2' },
+        { dx: 26, dy: 14, ch: '3' }, { dx: 29, dy: 14, ch: '1' },
+        { dx: 35, dy: 14, ch: '2' }, { dx: 38, dy: 14, ch: '1' },
+        { dx: 44, dy: 14, ch: '1' }, { dx: 47, dy: 14, ch: '3' },
+        // Southern benches near the parking-lot exit edge.
         { dx: 36, dy: 8,  ch: 'h' }, { dx: 38, dy: 8,  ch: 'h' },
-        // A pair of "lampposts" using water-cooler glyph (warm tint
-        // already reads as a standing lamp). Real lamppost art TBD.
-        { dx: 4,  dy: 10, ch: 'w' }, { dx: 44, dy: 10, ch: 'w' },
+        // Lampposts — variety. Two arched globes near the entrance,
+        // a pair of twin globes mid-lot, two simple fixtures at the
+        // far edges.
+        { dx: 4,  dy: 10, ch: '5' }, { dx: 14, dy: 10, ch: '5' },
+        { dx: 25, dy: 10, ch: '6' }, { dx: 33, dy: 10, ch: '6' },
+        { dx: 41, dy: 10, ch: '4' }, { dx: 47, dy: 10, ch: '4' },
       ],
     },
 

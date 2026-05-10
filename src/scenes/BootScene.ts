@@ -793,6 +793,344 @@ export class BootScene extends Phaser.Scene {
     g.fillRect(4, 11, 4, 1)
     if (!this.textures.exists('h_fax')) g.generateTexture('h_fax', 16, 16)
     g.destroy()
+
+    // ============================================================
+    // 2026-05 redraw set — see /sprite-redraw-preview.html for the
+    // canvas mockups these were picked from. All baked-in colors;
+    // intended to be rendered with objTint = 0xffffff (no tint) so
+    // the painted palette comes through.
+    // ============================================================
+
+    // ---------- Cars (parking-lot variety) ----------
+
+    // Sedan — top-down, two-tone slate body.
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0x000000, 0.3); g.fillRect(2, 1, 12, 14)            // ground shadow
+    g.fillStyle(0xc0c8d4); g.fillRect(3, 1, 10, 14)                 // body
+    g.fillStyle(0xa8b0bc); g.fillRect(3, 1, 10, 1); g.fillRect(3, 14, 10, 1)
+    g.fillStyle(0x808890); g.fillRect(3, 7, 10, 1); g.fillRect(3, 8, 10, 1) // door seam
+    g.fillStyle(0x707880, 0.5); g.fillRect(3, 7, 10, 1)
+    g.fillStyle(0x7a8290); g.fillRect(4, 4, 8, 8)                   // roof
+    g.fillStyle(0x6a7280); g.fillRect(4, 4, 8, 1)
+    g.fillStyle(0x90989c, 0.4); g.fillRect(5, 5, 6, 1)
+    g.fillStyle(0x1a1e26); g.fillRect(4, 2, 8, 2); g.fillRect(4, 12, 8, 2) // windshields
+    g.fillStyle(0x303a48, 0.7); g.fillRect(5, 2, 6, 1)
+    g.fillStyle(0x303a48, 0.5); g.fillRect(5, 13, 6, 1)
+    g.fillStyle(0x202830); g.fillRect(3, 5, 1, 6); g.fillRect(12, 5, 1, 6) // side windows
+    g.fillStyle(0x404a58, 0.6); g.fillRect(3, 5, 1, 1); g.fillRect(12, 5, 1, 1)
+    g.fillStyle(0x707880); g.fillRect(2, 4, 1, 1); g.fillRect(13, 4, 1, 1) // mirrors
+    g.fillStyle(0xa0a8b0); g.fillRect(3, 6, 1, 1); g.fillRect(12, 6, 1, 1) // door handles
+    g.fillStyle(0xa0a8b0); g.fillRect(3, 9, 1, 1); g.fillRect(12, 9, 1, 1)
+    g.fillStyle(0x101014); g.fillRect(2, 2, 1, 3); g.fillRect(13, 2, 1, 3) // wheels
+    g.fillStyle(0x101014); g.fillRect(2, 11, 1, 3); g.fillRect(13, 11, 1, 3)
+    g.fillStyle(0x4a4a52); g.fillRect(2, 3, 1, 1); g.fillRect(13, 3, 1, 1)
+    g.fillStyle(0x4a4a52); g.fillRect(2, 12, 1, 1); g.fillRect(13, 12, 1, 1)
+    g.fillStyle(0xfff4b8); g.fillRect(4, 0, 2, 1); g.fillRect(10, 0, 2, 1) // headlights
+    g.fillStyle(0xffffff, 0.7); g.fillRect(5, 0, 1, 1); g.fillRect(11, 0, 1, 1)
+    g.fillStyle(0x1a1a1e); g.fillRect(6, 0, 4, 1)                   // grille
+    g.fillStyle(0xc02020); g.fillRect(4, 15, 2, 1); g.fillRect(10, 15, 2, 1) // taillights
+    g.fillStyle(0xe0d8a0); g.fillRect(7, 15, 2, 1)                  // license plate
+    if (!this.textures.exists('h_car_sedan')) g.generateTexture('h_car_sedan', 16, 16)
+    g.destroy()
+
+    // SUV / minivan — boxy, fills the tile, charcoal body.
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0x000000, 0.3); g.fillRect(1, 0, 14, 16)
+    g.fillStyle(0x3a4050); g.fillRect(2, 0, 12, 16)
+    g.fillStyle(0x4a5060, 0.4); g.fillRect(3, 1, 10, 1)
+    g.fillStyle(0x202630); g.fillRect(3, 1, 10, 1)                  // roof rack rail
+    g.fillStyle(0x202630); g.fillRect(2, 3, 1, 1); g.fillRect(13, 3, 1, 1)
+    g.fillStyle(0x202630); g.fillRect(2, 12, 1, 1); g.fillRect(13, 12, 1, 1)
+    g.fillStyle(0x10141a); g.fillRect(3, 3, 10, 3); g.fillRect(3, 10, 10, 3) // glass
+    g.fillStyle(0x303848, 0.6); g.fillRect(3, 3, 10, 1); g.fillRect(3, 12, 10, 1)
+    g.fillStyle(0x505868, 0.4); g.fillRect(4, 4, 1, 1); g.fillRect(11, 4, 1, 1)
+    g.fillStyle(0x505868, 0.4); g.fillRect(4, 11, 1, 1); g.fillRect(11, 11, 1, 1)
+    g.fillStyle(0x4a5060); g.fillRect(3, 7, 10, 2)                  // body band
+    g.fillStyle(0x303640); g.fillRect(7, 7, 1, 2); g.fillRect(8, 7, 1, 2)
+    g.fillStyle(0x5a6070, 0.5); g.fillRect(3, 7, 10, 1)
+    g.fillStyle(0x202630); g.fillRect(1, 5, 1, 1); g.fillRect(14, 5, 1, 1) // mirrors
+    g.fillStyle(0x404858); g.fillRect(1, 4, 1, 1); g.fillRect(14, 4, 1, 1)
+    g.fillStyle(0x808890); g.fillRect(2, 6, 1, 1); g.fillRect(13, 6, 1, 1) // handles
+    g.fillStyle(0x808890); g.fillRect(2, 9, 1, 1); g.fillRect(13, 9, 1, 1)
+    g.fillStyle(0x0a0a0e); g.fillRect(0, 2, 2, 4); g.fillRect(14, 2, 2, 4) // wheels
+    g.fillStyle(0x0a0a0e); g.fillRect(0, 10, 2, 4); g.fillRect(14, 10, 2, 4)
+    g.fillStyle(0x404048); g.fillRect(1, 3, 1, 2); g.fillRect(14, 3, 1, 2)
+    g.fillStyle(0x404048); g.fillRect(1, 11, 1, 2); g.fillRect(14, 11, 1, 2)
+    g.fillStyle(0xfff6c0); g.fillRect(3, 0, 3, 1); g.fillRect(10, 0, 3, 1)
+    g.fillStyle(0xffffff, 0.6); g.fillRect(4, 0, 1, 1); g.fillRect(11, 0, 1, 1)
+    g.fillStyle(0x1a1a20); g.fillRect(6, 0, 4, 1)
+    g.fillStyle(0x303848); g.fillRect(7, 0, 1, 1); g.fillRect(8, 0, 1, 1)
+    g.fillStyle(0xa01818); g.fillRect(3, 15, 10, 1)                 // taillight bar
+    g.fillStyle(0xe04040, 0.6); g.fillRect(4, 15, 2, 1); g.fillRect(10, 15, 2, 1)
+    if (!this.textures.exists('h_car_suv')) g.generateTexture('h_car_suv', 16, 16)
+    g.destroy()
+
+    // Beater — rusted, dented, missing trim. Lynch-y.
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0x000000, 0.4); g.fillRect(2, 1, 12, 14)
+    g.fillStyle(0x202018, 0.6); g.fillRect(7, 14, 4, 1)             // oil leak
+    g.fillStyle(0x8a7860); g.fillRect(3, 1, 10, 14)                 // muddy beige
+    g.fillStyle(0xa08868, 0.5); g.fillRect(3, 1, 10, 1)
+    g.fillStyle(0x6a4838); g.fillRect(4, 4, 8, 8)                   // rust roof
+    g.fillStyle(0x4a2a18); g.fillRect(5, 5, 2, 1); g.fillRect(9, 6, 2, 2)
+    g.fillStyle(0x4a2a18); g.fillRect(6, 9, 1, 2); g.fillRect(10, 10, 2, 1)
+    g.fillStyle(0x8a5a3a, 0.6); g.fillRect(7, 7, 2, 2)              // primer
+    g.fillStyle(0x9aa098); g.fillRect(3, 6, 1, 4)                   // duct-tape side
+    g.fillStyle(0x707068, 0.5); g.fillRect(3, 7, 1, 1); g.fillRect(3, 9, 1, 1)
+    g.fillStyle(0x2a2628); g.fillRect(4, 2, 8, 2); g.fillRect(4, 12, 8, 2)
+    g.fillStyle(0x6a6868); g.fillRect(7, 2, 1, 1); g.fillRect(8, 3, 1, 1)
+    g.fillStyle(0x6a6868); g.fillRect(6, 3, 1, 1); g.fillRect(7, 13, 1, 1)
+    g.fillStyle(0xc8a878); g.fillRect(12, 8, 1, 2)                  // missing trim
+    g.fillStyle(0xa0a8a8); g.fillRect(8, 1, 3, 1)                   // duct-tape patch
+    g.fillStyle(0x6a5848, 0.5); g.fillRect(3, 9, 4, 3)              // mismatched door
+    g.fillStyle(0x101010); g.fillRect(2, 2, 1, 3); g.fillRect(13, 2, 1, 3)
+    g.fillStyle(0x101010); g.fillRect(2, 10, 2, 4)                  // flat tire
+    g.fillStyle(0x101010); g.fillRect(13, 11, 1, 2)
+    g.fillStyle(0x4a4a40); g.fillRect(13, 3, 1, 1)
+    g.fillStyle(0xa03020); g.fillRect(8, 14, 3, 1)                  // bumper sticker
+    g.fillStyle(0xe0d8a0, 0.4); g.fillRect(8, 14, 3, 1)
+    g.fillStyle(0xa89060); g.fillRect(4, 0, 2, 1)                   // dim headlight
+    g.fillStyle(0x303030); g.fillRect(10, 0, 2, 1)                  // dead headlight
+    g.fillStyle(0xc8c0a0); g.fillRect(7, 15, 3, 1)                  // tilted plate
+    if (!this.textures.exists('h_car_beater')) g.generateTexture('h_car_beater', 16, 16)
+    g.destroy()
+
+    // ---------- Lampposts ----------
+
+    // Simple — rectangular fixture with shroud.
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0xfff5c8, 0.15); g.fillRect(3, 0, 10, 6)            // halo
+    g.fillStyle(0xfff5c8, 0.25); g.fillRect(4, 1, 8, 4)
+    g.fillStyle(0x1a1a1e); g.fillRect(4, 1, 8, 4)
+    g.fillStyle(0x303034); g.fillRect(5, 1, 6, 1)
+    g.fillStyle(0xfff080); g.fillRect(5, 2, 6, 2)
+    g.fillStyle(0xffffff, 0.7); g.fillRect(7, 2, 2, 1)
+    g.fillStyle(0x202024); g.fillRect(4, 4, 8, 1)
+    g.fillStyle(0x303034); g.fillRect(7, 4, 2, 11)                  // pole
+    g.fillStyle(0x404044, 0.6); g.fillRect(7, 4, 1, 11)
+    g.fillStyle(0x1a1a1e); g.fillRect(8, 4, 1, 11)
+    g.fillStyle(0x202024); g.fillRect(7, 8, 2, 1); g.fillRect(7, 12, 2, 1) // bands
+    g.fillStyle(0x1a1a1e); g.fillRect(5, 14, 6, 2)
+    g.fillStyle(0x303034); g.fillRect(5, 14, 6, 1)
+    g.fillStyle(0x0a0a0e); g.fillRect(4, 15, 8, 1)
+    if (!this.textures.exists('h_lamp_simple')) g.generateTexture('h_lamp_simple', 16, 16)
+    g.destroy()
+
+    // Arched — shepherd's-crook with a glass globe.
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0xfff5c8, 0.2); g.fillRect(1, 1, 8, 8)
+    g.fillStyle(0xfff5c8, 0.3); g.fillRect(2, 2, 6, 6)
+    g.fillStyle(0x2a2a2e); g.fillRect(8, 5, 1, 10)                  // pole
+    g.fillStyle(0x404044, 0.6); g.fillRect(8, 5, 1, 10)
+    g.fillStyle(0x1a1a1e); g.fillRect(9, 5, 1, 10)
+    g.fillStyle(0x1a1a1e); g.fillRect(6, 14, 4, 2)                  // base
+    g.fillStyle(0x2a2a2e); g.fillRect(7, 13, 2, 1)
+    g.fillStyle(0x404044); g.fillRect(6, 14, 4, 1)
+    g.fillStyle(0x0a0a0e); g.fillRect(5, 15, 6, 1)
+    g.fillStyle(0x2a2a2e)                                            // arch scroll
+    g.fillRect(8, 4, 1, 1); g.fillRect(7, 3, 1, 1); g.fillRect(6, 2, 1, 1)
+    g.fillRect(5, 2, 1, 1); g.fillRect(4, 3, 1, 1)
+    g.fillStyle(0x404044, 0.6); g.fillRect(7, 3, 1, 1); g.fillRect(5, 2, 1, 1)
+    g.fillStyle(0x404044); g.fillRect(8, 4, 1, 1)
+    g.fillStyle(0xfff5c8, 0.5); g.fillRect(3, 4, 5, 4)              // glass globe
+    g.fillStyle(0xfff5c8, 0.3); g.fillRect(2, 5, 7, 2)
+    g.fillStyle(0xffe880); g.fillRect(4, 5, 3, 2)                   // bulb
+    g.fillStyle(0xffffff, 0.8); g.fillRect(4, 5, 1, 1)
+    g.fillStyle(0x303034); g.fillRect(3, 3, 5, 1)
+    g.fillStyle(0x202028); g.fillRect(3, 8, 5, 1)
+    if (!this.textures.exists('h_lamp_arched')) g.generateTexture('h_lamp_arched', 16, 16)
+    g.destroy()
+
+    // Twin globe — civic / hospital-drive lamp.
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0xfff5c8, 0.2); g.fillRect(0, 0, 6, 6); g.fillRect(10, 0, 6, 6)
+    g.fillStyle(0xfff5c8, 0.3); g.fillRect(1, 1, 4, 4); g.fillRect(11, 1, 4, 4)
+    g.fillStyle(0x2a2a2e); g.fillRect(7, 5, 2, 10)                  // pole
+    g.fillStyle(0x404044, 0.6); g.fillRect(7, 5, 1, 10)
+    g.fillStyle(0x1a1a1e); g.fillRect(8, 5, 1, 10)
+    g.fillStyle(0x404044); g.fillRect(7, 9, 2, 1)                   // band
+    g.fillStyle(0x2a2a2e); g.fillRect(2, 4, 12, 1)                  // crossbar
+    g.fillStyle(0x404044, 0.5); g.fillRect(2, 4, 12, 1)
+    g.fillStyle(0x2a2a2e); g.fillRect(2, 3, 1, 1); g.fillRect(13, 3, 1, 1)
+    g.fillStyle(0x2a2a2e); g.fillRect(7, 3, 2, 2)
+    g.fillStyle(0x404044); g.fillRect(7, 3, 1, 1)
+    g.fillStyle(0xfff5c8, 0.5); g.fillRect(2, 1, 4, 4); g.fillRect(10, 1, 4, 4)
+    g.fillStyle(0xfff5c8, 0.3); g.fillRect(1, 2, 6, 2); g.fillRect(9, 2, 6, 2)
+    g.fillStyle(0xffe880); g.fillRect(3, 2, 2, 2); g.fillRect(11, 2, 2, 2)
+    g.fillStyle(0xffffff, 0.8); g.fillRect(3, 2, 1, 1); g.fillRect(11, 2, 1, 1)
+    g.fillStyle(0x303034); g.fillRect(2, 0, 4, 1); g.fillRect(10, 0, 4, 1)
+    g.fillStyle(0x202028); g.fillRect(2, 5, 4, 1); g.fillRect(10, 5, 4, 1)
+    g.fillStyle(0x1a1a1e); g.fillRect(5, 14, 6, 2)
+    g.fillStyle(0x303034); g.fillRect(5, 14, 6, 1)
+    g.fillStyle(0x404044); g.fillRect(6, 13, 4, 1)
+    g.fillStyle(0x0a0a0e); g.fillRect(4, 15, 8, 1)
+    if (!this.textures.exists('h_lamp_double')) g.generateTexture('h_lamp_double', 16, 16)
+    g.destroy()
+
+    // ---------- Auditorium seat (lecture hall) — padded armrest ----------
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0x4a3a48); g.fillRect(3, 1, 10, 5)                  // back
+    g.fillStyle(0x5a4a58, 0.6); g.fillRect(4, 1, 8, 1)
+    g.fillStyle(0x3a2a38); g.fillRect(3, 5, 10, 1)
+    g.fillStyle(0x2a1a28); g.fillRect(7, 3, 1, 1); g.fillRect(8, 3, 1, 1)
+    g.fillStyle(0x3a2a38, 0.6); g.fillRect(7, 1, 2, 4)
+    g.fillStyle(0x4a3a48); g.fillRect(3, 6, 10, 4)                  // seat cushion
+    g.fillStyle(0x6a5a68, 0.4); g.fillRect(4, 6, 8, 1)
+    g.fillStyle(0x5a4a58, 0.3); g.fillRect(5, 7, 6, 2)
+    g.fillStyle(0x3a2a38); g.fillRect(3, 9, 10, 1)
+    g.fillStyle(0x2a1a28); g.fillRect(2, 5, 1, 5); g.fillRect(13, 5, 1, 5)
+    g.fillStyle(0x3a2a38); g.fillRect(2, 5, 1, 1); g.fillRect(13, 5, 1, 1)
+    g.fillStyle(0x4a3a48, 0.5); g.fillRect(2, 6, 1, 1); g.fillRect(13, 6, 1, 1)
+    g.fillStyle(0x404048); g.fillRect(7, 10, 2, 3)                  // pedestal
+    g.fillStyle(0x606068); g.fillRect(7, 10, 1, 3)
+    g.fillStyle(0x202028); g.fillRect(8, 10, 1, 3)
+    g.fillStyle(0x1a1a1e); g.fillRect(5, 13, 6, 1)
+    g.fillStyle(0x303038); g.fillRect(5, 14, 6, 2)
+    g.fillStyle(0x0a0a0e); g.fillRect(4, 15, 8, 1)
+    if (!this.textures.exists('h_seat')) g.generateTexture('h_seat', 16, 16)
+    g.destroy()
+
+    // ---------- Chalkboard (lecture hall big-board) ----------
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0x4a3018); g.fillRect(0, 0, 16, 2)                  // wood frame top
+    g.fillStyle(0x6a4a30); g.fillRect(0, 0, 16, 1)
+    g.fillStyle(0x4a3018); g.fillRect(0, 1, 1, 13); g.fillRect(15, 1, 1, 13)
+    g.fillStyle(0x6a4a30); g.fillRect(0, 1, 1, 1); g.fillRect(15, 1, 1, 1)
+    g.fillStyle(0x1a2a20); g.fillRect(1, 2, 14, 11)                 // slate green
+    g.fillStyle(0x2a3a30); g.fillRect(1, 2, 14, 1)
+    g.fillStyle(0x0a1a10, 0.3); g.fillRect(2, 3, 12, 9)
+    g.fillStyle(0xe0e8d8, 0.15); g.fillRect(3, 4, 10, 2)            // dust smudge
+    g.fillStyle(0xe0e8d8, 0.1); g.fillRect(2, 8, 12, 2)
+    g.fillStyle(0xf0f0e0, 0.85); g.fillRect(3, 4, 4, 1)             // chalk lines
+    g.fillStyle(0xf0f0e0, 0.7); g.fillRect(8, 4, 1, 1); g.fillRect(10, 4, 2, 1)
+    g.fillStyle(0xf0f0e0, 0.8); g.fillRect(3, 6, 6, 1)
+    g.fillStyle(0xf0f0e0, 0.6); g.fillRect(10, 6, 3, 1)
+    g.fillStyle(0xf0f0e0, 0.75); g.fillRect(3, 8, 5, 1)
+    g.fillStyle(0xf0f0e0, 0.5); g.fillRect(9, 8, 4, 1)
+    g.fillStyle(0xe07060, 0.8); g.fillRect(11, 9, 2, 2)             // colored chalk
+    g.fillStyle(0xf0f0e0, 0.4); g.fillRect(3, 10, 7, 1)
+    g.fillStyle(0x6a4a30); g.fillRect(0, 13, 16, 2)                 // chalk tray
+    g.fillStyle(0x8a6a44, 0.5); g.fillRect(1, 13, 14, 1)
+    g.fillStyle(0x4a3018); g.fillRect(0, 14, 16, 1)
+    g.fillStyle(0xf0f0e0); g.fillRect(3, 13, 2, 1)                  // chalk pieces
+    g.fillStyle(0xe0a050); g.fillRect(11, 13, 2, 1)
+    g.fillStyle(0xa05858); g.fillRect(7, 13, 1, 1)
+    g.fillStyle(0x4a3a30); g.fillRect(13, 13, 2, 1)                 // eraser
+    if (!this.textures.exists('h_chalkboard')) g.generateTexture('h_chalkboard', 16, 16)
+    g.destroy()
+
+    // ---------- Avocado tufted armchair (lobby) ----------
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0x000000, 0.2); g.fillRect(2, 14, 12, 2)
+    g.fillStyle(0x607038); g.fillRect(2, 4, 12, 9)                  // body
+    g.fillStyle(0x788848, 0.5); g.fillRect(3, 4, 10, 1)
+    g.fillStyle(0x405020); g.fillRect(2, 12, 12, 1)
+    g.fillStyle(0x405020); g.fillRect(2, 8, 12, 1)                  // back-cushion seam
+    g.fillStyle(0x788848, 0.3); g.fillRect(3, 9, 10, 1)
+    g.fillStyle(0x2a3818); g.fillRect(5, 6, 1, 1); g.fillRect(8, 6, 1, 1); g.fillRect(11, 6, 1, 1)
+    g.fillStyle(0x2a3818); g.fillRect(4, 7, 1, 1); g.fillRect(7, 7, 1, 1); g.fillRect(10, 7, 1, 1); g.fillRect(12, 7, 1, 1)
+    g.fillStyle(0x788848, 0.4); g.fillRect(5, 6, 1, 1); g.fillRect(8, 6, 1, 1)
+    g.fillStyle(0x2a3818); g.fillRect(5, 10, 1, 1); g.fillRect(8, 10, 1, 1); g.fillRect(11, 10, 1, 1)
+    g.fillStyle(0x506028); g.fillRect(2, 4, 1, 9); g.fillRect(13, 4, 1, 9) // armrests
+    g.fillStyle(0x788848); g.fillRect(2, 4, 1, 1); g.fillRect(13, 4, 1, 1)
+    g.fillStyle(0xe0e0d0); g.fillRect(5, 4, 6, 1)                   // antimacassar
+    g.fillStyle(0x788848, 0.2); g.fillRect(5, 4, 6, 1)
+    g.fillStyle(0xa05030); g.fillRect(11, 4, 3, 5)                  // throw blanket
+    g.fillStyle(0xc06040, 0.4); g.fillRect(11, 4, 3, 1)
+    g.fillStyle(0x804030); g.fillRect(11, 8, 3, 1)
+    g.fillStyle(0x405020); g.fillRect(2, 13, 12, 1)                 // pleated skirt
+    g.fillStyle(0x506028, 0.5); g.fillRect(3, 13, 1, 1); g.fillRect(7, 13, 1, 1); g.fillRect(11, 13, 1, 1)
+    g.fillStyle(0x3a2818); g.fillRect(3, 14, 2, 1); g.fillRect(11, 14, 2, 1)
+    g.fillStyle(0x1a0a00); g.fillRect(3, 15, 2, 1); g.fillRect(11, 15, 2, 1)
+    if (!this.textures.exists('h_armchair_avocado')) g.generateTexture('h_armchair_avocado', 16, 16)
+    g.destroy()
+
+    // ---------- Round dining table (cafeteria) ----------
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0x000000, 0.2); g.fillCircle(7.5, 8.5, 7)
+    g.fillStyle(0x808890); g.fillCircle(7.5, 7.5, 7.0)              // chrome edge ring
+    g.fillStyle(0xe8e0c8); g.fillCircle(7.5, 7.5, 6.8)
+    g.fillStyle(0xd0c8a8, 0.7); g.fillCircle(7.5, 7.5, 6.0)
+    g.fillStyle(0xf0e8d0, 0.5); g.fillCircle(7.5, 7.0, 5.5)
+    g.fillStyle(0x8a6a48); g.fillRect(2, 5, 6, 5)                   // tray
+    g.fillStyle(0xa07a58, 0.5); g.fillRect(2, 5, 6, 1)
+    g.fillStyle(0x6a4a30); g.fillRect(2, 9, 6, 1)
+    g.fillStyle(0xfafaf0); g.fillCircle(5, 7.5, 1.6)                // plate
+    g.fillStyle(0xe8e0d0, 0.6); g.fillCircle(5, 7.0, 1.2)
+    g.fillStyle(0x8a4030); g.fillRect(4, 7, 2, 1)                   // entrée
+    g.fillStyle(0x607030); g.fillRect(4, 8, 1, 1)                   // greens
+    g.fillStyle(0xc8a040); g.fillRect(5, 8, 1, 1)                   // mash
+    g.fillStyle(0xc0c0c8); g.fillRect(2, 6, 1, 3)                   // fork
+    g.fillStyle(0x808890); g.fillRect(2, 6, 1, 1)
+    g.fillStyle(0xc0c0c8); g.fillRect(7, 6, 1, 3)                   // knife
+    g.fillStyle(0xc0c8d0); g.fillCircle(11, 6, 1.6)                 // glass rim
+    g.fillStyle(0xa0c8e0, 0.8); g.fillCircle(11, 6, 1.2)
+    g.fillStyle(0xe0f0f8, 0.5); g.fillCircle(11, 5.5, 1.0)
+    g.fillStyle(0xf0e0d0); g.fillRect(10, 9, 3, 2)                  // napkin
+    g.fillStyle(0xd0c0a8, 0.5); g.fillRect(10, 9, 3, 1)
+    g.fillStyle(0x3a3a4a); g.fillRect(6, 0, 4, 2); g.fillRect(6, 14, 4, 2) // chair backs
+    g.fillStyle(0x3a3a4a); g.fillRect(0, 6, 2, 4); g.fillRect(14, 6, 2, 4)
+    g.fillStyle(0x4a4a5a, 0.5); g.fillRect(7, 0, 2, 1); g.fillRect(7, 14, 2, 1)
+    g.fillStyle(0x4a4a5a, 0.5); g.fillRect(0, 7, 1, 2); g.fillRect(15, 7, 1, 2)
+    if (!this.textures.exists('h_diningtable')) g.generateTexture('h_diningtable', 16, 16)
+    g.destroy()
+
+    // ---------- Modern stainless steam table ----------
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0xa0a8b0); g.fillRect(1, 0, 1, 6); g.fillRect(14, 0, 1, 6) // sneeze-guard posts
+    g.fillStyle(0xc0c8d0, 0.6); g.fillRect(1, 0, 1, 1); g.fillRect(14, 0, 1, 1)
+    g.fillStyle(0xa0a8b0); g.fillRect(1, 0, 14, 1)                  // top bar
+    g.fillStyle(0xa0d0e8, 0.18); g.fillRect(2, 1, 12, 4)            // glass panel
+    g.fillStyle(0xffffff, 0.15); g.fillRect(2, 1, 12, 1)
+    g.fillStyle(0xa0d0e8, 0.08); g.fillRect(3, 2, 10, 3)
+    g.fillStyle(0xffffff, 0.5); g.fillCircle(3.5, 4, 1.4); g.fillCircle(8, 3.5, 1.5); g.fillCircle(12.5, 4, 1.4)
+    g.fillStyle(0xffffff, 0.35); g.fillCircle(4.5, 2.5, 1); g.fillCircle(9, 2, 1.2); g.fillCircle(13, 2.5, 0.9)
+    g.fillStyle(0xffffff, 0.2); g.fillCircle(5, 1.5, 0.8); g.fillCircle(10, 1, 0.8); g.fillCircle(13.5, 1.5, 0.8)
+    g.fillStyle(0xb8c0c8); g.fillRect(1, 6, 14, 9)                  // body
+    g.fillStyle(0xd8e0e8, 0.5); g.fillRect(1, 6, 14, 1)
+    g.fillStyle(0x707880, 0.4); g.fillRect(1, 14, 14, 1)
+    g.lineStyle(1, 0x808890); g.strokeRect(1, 6, 14, 9)
+    g.fillStyle(0xc0c8d0, 0.3); g.fillRect(2, 13, 1, 1); g.fillRect(6, 13, 1, 1); g.fillRect(10, 13, 1, 1); g.fillRect(13, 13, 1, 1)
+    g.fillStyle(0x707880); g.fillRect(2, 7, 4, 1); g.fillRect(7, 7, 4, 1); g.fillRect(12, 7, 3, 1)
+    g.fillStyle(0x303840); g.fillRect(2, 8, 4, 5); g.fillRect(7, 8, 4, 5); g.fillRect(12, 8, 3, 5)
+    g.fillStyle(0xc05030); g.fillRect(2, 9, 4, 2); g.fillStyle(0xe06040, 0.4); g.fillRect(2, 9, 4, 1)
+    g.fillStyle(0xa08838); g.fillRect(7, 9, 4, 2); g.fillStyle(0xc0a050, 0.4); g.fillRect(7, 9, 4, 1)
+    g.fillStyle(0x607030); g.fillRect(12, 9, 3, 2); g.fillStyle(0x809040, 0.4); g.fillRect(12, 9, 3, 1)
+    g.fillStyle(0xc0c0c8); g.fillRect(4, 8, 1, 1); g.fillRect(9, 8, 1, 1); g.fillRect(13, 8, 1, 1)
+    g.fillStyle(0xf0e8d0); g.fillRect(2, 12, 4, 1); g.fillRect(7, 12, 4, 1); g.fillRect(12, 12, 3, 1)
+    g.fillStyle(0x202028); g.fillRect(3, 12, 2, 1); g.fillRect(8, 12, 2, 1); g.fillRect(12, 12, 2, 1)
+    g.fillStyle(0x202028); g.fillRect(13, 13, 2, 1)
+    g.fillStyle(0x40d080); g.fillRect(13, 13, 1, 1)
+    if (!this.textures.exists('h_steamtable_modern')) g.generateTexture('h_steamtable_modern', 16, 16)
+    g.destroy()
+
+    // ---------- Brass buffet steam table ----------
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0xa05020); g.fillRect(1, 0, 14, 1)                  // heat-lamp bracket
+    g.fillStyle(0xe06030); g.fillRect(2, 1, 12, 1)                  // lamp tube
+    g.fillStyle(0xff8050, 0.6); g.fillRect(2, 1, 12, 1)
+    g.fillStyle(0xffa080, 0.4); g.fillRect(3, 1, 10, 1)
+    g.fillStyle(0xffffff, 0.45); g.fillCircle(3.5, 4, 1.2); g.fillCircle(7.5, 3.5, 1.3); g.fillCircle(11.5, 4, 1.2)
+    g.fillStyle(0xffffff, 0.3); g.fillCircle(4, 2.5, 0.9); g.fillCircle(8, 2, 1); g.fillCircle(12, 2.5, 0.9)
+    g.fillStyle(0xffffff, 0.2); g.fillCircle(5, 1.5, 0.7); g.fillCircle(9, 1, 0.8); g.fillCircle(12.5, 1.5, 0.7)
+    g.fillStyle(0xa07030); g.fillRect(1, 6, 14, 9)                  // brass housing
+    g.fillStyle(0xc09040, 0.5); g.fillRect(1, 6, 14, 1)
+    g.fillStyle(0x804018); g.fillRect(1, 14, 14, 1)
+    g.lineStyle(1, 0x804018); g.strokeRect(1, 6, 14, 9)
+    g.fillStyle(0xc09040); g.fillRect(1, 13, 14, 1)
+    g.fillStyle(0xe0a060, 0.4); g.fillRect(1, 13, 14, 1)
+    g.fillStyle(0x6a4818); g.fillRect(2, 7, 3, 1); g.fillRect(5, 7, 3, 1); g.fillRect(8, 7, 3, 1); g.fillRect(11, 7, 3, 1)
+    g.fillStyle(0x303030); g.fillRect(2, 8, 3, 5); g.fillRect(5, 8, 3, 5); g.fillRect(8, 8, 3, 5); g.fillRect(11, 8, 3, 5)
+    g.fillStyle(0x9a3a20); g.fillRect(2, 9, 3, 2); g.fillStyle(0xc05030, 0.4); g.fillRect(2, 9, 3, 1)
+    g.fillStyle(0xa08038); g.fillRect(5, 9, 3, 2); g.fillStyle(0xc0a050, 0.4); g.fillRect(5, 9, 3, 1)
+    g.fillStyle(0x507028); g.fillRect(8, 9, 3, 2); g.fillStyle(0x708840, 0.4); g.fillRect(8, 9, 3, 1)
+    g.fillStyle(0xb8a060); g.fillRect(11, 9, 3, 2); g.fillStyle(0xd8c080, 0.4); g.fillRect(11, 9, 3, 1)
+    g.fillStyle(0xc0c0c8); g.fillRect(3, 8, 1, 1); g.fillRect(6, 8, 1, 1); g.fillRect(9, 8, 1, 1); g.fillRect(12, 8, 1, 1)
+    g.fillStyle(0x808890); g.fillRect(3, 7, 1, 1); g.fillRect(6, 7, 1, 1); g.fillRect(9, 7, 1, 1); g.fillRect(12, 7, 1, 1)
+    g.fillStyle(0xf0e0c0); g.fillRect(2, 12, 3, 1); g.fillRect(5, 12, 3, 1); g.fillRect(8, 12, 3, 1); g.fillRect(11, 12, 3, 1)
+    g.fillStyle(0x402a18); g.fillRect(3, 12, 1, 1); g.fillRect(6, 12, 1, 1); g.fillRect(9, 12, 1, 1); g.fillRect(12, 12, 1, 1)
+    if (!this.textures.exists('h_steamtable_buffet')) g.generateTexture('h_steamtable_buffet', 16, 16)
+    g.destroy()
   }
 
   private makeWaitingRoomTiles() {
