@@ -207,6 +207,21 @@ const prototypes: Prototype[] = [
   },
 
   {
+    id: 'three-forty-b-specter',
+    title: '340B Drug Pricing Specter',
+    subtitle: '@ L8 — duplicate-discount + HRSA self-disclosure',
+    archetype: 'Specter',
+    carc: 'compliance event (no CARC; HRSA review)',
+    level: 8,
+    status: 'shipped',
+    verbs: 'QUALIFY + MARK + DISCLOSE',
+    testing: 'Aaron Burnett, Medicaid managed-care patient, outpatient bevacizumab biosimilar (Q5107) at Mercy oncology. Drug came from 340B inventory ($312 acquisition vs $845 ASP+6%). Claim went out without modifier UD (state Medicaid 340B identifier); manufacturer paid the Medicaid rebate AND provided the 340B discount on the same dose → duplicate discount → manufacturer reports → HRSA opens compliance review. Player walks 4 program-rule statements (covered-entity qualification, drug eligibility carve-outs, duplicate-discount prohibition, GPO prohibition), picks the right modifier from 4 (UD correct; JG is Medicare; TB is DME; no-modifier was the original bug), and picks the right resolution from 5 (refile + refund + self-disclose is correct; decoys teach the wrong moves: skip-disclosure when review already open, abandon 340B, switch primary to Medicare = fraud, recoup-and-rebill instead of Frequency-7). Cousin to ASP/WAC Apothecary (drug-pricing complexity) and HIPAA Spider (self-disclosure shape).',
+    href: './three-forty-b-specter-prototype.html',
+    district: 'appeals',
+    accent: '#b18bd6',
+  },
+
+  {
     id: 'two-midnight-mire',
     title: '2-Midnight Mire',
     subtitle: '@ L8 — Medicare 2-midnight rule + RAC observation reclassification',
