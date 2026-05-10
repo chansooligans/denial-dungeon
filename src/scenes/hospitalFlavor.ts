@@ -657,7 +657,7 @@ export const LEVEL_ORIENTATION_HINTS: Record<number, string> = {
   3:  'Sam is in Patient Services. There\'s a denial.',
   4:  'Pat moved down to HIM / Coding — head south.',
   5:  'Sam is back in Patient Services with another wraith.',
-  6:  'Alex is in Billing — south wing. The clearinghouse is bleeding.',
+  6:  'Cal cleared out of the back-wing corridor over the weekend — south wing is open all the way through. Alex is in Billing. The clearinghouse is bleeding.',
   7:  'Sam in Patient Services. The reaper has surfaced.',
   8:  'Jordan is now at the PFS phone bank. Patient on the line.',
   9:  'Kim at Registration. Three payers, one claim.',
