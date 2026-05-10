@@ -19,6 +19,7 @@
 
 import { CASES } from '../content/cases'
 import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
+import { CASE_RECAPS } from '../content/case-recaps'
 
 interface ModifierOption {
   code: string
@@ -608,19 +609,7 @@ function renderChecklist(): string {
   `
 }
 
-const RECAP: CaseRecap = {
-  oneLineRecap: 'You unbundled a CO-97 denial by adding modifier 25 to the E&M line, citing the NCCI edit, and showing the procedure was significant + separately identifiable.',
-  keyConcepts: [
-    { term: 'CO-97 (procedure or service is bundled)', gist: 'The payer rolled this code into a primary service. Resolution: prove the service was significant + separately identifiable AND apply the right modifier (most often 25 or 59).' },
-    { term: 'Modifier 25', gist: 'Significant, separately identifiable E&M service performed by the same physician on the same day as a procedure. Belongs on the E&M line, not the procedure.' },
-    { term: 'NCCI edits', gist: 'CMS\'s National Correct Coding Initiative tables that drive most CO-97 denials. Each edit pair has a "1" or "0" indicator — 1 means a modifier can break the bundle; 0 means it can\'t.' },
-  ],
-  resources: [
-    { title: 'CMS NCCI Coding Edits', url: 'https://www.cms.gov/medicare/coding-billing/national-correct-coding-initiative-ncci-edits', note: 'The NCCI edit tables themselves + quarterly updates.' },
-    { title: 'CMS NCCI Policy Manual', url: 'https://www.cms.gov/medicare/coding-billing/national-correct-coding-initiative-ncci-edits/medicare-ncci-policy-manual', note: 'Chapter-by-chapter rationale for the edits. Pulls the curtain back.' },
-    { title: 'CMS Modifier Quick Reference (MLN)', url: 'https://www.cms.gov/outreach-and-education/medicare-learning-network-mln/mlnproducts/downloads/proper-use-modifier-25.pdf', note: 'When 25 applies, when 57 applies, when neither does.' },
-  ],
-}
+const RECAP: CaseRecap = CASE_RECAPS['bundle']
 
 function renderVictory(): string {
   return `

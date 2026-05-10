@@ -25,6 +25,7 @@
 
 import { CASES } from '../content/cases'
 import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
+import { CASE_RECAPS } from '../content/case-recaps'
 
 interface FrequencyOption {
   code: '1' | '6' | '7' | '8'
@@ -669,19 +670,7 @@ function renderChecklist(): string {
   `
 }
 
-const RECAP: CaseRecap = {
-  oneLineRecap: 'You resolved a CO-18 duplicate flag by filing the resubmission as a frequency-7 replacement of the original ICN — version control, not a re-fight.',
-  keyConcepts: [
-    { term: 'CO-18 (exact duplicate claim/service)', gist: 'The payer sees two claims that look identical and pays neither. Two correct fixes: frequency-code-7 replacement (most cases) or frequency-code-8 void+rebill.' },
-    { term: 'Frequency code 7 (replacement)', gist: 'Says "replace this claim, here\'s the original ICN, here\'s the corrected version." Belongs in CLM05-3 of the X12 837.' },
-    { term: 'Original ICN reference', gist: "Frequency-7 replacements MUST cite the original Internal Control Number (ICN/DCN). Without it, the payer treats it as a brand-new claim and you're back at CO-18." },
-  ],
-  resources: [
-    { title: 'CMS — Frequency Codes (UB-04 Manual)', url: 'https://www.cms.gov/research-statistics-data-and-systems/cms-information-technology/icd10', note: 'Type-of-bill third-position frequency code reference.' },
-    { title: 'X12 837P Implementation Guide — CLM05-3', url: 'https://www.x12.org/products/health-care', note: 'The frequency-type code field for professional claims.' },
-    { title: 'CMS Claim Adjustment Reason Codes', url: 'https://x12.org/codes/claim-adjustment-reason-codes', note: 'CO-18 + the rest of the CARC family.' },
-  ],
-}
+const RECAP: CaseRecap = CASE_RECAPS['doppelganger']
 
 function renderVictory(): string {
   return `

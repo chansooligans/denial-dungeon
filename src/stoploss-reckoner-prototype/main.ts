@@ -15,6 +15,7 @@
 //
 // Author: May 2026.
 import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
+import { CASE_RECAPS } from '../content/case-recaps'
 
 // ===== Domain types =====
 
@@ -594,19 +595,7 @@ function renderTermPopover(): string {
   `
 }
 
-const RECAP: CaseRecap = {
-  oneLineRecap: 'You tripped a stoploss provision on a $312k ICU stay, recalculated payment from case rate to 65% of charges, and filed the appeal with the right shortfall.',
-  keyConcepts: [
-    { term: 'Stoploss / outlier provisions', gist: 'Trigger when actual charges far exceed the case rate (e.g. > 4× case rate, or fixed dollar threshold). Payment converts from case rate to a percent-of-charges (commonly 65-80%).' },
-    { term: 'Mutually-EXclusive vs INclusive', gist: 'Most stoploss provisions are exclusive: payment is EITHER case rate OR percent-of-charges, not both. Misreading as inclusive double-pays — payer will not.' },
-    { term: 'Threshold math', gist: 'Stoploss math is mechanical: charges > threshold → flip to percent-of-charges → calculate shortfall against case rate paid → file appeal with citation.' },
-  ],
-  resources: [
-    { title: 'CMS — Inpatient Outlier Payments', url: 'https://www.cms.gov/medicare/medicare-fee-for-service-payment/acuteinpatientpps/outlier', note: "Medicare's outlier methodology — model for commercial stoploss provisions." },
-    { title: 'AHA — Contract Stoploss Provisions', url: 'https://www.aha.org/', note: 'Hospital-side guidance on stoploss language + threshold modeling.' },
-    { title: 'HFMA — Outlier Payment Recovery', url: 'https://www.hfma.org/topics/revenue-cycle/', note: 'Systematic identification of triggered stoploss claims in EOB review.' },
-  ],
-}
+const RECAP: CaseRecap = CASE_RECAPS['stoploss-reckoner']
 
 function renderVictory(): string {
   return `

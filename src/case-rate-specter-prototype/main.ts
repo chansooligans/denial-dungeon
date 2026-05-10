@@ -24,6 +24,7 @@
 // Author: May 2026. Modeled on src/specter-prototype/main.ts —
 // share the dragon, swap the lever.
 import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
+import { CASE_RECAPS } from '../content/case-recaps'
 
 // ===== Domain types =====
 
@@ -676,19 +677,7 @@ function renderTermPopover(): string {
   `
 }
 
-const RECAP: CaseRecap = {
-  oneLineRecap: 'You reprised an underpayment behind a CO-45 by reading the contract — case-rate vs outlier-provision split — and recovered the shortfall the static fee table had hidden.',
-  keyConcepts: [
-    { term: 'Case rate', gist: 'A flat per-admission payment by DRG or service category. Simpler than per-diem; harder to challenge unless the case has outlier characteristics.' },
-    { term: 'Outlier provision', gist: 'Most case-rate contracts have an outlier clause: when charges exceed a threshold (often 2x or 3x the case rate, sometimes a fixed dollar threshold), payment converts to percent-of-charges.' },
-    { term: 'Contract repricing', gist: "When the EOB pays the case rate but the contract's outlier clause was triggered, the right move is to reprice using the contract — not appeal the denial." },
-  ],
-  resources: [
-    { title: 'CMS — Inpatient Outlier Payments', url: 'https://www.cms.gov/medicare/medicare-fee-for-service-payment/acuteinpatientpps/outlier', note: "How Medicare's outlier methodology works — model for many commercial contracts." },
-    { title: 'AHA — Contract Modeling Guide', url: 'https://www.aha.org/', note: 'Best practices for verifying contracted rates against EOBs.' },
-    { title: 'HFMA — Underpayment Recovery Programs', url: 'https://www.hfma.org/topics/revenue-cycle/', note: 'Systematic approach to reprice + recover.' },
-  ],
-}
+const RECAP: CaseRecap = CASE_RECAPS['case-rate-specter']
 
 function renderVictory(): string {
   return `

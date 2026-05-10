@@ -21,6 +21,7 @@
 
 import { CASES } from '../content/cases'
 import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
+import { CASE_RECAPS } from '../content/case-recaps'
 
 interface SubscriberOption {
   id: string
@@ -692,19 +693,7 @@ function renderChecklist(): string {
   `
 }
 
-const RECAP: CaseRecap = {
-  oneLineRecap: 'You filed a CO-29 timely-filing waiver under deadline pressure — citing the original submission proof + good-cause exception — without burning the appeal window on indecision.',
-  keyConcepts: [
-    { term: 'CO-29 (timely filing limit exceeded)', gist: "The claim arrived past the payer's filing deadline. Resolution: prove the original was timely (clearinghouse acknowledgments, fax confirmations) OR file a good-cause waiver." },
-    { term: 'Filing windows vary', gist: 'Medicare: 1 calendar year from DOS. Commercial: usually 90-180 days, sometimes 365. Medicaid: state-specific. Always check the contract — never assume.' },
-    { term: 'Good-cause exception', gist: "Documented circumstances outside the provider's control (catastrophic event, payer error, member-id provided wrong by patient). Different payers have different evidence standards." },
-  ],
-  resources: [
-    { title: 'CMS — Medicare Timely Filing (MLN MM6960)', url: 'https://www.cms.gov/regulations-and-guidance/guidance/transmittals/downloads/r1815cp.pdf', note: 'The 1-calendar-year rule + the four exceptions Medicare recognizes.' },
-    { title: '42 CFR 424.44 — Time limits for filing claims', url: 'https://www.ecfr.gov/current/title-42/chapter-IV/subchapter-B/part-424/subpart-C/section-424.44', note: 'The federal regulation. Authority for any timely-filing argument with a Medicare contractor.' },
-    { title: 'AAPC — Timely Filing Appeals Playbook', url: 'https://www.aapc.com/blog/47879-the-clock-is-ticking-tips-for-timely-claim-filing/', note: 'Practical good-cause arguments and the proof formats payers accept.' },
-  ],
-}
+const RECAP: CaseRecap = CASE_RECAPS['reaper']
 
 function renderVictory(): string {
   const saved = state.daysRemaining

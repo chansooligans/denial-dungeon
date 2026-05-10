@@ -17,6 +17,7 @@
 //
 // Author: May 2026.
 import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
+import { CASE_RECAPS } from '../content/case-recaps'
 
 // ===== Domain types =====
 
@@ -655,19 +656,7 @@ function renderTermPopover(): string {
   `
 }
 
-const RECAP: CaseRecap = {
-  oneLineRecap: "You unbundled an implant from the DRG case rate by appending the contract's invoice-cost-plus-20% carveout — recovering the surgical-implant cost the case rate had absorbed.",
-  keyConcepts: [
-    { term: 'Implant carveouts', gist: 'Most surgical contracts carve out high-cost implants (typically > $1,000-$5,000 invoice cost) — paid separately at invoice cost + a markup (often 10-20%).' },
-    { term: 'Itemize + invoice-match', gist: 'Carveouts require the original invoice on the claim. Append the supplier invoice as supporting documentation; the claim must reference invoice number + line item.' },
-    { term: 'Case-rate absorption', gist: 'Without the carveout flag, the implant is rolled into the DRG case rate. A $12,000 cardiac stent absorbed into a $14,000 case rate is a $12,000 underpayment.' },
-  ],
-  resources: [
-    { title: 'CMS — Inpatient Prospective Payment System (IPPS)', url: 'https://www.cms.gov/medicare/payment/prospective-payment-systems/acute-inpatient-pps', note: 'How CMS handles high-cost implants — model for many commercial contracts.' },
-    { title: 'AHA — Implant Carveout Guide', url: 'https://www.aha.org/', note: 'Industry guidance on implant carveout language + reimbursement.' },
-    { title: 'HFMA — Underpayment Recovery', url: 'https://www.hfma.org/topics/revenue-cycle/', note: 'Systematic approach to identifying contract carveouts in EOB review.' },
-  ],
-}
+const RECAP: CaseRecap = CASE_RECAPS['implant-carveout-specter']
 
 function renderVictory(): string {
   return `

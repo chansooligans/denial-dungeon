@@ -22,6 +22,7 @@
 
 import { CASES } from '../content/cases'
 import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
+import { CASE_RECAPS } from '../content/case-recaps'
 
 interface InquiryEntry {
   id: string
@@ -644,19 +645,7 @@ function renderChecklist(): string {
   `
 }
 
-const RECAP: CaseRecap = {
-  oneLineRecap: "You ran a 270 eligibility inquiry pre-submit, used the 271 response to surface the field discrepancy, and amended the claim before it ever met the payer's adjudicator.",
-  keyConcepts: [
-    { term: 'X12 270 / 271', gist: "270 = eligibility inquiry sent to the payer; 271 = the payer's response (active/inactive coverage, copay/coinsurance, plan details). Real-time exchanges; usually free." },
-    { term: 'Pre-submission verification', gist: 'The fight you win on the front end. Catching a wrong member ID, terminated coverage, or wrong-payer-of-record before submission saves a denial cycle.' },
-    { term: 'Roster vs claim mismatch', gist: 'The most common eligibility break: registration captured one name/DOB/ID combination; the payer has a different one on file. The 271 surfaces both.' },
-  ],
-  resources: [
-    { title: 'CMS — Eligibility (X12 270/271)', url: 'https://www.cms.gov/research-statistics-data-and-systems/cms-information-technology/health-plan-management-systems/medicareeligibility', note: "CMS's reference for Medicare eligibility transactions." },
-    { title: 'CAQH CORE — Eligibility Operating Rules', url: 'https://www.caqh.org/core/eligibility-rule', note: 'Payer obligations on the 270/271 — turnaround times, content requirements.' },
-    { title: 'X12 — 270/271 Implementation Guide', url: 'https://www.x12.org/products/health-care', note: 'The standard itself, including data segments + return codes.' },
-  ],
-}
+const RECAP: CaseRecap = CASE_RECAPS['fog']
 
 function renderVictory(): string {
   return `

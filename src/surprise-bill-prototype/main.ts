@@ -27,6 +27,7 @@
 // the PFS counter has to carry.
 
 import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
+import { CASE_RECAPS } from '../content/case-recaps'
 
 interface ClassifyOption {
   id: string
@@ -649,19 +650,7 @@ function renderChecklist(): string {
   `
 }
 
-const RECAP: CaseRecap = {
-  oneLineRecap: 'You disarmed an OON balance bill from a contracted radiologist on an in-network ER scan — classified the scenario, calculated true patient cost-share, filed the protective statement under the No Surprises Act.',
-  keyConcepts: [
-    { term: 'NSA emergency carve-out', gist: 'Patients who receive emergency care at any facility — or care from an OON clinician at an in-network facility — pay only in-network cost-sharing. The provider/plan rate dispute is between them.' },
-    { term: 'Patient cost-share = in-network', gist: 'Even if the clinician is OON, the patient sees the in-network deductible/coinsurance/copay. Anything above that is balance billing and prohibited under the NSA.' },
-    { term: 'Protective notification', gist: 'When an OON provider tries to balance bill, the patient files a protective statement; the provider must refund any overage. Then the provider/plan dispute moves to IDR.' },
-  ],
-  resources: [
-    { title: '45 CFR 149.110 — Patient Protections', url: 'https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-B/part-149/subpart-B', note: 'The NSA balance-billing prohibition.' },
-    { title: 'CMS — No Surprises Act Patient FAQ', url: 'https://www.cms.gov/nosurprises', note: 'Patient-facing explainer + complaint mechanism.' },
-    { title: 'CMS — Provider Notice and Consent Requirements', url: 'https://www.cms.gov/nosurprises/policies-and-resources/provider-requirements-and-resources', note: 'When OON providers can ask the patient to waive NSA protections (limited situations).' },
-  ],
-}
+const RECAP: CaseRecap = CASE_RECAPS['surprise-bill']
 
 function renderVictory(): string {
   return `

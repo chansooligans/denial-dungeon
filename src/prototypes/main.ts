@@ -15,6 +15,9 @@
 // from that list. URL stays at /prototypes.html for link
 // stability — only the visible labels change.
 
+import { CASE_RECAPS } from '../content/case-recaps'
+import type { CaseRecap } from '../shared/prototype-base'
+
 interface Prototype {
   id: string
   title: string
@@ -618,6 +621,7 @@ function renderDistrictKey(): string {
 
 function renderCard(p: Prototype): string {
   const isShipped = p.status === 'shipped'
+  const recap = CASE_RECAPS[p.id]
   return `
     <article class="card ${isShipped ? 'shipped' : 'planned'}" style="--card-accent: ${p.accent};">
       <div class="card-accent"></div>
@@ -632,11 +636,44 @@ function renderCard(p: Prototype): string {
         <h2 class="card-title">${escape(p.title)}</h2>
         <p class="card-subtitle">${escape(p.subtitle)}</p>
         <p class="card-testing"><strong>Tests:</strong> ${escape(p.testing)}</p>
+        ${recap ? renderCardRecap(recap) : ''}
         ${p.href
           ? `<a class="card-cta" href="${p.href}">Open prototype →</a>`
           : '<span class="card-cta disabled">Not yet built</span>'}
       </div>
     </article>
+  `
+}
+
+function renderCardRecap(recap: CaseRecap): string {
+  return `
+    <details class="card-recap">
+      <summary>What this Case teaches <span class="card-recap-caret">▾</span></summary>
+      <div class="card-recap-body">
+        <p class="card-recap-lede">${escape(recap.oneLineRecap)}</p>
+        <div class="card-recap-grid">
+          <div class="card-recap-block">
+            <h4>Key concepts</h4>
+            <ul class="card-recap-concepts">
+              ${recap.keyConcepts.map(c => `
+                <li><strong>${escape(c.term)}.</strong> ${escape(c.gist)}</li>
+              `).join('')}
+            </ul>
+          </div>
+          <div class="card-recap-block">
+            <h4>Learn more</h4>
+            <ul class="card-recap-resources">
+              ${recap.resources.map(r => `
+                <li>
+                  <a href="${escape(r.url)}" target="_blank" rel="noopener noreferrer">${escape(r.title)}</a>
+                  <span class="card-recap-resource-note">${escape(r.note)}</span>
+                </li>
+              `).join('')}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </details>
   `
 }
 
@@ -853,6 +890,68 @@ const css = `
     line-height: 1.55;
     margin: 10px 0 12px;
   }
+  /* Per-card recap (collapsible). Default closed so cards stay
+     scannable; expanding shows key concepts + further-reading
+     links pulled from CASE_RECAPS (single source of truth — same
+     data the in-prototype victory page uses). */
+  .card-recap { margin: 6px 0 14px; border-top: 1px dashed #232a36; }
+  .card-recap summary {
+    cursor: pointer;
+    list-style: none;
+    padding: 8px 0 6px;
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--card-accent);
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .card-recap summary::-webkit-details-marker { display: none; }
+  .card-recap-caret { font-size: 10px; transition: transform 0.15s; }
+  .card-recap[open] .card-recap-caret { transform: rotate(180deg); }
+  .card-recap-body { padding: 4px 0 12px; }
+  .card-recap-lede { font-size: 13px; line-height: 1.55; color: var(--ink); margin: 0 0 14px; }
+  .card-recap-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 720px) { .card-recap-grid { grid-template-columns: 1fr; } }
+  .card-recap-block h4 {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-dim);
+    margin: 0 0 6px;
+    font-weight: 700;
+  }
+  .card-recap-concepts,
+  .card-recap-resources { list-style: none; padding-left: 0; margin: 0; }
+  .card-recap-concepts li {
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--ink);
+    padding: 5px 0;
+    border-bottom: 1px dashed #232a36;
+  }
+  .card-recap-concepts li:last-child { border-bottom: none; }
+  .card-recap-concepts li strong { color: var(--card-accent); font-weight: 600; }
+  .card-recap-resources li {
+    padding: 5px 0;
+    border-bottom: 1px dashed #232a36;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .card-recap-resources li:last-child { border-bottom: none; }
+  .card-recap-resources a {
+    font-size: 12px;
+    color: var(--card-accent);
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .card-recap-resources a:hover { text-decoration: underline; }
+  .card-recap-resources a::after { content: " ↗"; font-size: 10px; opacity: 0.6; }
+  .card-recap-resource-note { font-size: 11px; color: var(--ink-dim); line-height: 1.4; }
   .card-cta {
     display: inline-block;
     padding: 6px 14px;

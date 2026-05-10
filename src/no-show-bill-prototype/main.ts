@@ -12,6 +12,7 @@
 //
 // Author: May 2026.
 import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
+import { CASE_RECAPS } from '../content/case-recaps'
 
 interface Statement {
   id: string
@@ -453,19 +454,7 @@ function renderTermPopover(): string {
   `
 }
 
-const RECAP: CaseRecap = {
-  oneLineRecap: 'You handled a missed-appointment billing situation — Medicare prohibition, commercial allowability, patient-financial-hardship pathway — without violating policy or burning the relationship.',
-  keyConcepts: [
-    { term: 'Medicare prohibition', gist: "Medicare does NOT allow providers to bill the patient for missed appointments unless the practice has a uniformly-applied written policy (CMS Carrier Manual 30-3). Most don't bother." },
-    { term: 'Commercial allowability', gist: "Commercial payers don't restrict no-show fees — but the patient pays out of pocket; the payer doesn't cover them." },
-    { term: 'Hardship pathway', gist: 'Many practices waive no-show fees on first occurrence + for documented hardship. Routes through the same financial-assistance policy that handles charity care.' },
-  ],
-  resources: [
-    { title: 'CMS Carrier Manual — Missed Appointment Charges', url: 'https://www.cms.gov/regulations-and-guidance/guidance/manuals/internet-only-manuals-ioms', note: "Medicare's rule: practice may charge IF policy applies uniformly to all patients (Medicare + others)." },
-    { title: 'AAFP — Missed Appointment Policies', url: 'https://www.aafp.org/', note: 'Family-medicine guidance on practice-level no-show policy design.' },
-    { title: 'AMA — Office Practice Management', url: 'https://www.ama-assn.org/', note: "AMA's no-show policy templates + patient communication." },
-  ],
-}
+const RECAP: CaseRecap = CASE_RECAPS['no-show-bill']
 
 function renderVictory(): string {
   return `

@@ -40,6 +40,7 @@
 //
 // Author: May 2026.
 import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
+import { CASE_RECAPS } from '../content/case-recaps'
 
 // ===== Domain types =====
 
@@ -820,19 +821,7 @@ function renderTermPopover(): string {
   `
 }
 
-const RECAP: CaseRecap = {
-  oneLineRecap: 'You built the machine-readable file row by row from the chargemaster (hard-coded services) and claim history (soft-coded services), with per-payer-discrete rates plus de-identified min/max.',
-  keyConcepts: [
-    { term: 'Hard-coded vs soft-coded', gist: 'Hard-coded services live in the CDM (chargemaster) with a fixed CPT/HCPCS — straight read. Soft-coded services are HIM-assigned post-encounter from documentation — must be derived from claim history.' },
-    { term: '45 CFR 180.50 — MRF requirements', gist: 'Hospitals must publish a machine-readable file with per-payer-discrete negotiated rates (not medians) plus de-identified min/max for each shoppable service. Updated annually.' },
-    { term: 'Service-package buckets', gist: 'The MRF lists items by gross charge, discounted cash price, payer-specific negotiated charge, de-identified min, de-identified max — all five for every shoppable service.' },
-  ],
-  resources: [
-    { title: '45 CFR 180.50 — Machine-Readable Files', url: 'https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-B/part-180/subpart-B/section-180.50', note: 'The MRF regulation. Read the standard and the schema.' },
-    { title: 'CMS Hospital Price Transparency', url: 'https://www.cms.gov/hospital-price-transparency', note: 'CMS guidance, schema templates, enforcement notices.' },
-    { title: 'CMS MRF Schema (GitHub)', url: 'https://github.com/CMSgov/hospital-price-transparency', note: 'Reference JSON/CSV schemas for compliant MRFs.' },
-  ],
-}
+const RECAP: CaseRecap = CASE_RECAPS['mrf-cartographer']
 
 function renderVictory(): string {
   return `

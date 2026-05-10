@@ -16,6 +16,7 @@
 //
 // Author: May 2026.
 import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
+import { CASE_RECAPS } from '../content/case-recaps'
 
 interface AuditEvent {
   id: string
@@ -546,19 +547,7 @@ function renderTermPopover(): string {
   `
 }
 
-const RECAP: CaseRecap = {
-  oneLineRecap: 'You resolved an identity-mismatch denial by matching against the registration record, surfacing the wrong DOB at intake, and preventing the same break next visit.',
-  keyConcepts: [
-    { term: 'Patient matching', gist: 'Registration captures name + DOB + SSN/MRN; the payer matches against their member roster. A character off in the DOB or a hyphen in the last name breaks the match.' },
-    { term: 'Identity verification', gist: 'EMPI (enterprise master patient index) systems probabilistic-match across registrations, but only catch what the registrar enters correctly.' },
-    { term: 'Front-end prevention', gist: 'A 270/271 eligibility check at intake catches most identity breaks before the claim ever submits. Saves a denial cycle.' },
-  ],
-  resources: [
-    { title: 'ONC — Patient Matching Resources', url: 'https://www.healthit.gov/topic/scientific-initiatives/patient-matching', note: 'Federal guidance on patient-matching standards + algorithms.' },
-    { title: 'AHIMA — Patient Identification + Matching', url: 'https://www.ahima.org/', note: "AHIMA's patient-matching toolkit + best-practice registration workflows." },
-    { title: 'HHS — Strategic Health IT Plan: Identity Resolution', url: 'https://www.healthit.gov/', note: 'The federal-level identity-resolution roadmap.' },
-  ],
-}
+const RECAP: CaseRecap = CASE_RECAPS['phantom-patient']
 
 function renderVictory(): string {
   return `

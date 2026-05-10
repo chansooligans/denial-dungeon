@@ -19,6 +19,7 @@
 // analysts spend half their time hunting these).
 
 import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
+import { CASE_RECAPS } from '../content/case-recaps'
 
 interface FeeScheduleLine {
   cpt: string
@@ -651,19 +652,7 @@ function renderChecklist(): string {
   `
 }
 
-const RECAP: CaseRecap = {
-  oneLineRecap: 'You read the 835 ERA line by line, flagged a $28 underpayment hidden behind a CO-45 contractual adjustment, and filed the appeal with the right shortfall + contract section.',
-  keyConcepts: [
-    { term: 'CO-45 (charge exceeds fee schedule/maximum allowable)', gist: 'Strictly informational on a normal claim — the payer is reporting the contractual write-down. The bug is when CO-45 is hiding an UNDERPAYMENT relative to the actual contracted rate.' },
-    { term: 'VARIANCE detection', gist: "Compare each paid amount line against the live contract's fee schedule. Even small per-claim variances become real money at volume." },
-    { term: '835 ERA structure', gist: "The 835 has CLP segments (per-claim) and SVC segments (per-service-line). The contractual adjustment lives at the line level. CO-45 + a number that doesn't match your contract = appeal." },
-  ],
-  resources: [
-    { title: 'X12 835 Health Care Claim Payment/Advice', url: 'https://www.x12.org/products/health-care', note: 'The EDI standard for the ERA. Field-level reference.' },
-    { title: 'CMS — ERA / 835 Companion Guide', url: 'https://www.cms.gov/research-statistics-data-and-systems/cms-information-technology/healthplanmanagementsystems/electronicbillingedi', note: "CMS's implementation specifics for Medicare ERAs." },
-    { title: 'Healthcare Financial Management Association — Underpayment Recovery', url: 'https://www.hfma.org/topics/revenue-cycle/', note: 'Industry guidance on systematic underpayment review programs.' },
-  ],
-}
+const RECAP: CaseRecap = CASE_RECAPS['specter']
 
 function renderVictory(): string {
   return `

@@ -13,6 +13,7 @@
 //
 // Author: May 2026.
 import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
+import { CASE_RECAPS } from '../content/case-recaps'
 
 interface ChartSnippet {
   id: string
@@ -564,19 +565,7 @@ function renderTermPopover(): string {
   `
 }
 
-const RECAP: CaseRecap = {
-  oneLineRecap: "You closed the HCC documentation gap by capturing the chronic conditions in this year's encounter, applying the MEAT criteria, and posting the corrected RAF.",
-  keyConcepts: [
-    { term: 'HCC categories', gist: "Hierarchical Condition Categories — CMS's risk-adjustment model. Each captured chronic condition bumps the patient's RAF score and the plan's capitation payment." },
-    { term: 'MEAT documentation', gist: "Monitor / Evaluate / Assess / Treat. Each chronic condition must show at least one of these in the current year's notes — otherwise the HCC doesn't roll forward." },
-    { term: 'Annual recapture', gist: "HCCs reset every January. Conditions documented last year must be re-documented with MEAT this year — diagnosis lists alone aren't enough." },
-  ],
-  resources: [
-    { title: 'CMS — Medicare Advantage Risk Adjustment', url: 'https://www.cms.gov/medicare/health-plans/medicareadvtgspecratestats/risk-adjustors', note: 'The HCC model + the RAF calculation.' },
-    { title: 'AAPC — HCC Coding & MEAT Documentation', url: 'https://www.aapc.com/blog/topics/hcc-coding/', note: "Coder's view of MEAT + common documentation gaps." },
-    { title: 'AHIMA — Risk-Adjusted Coding Guide', url: 'https://www.ahima.org/', note: 'Health-information-management perspective on HCC capture programs.' },
-  ],
-}
+const RECAP: CaseRecap = CASE_RECAPS['risk-adj-hollow']
 
 function renderVictory(): string {
   return `

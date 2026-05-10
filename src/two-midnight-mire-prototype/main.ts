@@ -21,6 +21,7 @@
 //
 // Author: May 2026.
 import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
+import { CASE_RECAPS } from '../content/case-recaps'
 
 interface ClockStatement {
   id: string
@@ -575,19 +576,7 @@ function renderTermPopover(): string {
   `
 }
 
-const RECAP: CaseRecap = {
-  oneLineRecap: "You defended a 2-midnight inpatient admission against a RAC reclassification — and when the chart didn't support it, you rebilled Part A → Part B observation with the right citation.",
-  keyConcepts: [
-    { term: '2-Midnight Rule', gist: 'Medicare presumes inpatient is appropriate when the admitting physician expects the patient will need ≥2 midnights of medically-necessary hospital care. Stays clearly < 2 midnights belong as observation.' },
-    { term: 'Clock-start mechanic', gist: 'The clock starts when the patient receives hospital-level care — usually ED arrival — NOT when the inpatient order is written. Documentation often gets this wrong.' },
-    { term: 'Part A → Part B rebill', gist: "When a RAC denies the inpatient stay AND the chart doesn't actually support inpatient, the right move is to rebill as observation under Part B (lower payment, but recoverable)." },
-  ],
-  resources: [
-    { title: 'CMS — 2-Midnight Rule (MLN MM9979)', url: 'https://www.cms.gov/outreach-and-education/medicare-learning-network-mln/mlnmattersarticles/downloads/mm9979.pdf', note: 'The MLN article explaining the 2-midnight benchmark + presumption.' },
-    { title: '42 CFR 412.3 — Inpatient Admission Decision', url: 'https://www.ecfr.gov/current/title-42/chapter-IV/subchapter-B/part-412/subpart-A/section-412.3', note: 'The federal regulation establishing the 2-midnight rule.' },
-    { title: 'CMS — Recovery Audit Program (2-Midnight Reviews)', url: 'https://www.cms.gov/research-statistics-data-and-systems/monitoring-programs/medicare-ffs-compliance-programs/recovery-audit-program', note: 'How RACs review 2-midnight cases + the Part A → Part B rebill mechanic.' },
-  ],
-}
+const RECAP: CaseRecap = CASE_RECAPS['two-midnight-mire']
 
 function renderVictory(): string {
   return `

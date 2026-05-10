@@ -24,6 +24,7 @@
 //
 // Author: May 2026.
 import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
+import { CASE_RECAPS } from '../content/case-recaps'
 
 // ===== Domain types =====
 
@@ -597,19 +598,7 @@ function renderTermPopover(): string {
   `
 }
 
-const RECAP: CaseRecap = {
-  oneLineRecap: 'You walked the AMA CPT licensing chain at a charity clinic audit, picked the right tier, and found the HCPCS Level II alternative codes where they exist.',
-  keyConcepts: [
-    { term: 'AMA CPT licensing', gist: 'CPT codes are AMA-owned IP. Most software vendors and providers pay royalty + license fees. The federal government has a special exemption.' },
-    { term: 'HCPCS Level II', gist: 'CMS-published codes (the "G", "Q", "S" code families) covering services CPT doesn\'t — DME, supplies, certain procedures. Royalty-free.' },
-    { term: 'Federal exemption', gist: 'Federally-funded programs (Medicare, Medicaid) have a license to use CPT for claims. Charity clinics serving those populations may qualify for reduced fees.' },
-  ],
-  resources: [
-    { title: 'AMA CPT Licensing FAQ', url: 'https://www.ama-assn.org/practice-management/cpt/cpt-licensing-distribution', note: "AMA's licensing tiers + the application process." },
-    { title: 'CMS HCPCS Level II Quarterly Update', url: 'https://www.cms.gov/medicare/coding-billing/healthcare-common-procedure-system', note: 'The HCPCS Level II code set + quarterly additions.' },
-    { title: '45 CFR 162.1002 — HIPAA Code Sets', url: 'https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-C/part-162/subpart-J', note: 'The federally-mandated code sets — CPT, HCPCS, ICD-10 — for HIPAA-covered transactions.' },
-  ],
-}
+const RECAP: CaseRecap = CASE_RECAPS['cpt-licensure-mire']
 
 function renderVictory(): string {
   return `

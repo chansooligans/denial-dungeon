@@ -26,6 +26,7 @@
 // Author: May 2026. Modeled on MRF Cartographer with a co-provider
 // classification axis added.
 import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
+import { CASE_RECAPS } from '../content/case-recaps'
 
 // ===== Domain types =====
 
@@ -637,19 +638,7 @@ function renderTermPopover(): string {
   `
 }
 
-const RECAP: CaseRecap = {
-  oneLineRecap: "You produced a Good Faith Estimate within 3 business days of the self-pay patient's scheduled procedure — itemized, estimated, committed — covering the convening provider AND the co-providers.",
-  keyConcepts: [
-    { term: 'GFE under the No Surprises Act', gist: 'For uninsured/self-pay patients, the convening provider must furnish a GFE within 3 business days of scheduling (or 1 business day for procedures within 3 days).' },
-    { term: 'Convening provider vs co-provider', gist: 'The convening provider organizes the GFE — must include their charges AND the expected charges from co-providers (anesthesia, pathology, etc.).' },
-    { term: 'AEOB (deferred)', gist: 'For insured patients, the equivalent is an Advance Explanation of Benefits — currently in deferred enforcement. Watch the CMS rulemaking.' },
-  ],
-  resources: [
-    { title: '45 CFR 149.610 — Good Faith Estimates', url: 'https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-B/part-149/subpart-G/section-149.610', note: 'The GFE regulation for uninsured/self-pay.' },
-    { title: 'CMS — GFE Guidance', url: 'https://www.cms.gov/nosurprises/help-resolve-payment-disputes/good-faith-estimate', note: 'CMS resources, sample GFE templates, the patient-provider dispute resolution process.' },
-    { title: 'AHA — GFE Implementation Toolkit', url: 'https://www.aha.org/', note: 'Operational guidance on convening-provider workflows.' },
-  ],
-}
+const RECAP: CaseRecap = CASE_RECAPS['gfe-oracle']
 
 function renderVictory(): string {
   return `

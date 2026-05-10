@@ -37,6 +37,7 @@
 //
 // Author: May 2026.
 import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
+import { CASE_RECAPS } from '../content/case-recaps'
 
 // ===== Domain types =====
 
@@ -605,21 +606,7 @@ function renderTermPopover(): string {
   `
 }
 
-const RECAP: CaseRecap = {
-  oneLineRecap: 'You filed an Independent Dispute Resolution submission against a wrong-bucket QPA, picked the defensible market median over the billed charge or the just-above-QPA decoy, and won baseball-style arbitration on the merits.',
-  keyConcepts: [
-    { term: 'QPA methodology', gist: 'The plan\'s median in-network rate keyed by service + specialty + region + plan type. Excludes single-case agreements and risk-bearing payments. Plans must disclose the methodology within 30 days of provider request.' },
-    { term: 'Specialty + setting bucket', gist: 'Same CPT code can carry different QPAs depending on who billed and where. Cardiology-elective ≠ cardiology-emergency-ED. Wrong-bucket QPAs are the most-litigated IDR challenge ground.' },
-    { term: 'Baseball arbitration', gist: 'Each side submits ONE final offer; the arbitrator picks one — no splitting, no averaging. Submit too high → arbitrator picks the QPA. Submit too low → leave money on the table.' },
-    { term: 'Additional credible information', gist: 'After Texas Medical Association v HHS killed the QPA presumption, arbitrators weigh the QPA alongside provider training, service complexity, market data, and prior negotiations. Strong ACI can flip the decision.' },
-  ],
-  resources: [
-    { title: '45 CFR 149.140 — QPA methodology', url: 'https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-B/part-149/subpart-D/section-149.140', note: 'The regulation that defines what goes into the QPA, what\'s excluded, and the disclosure obligations.' },
-    { title: '45 CFR 149.510 — Federal IDR process', url: 'https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-B/part-149/subpart-G/section-149.510', note: 'The IDR mechanic itself: open negotiation, certified IDR entity, baseball arbitration, ACI factors.' },
-    { title: 'CMS Federal IDR Process — provider portal', url: 'https://www.cms.gov/nosurprises/policies-and-resources/Federal-IDR-Process-Guidance', note: 'CMS guidance, batching rules, current arbitration entity list, fee schedule.' },
-    { title: 'Texas Medical Association v HHS (TMA III) ruling', url: 'https://www.govinfo.gov/app/details/USCOURTS-txed-6_22-cv-00450', note: 'The 2023 E.D. Tex. ruling that struck the QPA presumption from the IDR rule. Foundation for current arbitrator-discretion regime.' },
-  ],
-}
+const RECAP: CaseRecap = CASE_RECAPS['idr-crucible']
 
 function renderVictory(): string {
   return `

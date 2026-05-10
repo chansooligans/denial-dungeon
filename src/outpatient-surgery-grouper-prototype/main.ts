@@ -29,6 +29,7 @@
 //
 // Author: May 2026.
 import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
+import { CASE_RECAPS } from '../content/case-recaps'
 
 // ===== Domain types =====
 
@@ -619,19 +620,7 @@ function renderTermPopover(): string {
   `
 }
 
-const RECAP: CaseRecap = {
-  oneLineRecap: "You modeled an OPG-based reimbursement against the UHC contract's outpatient-surgery grouping methodology, identified the multiple-procedure discount tier, and recovered the contract-vs-EOB shortfall.",
-  keyConcepts: [
-    { term: 'OPG vs APC', gist: "UHC's Outpatient Procedure Grouper (OPG) is a proprietary grouping methodology that bundles multiple outpatient procedures into a single payment tier — different from CMS's APC system." },
-    { term: 'Multiple-procedure discount', gist: 'Most OPG contracts pay 100% of the highest-tier procedure + 50% of additional procedures (sometimes 25% for 3+). Misreading the discount stacks underpayments.' },
-    { term: 'Tier walking', gist: 'Verify each line: which procedure landed in which OPG tier, what discount applied, what the contracted rate yields. EOB rarely shows the math.' },
-  ],
-  resources: [
-    { title: 'UHC — Outpatient Surgery Grouper Reference', url: 'https://www.uhcprovider.com/en/resource-library/news/2025/outpatient-procedure-codes-for-reimbursement.html', note: "UHC's public OPG reference (the actual contract has the rate tables)." },
-    { title: 'CMS — APC Reference (model for OPG)', url: 'https://www.cms.gov/medicare/payment/prospective-payment-systems/hospital-outpatient', note: "How Medicare's APC grouper works — useful comparison to OPG." },
-    { title: 'AHA — Contract Modeling', url: 'https://www.aha.org/', note: 'Hospital-side guidance on OPG-style proprietary groupers.' },
-  ],
-}
+const RECAP: CaseRecap = CASE_RECAPS['outpatient-surgery-grouper']
 
 function renderVictory(): string {
   return `
