@@ -223,6 +223,19 @@ export default defineConfig({
         // diagnostic page in one place. Bookmark this. Lives at
         // /dev.html on GitHub Pages.
         dev: resolve(__dirname, 'dev.html'),
+        // Sprite redraw preview — click-to-pick interface for
+        // procedurally-drawn 16×16 sprite variants (cars, lamps,
+        // recliners, armchairs, etc.). Renders each variant on a
+        // canvas using the same Phaser Graphics primitives that
+        // BootScene.makeHospitalTiles uses, so what you see IS what
+        // the game would render. Lives at /sprite-redraw-preview.html.
+        spriteRedrawPreview: resolve(__dirname, 'sprite-redraw-preview.html'),
+        // Room redraw preview — click-to-pick interface for full
+        // room layouts (parking lot, lecture hall, lobby, etc.). Each
+        // canvas renders the entire room with walls, doors, props in
+        // tile positions matching the level1.ts MapDef format. Lives
+        // at /room-redraw-preview.html.
+        roomRedrawPreview: resolve(__dirname, 'room-redraw-preview.html'),
       },
       output: {
         // Pull Phaser into its own vendor chunk. The framework is the

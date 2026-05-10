@@ -1,0 +1,1317 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Room redraw preview — The Waiting Room</title>
+<style>
+  :root {
+    --bg: #1a1d22;
+    --panel: #23272d;
+    --ink: #d8d4cc;
+    --sub: #8a8680;
+    --accent: #c8a040;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 14px/1.5 -apple-system, system-ui, sans-serif;
+  }
+  header {
+    padding: 24px 32px 8px;
+    border-bottom: 1px solid #2c3036;
+  }
+  header h1 { margin: 0 0 4px; font-size: 18px; letter-spacing: 0.02em; }
+  header p  { margin: 0; color: var(--sub); max-width: 760px; }
+  main { padding: 24px 32px 120px; }
+  section { margin: 32px 0 56px; }
+  section h2 {
+    margin: 0 0 4px;
+    font-size: 16px;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+  }
+  section p.note {
+    margin: 0 0 16px;
+    color: var(--sub);
+    max-width: 760px;
+  }
+  .stack {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .variant {
+    background: var(--panel);
+    padding: 12px 14px 12px;
+    border-radius: 6px;
+    border: 1px solid #2c3036;
+    cursor: pointer;
+    user-select: none;
+    transition: border-color 0.12s ease, box-shadow 0.12s ease;
+  }
+  .variant:hover { border-color: #4a5260; }
+  .variant.is-current { border-color: var(--accent); }
+  .variant.is-selected {
+    border-color: #5fb878;
+    box-shadow: 0 0 0 2px rgba(95, 184, 120, 0.25);
+  }
+  .variant-head {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .variant-head .letter {
+    font-weight: 700;
+    color: var(--accent);
+    min-width: 18px;
+  }
+  .variant.is-current .variant-head .letter::after {
+    content: " (current)";
+    color: var(--accent);
+    font-weight: 400;
+    font-size: 11px;
+  }
+  .variant.is-selected .variant-head::after {
+    content: "✓ selected";
+    color: #5fb878;
+    margin-left: auto;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .variant-head .name { font-weight: 600; }
+  .variant-head .desc { color: var(--sub); font-size: 12px; }
+  .variant canvas {
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    display: block;
+    border: 1px solid #3a3e44;
+    background: #5a5448;
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Sticky summary bar */
+  #summary {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(20, 22, 26, 0.96);
+    border-top: 1px solid #2c3036;
+    padding: 14px 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    z-index: 50;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+  #summary .picks {
+    flex: 1;
+    font-size: 12px;
+    color: var(--sub);
+    line-height: 1.5;
+  }
+  #summary .picks strong { color: var(--ink); margin-right: 4px; }
+  #summary .picks .pick {
+    display: inline-block;
+    background: #2c3036;
+    color: #5fb878;
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin: 2px 8px 2px 0;
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 11px;
+  }
+  #summary .picks .pick em { color: var(--sub); font-style: normal; margin-right: 4px; }
+  #summary button {
+    background: var(--accent);
+    color: #1a1d22;
+    border: 0;
+    padding: 8px 14px;
+    border-radius: 4px;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  #summary button:hover { background: #d8b050; }
+  #summary button.secondary {
+    background: transparent;
+    color: var(--sub);
+    border: 1px solid #3a3e44;
+    font-weight: 400;
+  }
+  #toast {
+    position: fixed;
+    bottom: 84px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #5fb878;
+    color: #0e1410;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease;
+    z-index: 60;
+  }
+  #toast.is-shown { opacity: 1; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Room redraw preview</h1>
+  <p>Each canvas renders a full room — walls, doors, props in place — using the same sprites as the game. Click any variant to pick it for that room. <strong style="color:var(--ink)">Each tile is 16×16, displayed at 2× zoom.</strong> Walls (walnut), floor (cream), doors (brass), parking-lot floor (asphalt). Use the bar at the bottom to copy your picks.</p>
+</header>
+
+<main>
+
+  <section>
+    <h2>Parking lot — round 2</h2>
+    <p class="note">Updated for the issues you flagged: plants now sit on asphalt (not cream linoleum), each parking space has painted lines, and a street runs along the south edge. Click any variant to pick.</p>
+    <div class="stack" data-room="parking"></div>
+  </section>
+
+</main>
+
+<div id="summary">
+  <div class="picks" id="picks-readout">
+    <strong>Selections:</strong>
+    <span style="color:var(--sub)">Click any variant to select it for that room.</span>
+  </div>
+  <button class="secondary" id="btn-clear">Clear</button>
+  <button id="btn-copy">Copy picks</button>
+</div>
+<div id="toast"></div>
+
+<script>
+// ============================================================
+// Tile drawing — simplified procedural sprites baked with the
+// game's TINT palette so layouts read close to the in-game look.
+// Each draw function takes (ctx, sx, sy, t) where (sx, sy) is the
+// pixel origin of the tile and t = tile-size (=16). All x/y/w/h
+// inside are in fractions of t so they scale cleanly.
+// ============================================================
+
+const T = 16;        // native px per tile
+const ZOOM = 2;      // CSS upscaling for display
+
+// Color palette — mirrors HospitalScene.TINT but baked-in here.
+const C = {
+  wall:    '#4a3220',
+  wallHi:  '#5a3a28',
+  wallLo:  '#382418',
+  floor:   '#c8b090',
+  floor2:  '#b89870',
+  door:    '#9a6a3a',
+  doorHi:  '#b88848',
+  asphalt: '#4a4848',
+  exit:    '#6a8848',
+  stair:   '#9a6a3a',
+  // Object tints
+  chair:    '#4a6878',
+  desk:     '#5a3820',
+  equip:    '#6a5a4a',
+  plant:    '#5a7028',
+  water:    '#c8a040',
+  cabinet:  '#6a4828',
+  whitebd:  '#a89878',
+  counter:  '#b08c30',
+  vending:  '#8a4a28',
+  bulletin: '#8a6840',
+  bed:      '#b09870',
+  fax:      '#6a5a4a',
+};
+
+function px(ctx, sx, sy, x, y, w, h, color) {
+  ctx.fillStyle = color;
+  ctx.fillRect(sx + x, sy + y, w, h);
+}
+
+const TILES = {
+  // Bare floor (room interior)
+  '.': (ctx, sx, sy) => {
+    px(ctx, sx, sy, 0, 0, T, T, C.floor);
+    ctx.fillStyle = 'rgba(255,255,255,0.04)';
+    ctx.fillRect(sx, sy, 8, 8);
+    ctx.fillRect(sx+8, sy+8, 8, 8);
+  },
+  // Wall
+  'W': (ctx, sx, sy) => {
+    px(ctx, sx, sy, 0, 0, T, T, C.wall);
+    px(ctx, sx, sy, 0, 0, T, 2, C.wallHi);
+    px(ctx, sx, sy, 0, 14, T, 2, C.wallLo);
+  },
+  // Door — brass
+  'D': (ctx, sx, sy) => {
+    px(ctx, sx, sy, 0, 0, T, T, C.door);
+    px(ctx, sx, sy, 2, 1, 12, 6, C.doorHi);
+    px(ctx, sx, sy, 2, 9, 12, 6, C.doorHi);
+    px(ctx, sx, sy, 11, 7, 3, 2, '#d0b060');
+  },
+  // Outdoor / asphalt floor (used for parking lot)
+  '_': (ctx, sx, sy) => {
+    px(ctx, sx, sy, 0, 0, T, T, C.asphalt);
+    ctx.fillStyle = 'rgba(255,255,255,0.03)';
+    ctx.fillRect(sx+1, sy+5, 4, 1);
+    ctx.fillRect(sx+9, sy+11, 5, 1);
+  },
+  // Parking-space asphalt — same dark base, but with white painted
+  // stripes on the left + right edges marking a single space.
+  '=': (ctx, sx, sy) => {
+    TILES['_'](ctx, sx, sy);
+    // Left + right white stripes (full height, 1px wide)
+    px(ctx, sx, sy, 0, 0, 1, T, '#e8e8d8');
+    px(ctx, sx, sy, 15, 0, 1, T, '#e8e8d8');
+    // Subtle wear on the stripes
+    ctx.fillStyle = 'rgba(40,40,40,0.4)';
+    ctx.fillRect(sx+0, sy+7, 1, 2);
+    ctx.fillRect(sx+15, sy+5, 1, 2);
+  },
+  // Street / road — runs east-west. Darker than asphalt, yellow
+  // dashed center line, white edge stripes top + bottom.
+  'r': (ctx, sx, sy) => {
+    px(ctx, sx, sy, 0, 0, T, T, '#1e1e22');               // road base (darker)
+    // Top + bottom white edge stripes
+    px(ctx, sx, sy, 0, 1, T, 1, '#e0e0d0');
+    px(ctx, sx, sy, 0, 14, T, 1, '#e0e0d0');
+    // Dashed yellow center line (3 dashes per tile)
+    px(ctx, sx, sy, 1, 7, 4, 1, '#e8c040');
+    px(ctx, sx, sy, 7, 7, 4, 1, '#e8c040');
+    px(ctx, sx, sy, 13, 7, 3, 1, '#e8c040');
+    // Pavement noise
+    ctx.fillStyle = 'rgba(255,255,255,0.04)';
+    ctx.fillRect(sx+3, sy+4, 3, 1);
+    ctx.fillRect(sx+10, sy+11, 4, 1);
+  },
+  // Curb — narrow concrete strip separating parking from street
+  'C': (ctx, sx, sy) => {
+    px(ctx, sx, sy, 0, 0, T, T, '#5a5650');               // curb base
+    px(ctx, sx, sy, 0, 0, T, 4, '#787268');               // raised top edge
+    px(ctx, sx, sy, 0, 0, T, 1, '#a0998a');               // top highlight
+    // Joint lines between curb segments
+    px(ctx, sx, sy, 0, 4, T, 1, '#3a362e');
+  },
+  // Exit mat — moss green
+  'O': (ctx, sx, sy) => {
+    px(ctx, sx, sy, 0, 0, T, T, C.exit);
+    px(ctx, sx, sy, 2, 2, 12, 12, '#7a9858');
+    px(ctx, sx, sy, 4, 4, 8, 8, '#5a7838');
+  },
+  // Stair landing
+  'S': (ctx, sx, sy) => {
+    px(ctx, sx, sy, 0, 0, T, T, C.stair);
+    px(ctx, sx, sy, 2, 2, 12, 2, '#b8884a');
+    px(ctx, sx, sy, 2, 6, 12, 2, '#b8884a');
+    px(ctx, sx, sy, 2, 10, 12, 2, '#b8884a');
+  },
+  // Chair (waiting room)
+  'h': (ctx, sx, sy) => {
+    px(ctx, sx, sy, 3, 6, 10, 6, C.chair);
+    px(ctx, sx, sy, 4, 6, 8, 1, '#6a8898');
+    px(ctx, sx, sy, 6, 12, 4, 2, '#202028');
+  },
+  // Desk
+  'c': (ctx, sx, sy) => {
+    px(ctx, sx, sy, 0, 6, 16, 10, C.desk);
+    px(ctx, sx, sy, 1, 6, 14, 1, '#7a4828');
+    px(ctx, sx, sy, 3, 1, 6, 5, '#202830');
+    px(ctx, sx, sy, 4, 2, 4, 3, '#5090c0');
+  },
+  // Equipment (vitals monitor)
+  'E': (ctx, sx, sy) => {
+    px(ctx, sx, sy, 4, 0, 8, 10, '#8a8a98');
+    px(ctx, sx, sy, 5, 1, 6, 5, '#1a2a1a');
+    px(ctx, sx, sy, 6, 3, 4, 1, '#40d080');
+    px(ctx, sx, sy, 4, 12, 8, 4, C.equip);
+  },
+  // Plant
+  'P': (ctx, sx, sy) => {
+    px(ctx, sx, sy, 5, 10, 6, 5, '#8a5a30');
+    ctx.fillStyle = C.plant; ctx.beginPath();
+    ctx.arc(sx+8, sy+7, 5, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#7a9038'; ctx.beginPath();
+    ctx.arc(sx+6, sy+5, 3, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(sx+10, sy+6, 3, 0, Math.PI*2); ctx.fill();
+  },
+  // Water cooler / lamp stand-in
+  'w': (ctx, sx, sy) => {
+    px(ctx, sx, sy, 5, 0, 6, 12, '#d8e0e8');
+    px(ctx, sx, sy, 6, 1, 4, 4, C.water);
+    px(ctx, sx, sy, 4, 12, 8, 4, '#909898');
+  },
+  // Cabinet
+  'F': (ctx, sx, sy) => {
+    px(ctx, sx, sy, 2, 0, 12, 16, C.cabinet);
+    px(ctx, sx, sy, 7, 2, 3, 1, '#a08858');
+    px(ctx, sx, sy, 7, 7, 3, 1, '#a08858');
+    px(ctx, sx, sy, 7, 12, 3, 1, '#a08858');
+  },
+  // Whiteboard
+  'B': (ctx, sx, sy) => {
+    px(ctx, sx, sy, 1, 1, 14, 12, C.whitebd);
+    px(ctx, sx, sy, 1, 13, 14, 2, '#404040');
+    px(ctx, sx, sy, 3, 3, 7, 1, '#e05050');
+    px(ctx, sx, sy, 3, 5, 5, 1, '#3080e0');
+    px(ctx, sx, sy, 3, 7, 9, 1, '#40a050');
+  },
+  // Counter (reception)
+  'R': (ctx, sx, sy) => {
+    px(ctx, sx, sy, 2, 8, 12, 8, C.counter);
+    px(ctx, sx, sy, 2, 8, 12, 2, '#c8a050');
+  },
+  // Vending machine
+  'V': (ctx, sx, sy) => {
+    px(ctx, sx, sy, 2, 0, 12, 16, C.vending);
+    px(ctx, sx, sy, 4, 1, 8, 8, '#a05a30');
+    px(ctx, sx, sy, 5, 10, 6, 3, '#202028');
+  },
+  // Bulletin / framed art
+  'b': (ctx, sx, sy) => {
+    px(ctx, sx, sy, 1, 1, 14, 14, C.bulletin);
+    px(ctx, sx, sy, 3, 3, 4, 3, '#f0e060');
+    px(ctx, sx, sy, 9, 3, 4, 4, '#f08080');
+    px(ctx, sx, sy, 3, 8, 5, 4, '#e0e8f0');
+    px(ctx, sx, sy, 9, 9, 4, 3, '#80c0f0');
+  },
+  // Bed (cancer infusion bay stand-in)
+  'H': (ctx, sx, sy) => {
+    px(ctx, sx, sy, 1, 3, 14, 11, '#e8e0d0');
+    px(ctx, sx, sy, 1, 6, 14, 8, C.bed);
+    px(ctx, sx, sy, 2, 3, 5, 3, '#f8f0e0');
+    px(ctx, sx, sy, 0, 14, 3, 2, '#505860');
+    px(ctx, sx, sy, 13, 14, 3, 2, '#505860');
+  },
+  // Fax
+  'X': (ctx, sx, sy) => {
+    px(ctx, sx, sy, 2, 6, 12, 8, '#c8c8c0');
+    px(ctx, sx, sy, 4, 1, 8, 5, '#f0e8d8');
+    px(ctx, sx, sy, 5, 8, 6, 2, C.fax);
+  },
+
+  // -------- 2026-05 redraw set --------
+
+  // Cars (asphalt floor under)
+  '1': (ctx, sx, sy) => {
+    px(ctx, sx, sy, 3, 1, 10, 14, '#c0c8d4');
+    px(ctx, sx, sy, 4, 4, 8, 8, '#7a8290');
+    px(ctx, sx, sy, 4, 2, 8, 2, '#1a1e26');
+    px(ctx, sx, sy, 4, 12, 8, 2, '#1a1e26');
+    px(ctx, sx, sy, 3, 7, 10, 1, '#808890');
+    px(ctx, sx, sy, 4, 0, 2, 1, '#fff4b8');
+    px(ctx, sx, sy, 10, 0, 2, 1, '#fff4b8');
+  },
+  '2': (ctx, sx, sy) => {
+    px(ctx, sx, sy, 2, 0, 12, 16, '#3a4050');
+    px(ctx, sx, sy, 3, 3, 10, 3, '#10141a');
+    px(ctx, sx, sy, 3, 10, 10, 3, '#10141a');
+    px(ctx, sx, sy, 3, 7, 10, 2, '#4a5060');
+    px(ctx, sx, sy, 3, 15, 10, 1, '#a01818');
+  },
+  '3': (ctx, sx, sy) => {
+    px(ctx, sx, sy, 3, 1, 10, 14, '#8a7860');
+    px(ctx, sx, sy, 4, 4, 8, 8, '#6a4838');
+    px(ctx, sx, sy, 5, 5, 2, 1, '#4a2a18');
+    px(ctx, sx, sy, 9, 6, 2, 2, '#4a2a18');
+    px(ctx, sx, sy, 4, 2, 8, 2, '#2a2628');
+    px(ctx, sx, sy, 4, 12, 8, 2, '#2a2628');
+    px(ctx, sx, sy, 8, 1, 3, 1, '#a0a8a8');
+  },
+  // Lampposts
+  '4': (ctx, sx, sy) => {
+    ctx.fillStyle = 'rgba(255,245,200,0.18)';
+    ctx.fillRect(sx+3, sy+0, 10, 6);
+    px(ctx, sx, sy, 4, 1, 8, 4, '#1a1a1e');
+    px(ctx, sx, sy, 5, 2, 6, 2, '#fff080');
+    px(ctx, sx, sy, 7, 4, 2, 11, '#303034');
+    px(ctx, sx, sy, 5, 14, 6, 2, '#1a1a1e');
+  },
+  '5': (ctx, sx, sy) => {
+    ctx.fillStyle = 'rgba(255,245,200,0.22)';
+    ctx.fillRect(sx+1, sy+1, 8, 8);
+    px(ctx, sx, sy, 8, 5, 1, 10, '#2a2a2e');
+    px(ctx, sx, sy, 6, 14, 4, 2, '#1a1a1e');
+    px(ctx, sx, sy, 4, 5, 3, 2, '#ffe880');
+    px(ctx, sx, sy, 3, 4, 5, 4, 'rgba(255,245,200,0.5)');
+    px(ctx, sx, sy, 4, 5, 3, 2, '#ffe880');
+  },
+  '6': (ctx, sx, sy) => {
+    ctx.fillStyle = 'rgba(255,245,200,0.18)';
+    ctx.fillRect(sx+0, sy+0, 6, 6);
+    ctx.fillRect(sx+10, sy+0, 6, 6);
+    px(ctx, sx, sy, 7, 5, 2, 10, '#2a2a2e');
+    px(ctx, sx, sy, 2, 4, 12, 1, '#2a2a2e');
+    px(ctx, sx, sy, 3, 2, 2, 2, '#ffe880');
+    px(ctx, sx, sy, 11, 2, 2, 2, '#ffe880');
+    px(ctx, sx, sy, 5, 14, 6, 2, '#1a1a1e');
+  },
+  // Auditorium seat (padded armrest)
+  's': (ctx, sx, sy) => {
+    px(ctx, sx, sy, 3, 1, 10, 5, '#4a3a48');
+    px(ctx, sx, sy, 4, 1, 8, 1, '#5a4a58');
+    px(ctx, sx, sy, 3, 6, 10, 4, '#4a3a48');
+    px(ctx, sx, sy, 2, 5, 1, 5, '#2a1a28');
+    px(ctx, sx, sy, 13, 5, 1, 5, '#2a1a28');
+    px(ctx, sx, sy, 7, 10, 2, 3, '#404048');
+    px(ctx, sx, sy, 5, 14, 6, 2, '#303038');
+  },
+  // Chalkboard
+  'k': (ctx, sx, sy) => {
+    px(ctx, sx, sy, 0, 0, T, 2, '#4a3018');
+    px(ctx, sx, sy, 0, 1, 1, 13, '#4a3018');
+    px(ctx, sx, sy, 15, 1, 1, 13, '#4a3018');
+    px(ctx, sx, sy, 1, 2, 14, 11, '#1a2a20');
+    px(ctx, sx, sy, 3, 4, 4, 1, 'rgba(240,240,224,0.85)');
+    px(ctx, sx, sy, 3, 6, 6, 1, 'rgba(240,240,224,0.7)');
+    px(ctx, sx, sy, 3, 8, 5, 1, 'rgba(240,240,224,0.7)');
+    px(ctx, sx, sy, 11, 9, 2, 2, '#e07060');
+    px(ctx, sx, sy, 0, 13, 16, 2, '#6a4a30');
+    px(ctx, sx, sy, 3, 13, 2, 1, '#f0f0e0');
+    px(ctx, sx, sy, 11, 13, 2, 1, '#e0a050');
+  },
+  // Avocado armchair
+  'A': (ctx, sx, sy) => {
+    px(ctx, sx, sy, 2, 4, 12, 9, '#607038');
+    px(ctx, sx, sy, 3, 4, 10, 1, '#788848');
+    px(ctx, sx, sy, 2, 8, 12, 1, '#405020');
+    px(ctx, sx, sy, 5, 6, 1, 1, '#2a3818');
+    px(ctx, sx, sy, 8, 6, 1, 1, '#2a3818');
+    px(ctx, sx, sy, 11, 6, 1, 1, '#2a3818');
+    px(ctx, sx, sy, 5, 10, 1, 1, '#2a3818');
+    px(ctx, sx, sy, 8, 10, 1, 1, '#2a3818');
+    px(ctx, sx, sy, 11, 10, 1, 1, '#2a3818');
+    px(ctx, sx, sy, 2, 4, 1, 9, '#506028');
+    px(ctx, sx, sy, 13, 4, 1, 9, '#506028');
+    px(ctx, sx, sy, 11, 4, 3, 5, '#a05030');
+    px(ctx, sx, sy, 3, 14, 2, 1, '#3a2818');
+    px(ctx, sx, sy, 11, 14, 2, 1, '#3a2818');
+  },
+  // Round dining table
+  'T': (ctx, sx, sy) => {
+    ctx.fillStyle = '#808890'; ctx.beginPath();
+    ctx.arc(sx+8, sy+8, 7, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#e8e0c8'; ctx.beginPath();
+    ctx.arc(sx+8, sy+8, 6.5, 0, Math.PI*2); ctx.fill();
+    px(ctx, sx, sy, 2, 5, 6, 5, '#8a6a48');
+    ctx.fillStyle = '#fafaf0'; ctx.beginPath();
+    ctx.arc(sx+5, sy+7.5, 1.6, 0, Math.PI*2); ctx.fill();
+    px(ctx, sx, sy, 4, 7, 2, 1, '#8a4030');
+    px(ctx, sx, sy, 6, 0, 4, 2, '#3a3a4a');
+    px(ctx, sx, sy, 6, 14, 4, 2, '#3a3a4a');
+    px(ctx, sx, sy, 0, 6, 2, 4, '#3a3a4a');
+    px(ctx, sx, sy, 14, 6, 2, 4, '#3a3a4a');
+  },
+  // Modern stainless steam table
+  'm': (ctx, sx, sy) => {
+    px(ctx, sx, sy, 1, 0, 1, 6, '#a0a8b0');
+    px(ctx, sx, sy, 14, 0, 1, 6, '#a0a8b0');
+    px(ctx, sx, sy, 1, 0, 14, 1, '#a0a8b0');
+    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    ctx.beginPath(); ctx.arc(sx+3.5, sy+4, 1.4, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(sx+8, sy+3.5, 1.5, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(sx+12.5, sy+4, 1.4, 0, Math.PI*2); ctx.fill();
+    px(ctx, sx, sy, 1, 6, 14, 9, '#b8c0c8');
+    px(ctx, sx, sy, 1, 6, 14, 1, '#d8e0e8');
+    px(ctx, sx, sy, 2, 8, 4, 5, '#303840');
+    px(ctx, sx, sy, 7, 8, 4, 5, '#303840');
+    px(ctx, sx, sy, 12, 8, 3, 5, '#303840');
+    px(ctx, sx, sy, 2, 9, 4, 2, '#c05030');
+    px(ctx, sx, sy, 7, 9, 4, 2, '#a08838');
+    px(ctx, sx, sy, 12, 9, 3, 2, '#607030');
+  },
+  // Brass buffet steam table
+  'M': (ctx, sx, sy) => {
+    px(ctx, sx, sy, 1, 0, 14, 1, '#a05020');
+    px(ctx, sx, sy, 2, 1, 12, 1, '#e06030');
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.beginPath(); ctx.arc(sx+3.5, sy+4, 1.2, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(sx+7.5, sy+3.5, 1.3, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(sx+11.5, sy+4, 1.2, 0, Math.PI*2); ctx.fill();
+    px(ctx, sx, sy, 1, 6, 14, 9, '#a07030');
+    px(ctx, sx, sy, 1, 6, 14, 1, '#c09040');
+    px(ctx, sx, sy, 2, 8, 3, 5, '#303030');
+    px(ctx, sx, sy, 5, 8, 3, 5, '#303030');
+    px(ctx, sx, sy, 8, 8, 3, 5, '#303030');
+    px(ctx, sx, sy, 11, 8, 3, 5, '#303030');
+    px(ctx, sx, sy, 2, 9, 3, 2, '#9a3a20');
+    px(ctx, sx, sy, 5, 9, 3, 2, '#a08838');
+    px(ctx, sx, sy, 8, 9, 3, 2, '#507028');
+    px(ctx, sx, sy, 11, 9, 3, 2, '#b8a060');
+  },
+};
+
+// ============================================================
+// Render helpers — turn a layout def into a canvas.
+// ============================================================
+
+function buildGrid(w, h, items, doors) {
+  // Initialize all-walls, then carve the interior to floor; then
+  // stamp doors (D on the wall ring) and items.
+  const g = Array.from({ length: h }, () => Array(w).fill('W'));
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      g[y][x] = '.';
+    }
+  }
+  // Doors on the perimeter
+  for (const d of doors || []) {
+    const { side, offset } = d;
+    if (side === 'N') g[0][offset] = 'D';
+    if (side === 'S') g[h - 1][offset] = 'D';
+    if (side === 'W') g[offset][0] = 'D';
+    if (side === 'E') g[offset][w - 1] = 'D';
+  }
+  // Items placed inside (item dx/dy is offset from the room's
+  // (1,1) interior origin so dx 0..w-3 maps to grid x 1..w-2)
+  for (const it of items || []) {
+    const gx = it.dx + 1;
+    const gy = it.dy + 1;
+    if (gx >= 0 && gx < w && gy >= 0 && gy < h) g[gy][gx] = it.ch;
+  }
+  return g;
+}
+
+function renderRoom(variant) {
+  const { w, h, items = [], doors = [], outdoor = false } = variant;
+  const cv = document.createElement('canvas');
+  cv.width = w * T;
+  cv.height = h * T;
+  cv.style.width = (w * T * ZOOM) + 'px';
+  cv.style.height = (h * T * ZOOM) + 'px';
+  const ctx = cv.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+
+  const grid = buildGrid(w, h, items, doors);
+
+  // Tiles that fully paint themselves (no floor underneath needed).
+  // Everything else gets a floor draw first, then the object on top.
+  const FULL_TILES = new Set(['W', 'D', '.', '_', '=', 'r', 'C', 'O', 'S']);
+
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const ch = grid[y][x];
+      const sx = x * T;
+      const sy = y * T;
+
+      if (FULL_TILES.has(ch)) {
+        if (TILES[ch]) TILES[ch](ctx, sx, sy);
+      } else {
+        // Floor first
+        if (outdoor) TILES['_'](ctx, sx, sy);
+        else TILES['.'](ctx, sx, sy);
+        // Object overlay (if any)
+        if (TILES[ch]) {
+          TILES[ch](ctx, sx, sy);
+        } else {
+          ctx.fillStyle = '#ff00ff';
+          ctx.fillRect(sx, sy, T, T);
+        }
+      }
+    }
+  }
+  return cv;
+}
+
+// ============================================================
+// LAYOUT VARIANTS
+// ============================================================
+
+// Helper: fill a rectangular block of items at (x0..x0+w-1, y0..y0+h-1)
+function block(x0, y0, w, h, ch) {
+  const out = [];
+  for (let dy = 0; dy < h; dy++)
+    for (let dx = 0; dx < w; dx++)
+      out.push({ dx: x0 + dx, dy: y0 + dy, ch });
+  return out;
+}
+function row(x0, y0, count, ch, step = 1) {
+  const out = [];
+  for (let i = 0; i < count; i++) out.push({ dx: x0 + i * step, dy: y0, ch });
+  return out;
+}
+function col(x0, y0, count, ch, step = 1) {
+  const out = [];
+  for (let i = 0; i < count; i++) out.push({ dx: x0, dy: y0 + i * step, ch });
+  return out;
+}
+
+// ============================================================
+// Parking lot variants (50w × 22h, OUTDOOR — no doors, has 'O' mat)
+// ============================================================
+const parkingArrival = { dx: 11, dy: 1, ch: 'O' };
+
+// Helper: paint parking stripes ('=') flanking each car. Adds a
+// stripe at dx-1 and dx+1 of the same dy. Stripes share between
+// adjacent cars (de-duped by Set).
+function withStripes(cars) {
+  const out = [...cars];
+  const stripes = new Set();
+  for (const car of cars) {
+    stripes.add(`${car.dx - 1},${car.dy}`);
+    stripes.add(`${car.dx + 1},${car.dy}`);
+  }
+  // Don't paint stripes on cells that already have a car
+  const carCells = new Set(cars.map(c => `${c.dx},${c.dy}`));
+  for (const key of stripes) {
+    if (!carCells.has(key)) {
+      const [x, y] = key.split(',').map(Number);
+      out.push({ dx: x, dy: y, ch: '=' });
+    }
+  }
+  return out;
+}
+
+// Street row: 'r' tiles for the road + 'C' curb tiles directly
+// north of it. Street runs east-west across the full width.
+function streetRow(dy) {
+  const out = [];
+  for (let x = 0; x < 48; x++) {              // dx valid 0..47 (w-3=47)
+    out.push({ dx: x, dy, ch: 'r' });
+  }
+  return out;
+}
+function curbRow(dy) {
+  const out = [];
+  for (let x = 0; x < 48; x++) out.push({ dx: x, dy, ch: 'C' });
+  return out;
+}
+
+const PARKING_CURRENT = {
+  name: 'Current (with new fixes)',
+  letter: 'current',
+  current: true,
+  desc: 'Today\'s layout + plant bg fixed + parking stripes + south curb & street',
+  w: 50, h: 22, outdoor: true,
+  items: [
+    parkingArrival,
+    // Trees N + middle (south row removed — that\'s where curb + street go now)
+    ...[2,6,22,32,42,46].map(x => ({ dx: x, dy: 2, ch: 'P' })),
+    // North row of cars at dy=4 + auto-stripes
+    ...withStripes([[2,'1'],[5,'2'],[8,'1'],[14,'3'],[17,'2'],[20,'1'],[26,'1'],[29,'2'],[35,'3'],[38,'1'],[44,'2'],[47,'1']]
+      .map(([x, c]) => ({ dx: x, dy: 4, ch: c }))),
+    // Middle row of cars at dy=11 + stripes (moved up from dy=14
+    // to make room for the southern curb + street)
+    ...withStripes([[2,'2'],[5,'1'],[8,'3'],[14,'1'],[17,'1'],[20,'2'],[26,'3'],[29,'1'],[35,'2'],[38,'1'],[44,'1'],[47,'3']]
+      .map(([x, c]) => ({ dx: x, dy: 11, ch: c }))),
+    // Benches in mid-lot drive aisles
+    { dx: 8, dy: 8, ch: 'h' }, { dx: 10, dy: 8, ch: 'h' },
+    { dx: 36, dy: 8, ch: 'h' }, { dx: 38, dy: 8, ch: 'h' },
+    // Lampposts — same mix
+    { dx: 4, dy: 8, ch: '5' }, { dx: 14, dy: 8, ch: '5' },
+    { dx: 25, dy: 8, ch: '6' }, { dx: 33, dy: 8, ch: '6' },
+    { dx: 41, dy: 8, ch: '4' }, { dx: 47, dy: 8, ch: '4' },
+    // Curb at dy=17, street at dy=18..19 (the southern edge)
+    ...curbRow(17),
+    ...streetRow(18),
+    ...streetRow(19),
+  ],
+};
+
+const PARKING_THREEROW = {
+  name: 'A. Three rows + curb & street',
+  letter: 'A',
+  desc: 'Denser — three rows of cars with drive aisles, full curb + 2-tile street south',
+  w: 50, h: 22, outdoor: true,
+  items: [
+    parkingArrival,
+    // Tree corners
+    ...[2,46].map(x => ({ dx: x, dy: 2, ch: 'P' })),
+    // Row 1 (dy=4)
+    ...withStripes([3,6,9,12,15,18,21,24,27,30,33,36,39,42,45]
+      .map((x, i) => ({ dx: x, dy: 4, ch: ['1','2','1','3','1','2','1','1','2','1','3','1','2','1','1'][i] }))),
+    // Row 2 (dy=9)
+    ...withStripes([3,6,9,12,15,18,21,24,27,30,33,36,39,42,45]
+      .map((x, i) => ({ dx: x, dy: 9, ch: ['2','1','1','2','1','3','1','2','1','1','2','1','3','1','1'][i] }))),
+    // Row 3 (dy=14)
+    ...withStripes([3,6,9,12,15,18,21,24,27,30,33,36,39,42,45]
+      .map((x, i) => ({ dx: x, dy: 14, ch: ['1','3','2','1','2','1','3','1','1','2','1','1','2','3','1'][i] }))),
+    // Lampposts in drive aisles
+    { dx: 12, dy: 6, ch: '6' }, { dx: 24, dy: 6, ch: '6' }, { dx: 36, dy: 6, ch: '6' },
+    { dx: 12, dy: 11, ch: '5' }, { dx: 24, dy: 11, ch: '5' }, { dx: 36, dy: 11, ch: '5' },
+    // Benches mid-aisle
+    { dx: 6, dy: 11, ch: 'h' }, { dx: 42, dy: 11, ch: 'h' },
+    // Curb + street south
+    ...curbRow(16),
+    ...streetRow(17),
+    ...streetRow(18),
+    ...streetRow(19),
+  ],
+};
+
+const PARKING_DRIVEUP = {
+  name: 'B. Hospital drive-up + drop-off lane',
+  letter: 'B',
+  desc: 'Open drop-off circle near arrival mat, ambulance bay west, cars on east',
+  w: 50, h: 22, outdoor: true,
+  items: [
+    parkingArrival,
+    // Trees
+    ...[2,42,46].map(x => ({ dx: x, dy: 2, ch: 'P' })),
+    // Ambulance bay (W) — 'E' equipment stands in for parked ambulances
+    { dx: 1, dy: 4, ch: 'E' }, { dx: 2, dy: 4, ch: 'E' },
+    { dx: 1, dy: 6, ch: 'E' }, { dx: 2, dy: 6, ch: 'E' },
+    // Drop-off curb framing the arrival mat (counter glyph reads as curb)
+    { dx: 9, dy: 0, ch: 'R' }, { dx: 10, dy: 0, ch: 'R' },
+    { dx: 11, dy: 0, ch: 'R' }, { dx: 12, dy: 0, ch: 'R' }, { dx: 13, dy: 0, ch: 'R' },
+    // Two parked cars west of drop-off
+    ...withStripes([
+      { dx: 4, dy: 5, ch: '1' },
+      { dx: 7, dy: 5, ch: '2' },
+    ]),
+    // East side: parked cars in two rows
+    ...withStripes([18,21,24,27,30,33,36,39,42,45].map((x, i) => ({
+      dx: x, dy: 4, ch: ['1','2','1','3','1','2','1','1','3','2'][i]
+    }))),
+    ...withStripes([18,21,24,27,30,33,36,39,42,45].map((x, i) => ({
+      dx: x, dy: 11, ch: ['2','1','3','1','2','1','3','1','2','1'][i]
+    }))),
+    // Lampposts flanking entrance + along east row
+    { dx: 6, dy: 8, ch: '6' }, { dx: 14, dy: 8, ch: '6' },
+    { dx: 22, dy: 8, ch: '5' }, { dx: 32, dy: 8, ch: '5' }, { dx: 42, dy: 8, ch: '5' },
+    // Benches near drop-off
+    { dx: 8, dy: 8, ch: 'h' }, { dx: 10, dy: 8, ch: 'h' }, { dx: 12, dy: 8, ch: 'h' },
+    // Curb + street south
+    ...curbRow(17),
+    ...streetRow(18),
+    ...streetRow(19),
+  ],
+};
+
+const PARKING_DIAGONAL = {
+  name: 'C. Diagonal-spaces lot',
+  letter: 'C',
+  desc: 'Cars staggered in two echelons — reads as 45° spaces with one-way drive',
+  w: 50, h: 22, outdoor: true,
+  items: [
+    parkingArrival,
+    // Trees
+    ...[2,46].map(x => ({ dx: x, dy: 2, ch: 'P' })),
+    ...[2,46].map(x => ({ dx: x, dy: 8, ch: 'P' })),
+    // Echelon 1 — alternating dy=4 and dy=5 (suggests 45° angle)
+    ...withStripes([
+      { dx: 4, dy: 4, ch: '1' }, { dx: 7, dy: 5, ch: '2' },
+      { dx: 10, dy: 4, ch: '1' }, { dx: 13, dy: 5, ch: '3' },
+      { dx: 16, dy: 4, ch: '1' }, { dx: 19, dy: 5, ch: '2' },
+      { dx: 22, dy: 4, ch: '1' }, { dx: 25, dy: 5, ch: '1' },
+      { dx: 28, dy: 4, ch: '3' }, { dx: 31, dy: 5, ch: '1' },
+      { dx: 34, dy: 4, ch: '2' }, { dx: 37, dy: 5, ch: '1' },
+      { dx: 40, dy: 4, ch: '1' }, { dx: 43, dy: 5, ch: '2' },
+    ]),
+    // Echelon 2 (south side) — staggered the other way
+    ...withStripes([
+      { dx: 4, dy: 12, ch: '2' }, { dx: 7, dy: 11, ch: '1' },
+      { dx: 10, dy: 12, ch: '3' }, { dx: 13, dy: 11, ch: '1' },
+      { dx: 16, dy: 12, ch: '1' }, { dx: 19, dy: 11, ch: '2' },
+      { dx: 22, dy: 12, ch: '1' }, { dx: 25, dy: 11, ch: '3' },
+      { dx: 28, dy: 12, ch: '1' }, { dx: 31, dy: 11, ch: '1' },
+      { dx: 34, dy: 12, ch: '2' }, { dx: 37, dy: 11, ch: '1' },
+      { dx: 40, dy: 12, ch: '3' }, { dx: 43, dy: 11, ch: '1' },
+    ]),
+    // Lampposts in mid-aisle
+    { dx: 8, dy: 8, ch: '6' }, { dx: 18, dy: 8, ch: '6' },
+    { dx: 28, dy: 8, ch: '6' }, { dx: 38, dy: 8, ch: '6' },
+    { dx: 14, dy: 14, ch: '5' }, { dx: 32, dy: 14, ch: '5' },
+    // Benches
+    { dx: 10, dy: 8, ch: 'h' }, { dx: 36, dy: 14, ch: 'h' },
+    // Curb + street south
+    ...curbRow(16),
+    ...streetRow(17),
+    ...streetRow(18),
+    ...streetRow(19),
+  ],
+};
+
+// ============================================================
+// Lecture hall variants (20w × 12h)
+// ============================================================
+const LECTURE_DOOR_N = { side: 'N', offset: 12 };
+
+const LECTURE_CURRENT = {
+  name: 'Current',
+  letter: 'current',
+  current: true,
+  desc: 'Live today — five rows of seats, lectern + chalkboard south.',
+  w: 20, h: 12,
+  doors: [LECTURE_DOOR_N],
+  items: [
+    { dx: 0, dy: 0, ch: 'P' }, { dx: 17, dy: 0, ch: 'P' },
+    // 5 rows of seats with center + east aisles
+    ...[1,3,5,7,13,15,17].map(x => ({ dx: x, dy: 1, ch: 's' })),
+    ...[1,3,5,7,13,15,17].map(x => ({ dx: x, dy: 2, ch: 's' })),
+    ...[1,3,5,7,13,15,17].map(x => ({ dx: x, dy: 3, ch: 's' })),
+    ...[1,3,5,7,13,15,17].map(x => ({ dx: x, dy: 5, ch: 's' })),
+    ...[1,3,5,7,13,15,17].map(x => ({ dx: x, dy: 6, ch: 's' })),
+    { dx: 8, dy: 8, ch: 'c' }, { dx: 9, dy: 9, ch: 'k' },
+    { dx: 0, dy: 9, ch: 'R' }, { dx: 1, dy: 9, ch: 'R' },
+    { dx: 16, dy: 9, ch: 'R' }, { dx: 17, dy: 9, ch: 'R' },
+  ],
+};
+
+const LECTURE_TIERED = {
+  name: 'A. Tiered with center podium',
+  letter: 'A',
+  desc: 'Symmetric — center aisle for podium sightline + cross-aisle',
+  w: 20, h: 12,
+  doors: [LECTURE_DOOR_N],
+  items: [
+    { dx: 0, dy: 0, ch: 'P' }, { dx: 17, dy: 0, ch: 'P' },
+    // Two-block seating, center aisle at dx=8/9
+    ...[1,2,4,5].flatMap(x => [
+      { dx: x, dy: 1, ch: 's' }, { dx: x, dy: 2, ch: 's' },
+    ]),
+    ...[12,13,15,16].flatMap(x => [
+      { dx: x, dy: 1, ch: 's' }, { dx: x, dy: 2, ch: 's' },
+    ]),
+    // Cross-aisle dy=3 (open)
+    ...[1,2,4,5,7].flatMap(x => [
+      { dx: x, dy: 4, ch: 's' }, { dx: x, dy: 5, ch: 's' }, { dx: x, dy: 6, ch: 's' },
+    ]),
+    ...[10,12,13,15,16].flatMap(x => [
+      { dx: x, dy: 4, ch: 's' }, { dx: x, dy: 5, ch: 's' }, { dx: x, dy: 6, ch: 's' },
+    ]),
+    // Stage south
+    { dx: 1, dy: 9, ch: 'R' }, { dx: 8, dy: 8, ch: 'c' },
+    { dx: 9, dy: 9, ch: 'k' }, { dx: 16, dy: 9, ch: 'R' },
+  ],
+};
+
+const LECTURE_HORSESHOE = {
+  name: 'B. Horseshoe seminar',
+  letter: 'B',
+  desc: 'Inward-facing, fewer seats, more discussion — case-conf vibe',
+  w: 20, h: 12,
+  doors: [LECTURE_DOOR_N],
+  items: [
+    { dx: 0, dy: 0, ch: 'P' }, { dx: 17, dy: 0, ch: 'P' },
+    // U-shape of desks + chairs ringing the room
+    ...row(1, 1, 5, 'c'), ...row(1, 2, 5, 's'),
+    ...row(13, 1, 5, 'c'), ...row(13, 2, 5, 's'),
+    // Side desks
+    ...col(1, 4, 4, 'c'), ...col(2, 4, 4, 's'),
+    ...col(17, 4, 4, 'c'), ...col(16, 4, 4, 's'),
+    // Bottom row + screen
+    ...row(5, 8, 8, 's'),
+    ...row(5, 9, 8, 'c'),
+    { dx: 9, dy: 6, ch: 'k' },
+  ],
+};
+
+const LECTURE_STADIUM = {
+  name: 'C. Two-aisle stadium',
+  letter: 'C',
+  desc: 'Same shape as current, denser seating + redesigned stage',
+  w: 20, h: 12,
+  doors: [LECTURE_DOOR_N],
+  items: [
+    { dx: 0, dy: 0, ch: 'P' }, { dx: 17, dy: 0, ch: 'P' },
+    // 6 rows of denser seats — two aisles at dx=4 + dx=11
+    ...[1,2,3,5,6,7,8,9,10,12,13,14,15,16,17].flatMap(x =>
+      [1, 2, 3, 5, 6, 7].map(y => ({ dx: x, dy: y, ch: 's' }))
+    ),
+    // Stage — full width
+    ...row(0, 9, 18, 'R'),
+    { dx: 8, dy: 8, ch: 'c' }, // lectern
+    { dx: 9, dy: 8, ch: 'k' }, // chalkboard sits on counter
+  ],
+};
+
+// ============================================================
+// Cancer center variants (28w × 12h)
+// ============================================================
+const CANCER_DOOR_S = { side: 'S', offset: 5 };
+
+const CANCER_CURRENT = {
+  name: 'Current',
+  letter: 'current',
+  current: true,
+  desc: 'Live today — 6 north bays, mid staff stations, pharmacy east.',
+  w: 28, h: 12,
+  doors: [CANCER_DOOR_S],
+  items: [
+    ...[1,5,9,13,17,21].map(x => ({ dx: x, dy: 0, ch: 'H' })),
+    ...[2,6,10,14,18,22].map(x => ({ dx: x, dy: 1, ch: 'c' })),
+    { dx: 4, dy: 4, ch: 'c' }, { dx: 4, dy: 5, ch: 'h' },
+    { dx: 12, dy: 4, ch: 'c' }, { dx: 12, dy: 5, ch: 'h' },
+    { dx: 20, dy: 4, ch: 'c' }, { dx: 20, dy: 5, ch: 'h' },
+    { dx: 25, dy: 1, ch: 'R' }, { dx: 25, dy: 2, ch: 'R' },
+    { dx: 25, dy: 4, ch: 'F' }, { dx: 25, dy: 7, ch: 'V' },
+    ...row(1, 7, 3, 'h'), { dx: 2, dy: 8, ch: 'c' },
+    ...row(1, 9, 3, 'h'), { dx: 7, dy: 9, ch: 'b' },
+    { dx: 11, dy: 9, ch: 'P' }, { dx: 17, dy: 9, ch: 'P' },
+    { dx: 22, dy: 9, ch: 'B' },
+  ],
+};
+
+const CANCER_LINEAR = {
+  name: 'A. Linear infusion floor',
+  letter: 'A',
+  desc: 'Tightened version of current — fridge, pharmacy, board cleaner',
+  w: 28, h: 12,
+  doors: [CANCER_DOOR_S],
+  items: [
+    // Six bays north
+    ...[1,5,9,13,17,21].map(x => ({ dx: x, dy: 0, ch: 'H' })),
+    ...[1,5,9,13,17,21].map(x => ({ dx: x, dy: 1, ch: 'c' })),
+    // Three RN stations mid
+    ...[4,12,20].flatMap(x => [
+      { dx: x, dy: 3, ch: 'c' }, { dx: x, dy: 4, ch: 'h' },
+    ]),
+    // Pharmacy column east
+    ...col(25, 0, 3, 'R'), { dx: 25, dy: 4, ch: 'F' },
+    { dx: 25, dy: 6, ch: 'V' }, { dx: 25, dy: 8, ch: 'B' },
+    // SW consult lounge
+    ...row(1, 7, 3, 'h'), { dx: 2, dy: 8, ch: 'c' },
+    ...row(1, 9, 3, 'h'), { dx: 7, dy: 9, ch: 'b' },
+    // Plants
+    { dx: 11, dy: 9, ch: 'P' }, { dx: 17, dy: 9, ch: 'P' },
+  ],
+};
+
+const CANCER_PODS = {
+  name: 'B. Two-pod open plan',
+  letter: 'B',
+  desc: 'Bays in clusters of 3 — pod model, quieter, more private',
+  w: 28, h: 12,
+  doors: [CANCER_DOOR_S],
+  items: [
+    // Pod 1 (3 bays west)
+    ...[1,4,7].flatMap(x => [
+      { dx: x, dy: 0, ch: 'H' }, { dx: x+1, dy: 1, ch: 'c' },
+    ]),
+    // Pod 2 (3 bays east)
+    ...[14,17,20].flatMap(x => [
+      { dx: x, dy: 0, ch: 'H' }, { dx: x+1, dy: 1, ch: 'c' },
+    ]),
+    // Three RN stations
+    { dx: 2, dy: 4, ch: 'c' }, { dx: 3, dy: 4, ch: 'h' },
+    { dx: 9, dy: 4, ch: 'c' }, { dx: 10, dy: 4, ch: 'h' },
+    { dx: 18, dy: 4, ch: 'c' }, { dx: 19, dy: 4, ch: 'h' },
+    // Pharmacy
+    ...col(25, 0, 2, 'R'), { dx: 25, dy: 3, ch: 'F' },
+    { dx: 25, dy: 6, ch: 'V' }, { dx: 25, dy: 8, ch: 'B' },
+    // Two consult clusters SW
+    ...row(1, 7, 2, 'h'), { dx: 1, dy: 8, ch: 'c' },
+    ...row(8, 7, 2, 'h'), { dx: 8, dy: 8, ch: 'c' },
+    { dx: 12, dy: 9, ch: 'b' },
+    { dx: 17, dy: 9, ch: 'P' }, { dx: 22, dy: 9, ch: 'P' },
+  ],
+};
+
+const CANCER_BAYEXAM = {
+  name: 'C. Bay + private exam rooms',
+  letter: 'C',
+  desc: 'Fewer bays + dedicated exam-room row east — clinic-day patients',
+  w: 28, h: 12,
+  doors: [CANCER_DOOR_S],
+  items: [
+    // 4 infusion bays (west half only)
+    ...[1,5,9,13].map(x => ({ dx: x, dy: 0, ch: 'H' })),
+    ...[1,5,9,13].map(x => ({ dx: x, dy: 1, ch: 'c' })),
+    // 2 RN stations
+    { dx: 3, dy: 4, ch: 'c' }, { dx: 3, dy: 5, ch: 'h' },
+    { dx: 10, dy: 4, ch: 'c' }, { dx: 10, dy: 5, ch: 'h' },
+    // Three exam-room desks east half
+    { dx: 15, dy: 7, ch: 'c' }, { dx: 15, dy: 8, ch: 'h' },
+    { dx: 18, dy: 7, ch: 'c' }, { dx: 18, dy: 8, ch: 'h' },
+    { dx: 21, dy: 7, ch: 'c' }, { dx: 21, dy: 8, ch: 'h' },
+    // Pharmacy column east
+    ...col(25, 0, 2, 'R'), { dx: 25, dy: 3, ch: 'F' },
+    { dx: 25, dy: 6, ch: 'V' }, { dx: 25, dy: 8, ch: 'B' },
+    // SW consult area
+    ...row(1, 7, 2, 'h'), { dx: 1, dy: 8, ch: 'c' },
+    { dx: 5, dy: 8, ch: 'b' },
+  ],
+};
+
+// ============================================================
+// Lobby variants (26w × 10h)
+// ============================================================
+const LOBBY_DOORS = [
+  { side: 'N', offset: 10 },
+  { side: 'S', offset: 14 },
+  { side: 'E', offset: 5 },
+];
+
+const LOBBY_CURRENT = {
+  name: 'Current',
+  letter: 'current',
+  current: true,
+  desc: 'Live today — counter NW, two rows of armchairs flank Chloe.',
+  w: 26, h: 10,
+  doors: LOBBY_DOORS,
+  items: [
+    { dx: 1, dy: 1, ch: 'R' }, { dx: 2, dy: 1, ch: 'R' }, { dx: 3, dy: 1, ch: 'R' },
+    { dx: 5, dy: 1, ch: 'b' }, { dx: 18, dy: 1, ch: 'b' },
+    { dx: 7, dy: 1, ch: 'P' }, { dx: 12, dy: 1, ch: 'P' }, { dx: 22, dy: 1, ch: 'P' },
+    { dx: 5, dy: 4, ch: 'c' }, { dx: 19, dy: 4, ch: 'c' },
+    { dx: 7, dy: 4, ch: 'A' }, { dx: 9, dy: 4, ch: 'A' }, { dx: 11, dy: 4, ch: 'A' },
+    { dx: 14, dy: 4, ch: 'A' }, { dx: 16, dy: 4, ch: 'A' },
+    { dx: 9, dy: 5, ch: 'c' },
+    { dx: 7, dy: 6, ch: 'A' }, { dx: 9, dy: 6, ch: 'h' }, { dx: 11, dy: 6, ch: 'A' },
+    { dx: 14, dy: 6, ch: 'A' }, { dx: 16, dy: 6, ch: 'A' },
+    { dx: 2, dy: 7, ch: 'V' },
+    { dx: 22, dy: 7, ch: 'w' }, { dx: 24, dy: 7, ch: 'P' },
+    { dx: 1, dy: 4, ch: 'O' },
+  ],
+};
+
+const LOBBY_ATRIUM = {
+  name: 'A. 70s atrium',
+  letter: 'A',
+  desc: 'Symmetric — fountain center, lounge clusters in corners',
+  w: 26, h: 10,
+  doors: LOBBY_DOORS,
+  items: [
+    ...row(1, 1, 3, 'R'), { dx: 22, dy: 1, ch: 'b' },
+    { dx: 1, dy: 4, ch: 'O' },
+    // NW lounge cluster
+    { dx: 3, dy: 3, ch: 'A' }, { dx: 4, dy: 3, ch: 'A' },
+    { dx: 3, dy: 4, ch: 'A' }, { dx: 4, dy: 4, ch: 'A' },
+    // NE lounge cluster
+    { dx: 21, dy: 3, ch: 'A' }, { dx: 22, dy: 3, ch: 'A' },
+    { dx: 21, dy: 4, ch: 'A' }, { dx: 22, dy: 4, ch: 'A' },
+    // SW + SE clusters
+    { dx: 3, dy: 6, ch: 'A' }, { dx: 4, dy: 6, ch: 'A' },
+    { dx: 21, dy: 6, ch: 'A' }, { dx: 22, dy: 6, ch: 'A' },
+    // Center "fountain" (lamp + plants)
+    { dx: 11, dy: 4, ch: 'P' }, { dx: 13, dy: 4, ch: 'w' }, { dx: 15, dy: 4, ch: 'P' },
+    // Chloe's desk + spawn
+    { dx: 9, dy: 5, ch: 'c' }, { dx: 9, dy: 6, ch: 'h' },
+    // Vending S
+    { dx: 2, dy: 7, ch: 'V' }, { dx: 24, dy: 7, ch: 'P' },
+  ],
+};
+
+const LOBBY_DINER = {
+  name: 'B. Diner waiting row',
+  letter: 'B',
+  desc: 'Counter dominant N, long row of armchairs along south wall',
+  w: 26, h: 10,
+  doors: LOBBY_DOORS,
+  items: [
+    ...row(1, 1, 6, 'R'), { dx: 22, dy: 1, ch: 'b' },
+    { dx: 1, dy: 4, ch: 'O' },
+    // Intake desks
+    { dx: 3, dy: 3, ch: 'c' }, { dx: 9, dy: 3, ch: 'c' },
+    { dx: 3, dy: 4, ch: 'h' }, { dx: 9, dy: 4, ch: 'h' },
+    // Chloe (player spawn)
+    { dx: 17, dy: 4, ch: 'c' }, { dx: 17, dy: 5, ch: 'h' },
+    // Plants
+    { dx: 19, dy: 3, ch: 'P' }, { dx: 22, dy: 3, ch: 'P' },
+    // Big southern row of armchairs
+    ...[3,4,7,8,11,12,15,16,19,20,23].map(x => ({ dx: x, dy: 7, ch: 'A' })),
+    { dx: 24, dy: 7, ch: 'V' },
+  ],
+};
+
+const LOBBY_DENSER = {
+  name: 'C. Current layout, denser',
+  letter: 'C',
+  desc: 'Minor edit of what exists — +5 chairs, plants frame entry',
+  w: 26, h: 10,
+  doors: LOBBY_DOORS,
+  items: [
+    { dx: 1, dy: 1, ch: 'R' }, { dx: 2, dy: 1, ch: 'R' }, { dx: 3, dy: 1, ch: 'R' },
+    { dx: 5, dy: 1, ch: 'b' }, { dx: 18, dy: 1, ch: 'b' },
+    { dx: 7, dy: 1, ch: 'P' }, { dx: 12, dy: 1, ch: 'P' }, { dx: 22, dy: 1, ch: 'P' },
+    { dx: 5, dy: 4, ch: 'c' }, { dx: 19, dy: 4, ch: 'c' },
+    // expanded chair rows
+    { dx: 7, dy: 3, ch: 'A' }, { dx: 11, dy: 3, ch: 'A' },
+    { dx: 14, dy: 3, ch: 'A' }, { dx: 21, dy: 3, ch: 'A' },
+    { dx: 7, dy: 4, ch: 'A' }, { dx: 11, dy: 4, ch: 'A' },
+    { dx: 14, dy: 4, ch: 'A' }, { dx: 21, dy: 4, ch: 'A' },
+    { dx: 9, dy: 5, ch: 'c' },
+    { dx: 7, dy: 6, ch: 'A' }, { dx: 9, dy: 6, ch: 'h' }, { dx: 11, dy: 6, ch: 'A' },
+    { dx: 14, dy: 6, ch: 'A' }, { dx: 16, dy: 6, ch: 'A' }, { dx: 21, dy: 6, ch: 'A' },
+    { dx: 2, dy: 7, ch: 'V' }, { dx: 22, dy: 7, ch: 'w' }, { dx: 24, dy: 7, ch: 'P' },
+    { dx: 1, dy: 4, ch: 'O' },
+  ],
+};
+
+// ============================================================
+// Cafeteria variants (12w × 10h)
+// ============================================================
+const CAFE_DOOR = { side: 'E', offset: 2 };
+
+const CAFE_CURRENT = {
+  name: 'Current',
+  letter: 'current',
+  current: true,
+  desc: 'Live today — service line N, 5 round tables, vending east.',
+  w: 12, h: 10,
+  doors: [CAFE_DOOR],
+  items: [
+    { dx: 1, dy: 1, ch: 'R' }, { dx: 2, dy: 1, ch: 'R' },
+    { dx: 4, dy: 1, ch: 'm' }, { dx: 5, dy: 1, ch: 'M' },
+    { dx: 7, dy: 1, ch: 'B' }, { dx: 9, dy: 1, ch: 'b' },
+    { dx: 1, dy: 4, ch: 'T' }, { dx: 4, dy: 4, ch: 'T' }, { dx: 7, dy: 4, ch: 'T' },
+    { dx: 2, dy: 7, ch: 'T' }, { dx: 5, dy: 7, ch: 'T' },
+    { dx: 9, dy: 4, ch: 'V' }, { dx: 9, dy: 6, ch: 'w' }, { dx: 9, dy: 8, ch: 'P' },
+  ],
+};
+
+const CAFE_SERVICE = {
+  name: 'A. Service line + dining',
+  letter: 'A',
+  desc: 'Clear queue → tables gradient. Bulletin-as-menu south wall.',
+  w: 12, h: 10,
+  doors: [CAFE_DOOR],
+  items: [
+    ...row(1, 1, 3, 'R'),                       // counter
+    { dx: 4, dy: 1, ch: 'm' }, { dx: 5, dy: 1, ch: 'M' },  // steam tables
+    { dx: 9, dy: 1, ch: 'V' },                  // vending end of line
+    // Three round tables in center, two rows
+    { dx: 1, dy: 4, ch: 'T' }, { dx: 5, dy: 4, ch: 'T' }, { dx: 8, dy: 4, ch: 'T' },
+    { dx: 2, dy: 7, ch: 'T' }, { dx: 5, dy: 7, ch: 'T' },
+    // South wall menu / bulletin
+    { dx: 5, dy: 8, ch: 'b' },
+    { dx: 9, dy: 7, ch: 'P' },
+  ],
+};
+
+const CAFE_COMMUNAL = {
+  name: 'B. Communal long tables',
+  letter: 'B',
+  desc: 'Single long table — staff cafeteria feel, fast NPC pop-ins',
+  w: 12, h: 10,
+  doors: [CAFE_DOOR],
+  items: [
+    ...row(1, 1, 2, 'R'), { dx: 3, dy: 1, ch: 'B' },
+    { dx: 4, dy: 1, ch: 'm' }, { dx: 5, dy: 1, ch: 'M' },
+    { dx: 9, dy: 1, ch: 'V' },
+    // Long communal table — desks as table tops, chairs flanking
+    ...row(1, 3, 8, 'h'),                       // bench seats N
+    ...row(1, 4, 8, 'c'),                       // table top
+    ...row(1, 5, 8, 'c'),                       // table top
+    ...row(1, 6, 8, 'h'),                       // bench seats S
+    { dx: 1, dy: 8, ch: 'P' }, { dx: 7, dy: 8, ch: 'b' }, { dx: 9, dy: 8, ch: 'w' },
+  ],
+};
+
+const CAFE_BOOTHS = {
+  name: 'C. Booths around perimeter',
+  letter: 'C',
+  desc: 'Four 4-tops in corners, open center for foot traffic',
+  w: 12, h: 10,
+  doors: [CAFE_DOOR],
+  items: [
+    ...row(1, 1, 2, 'R'), { dx: 3, dy: 1, ch: 'F' }, { dx: 4, dy: 1, ch: 'B' },
+    { dx: 5, dy: 1, ch: 'm' }, { dx: 9, dy: 1, ch: 'V' },
+    // Booth NW + NE
+    { dx: 1, dy: 3, ch: 'h' }, { dx: 2, dy: 3, ch: 'c' },
+    { dx: 1, dy: 4, ch: 'h' }, { dx: 2, dy: 4, ch: 'c' },
+    { dx: 8, dy: 3, ch: 'c' }, { dx: 9, dy: 3, ch: 'h' },
+    { dx: 8, dy: 4, ch: 'c' }, { dx: 9, dy: 4, ch: 'h' },
+    // Booth SW + SE
+    { dx: 1, dy: 6, ch: 'h' }, { dx: 2, dy: 6, ch: 'c' },
+    { dx: 1, dy: 7, ch: 'h' }, { dx: 2, dy: 7, ch: 'c' },
+    { dx: 8, dy: 6, ch: 'c' }, { dx: 9, dy: 6, ch: 'h' },
+    { dx: 8, dy: 7, ch: 'c' }, { dx: 9, dy: 7, ch: 'h' },
+    { dx: 5, dy: 8, ch: 'b' }, { dx: 9, dy: 8, ch: 'w' }, { dx: 1, dy: 8, ch: 'P' },
+  ],
+};
+
+// ============================================================
+// Mount everything
+// ============================================================
+const ROOMS = {
+  parking: { title: 'Parking lot', variants: [PARKING_CURRENT, PARKING_THREEROW, PARKING_DRIVEUP, PARKING_DIAGONAL] },
+};
+
+const selections = {};
+
+function mountRoom(roomKey) {
+  const stack = document.querySelector(`[data-room="${roomKey}"]`);
+  const { variants } = ROOMS[roomKey];
+  for (const v of variants) {
+    const wrap = document.createElement('div');
+    wrap.className = 'variant' + (v.current ? ' is-current' : '');
+    const head = document.createElement('div');
+    head.className = 'variant-head';
+    head.innerHTML = `<span class="letter">${v.letter}</span><span class="name">${v.name}</span><span class="desc">${v.desc || ''}</span>`;
+    wrap.appendChild(head);
+    const cv = renderRoom(v);
+    wrap.appendChild(cv);
+
+    wrap.addEventListener('click', () => {
+      stack.querySelectorAll('.variant.is-selected').forEach(el => el.classList.remove('is-selected'));
+      wrap.classList.add('is-selected');
+      selections[roomKey] = { letter: v.letter, name: v.name };
+      renderPicks();
+    });
+    stack.appendChild(wrap);
+  }
+}
+
+function renderPicks() {
+  const el = document.getElementById('picks-readout');
+  const keys = Object.keys(selections);
+  if (keys.length === 0) {
+    el.innerHTML = `<strong>Selections:</strong> <span style="color:var(--sub)">Click any variant to select it for that room.</span>`;
+    return;
+  }
+  const parts = keys.map(k => {
+    const { letter, name } = selections[k];
+    const title = ROOMS[k].title;
+    return `<span class="pick"><em>${title}:</em>${letter}${letter === 'current' ? '' : ` (${name.replace(/^[A-C]\.\s*/, '')})`}</span>`;
+  });
+  el.innerHTML = `<strong>Selections (${keys.length}/${Object.keys(ROOMS).length}):</strong> ${parts.join(' ')}`;
+}
+
+function buildSummaryText() {
+  const keys = Object.keys(selections);
+  if (keys.length === 0) return '';
+  const lines = ['Room layout picks:', ''];
+  for (const k of Object.keys(ROOMS)) {
+    const sel = selections[k];
+    const title = ROOMS[k].title;
+    lines.push(`- ${title}: ${sel ? `${sel.letter} (${sel.name})` : '— (no pick)'}`);
+  }
+  return lines.join('\n');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('is-shown');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => t.classList.remove('is-shown'), 1600);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  for (const key of Object.keys(ROOMS)) mountRoom(key);
+
+  document.getElementById('btn-clear').addEventListener('click', () => {
+    for (const k of Object.keys(selections)) delete selections[k];
+    document.querySelectorAll('.variant.is-selected').forEach(el => el.classList.remove('is-selected'));
+    renderPicks();
+    showToast('Cleared');
+  });
+  document.getElementById('btn-copy').addEventListener('click', async () => {
+    const text = buildSummaryText();
+    if (!text) { showToast('Nothing selected yet'); return; }
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast('Copied to clipboard — paste it back to me');
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+      showToast('Copied (fallback)');
+    }
+  });
+});
+</script>
+
+</body>
+</html>
