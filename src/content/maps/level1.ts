@@ -58,7 +58,7 @@
 // scenes consume the same MapDef. Per-level NPC placements (`levels`
 // filter) put the right staffer in the right room for each level.
 
-import { buildMap, applyTileOverrides, type MapDef } from '../mapBuilder'
+import { buildMap, applyTileOverrides, type MapDef, type RoomItem } from '../mapBuilder'
 
 const WIDTH = 80   // bumped from 66 to fit outdoor + payer office
 const HEIGHT = 130 // bumped from 72 to fit outdoor + second floor
@@ -198,6 +198,96 @@ const STAIR_2F_TO_HUB   = { from: { x: 33, y: 96 }, to: { x: 18, y: 7  }, label:
 // that distance.
 const EXIT_LOBBY_OUT    = { from: { x: 5,  y: 36 }, to: { x: 16, y: 67 }, label: '← EXIT' }
 const EXIT_OUT_LOBBY    = { from: { x: 16, y: 67 }, to: { x: 5,  y: 36 }, label: '← LOBBY' }
+
+/**
+ * Compute the OUTDOOR (parking lot) item list. Pulled into a helper
+ * so we can auto-generate parking-line stripes ('=') flanking each
+ * parked car instead of hand-placing 50+ stripe entries.
+ *
+ * Layout:
+ *   - Arrival mat at (11, 1) — lobby teleport partner
+ *   - North trees at dy=2 (south trees dropped — replaced by the
+ *     curb + street that runs along the south edge)
+ *   - North row of cars at dy=4, middle row at dy=14
+ *   - Each car gets stripes at dx-1 and dx+1 (auto, deduped against
+ *     other cars and out-of-bounds dx)
+ *   - Drop-off benches at dy=8
+ *   - Lampposts at dy=10 (mid-lot drive aisle)
+ *   - Curb row at dy=17 (full width)
+ *   - Street at dy=18, dy=19 (2-row road, full width)
+ */
+function outdoorItems(): RoomItem[] {
+  const cars: RoomItem[] = [
+    // Arrival tile (teleport partner of the lobby 'O').
+    // Outdoor origin is (4,65); dx=11/dy=1 → world (16, 67),
+    // matching EXIT_OUT_LOBBY.from.
+    { dx: 11, dy: 1, ch: 'O' },
+    // North row of cars — mixed sedans, SUVs, one beater. Sit at
+    // dy=4 (one row south of trees) so they don't overlap.
+    { dx: 2,  dy: 4, ch: '1' }, { dx: 5,  dy: 4, ch: '2' },
+    { dx: 8,  dy: 4, ch: '1' }, { dx: 14, dy: 4, ch: '3' },
+    { dx: 17, dy: 4, ch: '2' }, { dx: 20, dy: 4, ch: '1' },
+    { dx: 26, dy: 4, ch: '1' }, { dx: 29, dy: 4, ch: '2' },
+    { dx: 35, dy: 4, ch: '3' }, { dx: 38, dy: 4, ch: '1' },
+    { dx: 44, dy: 4, ch: '2' }, { dx: 47, dy: 4, ch: '1' },
+    // Middle row of cars at dy=14 — denser, a couple beaters.
+    { dx: 2,  dy: 14, ch: '2' }, { dx: 5,  dy: 14, ch: '1' },
+    { dx: 8,  dy: 14, ch: '3' }, { dx: 14, dy: 14, ch: '1' },
+    { dx: 17, dy: 14, ch: '1' }, { dx: 20, dy: 14, ch: '2' },
+    { dx: 26, dy: 14, ch: '3' }, { dx: 29, dy: 14, ch: '1' },
+    { dx: 35, dy: 14, ch: '2' }, { dx: 38, dy: 14, ch: '1' },
+    { dx: 44, dy: 14, ch: '1' }, { dx: 47, dy: 14, ch: '3' },
+  ]
+
+  // Auto-stripes flanking each car. Skip cells that are themselves
+  // cars or that fall outside the valid dx range (0..47 for w=50).
+  const carCells = new Set(
+    cars.filter(c => /^[123]$/.test(c.ch)).map(c => `${c.dx},${c.dy}`)
+  )
+  const stripeCells = new Set<string>()
+  for (const car of cars) {
+    if (!/^[123]$/.test(car.ch)) continue  // only cars get stripes
+    for (const dx of [car.dx - 1, car.dx + 1]) {
+      if (dx < 0 || dx > 47) continue
+      const key = `${dx},${car.dy}`
+      if (carCells.has(key)) continue
+      stripeCells.add(key)
+    }
+  }
+  const stripes: RoomItem[] = Array.from(stripeCells).map(k => {
+    const [x, y] = k.split(',').map(Number)
+    return { dx: x, dy: y, ch: '=' }
+  })
+
+  // Curb row at dy=17 + 2-row street at dy=18, dy=19. Replaces
+  // the south perimeter trees that used to live at dy=18.
+  const curbRow: RoomItem[] = Array.from({ length: 48 }, (_, i) => ({ dx: i, dy: 17, ch: 'C' }))
+  const streetRows: RoomItem[] = [
+    ...Array.from({ length: 48 }, (_, i) => ({ dx: i, dy: 18, ch: 'r' })),
+    ...Array.from({ length: 48 }, (_, i) => ({ dx: i, dy: 19, ch: 'r' })),
+  ]
+
+  return [
+    ...cars,
+    ...stripes,
+    // North-edge trees only (south trees dropped — curb + street
+    // takes that row now).
+    { dx: 2,  dy: 2, ch: 'P' }, { dx: 6,  dy: 2, ch: 'P' },
+    { dx: 22, dy: 2, ch: 'P' }, { dx: 32, dy: 2, ch: 'P' },
+    { dx: 42, dy: 2, ch: 'P' }, { dx: 46, dy: 2, ch: 'P' },
+    // Drop-off benches mid-lot.
+    { dx: 8,  dy: 8,  ch: 'h' }, { dx: 10, dy: 8,  ch: 'h' },
+    { dx: 36, dy: 8,  ch: 'h' }, { dx: 38, dy: 8,  ch: 'h' },
+    // Lampposts — variety. Arched globes near the entrance, twin
+    // globes mid-lot, simple fixtures at the far edges.
+    { dx: 4,  dy: 10, ch: '5' }, { dx: 14, dy: 10, ch: '5' },
+    { dx: 25, dy: 10, ch: '6' }, { dx: 33, dy: 10, ch: '6' },
+    { dx: 41, dy: 10, ch: '4' }, { dx: 47, dy: 10, ch: '4' },
+    // South edge: curb + street.
+    ...curbRow,
+    ...streetRows,
+  ]
+}
 
 const { layout, tileMeta, rooms: BUILT_ROOMS } = buildMap({
   width: WIDTH,
@@ -746,47 +836,11 @@ const { layout, tileMeta, rooms: BUILT_ROOMS } = buildMap({
       fill: ',',
       // 2026-05: cars (1=sedan, 2=SUV, 3=beater) and lampposts
       // (4=simple, 5=arched, 6=double) replaced the F-cabinet stand-ins
-      // and water-cooler "lamps". See /sprite-redraw-preview.html.
-      items: [
-        // Arrival tile (teleport partner of the lobby 'O').
-        // Outdoor origin is (4,65); dx=11/dy=1 → world (16, 67),
-        // matching EXIT_OUT_LOBBY.from.
-        { dx: 11, dy: 1, ch: 'O' },
-        // Perimeter trees (north + south rows).
-        { dx: 2,  dy: 2, ch: 'P' }, { dx: 6,  dy: 2, ch: 'P' },
-        { dx: 22, dy: 2, ch: 'P' }, { dx: 32, dy: 2, ch: 'P' },
-        { dx: 42, dy: 2, ch: 'P' }, { dx: 46, dy: 2, ch: 'P' },
-        { dx: 2,  dy: 18, ch: 'P' }, { dx: 6,  dy: 18, ch: 'P' },
-        { dx: 22, dy: 18, ch: 'P' }, { dx: 32, dy: 18, ch: 'P' },
-        { dx: 42, dy: 18, ch: 'P' }, { dx: 46, dy: 18, ch: 'P' },
-        // North row of cars — mixed sedans, SUVs, one beater. Sit at
-        // dy=4 (one row south of trees) so they don't overlap.
-        { dx: 2,  dy: 4, ch: '1' }, { dx: 5,  dy: 4, ch: '2' },
-        { dx: 8,  dy: 4, ch: '1' }, { dx: 14, dy: 4, ch: '3' },
-        { dx: 17, dy: 4, ch: '2' }, { dx: 20, dy: 4, ch: '1' },
-        { dx: 26, dy: 4, ch: '1' }, { dx: 29, dy: 4, ch: '2' },
-        { dx: 35, dy: 4, ch: '3' }, { dx: 38, dy: 4, ch: '1' },
-        { dx: 44, dy: 4, ch: '2' }, { dx: 47, dy: 4, ch: '1' },
-        // Drop-off curb area mid-lot, just south of the arrival mat:
-        // benches flanking the door path. Player enters at (dx=11,
-        // dy=1) and walks south to the lobby teleport mat.
-        { dx: 8,  dy: 8,  ch: 'h' }, { dx: 10, dy: 8,  ch: 'h' },
-        // Middle row of cars at dy=14 — denser, a couple beaters.
-        { dx: 2,  dy: 14, ch: '2' }, { dx: 5,  dy: 14, ch: '1' },
-        { dx: 8,  dy: 14, ch: '3' }, { dx: 14, dy: 14, ch: '1' },
-        { dx: 17, dy: 14, ch: '1' }, { dx: 20, dy: 14, ch: '2' },
-        { dx: 26, dy: 14, ch: '3' }, { dx: 29, dy: 14, ch: '1' },
-        { dx: 35, dy: 14, ch: '2' }, { dx: 38, dy: 14, ch: '1' },
-        { dx: 44, dy: 14, ch: '1' }, { dx: 47, dy: 14, ch: '3' },
-        // Southern benches near the parking-lot exit edge.
-        { dx: 36, dy: 8,  ch: 'h' }, { dx: 38, dy: 8,  ch: 'h' },
-        // Lampposts — variety. Two arched globes near the entrance,
-        // a pair of twin globes mid-lot, two simple fixtures at the
-        // far edges.
-        { dx: 4,  dy: 10, ch: '5' }, { dx: 14, dy: 10, ch: '5' },
-        { dx: 25, dy: 10, ch: '6' }, { dx: 33, dy: 10, ch: '6' },
-        { dx: 41, dy: 10, ch: '4' }, { dx: 47, dy: 10, ch: '4' },
-      ],
+      // and water-cooler "lamps". 2026-05 follow-up: parking-line
+      // stripes ('=') flank each car (auto-generated by withStripes
+      // helper); a curb row + 2-row street runs along the south edge.
+      // See /sprite-redraw-preview.html for the variant exploration.
+      items: outdoorItems(),
     },
 
     // ===== Second floor =====
