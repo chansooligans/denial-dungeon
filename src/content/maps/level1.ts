@@ -316,14 +316,16 @@ const { layout, tileMeta, rooms: BUILT_ROOMS } = buildMap({
     },
     {
       id: 'stairwell1F',
-      // L1-5 the stairs are closed off so the player can't reach
-      // 2F (AUDIT / PAYER / COMPLIANCE / R&D / Turquoise / 2F
-      // Lounge). Unlocks at L6 — i.e. the moment L5 is complete
-      // and the player advances. Locking the stairwell room itself
-      // (rather than the stair tile) reuses the existing
-      // applyUnlocks plumbing; the locked-door 'L' renders on the
-      // minimap and physically blocks entry.
-      lockedUntilLevel: 6,
+      // L1-4 the stairs are closed off so the player can't reach
+      // 2F early. Unlocks at L5 so the player can climb up to the
+      // Data Sandbox (the team's documentation terminal lives there
+      // and gets useful from the mid-game on). Other 2F rooms keep
+      // their own per-room locks (lounge2F L6, audit/payer L7,
+      // compliance L8, turquoiseLounge post-boss) so the upstairs
+      // map still phase-unlocks gradually. Locking the stairwell
+      // room itself (rather than the stair tile) reuses the
+      // existing applyUnlocks plumbing.
+      lockedUntilLevel: 5,
       ...STAIRWELL_1F,
       // East door at offset 3 → world (20, 7). Same tile as the
       // Main Hub west door at offset 4 — they share the boundary
@@ -959,6 +961,11 @@ const { layout, tileMeta, rooms: BUILT_ROOMS } = buildMap({
     {
       id: 'turquoiseLounge',
       ...TURQUOISE_LOUNGE,
+      // Post-game / hidden reveal. Stays locked through the whole
+      // main flow; opens after the player beats the audit boss,
+      // letting Chris + Adam (the Turquoise crew, partner-vendor
+      // side) appear as a "you finished the game" coda.
+      lockedUntilDefeated: ['boss_audit'],
       // South door at offset 11 → world (49, 98). Just south of it
       // is (49, 99) — already on the existing 2F trunk between
       // AUDIT and PAYER, so no corridor extension is needed.
@@ -1420,9 +1427,13 @@ export const LEVEL_1_MAP: MapDef = {
     // standing on the couch row at dy=1; both default 'down' so
     // they read as "facing the door / available to talk" rather
     // than locked in a side conversation. Editor-confirmed pose:
-    // 2026-05-09.
-    { npcId: 'chris', tileX: TURQUOISE_LOUNGE.x + 7,  tileY: TURQUOISE_LOUNGE.y + 2, ambient: true },
-    { npcId: 'adam',  tileX: TURQUOISE_LOUNGE.x + 14, tileY: TURQUOISE_LOUNGE.y + 2, ambient: true },
+    // 2026-05-09. Gated behind the audit boss — the lounge is a
+    // post-game reveal, so they only appear once the player has
+    // beaten boss_audit (matches turquoiseLounge.lockedUntilDefeated).
+    { npcId: 'chris', tileX: TURQUOISE_LOUNGE.x + 7,  tileY: TURQUOISE_LOUNGE.y + 2,
+      ambient: true, requiresDefeated: ['boss_audit'] },
+    { npcId: 'adam',  tileX: TURQUOISE_LOUNGE.x + 14, tileY: TURQUOISE_LOUNGE.y + 2,
+      ambient: true, requiresDefeated: ['boss_audit'] },
 
     // 2026-05 cast pass — fill the late-game rooms (added in PR #217)
     // and the previously-unpopulated 1F break rooms / Prior Auth.
@@ -1463,14 +1474,13 @@ export const LEVEL_1_MAP: MapDef = {
     // SW-corridor blocker — Cal stands in the south-wing trough
     // corridor (y=49, the east-west run that connects HIM / Billing /
     // PFS / Lab / Lecture Hall) just east of where the lobby south-
-    // door corridor descends at x=18. Blocks eastward passage to
-    // Billing (L6) / PFS (L6) / Lab (L5) / Lecture Hall (L7) until
-    // the latest of those rooms unlocks at L7. HIM (L4, west of the
-    // descent) is still reachable. Faces 'left' so he reads as
-    // looking toward the player as they approach from the lobby.
-    // ambient: true so npcsActive doesn't gate him.
+    // door corridor descends at x=18. Blocks eastward passage at
+    // L1-5; gone at L6 so the player can reach Alex in Billing
+    // (the L6 case-handing NPC). HIM (west of the descent, L4) is
+    // reachable from L4 onwards regardless. Lab / Lecture Hall stay
+    // gated by their own per-room locks even after Cal leaves.
     { npcId: 'maintenance_worker', tileX: 21, tileY: SW_TROUGH_Y, facing: 'left',
-      ambient: true, levels: [1, 2, 3, 4, 5, 6] },
+      ambient: true, levels: [1, 2, 3, 4, 5] },
 
     // (Kitchen stays unpopulated — back-of-house is invisible-by-design.)
 

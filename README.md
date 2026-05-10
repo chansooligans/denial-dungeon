@@ -51,7 +51,16 @@ Cases are organized by **district**, each with its own accent color:
 
 Archetypes you'll meet: **Wraith** (medical-necessity citation chains), **Bundle** (modifier 25), **Reaper** (timely-filing countdowns), **Specter** (hidden underpayments behind CO-45), **Spider** (COB cascades), **Mire** (regulatory swamps), **Crucible** (baseball-arbitration IDR), **Phantom** (carve-out routing), **Audit Boss** (the finale). The names track real procedural failure modes — see the catalog for the full bestiary.
 
-The map progresses in **phases**. At L1 you can only access the Lobby, Main Hub, and the Cafeteria. The stairwell to 2F is locked until you finish L5 — so the upstairs rooms (Audit Conference, Payer Office, Compliance, Turquoise Lounge, Data Sandbox, 2F Lounge) are out of reach for the first half of the game. The other 1F rooms — Patient Services, Eligibility, Registration, HIM, Billing, the Cancer Center, the Auditorium where the boss waits — unlock as your `currentLevel` advances. You can see the locked doors on the minimap; you just can't enter them yet.
+The map progresses in **phases**. At L1 you can only access the Lobby, Main Hub, and the Cafeteria. The stairwell to 2F is locked until you finish L4 — so the upstairs rooms (Data Sandbox, Audit Conference, Payer Office, Compliance, Turquoise Lounge, 2F Lounge) are out of reach for the first stretch of the game. From L5 on, the stairs open and the **Data Sandbox** is reachable; that's where the team's documentation terminal lives. The other 2F rooms keep their own per-level locks (Lounge L6, Audit / Payer L7, Compliance L8). The **Turquoise Lounge** is a post-game reveal — Chris and Adam show up there only after you've beaten the audit boss. The other 1F rooms — Patient Services, Eligibility, Registration, HIM, Billing, the Cancer Center, the Auditorium where the boss waits — unlock as your `currentLevel` advances. You can see the locked doors on the minimap; you just can't enter them yet.
+
+### Data Sandbox terminal
+
+The 'B' whiteboard on the north wall of the Data Sandbox is the team's wiki. Walk up to it and press **E** to open a popup with:
+
+- **Per-level orientation** for the level you're on — where to go, who hands the case, what the case teaches.
+- **Per-encounter hints** for the in-game cases. Encounters you've seen but haven't solved get full bullet-list playbooks; solved ones collapse to a "✓ done" line so the wiki feels like it remembers.
+
+Authored as data in `src/content/sandbox-tips.ts`. Voice is the team's wiki — collaborative, not Dana's notebook.
 
 ## Tech stack
 
