@@ -316,6 +316,14 @@ const { layout, tileMeta, rooms: BUILT_ROOMS } = buildMap({
     },
     {
       id: 'stairwell1F',
+      // L1-5 the stairs are closed off so the player can't reach
+      // 2F (AUDIT / PAYER / COMPLIANCE / R&D / Turquoise / 2F
+      // Lounge). Unlocks at L6 — i.e. the moment L5 is complete
+      // and the player advances. Locking the stairwell room itself
+      // (rather than the stair tile) reuses the existing
+      // applyUnlocks plumbing; the locked-door 'L' renders on the
+      // minimap and physically blocks entry.
+      lockedUntilLevel: 6,
       ...STAIRWELL_1F,
       // East door at offset 3 → world (20, 7). Same tile as the
       // Main Hub west door at offset 4 — they share the boundary
@@ -1251,18 +1259,16 @@ export const LEVEL_1_MAP: MapDef = {
     { npcId: 'jordan', tileX: MAIN_HUB.x + 9, tileY: MAIN_HUB.y + 5,
       levels: [1] },
 
-    // Dana — REMOVED from the map. The "Dana's notebook" briefing
-    // voice that runs across every Case is meant to read as her
-    // narration, not an in-ear stranger; placing her as a
-    // walk-up-and-talk NPC in Patient Services + the Audit room
-    // collided with that framing. (See L1 npcsActive comment for
-    // the same reasoning applied earlier.)
-    //
-    // NOTE: L10 boss intake (`dana_l10_intake` → `triggerDescent`
-    // for `boss_audit`) currently has no in-game trigger because
-    // Dana was the only path. Re-route to one of the auditors or
-    // re-add a Dana placement at L10 only when the boss flow gets
-    // its next pass.
+    // Dana — pulled from L1-9 because her in-game NPC presence
+    // collided with the "Dana's notebook" briefing voice that runs
+    // across every Case. She returns at L10 (and only L10) standing
+    // on the auditorium stage where the boss intake (`dana_l10_intake`
+    // → `triggerDescent` for `boss_audit`) plays out. The auditorium
+    // — a public-facing event room, full house — frames the audit as
+    // the company-wide reckoning it is, rather than a private
+    // back-office meeting.
+    { npcId: 'dana', tileX: AUDITORIUM.x + 17, tileY: AUDITORIUM.y + 4, facing: 'left',
+      levels: [10] },
 
     // Kim — Registration counter (L2+, once the room unlocks).
     // Default 'down' so she faces the lobby-side approach.

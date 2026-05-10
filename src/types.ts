@@ -467,6 +467,15 @@ export interface GameState {
    * DialogueChoice.condition.
    */
   chartsPulled?: Record<string, boolean>
+
+  /**
+   * DEV ONLY — when true, every room in the hospital map is treated
+   * as unlocked regardless of `lockedUntilLevel`. Toggled from the
+   * dev panel ("Full map access"). Persisted with the rest of the
+   * save so it survives reloads, but never set in production code
+   * paths.
+   */
+  devFullMapAccess?: boolean
 }
 
 export interface Decision {
