@@ -205,6 +205,22 @@ const prototypes: Prototype[] = [
     district: 'billing',
     accent: '#ef5b7b',
   },
+
+  {
+    id: 'cob-cascade-spider',
+    title: 'COB Cascade Spider',
+    subtitle: '@ L9 — birthday rule + MSP + payer-of-last-resort',
+    archetype: 'Spider',
+    carc: 'CO-22 (covered by another payer per COB)',
+    level: 9,
+    status: 'shipped',
+    verbs: 'VERIFY-ELIGIBILITY + APPLY-CASCADE + REFILE',
+    testing: 'Three Reyes-household patients, three CO-22 denials, three different primary payers on the same household policy. Mateo (dependent kid) → Aetna (Mom\'s plan, birthday rule, March birthday wins). Sofia (working 67-year-old wife) → Aetna (MSP working-aged: 65+, current employer, 20+ employees). Jorge (dual-eligible grandfather) → Medicare (Medicaid is statutory payer of last resort). Player walks 4 COB rule statements (birthday rule, MSP working-aged, court-order override, CO-22 = wrong primary), picks the right primary per patient (12 options across 3 patients), and picks the right resolution (5 paths; cascade-walk-and-refile is correct). Goes deeper than Hydra: COB isn\'t one rule, it\'s a per-patient cascade through relationship × age × Medicare entitlement × employer size × court orders.',
+    href: './cob-cascade-spider-prototype.html',
+    district: 'eligibility',
+    accent: '#7ee2c1',
+  },
+
   {
     id: 'gatekeeper',
     title: 'Prior Auth Gatekeeper',
