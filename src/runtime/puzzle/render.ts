@@ -7,6 +7,7 @@
 // District accent comes from districtVars(spec.district).
 
 import { escape, renderCaseRecap } from '../../shared/prototype-base'
+import { wrapTerms } from '../../shared/glossary'
 import { CASE_RECAPS } from '../../content/case-recaps'
 import type {
   PuzzleSpec,
@@ -136,15 +137,32 @@ function renderBriefingPopover(spec: PuzzleSpec, state: PuzzleState): string {
         <div class="notebook-page">
           <div class="notebook-header">Dana’s notebook</div>
           <div class="briefing-body">
-            ${spec.briefing.paragraphs.map(p => `<p>${p}</p>`).join('')}
-            <ul>${spec.briefing.bullets.map(b => `<li>${b}</li>`).join('')}</ul>
-            <p class="briefing-sign">${escape(spec.briefing.signoff)}</p>
+            ${renderBriefingBody(spec)}
           </div>
         </div>
         <button class="btn ghost" data-action="close-briefing">Back to the encounter</button>
       </div>
     </div>
   `
+}
+
+/** Shared briefing-body renderer used by both the inline (pre-dismiss)
+ *  and popover (recall) views. Walks the briefing's paragraph + bullet
+ *  + signoff strings through `wrapTerms` so the first occurrence of
+ *  each known glossary term gets a hover tooltip. The shared
+ *  `wrappedSet` makes "wrap once per briefing" rather than once per
+ *  block — e.g. CO-50 mentioned in both a paragraph and a bullet
+ *  only gets the "?" icon on the paragraph. */
+function renderBriefingBody(spec: PuzzleSpec): string {
+  const wrapped = new Set<string>()
+  const paragraphs = spec.briefing.paragraphs
+    .map(p => `<p>${wrapTerms(p, wrapped)}</p>`)
+    .join('')
+  const bullets = `<ul>${spec.briefing.bullets
+    .map(b => `<li>${wrapTerms(b, wrapped)}</li>`)
+    .join('')}</ul>`
+  const signoff = `<p class="briefing-sign">${escape(spec.briefing.signoff)}</p>`
+  return paragraphs + bullets + signoff
 }
 
 function renderHospitalIntro(spec: PuzzleSpec): string {
@@ -166,9 +184,7 @@ function renderBriefingInline(spec: PuzzleSpec): string {
     <section class="briefing notebook-page">
       <div class="notebook-header">Dana’s notebook</div>
       <div class="briefing-body">
-        ${spec.briefing.paragraphs.map(p => `<p>${p}</p>`).join('')}
-        <ul>${spec.briefing.bullets.map(b => `<li>${b}</li>`).join('')}</ul>
-        <p class="briefing-sign">${escape(spec.briefing.signoff)}</p>
+        ${renderBriefingBody(spec)}
       </div>
       <button class="btn primary" data-action="dismiss-briefing">
         Got it — start the encounter
