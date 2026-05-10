@@ -168,6 +168,10 @@ export default defineConfig({
         // household policy. Verbs: VERIFY-ELIGIBILITY /
         // APPLY-CASCADE / REFILE.
         cobCascadeSpider: resolve(__dirname, 'cob-cascade-spider-prototype.html'),
+        // 2-Midnight Mire: Medicare 2-midnight rule + observation
+        // vs inpatient classification + RAC defense. Verbs:
+        // CLOCK / CLASSIFY / RECLASSIFY.
+        twoMidnightMire: resolve(__dirname, 'two-midnight-mire-prototype.html'),
         // Implant Carve-out Specter: high-cost implant unflagged
         // at billing, rolled into the DRG case rate when the
         // contract appendix carves it out at invoice +20%. Verbs:

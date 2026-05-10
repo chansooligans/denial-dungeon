@@ -207,6 +207,21 @@ const prototypes: Prototype[] = [
   },
 
   {
+    id: 'two-midnight-mire',
+    title: '2-Midnight Mire',
+    subtitle: '@ L8 — Medicare 2-midnight rule + RAC observation reclassification',
+    archetype: 'Mire',
+    carc: 'RAC recoupment finding (no CARC; post-payment audit)',
+    level: 8,
+    status: 'shipped',
+    verbs: 'CLOCK + CLASSIFY + RECLASSIFY',
+    testing: "Lawrence Mitchell, 65, chest-pain rule-out admitted inpatient, 39-hour stay, ruled out NSTEMI. RAC returned a finding: stay didn\'t meet the 2-midnight benchmark (admitting H&P said \"expect 24-36 hour stay\" — observation territory by the doc\'s own documentation). $8,200 Part A on the line; $2,140 Part B observation as the rebill recovery; net loss $6,060. Player walks 4 clock statements (with the clock-start trap — clock starts at hospital-care arrival, not when the inpatient order is written), classifies 5 chart facts as supporting inpatient or observation (4 observation-shaped, 1 inpatient — the order itself), and picks the right resolution from 5 paths (Part A → Part B rebill correct; CC 44 wrong because patient already discharged; appeal-the-RAC wrong because chart genuinely doesn\'t support inpatient; inpatient-only-list wrong because no procedure performed; full write-off leaves $2,140 on the table). Cousin to Audit Boss (audit defense framework).",
+    href: './two-midnight-mire-prototype.html',
+    district: 'appeals',
+    accent: '#b18bd6',
+  },
+
+  {
     id: 'cob-cascade-spider',
     title: 'COB Cascade Spider',
     subtitle: '@ L9 — birthday rule + MSP + payer-of-last-resort',
