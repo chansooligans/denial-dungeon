@@ -114,6 +114,30 @@ const LOUNGE    = { x: 8,  y: 13, w: 6,  h: 4  } // 4×2 interior
 // === Outdoor — parking lot, reached via 'O' teleport from the lobby ===
 const OUTDOOR  = { x: 4,  y: 65, w: 50, h: 22 } // big sparse exterior
 
+// === Public-event rooms — auditorium, lecture hall, oncology suite.
+//     Three large public-facing rooms added late in the build to host
+//     grand-rounds presentations, M&M conferences, and the oncology
+//     service line that's been canon since the Chemo Bundle Specter
+//     Case (#200) but didn't have a physical room until now. ===
+//
+//   - AUDITORIUM: east of LOBBY, sharing its east wall. Big public-
+//     event room; reads as "the door east of reception leads here."
+//     Used for hospital-wide town halls, family meetings, vendor
+//     conferences. 20×10.
+//   - LECTURE_HALL: south of LAB, east of OUTDOOR. The clinical-
+//     teaching room — grand rounds, residency conferences, M&M.
+//     Tighter to LAB than the auditorium is to lobby; reads as
+//     "back of the south wing, where teaching happens." 20×12.
+//   - CANCER_CENTER: top-right corner above RADIOLOGY, east of
+//     PRIOR_AUTH. The oncology infusion suite that hosts chemo
+//     case-rate billing (cousin to Chemo Bundle Specter). Pharmacy
+//     directly below makes the adjacency clinically realistic.
+//     Reached via the east-wing trunk corridor extended NORTH past
+//     Radiology's door row. 28×12.
+const AUDITORIUM    = { x: 30, y: 32, w: 20, h: 10 }
+const LECTURE_HALL  = { x: 56, y: 58, w: 20, h: 12 }
+const CANCER_CENTER = { x: 51, y: 2,  w: 28, h: 12 }
+
 // === Stairwells — small dedicated rooms holding the 'S' teleport
 //     tiles, symmetric on both floors. STAIRWELL_1F is an annex on
 //     Main Hub's west wall (5×6, shared east-west wall with Main
@@ -402,10 +426,12 @@ const { layout, tileMeta } = buildMap({
     {
       id: 'lobby',
       ...LOBBY,
-      // North to the corridor / hospital interior, south to the new wing.
+      // North to the corridor / hospital interior, south to the new
+      // south wing, east into the auditorium (added 2026-05).
       doors: [
         { side: 'N', offset: 10 },
         { side: 'S', offset: 14 },
+        { side: 'E', offset: 5 }, // (29, 37) — pairs with auditorium W door
       ],
       // 70s-Lynch lobby — packed warmer + denser than the old cavern.
       // Reuses existing prop chars (lamps stand-in: water-cooler 'w';
@@ -502,8 +528,12 @@ const { layout, tileMeta } = buildMap({
       ...LAB,
       // North door at offset 4 → world (60, 50). Opens onto the SW
       // trough corridor at y=49 (extended east past PFS to reach
-      // this room).
-      doors: [{ side: 'N', offset: 4 }],
+      // this room). South door at offset 4 → world (60, 57) opens
+      // onto Lecture Hall directly south (added 2026-05).
+      doors: [
+        { side: 'N', offset: 4 },
+        { side: 'S', offset: 4 },
+      ],
       // Pathology / microbiology: bench counter on the north wall
       // (broken at the door entry), three microscope work-stations
       // in the middle, sample cabinets + a fax for results
@@ -526,6 +556,129 @@ const { layout, tileMeta } = buildMap({
         { dx: 7, dy: 5, ch: 'X' },
       ],
     },
+
+    // ===== Public-event rooms =====
+    {
+      id: 'auditorium',
+      ...AUDITORIUM,
+      // West door at offset 5 → world (30, 37) — pairs with lobby's
+      // east door at (29, 37). They share adjacent wall columns; the
+      // doors meet directly so no corridor is needed.
+      doors: [{ side: 'W', offset: 5 }],
+      // Big public-event room. Stage at the east end (R counter row
+      // standing in for a raised platform); rows of seating across
+      // the middle facing east toward the stage; aisle entry from
+      // the west door. Interior 18×8 (dx 0..17, dy 0..7).
+      items: [
+        // East-end stage — three R counter tiles + a podium (c desk)
+        // + a screen (B whiteboard).
+        { dx: 17, dy: 1, ch: 'R' }, { dx: 17, dy: 3, ch: 'R' }, { dx: 17, dy: 5, ch: 'R' },
+        { dx: 16, dy: 3, ch: 'c' }, // podium
+        { dx: 17, dy: 6, ch: 'B' }, // screen / whiteboard at the back
+        // Audience seating — five rows of chairs facing east. Aisle
+        // running through dy=4 left open for the door entry path
+        // (door at offset 5 → interior dx=0, dy=4).
+        { dx: 2,  dy: 1, ch: 'h' }, { dx: 4,  dy: 1, ch: 'h' }, { dx: 6,  dy: 1, ch: 'h' },
+        { dx: 8,  dy: 1, ch: 'h' }, { dx: 10, dy: 1, ch: 'h' }, { dx: 12, dy: 1, ch: 'h' },
+        { dx: 2,  dy: 2, ch: 'h' }, { dx: 4,  dy: 2, ch: 'h' }, { dx: 6,  dy: 2, ch: 'h' },
+        { dx: 8,  dy: 2, ch: 'h' }, { dx: 10, dy: 2, ch: 'h' }, { dx: 12, dy: 2, ch: 'h' },
+        { dx: 2,  dy: 3, ch: 'h' }, { dx: 4,  dy: 3, ch: 'h' }, { dx: 6,  dy: 3, ch: 'h' },
+        { dx: 8,  dy: 3, ch: 'h' }, { dx: 10, dy: 3, ch: 'h' }, { dx: 12, dy: 3, ch: 'h' },
+        // Aisle row (dy=4) intentionally clear for the entry.
+        { dx: 2,  dy: 5, ch: 'h' }, { dx: 4,  dy: 5, ch: 'h' }, { dx: 6,  dy: 5, ch: 'h' },
+        { dx: 8,  dy: 5, ch: 'h' }, { dx: 10, dy: 5, ch: 'h' }, { dx: 12, dy: 5, ch: 'h' },
+        { dx: 2,  dy: 6, ch: 'h' }, { dx: 4,  dy: 6, ch: 'h' }, { dx: 6,  dy: 6, ch: 'h' },
+        { dx: 8,  dy: 6, ch: 'h' }, { dx: 10, dy: 6, ch: 'h' }, { dx: 12, dy: 6, ch: 'h' },
+        // Corner plants for atmosphere.
+        { dx: 0, dy: 0, ch: 'P' }, { dx: 0, dy: 7, ch: 'P' },
+      ],
+    },
+
+    {
+      id: 'lectureHall',
+      ...LECTURE_HALL,
+      // North door at offset 4 → world (60, 58) — pairs with the lab's
+      // south door at (60, 57). Adjacent walls; no corridor needed.
+      doors: [{ side: 'N', offset: 4 }],
+      // Tiered teaching room — grand-rounds, M&Ms, residency
+      // conferences. Same shape as the auditorium (rows facing a
+      // stage) but smaller and more clinical-feeling. Stage at the
+      // SOUTH end this time (door is north). Interior 18×10
+      // (dx 0..17, dy 0..9). Door entry at interior dx=3 dy=0
+      // stays open.
+      items: [
+        // North-wall plants flanking door entry.
+        { dx: 0,  dy: 0, ch: 'P' },
+        { dx: 17, dy: 0, ch: 'P' },
+        // Audience rows (dy=1..6), facing south toward the stage.
+        // Center aisle along dx=9 left clear so people can reach
+        // the stage.
+        { dx: 1,  dy: 1, ch: 'h' }, { dx: 3,  dy: 1, ch: 'h' }, { dx: 5,  dy: 1, ch: 'h' },
+        { dx: 7,  dy: 1, ch: 'h' },                              { dx: 11, dy: 1, ch: 'h' },
+        { dx: 13, dy: 1, ch: 'h' }, { dx: 15, dy: 1, ch: 'h' }, { dx: 17, dy: 1, ch: 'h' },
+        { dx: 1,  dy: 2, ch: 'h' }, { dx: 3,  dy: 2, ch: 'h' }, { dx: 5,  dy: 2, ch: 'h' },
+        { dx: 7,  dy: 2, ch: 'h' },                              { dx: 11, dy: 2, ch: 'h' },
+        { dx: 13, dy: 2, ch: 'h' }, { dx: 15, dy: 2, ch: 'h' }, { dx: 17, dy: 2, ch: 'h' },
+        { dx: 1,  dy: 3, ch: 'h' }, { dx: 3,  dy: 3, ch: 'h' }, { dx: 5,  dy: 3, ch: 'h' },
+        { dx: 7,  dy: 3, ch: 'h' },                              { dx: 11, dy: 3, ch: 'h' },
+        { dx: 13, dy: 3, ch: 'h' }, { dx: 15, dy: 3, ch: 'h' }, { dx: 17, dy: 3, ch: 'h' },
+        { dx: 1,  dy: 5, ch: 'h' }, { dx: 3,  dy: 5, ch: 'h' }, { dx: 5,  dy: 5, ch: 'h' },
+        { dx: 7,  dy: 5, ch: 'h' },                              { dx: 11, dy: 5, ch: 'h' },
+        { dx: 13, dy: 5, ch: 'h' }, { dx: 15, dy: 5, ch: 'h' }, { dx: 17, dy: 5, ch: 'h' },
+        { dx: 1,  dy: 6, ch: 'h' }, { dx: 3,  dy: 6, ch: 'h' }, { dx: 5,  dy: 6, ch: 'h' },
+        { dx: 7,  dy: 6, ch: 'h' },                              { dx: 11, dy: 6, ch: 'h' },
+        { dx: 13, dy: 6, ch: 'h' }, { dx: 15, dy: 6, ch: 'h' }, { dx: 17, dy: 6, ch: 'h' },
+        // South-end stage at dy=8..9: podium + screen + flanking
+        // counters.
+        { dx: 8,  dy: 8, ch: 'c' }, // lectern
+        { dx: 9,  dy: 9, ch: 'B' }, // big screen
+        { dx: 0,  dy: 9, ch: 'R' }, { dx: 1,  dy: 9, ch: 'R' },
+        { dx: 16, dy: 9, ch: 'R' }, { dx: 17, dy: 9, ch: 'R' },
+      ],
+    },
+
+    {
+      id: 'cancerCenter',
+      ...CANCER_CENTER,
+      // West door at offset 5 → world (51, 7). Pairs with the east-
+      // wing trunk corridor extended NORTH from its previous
+      // top endpoint (50, 21) up to (50, 7).
+      doors: [{ side: 'W', offset: 5 }],
+      // Oncology infusion suite + supportive-care wing. The room
+      // canon-named in the Chemo Bundle Specter Case (#200) finally
+      // exists in the world. Layout: north row of infusion bays
+      // (H beds), staff station mid-room (c/h pairs), pharmacy
+      // counter at the east end (R), waiting/consult area south.
+      // Interior 26×10 (dx 0..25, dy 0..9). Door entry at
+      // (interior dx=0, dy=4) stays open.
+      items: [
+        // North row — infusion bays. Six recliner-style bays
+        // (H beds stand in) across the wall.
+        { dx: 1,  dy: 0, ch: 'H' }, { dx: 5,  dy: 0, ch: 'H' }, { dx: 9,  dy: 0, ch: 'H' },
+        { dx: 13, dy: 0, ch: 'H' }, { dx: 17, dy: 0, ch: 'H' }, { dx: 21, dy: 0, ch: 'H' },
+        // Per-bay nightstand (small c desks) for IV pump tablets.
+        { dx: 2,  dy: 1, ch: 'c' }, { dx: 6,  dy: 1, ch: 'c' }, { dx: 10, dy: 1, ch: 'c' },
+        { dx: 14, dy: 1, ch: 'c' }, { dx: 18, dy: 1, ch: 'c' }, { dx: 22, dy: 1, ch: 'c' },
+        // Mid-room staff station — RN desk + chair pairs.
+        { dx: 4,  dy: 4, ch: 'c' }, { dx: 4,  dy: 5, ch: 'h' },
+        { dx: 12, dy: 4, ch: 'c' }, { dx: 12, dy: 5, ch: 'h' },
+        { dx: 20, dy: 4, ch: 'c' }, { dx: 20, dy: 5, ch: 'h' },
+        // East-end pharmacy + drug-prep counter + sample fridge.
+        { dx: 25, dy: 1, ch: 'R' }, { dx: 25, dy: 2, ch: 'R' },
+        { dx: 25, dy: 4, ch: 'F' }, // refrigerated storage
+        { dx: 25, dy: 7, ch: 'V' }, // pneumatic-tube / dispense
+        // South-end consult / waiting area — couches around a low
+        // table; bulletin for support resources.
+        { dx: 1,  dy: 7, ch: 'h' }, { dx: 2,  dy: 7, ch: 'h' }, { dx: 3,  dy: 7, ch: 'h' },
+        { dx: 2,  dy: 8, ch: 'c' }, // coffee table
+        { dx: 1,  dy: 9, ch: 'h' }, { dx: 2,  dy: 9, ch: 'h' }, { dx: 3,  dy: 9, ch: 'h' },
+        { dx: 7,  dy: 9, ch: 'b' }, // bulletin / resources
+        { dx: 11, dy: 9, ch: 'P' }, { dx: 17, dy: 9, ch: 'P' },
+        // Whiteboard for treatment-plan posting.
+        { dx: 22, dy: 9, ch: 'B' },
+      ],
+    },
+
     // ===== Outdoor — parking lot =====
     {
       id: 'outdoor',
@@ -804,11 +957,12 @@ const { layout, tileMeta } = buildMap({
       width: 1,
     },
     // East-wing trunk: vertical corridor at x=50 connecting all three
-    // east-wing rooms' west doors.
+    // east-wing rooms' west doors PLUS the Cancer Center top-right
+    // suite (extended NORTH past Radiology to (50, 7) in 2026-05).
     {
       points: [
-        [RADIOLOGY.x - 1,   RADIOLOGY.y + 6],   // (50, 21) — radiology door row
-        [MED_RECORDS.x - 1, MED_RECORDS.y + 5], // (50, 42) — med-records door row
+        [CANCER_CENTER.x - 1, CANCER_CENTER.y + 5], // (50, 7)  — cancer center door row
+        [MED_RECORDS.x - 1,   MED_RECORDS.y + 5],   // (50, 42) — med-records door row
       ],
       width: 1,
     },
@@ -889,6 +1043,10 @@ export const LEVEL_1_MAP: MapDef = {
     { name: 'RADIOLOGY',        shortName: 'RAD',  ...RADIOLOGY },
     { name: 'PHARMACY',         shortName: 'PHA',  ...PHARMACY },
     { name: 'MEDICAL RECORDS',  shortName: 'REC',  ...MED_RECORDS },
+    { name: 'CANCER CENTER',    shortName: 'ONC',  ...CANCER_CENTER },
+    // Public-event rooms.
+    { name: 'AUDITORIUM',       shortName: 'AUD2', ...AUDITORIUM },
+    { name: 'LECTURE HALL',     shortName: 'LEC',  ...LECTURE_HALL },
     // Outdoor — parking lot, reached via 'O' teleport from lobby.
     { name: 'PARKING LOT',      shortName: 'OUT',  ...OUTDOOR },
     // Second floor.
