@@ -81,6 +81,16 @@ const TILE_TEXTURES: Record<string, { floor: string; obj?: string; solid?: boole
   // cream-tan linoleum every indoor room shares. Same h_floor texture,
   // just tinted dark.
   ',': { floor: 'h_floor', floorTint: TINT.asphalt },
+  // Parking-line stripe — asphalt with white painted edges baked
+  // into the texture. Walkable. Flanks each parked car in the
+  // OUTDOOR room (see withStripes() in level1.ts).
+  '=': { floor: 'h_asphalt_striped', floorTint: 0xffffff },
+  // Curb — concrete barrier between the parking lot and the street.
+  // Solid: player can't cross into the road.
+  'C': { floor: 'h_curb', solid: true, floorTint: 0xffffff },
+  // Road / street — dark asphalt with yellow dashed center +
+  // white edge stripes. Solid; decorative south-edge of the lot.
+  'r': { floor: 'h_road', solid: true, floorTint: 0xffffff },
   'c': { floor: 'h_floor', obj: 'h_desk',       solid: true, floorTint: TINT.floor, objTint: TINT.desk },
   'h': { floor: 'h_floor', obj: 'h_chair',      floorTint: TINT.floor, objTint: TINT.chair },
   'E': { floor: 'h_floor', obj: 'h_equipment',  floorTint: TINT.floor, objTint: TINT.equip },

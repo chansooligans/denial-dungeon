@@ -1131,6 +1131,49 @@ export class BootScene extends Phaser.Scene {
     g.fillStyle(0x402a18); g.fillRect(3, 12, 1, 1); g.fillRect(6, 12, 1, 1); g.fillRect(9, 12, 1, 1); g.fillRect(12, 12, 1, 1)
     if (!this.textures.exists('h_steamtable_buffet')) g.generateTexture('h_steamtable_buffet', 16, 16)
     g.destroy()
+
+    // ---------- Parking-line stripe ('=' glyph) ----------
+    // Asphalt floor with white painted stripes on the left + right
+    // edges. Used in the OUTDOOR room flanking each parked car so
+    // adjacent parking spaces share a 2-px stripe at their boundary.
+    // Walkable — players can move freely across stripes.
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0x4a4848); g.fillRect(0, 0, 16, 16)            // dark asphalt base
+    g.fillStyle(0xe8e8d8); g.fillRect(0, 0, 1, 16)             // left stripe
+    g.fillStyle(0xe8e8d8); g.fillRect(15, 0, 1, 16)            // right stripe
+    g.fillStyle(0x282828, 0.4); g.fillRect(0, 7, 1, 2)         // wear on left stripe
+    g.fillStyle(0x282828, 0.4); g.fillRect(15, 5, 1, 2)        // wear on right stripe
+    if (!this.textures.exists('h_asphalt_striped')) g.generateTexture('h_asphalt_striped', 16, 16)
+    g.destroy()
+
+    // ---------- Curb ('C' glyph) ----------
+    // Concrete curb between the parking lot and the street. Solid —
+    // acts as a barrier so the player can't wander into the road.
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0x5a5650); g.fillRect(0, 0, 16, 16)            // base
+    g.fillStyle(0x787268); g.fillRect(0, 0, 16, 4)             // raised top edge
+    g.fillStyle(0xa0998a); g.fillRect(0, 0, 16, 1)             // top highlight
+    g.fillStyle(0x3a362e); g.fillRect(0, 4, 16, 1)             // top/edge joint
+    g.fillStyle(0x3a362e); g.fillRect(7, 4, 1, 12)             // expansion joint mid
+    if (!this.textures.exists('h_curb')) g.generateTexture('h_curb', 16, 16)
+    g.destroy()
+
+    // ---------- Road / street ('r' glyph) ----------
+    // Darker than parking-lot asphalt. Yellow dashed center line
+    // (3 dashes per tile) + white edge stripes top + bottom. Solid
+    // — the street is decorative; player navigates the lot, not
+    // the road.
+    g = this.make.graphics({ x: 0, y: 0 })
+    g.fillStyle(0x1e1e22); g.fillRect(0, 0, 16, 16)            // road base
+    g.fillStyle(0xe0e0d0); g.fillRect(0, 1, 16, 1)             // top edge stripe
+    g.fillStyle(0xe0e0d0); g.fillRect(0, 14, 16, 1)            // bottom edge stripe
+    g.fillStyle(0xe8c040); g.fillRect(1, 7, 4, 1)              // center dash 1
+    g.fillStyle(0xe8c040); g.fillRect(7, 7, 4, 1)              // center dash 2
+    g.fillStyle(0xe8c040); g.fillRect(13, 7, 3, 1)             // center dash 3 (truncated)
+    g.fillStyle(0xffffff, 0.04); g.fillRect(3, 4, 3, 1)        // pavement noise
+    g.fillStyle(0xffffff, 0.04); g.fillRect(10, 11, 4, 1)
+    if (!this.textures.exists('h_road')) g.generateTexture('h_road', 16, 16)
+    g.destroy()
   }
 
   private makeWaitingRoomTiles() {

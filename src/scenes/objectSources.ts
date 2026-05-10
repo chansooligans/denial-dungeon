@@ -48,4 +48,8 @@ export const OBJECT_FALLBACK_COLORS: Record<string, number> = {
   h_diningtable:      0xe8e0c8, // cream laminate
   h_steamtable_modern:0xb8c0c8, // stainless
   h_steamtable_buffet:0xa07030, // brass
+  // Parking-lot infrastructure (2026-05 follow-up):
+  h_asphalt_striped:  0x4a4848, // asphalt + edge stripes
+  h_curb:             0x787268, // concrete curb
+  h_road:             0x1e1e22, // dark road / street
 }
