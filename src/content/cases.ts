@@ -105,7 +105,7 @@ export const CASES: Record<string, PatientCase> = {
   // the payer's roster) and bounced as CO-31. One amend on Box 1a fixes it.
   case_intro_patel: {
     id: 'case_intro_patel',
-    patientName: 'Anjali Patel',
+    patientName: 'Anjali',
     age: 38,
     insurance: 'Aetna PPO',
     diagnosis: 'Acute pharyngitis',

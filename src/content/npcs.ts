@@ -59,7 +59,7 @@ export const NPCS: Record<string, NPC> = {
   },
   anjali: {
     id: 'anjali',
-    name: 'Anjali Patel',
+    name: 'Anjali',
     department: 'Patient',
     spriteKey: 'npc_anjali',
     dialogueKey: 'anjali_intro',

@@ -10,7 +10,6 @@ import type { DialogueNode, DialogueChoice, DialogueEffect } from '../types'
 // keyed by the speaker string set on each DialogueNode.
 const SPEAKER_COLORS: Record<string, string> = {
   Anjali: '#b8d4e8',         // soft cyan, matches her sprite shirt
-  'Anjali Patel': '#b8d4e8',
   Dana: '#6da9e3',           // blue (revenue cycle)
   Kim: '#a8d8a8',            // green (registration)
   Jordan: '#d4a0d4',         // purple (PFS)

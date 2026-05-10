@@ -50,7 +50,7 @@ export const INTRO_PUZZLE: PuzzleSpec = {
   title: 'The Wrong Card',
   district: 'eligibility',
   hospitalIntro: [
-    'Anjali Patel is at the patient-services counter holding a $387 ' +
+    'Anjali is at the patient-services counter holding a $387 ' +
       'ER bill. "I had strep throat last week. I gave them my card. ' +
       'It said \'accepted.\' Now they\'re saying I\'m not on the plan?"',
     'You pull up the file. The card she handed to the registrar was ' +
