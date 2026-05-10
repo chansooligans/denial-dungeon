@@ -528,12 +528,9 @@ const { layout, tileMeta } = buildMap({
       ...LAB,
       // North door at offset 4 → world (60, 50). Opens onto the SW
       // trough corridor at y=49 (extended east past PFS to reach
-      // this room). South door at offset 4 → world (60, 57) opens
-      // onto Lecture Hall directly south (added 2026-05).
-      doors: [
-        { side: 'N', offset: 4 },
-        { side: 'S', offset: 4 },
-      ],
+      // this room). LAB has only the one door — clinical lab
+      // shouldn't be a thoroughfare to public-event rooms.
+      doors: [{ side: 'N', offset: 4 }],
       // Pathology / microbiology: bench counter on the north wall
       // (broken at the door entry), three microscope work-stations
       // in the middle, sample cabinets + a fax for results
@@ -597,36 +594,40 @@ const { layout, tileMeta } = buildMap({
     {
       id: 'lectureHall',
       ...LECTURE_HALL,
-      // North door at offset 4 → world (60, 58) — pairs with the lab's
-      // south door at (60, 57). Adjacent walls; no corridor needed.
-      doors: [{ side: 'N', offset: 4 }],
+      // North door at offset 12 → world (68, 58). Pairs with a
+      // wraparound corridor that runs east from the SW trough past
+      // LAB (x=56-67) and drops south at x=68 to (68, 57). Routing
+      // east of LAB rather than through it — clinical labs aren't
+      // public corridors.
+      doors: [{ side: 'N', offset: 12 }],
       // Tiered teaching room — grand-rounds, M&Ms, residency
       // conferences. Same shape as the auditorium (rows facing a
       // stage) but smaller and more clinical-feeling. Stage at the
       // SOUTH end this time (door is north). Interior 18×10
-      // (dx 0..17, dy 0..9). Door entry at interior dx=3 dy=0
+      // (dx 0..17, dy 0..9). Door entry at interior dx=11 dy=0
       // stays open.
       items: [
         // North-wall plants flanking door entry.
         { dx: 0,  dy: 0, ch: 'P' },
         { dx: 17, dy: 0, ch: 'P' },
         // Audience rows (dy=1..6), facing south toward the stage.
-        // Center aisle along dx=9 left clear so people can reach
-        // the stage.
+        // Two aisles: center along dx=9 (clear) and east along
+        // dx=11 (clear, also serves as the door entry path from the
+        // north door at offset 12 → interior dx=11 dy=0).
         { dx: 1,  dy: 1, ch: 'h' }, { dx: 3,  dy: 1, ch: 'h' }, { dx: 5,  dy: 1, ch: 'h' },
-        { dx: 7,  dy: 1, ch: 'h' },                              { dx: 11, dy: 1, ch: 'h' },
+        { dx: 7,  dy: 1, ch: 'h' },
         { dx: 13, dy: 1, ch: 'h' }, { dx: 15, dy: 1, ch: 'h' }, { dx: 17, dy: 1, ch: 'h' },
         { dx: 1,  dy: 2, ch: 'h' }, { dx: 3,  dy: 2, ch: 'h' }, { dx: 5,  dy: 2, ch: 'h' },
-        { dx: 7,  dy: 2, ch: 'h' },                              { dx: 11, dy: 2, ch: 'h' },
+        { dx: 7,  dy: 2, ch: 'h' },
         { dx: 13, dy: 2, ch: 'h' }, { dx: 15, dy: 2, ch: 'h' }, { dx: 17, dy: 2, ch: 'h' },
         { dx: 1,  dy: 3, ch: 'h' }, { dx: 3,  dy: 3, ch: 'h' }, { dx: 5,  dy: 3, ch: 'h' },
-        { dx: 7,  dy: 3, ch: 'h' },                              { dx: 11, dy: 3, ch: 'h' },
+        { dx: 7,  dy: 3, ch: 'h' },
         { dx: 13, dy: 3, ch: 'h' }, { dx: 15, dy: 3, ch: 'h' }, { dx: 17, dy: 3, ch: 'h' },
         { dx: 1,  dy: 5, ch: 'h' }, { dx: 3,  dy: 5, ch: 'h' }, { dx: 5,  dy: 5, ch: 'h' },
-        { dx: 7,  dy: 5, ch: 'h' },                              { dx: 11, dy: 5, ch: 'h' },
+        { dx: 7,  dy: 5, ch: 'h' },
         { dx: 13, dy: 5, ch: 'h' }, { dx: 15, dy: 5, ch: 'h' }, { dx: 17, dy: 5, ch: 'h' },
         { dx: 1,  dy: 6, ch: 'h' }, { dx: 3,  dy: 6, ch: 'h' }, { dx: 5,  dy: 6, ch: 'h' },
-        { dx: 7,  dy: 6, ch: 'h' },                              { dx: 11, dy: 6, ch: 'h' },
+        { dx: 7,  dy: 6, ch: 'h' },
         { dx: 13, dy: 6, ch: 'h' }, { dx: 15, dy: 6, ch: 'h' }, { dx: 17, dy: 6, ch: 'h' },
         // South-end stage at dy=8..9: podium + screen + flanking
         // counters.
@@ -916,8 +917,18 @@ const { layout, tileMeta } = buildMap({
     },
     {
       points: [
-        [HIM.x + 7, SW_TROUGH_Y], // east-west cross-corridor, anchored to HIM's door col
-        [LAB.x + 4, SW_TROUGH_Y], // ... extends past PFS to the LAB's N door col (60, 49)
+        [HIM.x + 7, SW_TROUGH_Y],            // east-west cross-corridor, anchored to HIM's door col
+        [LECTURE_HALL.x + 12, SW_TROUGH_Y],  // (68, 49) — extends east past LAB to the lecture-hall wraparound col
+      ],
+      width: 1,
+    },
+    // Lecture Hall wraparound: vertical run from SW trough to the
+    // lecture hall's north door, going EAST of LAB (x=68) so the
+    // path doesn't cut through the clinical lab.
+    {
+      points: [
+        [LECTURE_HALL.x + 12, SW_TROUGH_Y],            // (68, 49) — junction with trough
+        [LECTURE_HALL.x + 12, LECTURE_HALL.y - 1],     // (68, 57) — just north of the lecture hall door
       ],
       width: 1,
     },
