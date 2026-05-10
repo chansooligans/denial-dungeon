@@ -17,6 +17,9 @@ import type {
 export interface PuzzleState {
   /** True until the player dismisses Dana's briefing. */
   briefingDone: boolean
+  /** True when the recalled-briefing popover is open (player clicked
+   *  the "Dana's notebook" button in the header). */
+  briefingOpen: boolean
   /** Currently picked payer phrase (citation builder slot). */
   selectedPayerId: string | null
   /** Currently picked chart fact. */
@@ -45,6 +48,7 @@ export interface PuzzleState {
 export function makeInitialState(spec: PuzzleSpec): PuzzleState {
   return {
     briefingDone: false,
+    briefingOpen: false,
     selectedPayerId: null,
     selectedChartId: null,
     selectedPolicyId: null,
@@ -85,24 +89,61 @@ export function render(spec: PuzzleSpec, state: PuzzleState): string {
   }
   const hasWorkbench = (spec.payerPhrases?.length ?? 0) > 0
   return [
-    renderHeader(spec),
+    renderHeader(spec, state),
     spec.claim ? renderClaim(spec, state) : '',
     spec.amendSlots.length > 0 ? renderAmendCallouts(spec, state) : '',
     hasWorkbench ? renderWorkbench(spec, state) : '',
     hasWorkbench ? renderCitationBuilder(spec, state) : '',
     renderChecklist(spec, state),
     renderAmendModal(spec, state),
+    renderBriefingPopover(spec, state),
   ].join('')
 }
 
-function renderHeader(spec: PuzzleSpec): string {
+function renderHeader(spec: PuzzleSpec, state: PuzzleState): string {
+  // Recall button surfaces only after the player has dismissed the
+  // initial briefing — pressing it re-opens Dana's notebook in a
+  // popover so the player can re-check the brief mid-encounter
+  // without fleeing the case.
+  const recallBtn = state.briefingDone
+    ? `<button class="recall-btn" data-action="show-briefing">📜 Dana's notebook</button>`
+    : ''
   return `
     <header class="page-h">
       <div class="title-row">
         <h1>${escape(spec.title)} <span class="muted">@ runtime — encounter</span></h1>
-        <button class="back-link" data-action="flee">⏎ Leave</button>
+        <div class="header-actions">
+          ${recallBtn}
+          <button class="back-link" data-action="flee">⏎ Leave</button>
+        </div>
       </div>
     </header>
+  `
+}
+
+function renderBriefingPopover(spec: PuzzleSpec, state: PuzzleState): string {
+  if (!state.briefingOpen) return ''
+  // Inner popover carries data-action="noop" so clicks on the
+  // notebook body (which have no data-action of their own) bubble up
+  // to it and STOP — without it the click would keep bubbling up to
+  // the backdrop and dismiss the popover. Backdrop clicks still
+  // close (target IS the backdrop in that case, no inner ancestor
+  // with data-action exists).
+  return `
+    <div class="briefing-popover-backdrop" data-action="close-briefing">
+      <div class="briefing-popover" data-action="noop">
+        <button class="briefing-popover-close" data-action="close-briefing">×</button>
+        <div class="notebook-page">
+          <div class="notebook-header">Dana’s notebook</div>
+          <div class="briefing-body">
+            ${spec.briefing.paragraphs.map(p => `<p>${p}</p>`).join('')}
+            <ul>${spec.briefing.bullets.map(b => `<li>${b}</li>`).join('')}</ul>
+            <p class="briefing-sign">${escape(spec.briefing.signoff)}</p>
+          </div>
+        </div>
+        <button class="btn ghost" data-action="close-briefing">Back to the encounter</button>
+      </div>
+    </div>
   `
 }
 
