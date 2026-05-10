@@ -62,6 +62,10 @@ const TINT = {
   bulletin: 0x8a6840, // cork tan
   bed:      0xb09870, // tan
   fax:      0x6a5a4a, // dim taupe
+  // Outdoor floor for parking-lot tiles — dark cracked asphalt.
+  // Used by car + lamppost glyphs so they don't read as sitting on
+  // cream-tan linoleum. Indoor floors keep TINT.floor.
+  asphalt:  0x4a4848,
 } as const
 
 const TILE_TEXTURES: Record<string, { floor: string; obj?: string; solid?: boolean; floorTint?: number; objTint?: number }> = {
@@ -83,6 +87,30 @@ const TILE_TEXTURES: Record<string, { floor: string; obj?: string; solid?: boole
   'b': { floor: 'h_floor', obj: 'h_bulletin',   solid: true, floorTint: TINT.floor, objTint: TINT.bulletin },
   'H': { floor: 'h_floor', obj: 'h_bed',        solid: true, floorTint: TINT.floor, objTint: TINT.bed },
   'X': { floor: 'h_floor', obj: 'h_fax',        floorTint: TINT.floor, objTint: TINT.fax },
+  // 2026-05 redraw set — see /sprite-redraw-preview.html. Each of
+  // these has its palette baked into the sprite, so objTint stays at
+  // 0xffffff (no recolor) so the painted colors come through. Floor
+  // tint reuses TINT.floor for indoor sprites; outdoor props use a
+  // dark-asphalt tint instead of cream-tan linoleum.
+  // Cars (parking lot variety):
+  '1': { floor: 'h_floor', obj: 'h_car_sedan',        solid: true, floorTint: TINT.asphalt, objTint: 0xffffff },
+  '2': { floor: 'h_floor', obj: 'h_car_suv',          solid: true, floorTint: TINT.asphalt, objTint: 0xffffff },
+  '3': { floor: 'h_floor', obj: 'h_car_beater',       solid: true, floorTint: TINT.asphalt, objTint: 0xffffff },
+  // Lampposts (parking lot):
+  '4': { floor: 'h_floor', obj: 'h_lamp_simple',      solid: true, floorTint: TINT.asphalt, objTint: 0xffffff },
+  '5': { floor: 'h_floor', obj: 'h_lamp_arched',      solid: true, floorTint: TINT.asphalt, objTint: 0xffffff },
+  '6': { floor: 'h_floor', obj: 'h_lamp_double',      solid: true, floorTint: TINT.asphalt, objTint: 0xffffff },
+  // Lecture hall — auditorium seat (walkable, like h_chair):
+  's': { floor: 'h_floor', obj: 'h_seat',             floorTint: TINT.floor, objTint: 0xffffff },
+  // Lecture hall — chalkboard (solid, like whiteboard):
+  'k': { floor: 'h_floor', obj: 'h_chalkboard',       solid: true, floorTint: TINT.floor, objTint: 0xffffff },
+  // Lobby — avocado tufted armchair (solid):
+  'A': { floor: 'h_floor', obj: 'h_armchair_avocado', solid: true, floorTint: TINT.floor, objTint: 0xffffff },
+  // Cafeteria — round dining table (solid, single-tile w/ chair backs):
+  'T': { floor: 'h_floor', obj: 'h_diningtable',      solid: true, floorTint: TINT.floor, objTint: 0xffffff },
+  // Cafeteria — steam tables (solid):
+  'm': { floor: 'h_floor', obj: 'h_steamtable_modern',solid: true, floorTint: TINT.floor, objTint: 0xffffff },
+  'M': { floor: 'h_floor', obj: 'h_steamtable_buffet',solid: true, floorTint: TINT.floor, objTint: 0xffffff },
   // Teleport tiles. Visually a tinted floor; their behavior (fade-and-
   // snap to a paired tile) is wired in tryMove via the MapDef.stairs
   // sidecar. Floating labels are drawn on top in placeStairLabels().
