@@ -75,6 +75,11 @@ const TILE_TEXTURES: Record<string, { floor: string; obj?: string; solid?: boole
   '.': { floor: 'h_floor', floorTint: TINT.floor },
   '~': { floor: 'h_floor2', floorTint: TINT.floorAlt },
   '_': { floor: 'h_carpet', floorTint: TINT.carpet },
+  // Outdoor asphalt floor — used as the OUTDOOR room's interior fill
+  // so empty parking-lot cells read as gray pavement instead of the
+  // cream-tan linoleum every indoor room shares. Same h_floor texture,
+  // just tinted dark.
+  ',': { floor: 'h_floor', floorTint: TINT.asphalt },
   'c': { floor: 'h_floor', obj: 'h_desk',       solid: true, floorTint: TINT.floor, objTint: TINT.desk },
   'h': { floor: 'h_floor', obj: 'h_chair',      floorTint: TINT.floor, objTint: TINT.chair },
   'E': { floor: 'h_floor', obj: 'h_equipment',  floorTint: TINT.floor, objTint: TINT.equip },

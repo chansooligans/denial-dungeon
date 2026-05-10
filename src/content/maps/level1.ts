@@ -698,6 +698,11 @@ const { layout, tileMeta } = buildMap({
       // No doors — the player arrives + leaves via 'O' teleport tile.
       // The room is a sealed walled rectangle so the perimeter reads
       // as building-edge / fence.
+      // Floor fill: ',' = asphalt instead of the default '.' (cream
+      // linoleum). Empty cells between cars + lampposts now read as
+      // dark pavement, matching the tint already used under those
+      // objects. Trees + benches still draw their own props on top.
+      fill: ',',
       // 2026-05: cars (1=sedan, 2=SUV, 3=beater) and lampposts
       // (4=simple, 5=arched, 6=double) replaced the F-cabinet stand-ins
       // and water-cooler "lamps". See /sprite-redraw-preview.html.
