@@ -448,21 +448,19 @@ const { layout, tileMeta } = buildMap({
         // Side tables (with magazines / ashtrays — implied)
         { dx: 5,  dy: 4, ch: 'c' },
         { dx: 19, dy: 4, ch: 'c' },
-        // Two rows of patient seating flanking Chloe's intern station.
+        // Two rows of patient chairs flanking Chloe's intern station.
         // Chloe's desk sits at (dx=9, dy=5) — between the rows on
         // the player's spawn column — with her chair directly south
         // at (dx=9, dy=6). The patient row at dy=6 leaves dx=9 open
         // so it reads as "her chair," not part of public seating.
-        // 2026-05: patient seating uses 'A' (avocado tufted armchair)
-        // — heavier, solid, lobby-feeling. Chloe's chair stays 'h'
-        // (walkable) since the player spawns on it.
-        // NOTE: 'A' is solid; the gaps at dx=8/10/12/13/15 keep the
-        // N→S path through the lobby clear.
-        { dx: 7,  dy: 4, ch: 'A' }, { dx: 9,  dy: 4, ch: 'A' }, { dx: 11, dy: 4, ch: 'A' },
-        { dx: 14, dy: 4, ch: 'A' }, { dx: 16, dy: 4, ch: 'A' },
+        // 2026-05: reverted from 'A' avocado armchairs back to 'h'
+        // standard waiting-room chairs — keeps the seating walkable
+        // and matches the rest of the hospital's chair vocabulary.
+        { dx: 7,  dy: 4, ch: 'h' }, { dx: 9,  dy: 4, ch: 'h' }, { dx: 11, dy: 4, ch: 'h' },
+        { dx: 14, dy: 4, ch: 'h' }, { dx: 16, dy: 4, ch: 'h' },
         { dx: 9,  dy: 5, ch: 'c' }, // Chloe's desk
-        { dx: 7,  dy: 6, ch: 'A' },                              { dx: 11, dy: 6, ch: 'A' },
-        { dx: 14, dy: 6, ch: 'A' }, { dx: 16, dy: 6, ch: 'A' },
+        { dx: 7,  dy: 6, ch: 'h' },                              { dx: 11, dy: 6, ch: 'h' },
+        { dx: 14, dy: 6, ch: 'h' }, { dx: 16, dy: 6, ch: 'h' },
         { dx: 9,  dy: 6, ch: 'h' }, // Chloe's chair (player spawns here)
         // South wall amenities — vending, water cooler ("lamp"), bulletin.
         { dx: 2,  dy: 7, ch: 'V' },
