@@ -241,8 +241,14 @@ export class HospitalScene extends Phaser.Scene {
     // (open) for any room whose threshold the player has reached. Plot
     // doors with explicit `locked: true` keep their 'L' regardless of
     // level — those aren't progression gates.
+    //
+    // DEV: `state.devFullMapAccess` (toggled from the dev panel)
+    // bumps the effective level to 999 so every phase-locked room
+    // unlocks at once. Useful for QA / map-redraw work without
+    // grinding through level transitions.
+    const effectiveLevel = state.devFullMapAccess ? 999 : state.currentLevel
     const unlockedLayout = HOSPITAL_MAP.roomDefs
-      ? applyUnlocks(HOSPITAL_MAP.layout, HOSPITAL_MAP.roomDefs, state.currentLevel)
+      ? applyUnlocks(HOSPITAL_MAP.layout, HOSPITAL_MAP.roomDefs, effectiveLevel)
       : HOSPITAL_MAP.layout
     this.mapDef = { ...HOSPITAL_MAP, layout: unlockedLayout }
 

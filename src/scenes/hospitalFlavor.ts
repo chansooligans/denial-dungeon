@@ -661,5 +661,5 @@ export const LEVEL_ORIENTATION_HINTS: Record<number, string> = {
   7:  'Sam in Patient Services. The reaper has surfaced.',
   8:  'Jordan is now at the PFS phone bank. Patient on the line.',
   9:  'Kim at Registration. Three payers, one claim.',
-  10: 'Dana is in the Audit Conference Room. The auditors have arrived.',
+  10: 'Dana is on the auditorium stage. The auditors have arrived; the room is full.',
 }

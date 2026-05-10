@@ -10,12 +10,11 @@ export const LEVELS: LevelDef[] = [
     concepts: ['denial_rate', 'co_109', 'x12_270_271', 'eligibility'],
     encounters: ['intro_wrong_card'],
     cases: ['case_intro_patel'],
-    // Dana intentionally not in the roster at any level — her in-game
-    // presence as a walk-up NPC overlapped with the "Dana's notebook"
-    // briefing voice that runs across every Case. Removed from the
-    // map entirely. (NOTE: the L10 boss intake currently has no
-    // trigger; re-route or re-add a Dana placement at L10 when the
-    // boss flow gets its next pass.)
+    // Dana intentionally not in the L1-9 roster — her in-game
+    // presence as a walk-up NPC collided with the "Dana's notebook"
+    // briefing voice that runs across every Case. She returns at
+    // L10 only, on the auditorium stage where the boss intake plays
+    // out (see her placement in level1.ts).
     npcsActive: ['anjali', 'kim', 'jordan'],
     bossEncounter: undefined,
   },
@@ -122,7 +121,7 @@ export const LEVELS: LevelDef[] = [
     concepts: ['audit', 'compliance', 'upcoding', 'documentation'],
     encounters: ['boss_audit'],
     cases: ['case_audit_finale'],
-    npcsActive: ['martinez', 'pat', 'sam', 'auditor_carl', 'auditor_chen', 'auditor_rivera', 'auditor_eddi'],
+    npcsActive: ['dana', 'martinez', 'pat', 'sam', 'auditor_carl', 'auditor_chen', 'auditor_rivera', 'auditor_eddi'],
     bossEncounter: 'boss_audit',
   },
 ]

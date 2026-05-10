@@ -134,12 +134,30 @@ function renderPanel(): string {
       `).join('')}
     </section>
     <section>
+      <div class="devp-section-h">Map</div>
+      <button class="devp-btn" data-dev-action="toggle-full-map">
+        ${renderFullMapToggleLabel()}
+      </button>
+    </section>
+    <section>
       <div class="devp-section-h">Save</div>
       <button class="devp-btn" data-dev-action="copy-save">Copy save (JSON)</button>
       <button class="devp-btn" data-dev-action="paste-save">Load save (paste JSON)</button>
       <button class="devp-btn warn" data-dev-action="clear-save">Clear save</button>
     </section>
   `
+}
+
+/** Label for the full-map-access toggle. Reads the live state so the
+ *  button reflects what's currently set. Re-rendered when the panel
+ *  re-renders (toggle action below restarts the Hospital scene which
+ *  also re-mounts the panel — but we also overwrite the label
+ *  in-place after the click). */
+function renderFullMapToggleLabel(): string {
+  let on = false
+  try { on = !!getState().devFullMapAccess } catch { /* not booted */ }
+  const tag = on ? '<b style="color:#7ee2c1">ON</b>' : '<span style="color:#5a6a7a">off</span>'
+  return `Full map access ${tag} <span class="devp-id">(unlock every room)</span>`
 }
 
 /** Snapshot the most-debug-relevant fields of GameState as compact
@@ -447,6 +465,21 @@ function handleAction(action: string, arg?: string) {
         hidePanel()
       } catch (err) {
         alert('Could not jump to boss: ' + (err as Error).message)
+      }
+      return
+    }
+    case 'toggle-full-map': {
+      try {
+        const state = getState()
+        state.devFullMapAccess = !state.devFullMapAccess
+        saveGame()
+        // Restart Hospital so applyUnlocks() picks up the new flag —
+        // the layout flip happens in HospitalScene.create().
+        stopAllScenes(sm)
+        sm.start('Hospital')
+        hidePanel()
+      } catch (err) {
+        alert('Could not toggle full map access: ' + (err as Error).message)
       }
       return
     }
