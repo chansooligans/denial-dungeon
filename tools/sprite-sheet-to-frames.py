@@ -278,7 +278,7 @@ def keep_largest_blob(img: Image.Image, dilate_radius: int = 3) -> Image.Image:
     return img
 
 
-def erode_halo(img: Image.Image, ref: tuple[int, int, int], halo_fuzz: int = 60, passes: int = 3, no_warm_bump: bool = False) -> Image.Image:
+def erode_halo(img: Image.Image, ref: tuple[int, int, int], halo_fuzz: int = 60, passes: int = 3, no_warm_bump: bool = False, no_cool_bump: bool = False) -> Image.Image:
     """Remove the cream halo of anti-aliased pixels that flood-fill
     leaves around the character outline. Strategy: iteratively erase
     any opaque edge pixel (4-neighbor of a transparent pixel) whose
@@ -313,7 +313,8 @@ def erode_halo(img: Image.Image, ref: tuple[int, int, int], halo_fuzz: int = 60,
                 # or risk eating dark-skin edges (max-diff ~95).
                 halo_fuzz = max(halo_fuzz, 85)
         else:
-            halo_fuzz = max(halo_fuzz, 130)
+            if not no_cool_bump:
+                halo_fuzz = max(halo_fuzz, 130)
 
     for _ in range(passes):
         # Snapshot the current alpha mask so all edits this pass see
@@ -405,6 +406,7 @@ def main() -> None:
     p.add_argument("--halo-passes", type=int, default=3, help="Halo eroder iterations; each pass eats 1 px ring (default 3)")
     p.add_argument("--dilate", type=int, default=3, help="Connected-component dilation radius for blob filter; bigger = more tolerant of intra-character gaps but more risk of merging neighbor characters (default 3)")
     p.add_argument("--no-warm-bump", action="store_true", help="Disable the warm-chroma auto-bump in remove_background and erode_halo. Use with --fuzz / --halo-fuzz to dial cleanup precisely (parameter sweeps).")
+    p.add_argument("--no-cool-bump", action="store_true", help="Disable the cool-chroma (green/cyan) halo_fuzz auto-bump (default 130). The bumped value reliably eats green halos but also eats skin pixels in shadow + white badges with green-tinged anti-aliasing. Use this flag + a manual --halo-fuzz value when characters have detailed faces or visible badges.")
     p.add_argument("--no-global-erase", action="store_true", help="Skip chroma_key_global_erase entirely (the dominance-based pass that catches enclosed chroma pixels in hair). Useful for sweeps where the warm bg + skin overlap is the failure mode.")
     p.add_argument("--warm-min-excess", type=int, default=120, help="min_excess threshold for chroma_key_global_erase on warm chromas. Higher = more conservative (less likely to eat skin). Skin r-excess ~60 across tones, so values >70 are safe; 120 is the production default (locked in via the npc15 sweep). Cool chromas always use 15.")
     args = p.parse_args()
@@ -425,7 +427,7 @@ def main() -> None:
                     cleaned = cell.convert("RGBA")
                 else:
                     cleaned, ref = remove_background(cell, fuzz=args.fuzz, no_warm_bump=args.no_warm_bump)
-                    cleaned = erode_halo(cleaned, ref, halo_fuzz=args.halo_fuzz, passes=args.halo_passes, no_warm_bump=args.no_warm_bump)
+                    cleaned = erode_halo(cleaned, ref, halo_fuzz=args.halo_fuzz, passes=args.halo_passes, no_warm_bump=args.no_warm_bump, no_cool_bump=args.no_cool_bump)
                     if is_chroma_key(ref) and not args.no_global_erase:
                         # Catch any chroma-tinted pixels enclosed inside
                         # the silhouette (curls of hair, etc.) that
@@ -450,7 +452,7 @@ def main() -> None:
                 cleaned = frame.convert("RGBA")
             else:
                 cleaned, ref = remove_background(frame, fuzz=args.fuzz, no_warm_bump=args.no_warm_bump)
-                cleaned = erode_halo(cleaned, ref, halo_fuzz=args.halo_fuzz, passes=args.halo_passes, no_warm_bump=args.no_warm_bump)
+                cleaned = erode_halo(cleaned, ref, halo_fuzz=args.halo_fuzz, passes=args.halo_passes, no_warm_bump=args.no_warm_bump, no_cool_bump=args.no_cool_bump)
                 # See grid-mode branch — warm chromas use a higher
                 # min_excess (configurable) so the dominance heuristic
                 # doesn't eat skin.
