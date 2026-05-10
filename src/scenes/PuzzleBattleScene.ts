@@ -269,10 +269,12 @@ export class PuzzleBattleScene extends Phaser.Scene {
         this.submitPacket()
         return // submit triggers scene transition; no rerender needed
       case 'finish':
-        this.finishToWaitingRoom(true)
+        // Continue from the victory + recap page → cinematic fade
+        // back to the calling scene.
+        this.finishCinematic()
         return
       case 'flee':
-        this.finishToWaitingRoom(false)
+        this.fleeToWaitingRoom()
         return
       case 'dev-solve':
         this.devSolveAll()
@@ -424,23 +426,30 @@ export class PuzzleBattleScene extends Phaser.Scene {
     saveGame()
     checkLevelProgression()
 
-    // Blur + fade the puzzle overlay while the camera fades to black.
-    // No static victory page anymore — the cinematic transition lands
-    // the player back in the calling scene under a wake-up unblur.
+    // Show the victory page + post-victory recap (key concepts +
+    // resources). The cinematic fade-to-black + wake-up transition
+    // happens later, when the player clicks Continue (the 'finish'
+    // action). This mirrors the standalone Case prototypes — players
+    // see what they learned before they leave the encounter.
+    s.packetSubmitted = true
+    debugEvent(`submit ${this.encounterId}`)
+    this.rerender()
+    // Scroll back to the top so the victory page lands in view rather
+    // than wherever the player happened to be on the workbench.
+    this.overlay.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior })
+  }
+
+  private finishCinematic() {
+    // Cinematic transition out of the puzzle overlay back into the
+    // calling scene. Used by the Continue button after the player
+    // has read the recap.
     this.overlay.classList.add('puzzle-submit-out')
     this.cameras.main.fadeOut(1500, 0, 0, 0)
-    // Cross-fade the Red Room ambience out so the player doesn't
-    // arrive in the Hospital with WR music still playing.
     this.fadeOutRedRoomAmbience(1500)
-    debugEvent(`submit ${this.encounterId}`)
     this.cameras.main.once('camerafadeoutcomplete', () => {
       debugEvent(`fadeOutComplete -> ${this.returnScene}`)
       this.scene.start(this.returnScene)
     })
-    // Backstop: if the camerafadeoutcomplete event never fires
-    // (Phaser tween bugs on certain mobile browsers / WebGL context
-    // hiccups), force the scene transition after 1.6s so the player
-    // can never get stuck on a black puzzle screen.
     this.time.delayedCall(1600, () => {
       if (this.scene.isActive(this.scene.key)) {
         debugEvent('fadeOut backstop fired')
@@ -468,13 +477,11 @@ export class PuzzleBattleScene extends Phaser.Scene {
     }
   }
 
-  private finishToWaitingRoom(won: boolean) {
-    // Now only used for the 'flee' action — submitting handles its
-    // own transition above.
-    if (!won) {
-      updateResources({ stress: +2 })
-      saveGame()
-    }
+  private fleeToWaitingRoom() {
+    // Player bailed on the encounter (Leave button). Stress penalty
+    // and a quick fade back to the calling scene.
+    updateResources({ stress: +2 })
+    saveGame()
     this.cameras.main.fadeOut(400, 0, 0, 0)
     this.fadeOutRedRoomAmbience(400)
     this.cameras.main.once('camerafadeoutcomplete', () => {
