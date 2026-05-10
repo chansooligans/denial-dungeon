@@ -3,7 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- Status-bar / browser-chrome color so iOS Safari + Chrome
+         don't paint a white strip in the notch / safe-area on
+         portrait→landscape rotation. Match the body bg. -->
+    <meta name="theme-color" content="#0e1116" />
     <!-- Disable browser caching of this entry HTML so deploys are
          picked up immediately. The Vite-built JS/CSS bundles already
          have content-hashed filenames so they bust per-deploy on
@@ -21,20 +25,36 @@
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
       html, body {
-        height: 100%; background: #0e1116; overflow: hidden;
+        /* Use min-height too so the bg fills even when content is
+           shorter than the viewport during orientation change. */
+        height: 100%;
+        min-height: 100vh;
+        min-height: 100dvh;
+        background-color: #0e1116;
+        overflow: hidden;
         /* Prevent iOS press-and-hold text selection / callout / tap
            highlight when interacting with the game canvas itself. */
         -webkit-user-select: none; -ms-user-select: none; user-select: none;
         -webkit-touch-callout: none;
         -webkit-tap-highlight-color: transparent;
       }
-      canvas { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+      canvas {
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+        /* Phaser tints the canvas via its own backgroundColor, but
+           an explicit fallback here prevents the brief white flash
+           some mobile browsers paint during portrait→landscape
+           rotation before Phaser repaints the WebGL context. */
+        background-color: #0e1116;
+      }
       #game {
         width: 100vw;
         /* 100vh on iOS includes the URL bar; dvh tracks the visible
            viewport as browser chrome shows/hides. */
         height: 100vh;
         height: 100dvh;
+        background-color: #0e1116;
         /* No flex centering — Phaser's Scale.CENTER_BOTH already
            centers the canvas inside this div via margin. Layering
            both causes double-centering off the visible center. */

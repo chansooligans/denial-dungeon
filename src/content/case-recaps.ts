@@ -19,7 +19,7 @@ export const CASE_RECAPS: Record<string, CaseRecap> = {
       { term: 'J-code units', gist: 'HCPCS J-codes describe the drug + the dose unit. Wrong unit count = systematic underpayment. E.g. J3490 50mg = 1 unit; if you bill 50 units the dispute is on you.' },
     ],
     resources: [
-      { title: 'CMS — Part B Drug Pricing Files', url: 'https://www.cms.gov/medicare/payment/fee-schedules/physician/medicare-part-b-drug-average-sales-price', note: 'Quarterly ASP files + the published ASP+6% rates.' },
+      { title: 'CMS — Part B Drug Pricing Files', url: 'https://www.cms.gov/medicare/payment/part-b-drugs/asp-pricing-files', note: 'Quarterly ASP files + the published ASP+6% rates.' },
       { title: 'CMS — HCPCS J-Code Reference', url: 'https://www.cms.gov/medicare/coding-billing/healthcare-common-procedure-system', note: 'The J-code set + dose-unit definitions.' },
       { title: 'FDA NDC Directory', url: 'https://www.accessdata.fda.gov/scripts/cder/ndc/', note: "Crosswalk NDC codes (manufacturer's SKU) to HCPCS J-codes." },
     ],
@@ -47,7 +47,7 @@ export const CASE_RECAPS: Record<string, CaseRecap> = {
     resources: [
       { title: 'CMS NCCI Coding Edits', url: 'https://www.cms.gov/medicare/coding-billing/national-correct-coding-initiative-ncci-edits', note: 'The NCCI edit tables themselves + quarterly updates.' },
       { title: 'CMS NCCI Policy Manual', url: 'https://www.cms.gov/medicare/coding-billing/national-correct-coding-initiative-ncci-edits/medicare-ncci-policy-manual', note: 'Chapter-by-chapter rationale for the edits. Pulls the curtain back.' },
-      { title: 'CMS Modifier Quick Reference (MLN)', url: 'https://www.cms.gov/outreach-and-education/medicare-learning-network-mln/mlnproducts/downloads/proper-use-modifier-25.pdf', note: 'When 25 applies, when 57 applies, when neither does.' },
+      { title: 'CMS Modifier Quick Reference (MLN)', url: 'https://www.cms.gov/files/document/mln006764-evaluation-management-services.pdf', note: 'When 25 applies, when 57 applies, when neither does.' },
     ],
   },
   'carveout-phantom': {
@@ -60,7 +60,7 @@ export const CASE_RECAPS: Record<string, CaseRecap> = {
     resources: [
       { title: '45 CFR 149.110-130 — Patient Protections', url: 'https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-B/part-149/subpart-B', note: 'The NSA balance-billing protections.' },
       { title: 'CMS — Provider Notice + Consent (149.420)', url: 'https://www.cms.gov/nosurprises/policies-and-resources/provider-requirements-and-resources', note: 'When OON providers may ask patients to waive NSA protections (post-stabilization, scheduled).' },
-      { title: 'AHA — NSA Implementation Guide', url: 'https://www.aha.org/no-surprises-act', note: 'Operational walkthrough for facility + physician group contract alignment.' },
+      { title: 'AHA — NSA Implementation Guide', url: 'https://www.aha.org/surprise-billing-resources', note: 'Operational walkthrough for facility + physician group contract alignment.' },
     ],
   },
   'case-rate-specter': {
@@ -86,7 +86,7 @@ export const CASE_RECAPS: Record<string, CaseRecap> = {
     resources: [
       { title: 'CMS — Hospital Outpatient Prospective Payment System (OPPS)', url: 'https://www.cms.gov/medicare/payment/prospective-payment-systems/hospital-outpatient', note: 'OPPS rules including chemo administration + drug payment.' },
       { title: 'ASCO — Coding & Reimbursement', url: 'https://www.asco.org/practice-policy/billing-coding', note: 'Oncology-specific billing guidance from the American Society of Clinical Oncology.' },
-      { title: 'CMS — Hospital Outpatient Quarterly Update Pricer', url: 'https://www.cms.gov/medicare/payment/prospective-payment-systems/hospital-outpatient-pps', note: 'Quarterly pricer files for chemo administration codes + drug payment rates.' },
+      { title: 'CMS — Hospital Outpatient Quarterly Update Pricer', url: 'https://www.cms.gov/medicare/payment/prospective-payment-systems/hospital-outpatient', note: 'Quarterly pricer files for chemo administration codes + drug payment rates.' },
     ],
   },
   'cob-cascade-spider': {
@@ -97,8 +97,8 @@ export const CASE_RECAPS: Record<string, CaseRecap> = {
       { term: 'Payer-of-last-resort', gist: 'Medicaid is always last. If the patient has any other coverage (Medicare, commercial), Medicaid pays only after those have adjudicated.' },
     ],
     resources: [
-      { title: 'CMS — Coordination of Benefits & Recovery Center', url: 'https://www.cms.gov/medicare/coordination-benefits-recovery', note: 'The Medicare COB program + the BCRC contractor.' },
-      { title: 'NAIC Coordination of Benefits Model Regulation', url: 'https://content.naic.org/sites/default/files/inline-files/MDL-120.pdf', note: 'The model COB rules most states adopt — birthday rule, primary/secondary order.' },
+      { title: 'CMS — Coordination of Benefits & Recovery Center', url: 'https://www.cms.gov/medicare/coordination-benefits-recovery/overview', note: 'The Medicare COB program + the BCRC contractor.' },
+      { title: 'NAIC Coordination of Benefits Model Regulation', url: 'https://www.naic.org/cipr_topics/coordination_benefits.htm', note: 'The model COB rules most states adopt — birthday rule, primary/secondary order.' },
       { title: 'SSA — Medicare Secondary Payer (MSP) Manual', url: 'https://www.ssa.gov/OP_Home/cfr20/404/404-0408.htm', note: 'Title XVIII rules on when Medicare is secondary.' },
     ],
   },
@@ -110,7 +110,7 @@ export const CASE_RECAPS: Record<string, CaseRecap> = {
       { term: 'Federal exemption', gist: 'Federally-funded programs (Medicare, Medicaid) have a license to use CPT for claims. Charity clinics serving those populations may qualify for reduced fees.' },
     ],
     resources: [
-      { title: 'AMA CPT Licensing FAQ', url: 'https://www.ama-assn.org/practice-management/cpt/cpt-licensing-distribution', note: "AMA's licensing tiers + the application process." },
+      { title: 'AMA CPT Licensing FAQ', url: 'https://www.ama-assn.org/practice-management/cpt', note: "AMA's licensing tiers + the application process." },
       { title: 'CMS HCPCS Level II Quarterly Update', url: 'https://www.cms.gov/medicare/coding-billing/healthcare-common-procedure-system', note: 'The HCPCS Level II code set + quarterly additions.' },
       { title: '45 CFR 162.1002 — HIPAA Code Sets', url: 'https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-C/part-162/subpart-J', note: 'The federally-mandated code sets — CPT, HCPCS, ICD-10 — for HIPAA-covered transactions.' },
     ],
@@ -136,8 +136,8 @@ export const CASE_RECAPS: Record<string, CaseRecap> = {
       { term: 'Original ICN reference', gist: "Frequency-7 replacements MUST cite the original Internal Control Number (ICN/DCN). Without it, the payer treats it as a brand-new claim and you're back at CO-18." },
     ],
     resources: [
-      { title: 'CMS — Frequency Codes (UB-04 Manual)', url: 'https://www.cms.gov/research-statistics-data-and-systems/cms-information-technology/icd10', note: 'Type-of-bill third-position frequency code reference.' },
-      { title: 'X12 837P Implementation Guide — CLM05-3', url: 'https://www.x12.org/products/health-care', note: 'The frequency-type code field for professional claims.' },
+      { title: 'CMS — Frequency Codes (UB-04 Manual)', url: 'https://www.cms.gov/medicare/coding-billing/icd-10-codes', note: 'Type-of-bill third-position frequency code reference.' },
+      { title: 'X12 837P Implementation Guide — CLM05-3', url: 'https://x12.org/products', note: 'The frequency-type code field for professional claims.' },
       { title: 'CMS Claim Adjustment Reason Codes', url: 'https://x12.org/codes/claim-adjustment-reason-codes', note: 'CO-18 + the rest of the CARC family.' },
     ],
   },
@@ -149,9 +149,9 @@ export const CASE_RECAPS: Record<string, CaseRecap> = {
       { term: 'Roster vs claim mismatch', gist: 'The most common eligibility break: registration captured one name/DOB/ID combination; the payer has a different one on file. The 271 surfaces both.' },
     ],
     resources: [
-      { title: 'CMS — Eligibility (X12 270/271)', url: 'https://www.cms.gov/research-statistics-data-and-systems/cms-information-technology/health-plan-management-systems/medicareeligibility', note: "CMS's reference for Medicare eligibility transactions." },
-      { title: 'CAQH CORE — Eligibility Operating Rules', url: 'https://www.caqh.org/core/eligibility-rule', note: 'Payer obligations on the 270/271 — turnaround times, content requirements.' },
-      { title: 'X12 — 270/271 Implementation Guide', url: 'https://www.x12.org/products/health-care', note: 'The standard itself, including data segments + return codes.' },
+      { title: 'CMS — Eligibility (X12 270/271)', url: 'https://www.cms.gov/medicare/coding-billing/electronic-billing', note: "CMS's reference for Medicare eligibility transactions." },
+      { title: 'CAQH CORE — Eligibility Operating Rules', url: 'https://www.caqh.org/core/operating-rules', note: 'Payer obligations on the 270/271 — turnaround times, content requirements.' },
+      { title: 'X12 — 270/271 Implementation Guide', url: 'https://x12.org/products', note: 'The standard itself, including data segments + return codes.' },
     ],
   },
   'form-mirror': {
@@ -162,7 +162,7 @@ export const CASE_RECAPS: Record<string, CaseRecap> = {
       { term: 'Institutional-only fields', gist: "Type of bill (FL 4), revenue codes, condition codes, occurrence codes — these don't exist on CMS-1500. A facility claim sent on CMS-1500 is missing the spine of its data." },
     ],
     resources: [
-      { title: 'CMS — UB-04 Claim Form Manual', url: 'https://www.cms.gov/medicare/billing/electronicbillingeditrans/medicarefeeforsvcclaims', note: 'The UB-04 reference + FL definitions.' },
+      { title: 'CMS — UB-04 Claim Form Manual', url: 'https://www.cms.gov/medicare/coding-billing/electronic-billing', note: 'The UB-04 reference + FL definitions.' },
       { title: 'CMS — CMS-1500 Form Instructions', url: 'https://www.cms.gov/medicare/cms-forms/cms-forms/downloads/cms1500.pdf', note: 'The CMS-1500 box-by-box instructions.' },
       { title: 'NUCC — CMS-1500 Reference Instruction Manual', url: 'https://www.nucc.org/index.php/1500-claim-form-mainmenu-35', note: 'Authoritative CMS-1500 instructions maintained by the National Uniform Claim Committee.' },
     ],
@@ -175,9 +175,9 @@ export const CASE_RECAPS: Record<string, CaseRecap> = {
       { term: 'Box 23 / Field 63', gist: 'CMS-1500 Box 23 (or UB-04 Field 63) is where the auth number lives once it comes back. Forgetting to populate it = same denial again.' },
     ],
     resources: [
-      { title: 'CMS — Prior Authorization', url: 'https://www.cms.gov/research-statistics-data-and-systems/computer-data-and-systems/electronic-billing-edi-transactions/prior-authorization', note: 'The federal stance on PA, including the new (2026) interoperability rule.' },
-      { title: 'X12 — 278 Transaction Standard', url: 'https://www.x12.org/products/health-care', note: 'The EDI standard reference + implementation guides.' },
-      { title: 'CAQH CORE — PA Operating Rules', url: 'https://www.caqh.org/core/prior-authorization-rule', note: 'Industry operating rules for PA exchange. Most payers attest compliance with these.' },
+      { title: 'CMS — Prior Authorization', url: 'https://www.cms.gov/newsroom/fact-sheets/cms-interoperability-prior-authorization-final-rule-cms-0057-f', note: 'The federal stance on PA, including the new (2026) interoperability rule.' },
+      { title: 'X12 — 278 Transaction Standard', url: 'https://x12.org/products', note: 'The EDI standard reference + implementation guides.' },
+      { title: 'CAQH CORE — PA Operating Rules', url: 'https://www.caqh.org/core/operating-rules', note: 'Industry operating rules for PA exchange. Most payers attest compliance with these.' },
     ],
   },
   'gfe-oracle': {
@@ -189,7 +189,7 @@ export const CASE_RECAPS: Record<string, CaseRecap> = {
     ],
     resources: [
       { title: '45 CFR 149.610 — Good Faith Estimates', url: 'https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-B/part-149/subpart-G/section-149.610', note: 'The GFE regulation for uninsured/self-pay.' },
-      { title: 'CMS — GFE Guidance', url: 'https://www.cms.gov/nosurprises/help-resolve-payment-disputes/good-faith-estimate', note: 'CMS resources, sample GFE templates, the patient-provider dispute resolution process.' },
+      { title: 'CMS — GFE Guidance', url: 'https://www.cms.gov/nosurprises/help-resolve-payment-disputes', note: 'CMS resources, sample GFE templates, the patient-provider dispute resolution process.' },
       { title: 'AHA — GFE Implementation Toolkit', url: 'https://www.aha.org/', note: 'Operational guidance on convening-provider workflows.' },
     ],
   },
@@ -217,7 +217,7 @@ export const CASE_RECAPS: Record<string, CaseRecap> = {
     resources: [
       { title: '45 CFR 149.140 — QPA methodology', url: 'https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-B/part-149/subpart-D/section-149.140', note: 'The regulation that defines what goes into the QPA, what\'s excluded, and the disclosure obligations.' },
       { title: '45 CFR 149.510 — Federal IDR process', url: 'https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-B/part-149/subpart-G/section-149.510', note: 'The IDR mechanic itself: open negotiation, certified IDR entity, baseball arbitration, ACI factors.' },
-      { title: 'CMS Federal IDR Process — provider portal', url: 'https://www.cms.gov/nosurprises/policies-and-resources/Federal-IDR-Process-Guidance', note: 'CMS guidance, batching rules, current arbitration entity list, fee schedule.' },
+      { title: 'CMS Federal IDR Process — provider portal', url: 'https://www.cms.gov/nosurprises/help-resolve-payment-disputes', note: 'CMS guidance, batching rules, current arbitration entity list, fee schedule.' },
       { title: 'Texas Medical Association v HHS (TMA III) ruling', url: 'https://www.govinfo.gov/app/details/USCOURTS-txed-6_22-cv-00450', note: 'The 2023 E.D. Tex. ruling that struck the QPA presumption from the IDR rule. Foundation for current arbitrator-discretion regime.' },
     ],
   },
@@ -242,7 +242,7 @@ export const CASE_RECAPS: Record<string, CaseRecap> = {
       { term: 'Charity vs bad debt', gist: 'Charity care is unpaid by design (financial assistance policy granted). Bad debt is unpaid because collection failed. Treating one as the other costs the hospital + the patient.' },
     ],
     resources: [
-      { title: 'IRS § 501(r) — Hospital Requirements', url: 'https://www.irs.gov/charities-non-profits/charitable-hospitals-general-requirements-for-tax-exemption-under-section-501r', note: 'The federal requirements for nonprofit hospitals.' },
+      { title: 'IRS § 501(r) — Hospital Requirements', url: 'https://www.irs.gov/charities-non-profits/charitable-organizations/requirements-for-501c3-hospitals-under-the-affordable-care-act-section-501r', note: 'The federal requirements for nonprofit hospitals.' },
       { title: 'Catholic Health Association — Financial Assistance Toolkit', url: 'https://www.chausa.org/finance/financial-assistance', note: 'Practical FAP design + screening protocols.' },
       { title: 'HHS — Federal Poverty Level Guidelines', url: 'https://aspe.hhs.gov/topics/poverty-economic-mobility/poverty-guidelines', note: 'Annual FPL tables. The thresholds shift each January.' },
     ],
@@ -307,7 +307,7 @@ export const CASE_RECAPS: Record<string, CaseRecap> = {
       { term: 'Front-end prevention', gist: 'A 270/271 eligibility check at intake catches most identity breaks before the claim ever submits. Saves a denial cycle.' },
     ],
     resources: [
-      { title: 'ONC — Patient Matching Resources', url: 'https://www.healthit.gov/topic/scientific-initiatives/patient-matching', note: 'Federal guidance on patient-matching standards + algorithms.' },
+      { title: 'ONC — Patient Matching Resources', url: 'https://www.healthit.gov/standards-and-technology/patient-identity-and-patient-record-matching/', note: 'Federal guidance on patient-matching standards + algorithms.' },
       { title: 'AHIMA — Patient Identification + Matching', url: 'https://www.ahima.org/', note: "AHIMA's patient-matching toolkit + best-practice registration workflows." },
       { title: 'HHS — Strategic Health IT Plan: Identity Resolution', url: 'https://www.healthit.gov/', note: 'The federal-level identity-resolution roadmap.' },
     ],
@@ -346,8 +346,8 @@ export const CASE_RECAPS: Record<string, CaseRecap> = {
       { term: '835 ERA structure', gist: "The 835 has CLP segments (per-claim) and SVC segments (per-service-line). The contractual adjustment lives at the line level. CO-45 + a number that doesn't match your contract = appeal." },
     ],
     resources: [
-      { title: 'X12 835 Health Care Claim Payment/Advice', url: 'https://www.x12.org/products/health-care', note: 'The EDI standard for the ERA. Field-level reference.' },
-      { title: 'CMS — ERA / 835 Companion Guide', url: 'https://www.cms.gov/research-statistics-data-and-systems/cms-information-technology/healthplanmanagementsystems/electronicbillingedi', note: "CMS's implementation specifics for Medicare ERAs." },
+      { title: 'X12 835 Health Care Claim Payment/Advice', url: 'https://x12.org/products', note: 'The EDI standard for the ERA. Field-level reference.' },
+      { title: 'CMS — ERA / 835 Companion Guide', url: 'https://www.cms.gov/medicare/coding-billing/electronic-billing', note: "CMS's implementation specifics for Medicare ERAs." },
       { title: 'Healthcare Financial Management Association — Underpayment Recovery', url: 'https://www.hfma.org/topics/revenue-cycle/', note: 'Industry guidance on systematic underpayment review programs.' },
     ],
   },
@@ -400,7 +400,7 @@ export const CASE_RECAPS: Record<string, CaseRecap> = {
     resources: [
       { title: 'HRSA — 340B Program Office of Pharmacy Affairs', url: 'https://www.hrsa.gov/opa', note: 'The 340B program home — eligibility, registration, compliance, self-disclosure.' },
       { title: '42 USC §256b — 340B Statute', url: 'https://www.govinfo.gov/app/details/USCODE-2023-title42/USCODE-2023-title42-chap6A-subchapII-partD-subpartVII-sec256b', note: 'The statute itself, including the duplicate-discount prohibition.' },
-      { title: 'CMS — Medicaid 340B Identifier Crosswalk', url: 'https://www.medicaid.gov/medicaid/prescription-drugs/medicaid-drug-rebate-program/index.html', note: 'State-by-state 340B claim identifier reference (UD, JG, state-specific).' },
+      { title: 'CMS — Medicaid 340B Identifier Crosswalk', url: 'https://www.medicaid.gov/medicaid/prescription-drugs/medicaid-drug-rebate-program', note: 'State-by-state 340B claim identifier reference (UD, JG, state-specific).' },
     ],
   },
   'two-midnight-mire': {
@@ -411,7 +411,7 @@ export const CASE_RECAPS: Record<string, CaseRecap> = {
       { term: 'Part A → Part B rebill', gist: "When a RAC denies the inpatient stay AND the chart doesn't actually support inpatient, the right move is to rebill as observation under Part B (lower payment, but recoverable)." },
     ],
     resources: [
-      { title: 'CMS — 2-Midnight Rule (MLN MM9979)', url: 'https://www.cms.gov/outreach-and-education/medicare-learning-network-mln/mlnmattersarticles/downloads/mm9979.pdf', note: 'The MLN article explaining the 2-midnight benchmark + presumption.' },
+      { title: 'CMS — 2-Midnight Rule (MLN MM9979)', url: 'https://www.cms.gov/files/document/two-midnight-rule-fact-sheet.pdf', note: 'The MLN article explaining the 2-midnight benchmark + presumption.' },
       { title: '42 CFR 412.3 — Inpatient Admission Decision', url: 'https://www.ecfr.gov/current/title-42/chapter-IV/subchapter-B/part-412/subpart-A/section-412.3', note: 'The federal regulation establishing the 2-midnight rule.' },
       { title: 'CMS — Recovery Audit Program (2-Midnight Reviews)', url: 'https://www.cms.gov/research-statistics-data-and-systems/monitoring-programs/medicare-ffs-compliance-programs/recovery-audit-program', note: 'How RACs review 2-midnight cases + the Part A → Part B rebill mechanic.' },
     ],

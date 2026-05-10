@@ -1242,12 +1242,14 @@ export const LEVEL_1_MAP: MapDef = {
       levels: [1, 2] },
 
     // === Per-level placements ===
-    // Day-one mentor pass: at L1, Dana / Kim / Jordan all gather
-    // in the front-of-house (lobby + main hub) because their
-    // dedicated rooms are still phase-locked. From L2 onwards they
-    // disperse to their stations as those rooms unlock.
-    { npcId: 'dana',   tileX: LOBBY.x + 13, tileY: LOBBY.y + 4,
-      levels: [1] },
+    // Day-one mentor pass: at L1, Kim / Jordan gather in the front-
+    // of-house (lobby + main hub) because their dedicated rooms are
+    // still phase-locked. From L2 onwards they disperse to their
+    // stations as those rooms unlock.
+    // Dana removed from the Lobby — at L1 she stays at her primary
+    // station (Patient Services); the room is locked from the
+    // player but her placement is unaffected (the player meets her
+    // first at L2 when PS opens).
     { npcId: 'kim',    tileX: LOBBY.x + 22, tileY: LOBBY.y + 5, facing: 'left',
       levels: [1] },
     { npcId: 'jordan', tileX: MAIN_HUB.x + 9, tileY: MAIN_HUB.y + 5,
