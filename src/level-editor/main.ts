@@ -61,6 +61,8 @@ function renderCard(c: CaseEntry, i: number): string {
   const legacyChip = c.legacyLevel != null
     ? `<span class="chip-legacy">prev L${c.legacyLevel}</span>`
     : ''
+  const diffColor = difficultyColor(c.difficulty)
+  const diffChip = `<span class="chip-diff" style="color:${diffColor.fg};background:${diffColor.bg};border-color:${diffColor.border}" title="Difficulty: ${c.difficulty}/10">diff ${c.difficulty}</span>`
   return `
     <div class="card${dragging}${dropTop}${dropBot}" draggable="true" data-idx="${i}">
       <div class="grip" aria-label="drag to reorder">⋮⋮</div>
@@ -72,6 +74,7 @@ function renderCard(c: CaseEntry, i: number): string {
         </div>
         <div class="gloss">${esc(c.gloss)}</div>
         <div class="chips">
+          ${diffChip}
           <span class="chip-district" style="color:${palette.fg};background:${palette.bg};border-color:${palette.border}">${esc(c.district)}</span>
           ${specChip}
           ${legacyChip}
@@ -144,6 +147,17 @@ function attachDragHandlers() {
   })
 }
 
+/** Heat-map color for the difficulty chip — green-leaning at 1,
+ *  amber mid, red at 10. Saturation kept low so the chip doesn't
+ *  scream louder than the district color. */
+function difficultyColor(d: number): { fg: string; bg: string; border: string } {
+  if (d <= 2) return { fg: '#7ee2c1', bg: 'rgba(126, 226, 193, 0.10)', border: '#3a6b58' }
+  if (d <= 4) return { fg: '#a8d878', bg: 'rgba(168, 216, 120, 0.10)', border: '#4a6b3a' }
+  if (d <= 6) return { fg: '#f4d06f', bg: 'rgba(244, 208, 111, 0.10)', border: '#6b5938' }
+  if (d <= 8) return { fg: '#f0a868', bg: 'rgba(240, 168, 104, 0.10)', border: '#6b4d36' }
+  return            { fg: '#ef5b7b', bg: 'rgba(239, 91, 123, 0.10)', border: '#6b3742' }
+}
+
 function updateSummary() {
   const summary = $('#summary')
   const byDistrict: Record<string, number> = {}
@@ -176,6 +190,7 @@ function copyTsLiteral() {
     tsLines.push(`    hasRuntimeSpec: ${c.hasRuntimeSpec},`)
     tsLines.push(`    legacyLevel: ${c.legacyLevel === null ? 'null' : c.legacyLevel},`)
     tsLines.push(`    gloss: ${JSON.stringify(c.gloss)},`)
+    tsLines.push(`    difficulty: ${c.difficulty},`)
     tsLines.push('  },')
   }
   tsLines.push(']')
@@ -200,6 +215,12 @@ function resetOrder() {
   state.order = CASE_ORDER.slice()
   render()
   flashStatus('Reset.')
+}
+
+function sortByDifficulty() {
+  state.order = state.order.slice().sort((a, b) => a.difficulty - b.difficulty)
+  render()
+  flashStatus('Sorted by difficulty (easiest first). Tweak from here.')
 }
 
 function fallbackCopy(text: string) {
@@ -232,5 +253,6 @@ document.addEventListener('DOMContentLoaded', () => {
   render()
   $('#copy-ts').addEventListener('click', copyTsLiteral)
   $('#copy-ids').addEventListener('click', copyIdsOnly)
+  $('#sort-diff').addEventListener('click', sortByDifficulty)
   $('#reset').addEventListener('click', resetOrder)
 })

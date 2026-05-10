@@ -42,6 +42,25 @@ export interface CaseEntry {
   /** One-line gloss for the card subtitle. Pulled from the recap or
    *  the prototype's hospital-intro line. Kept short. */
   gloss: string
+  /**
+   * Difficulty rating on a 1-10 scale.
+   *
+   * Calibration:
+   *   1   single-issue, single picker, no domain prereq (intro teaching)
+   *   2-3 single new verb OR 2 sequential simple issues
+   *   4   2-3 issues, clear path, one new mechanic
+   *   5   first real citation chain or multi-step procedural
+   *   6   multi-issue + multi-verb + meaningful domain depth
+   *   7   complex domain (contract math, drug pricing, federal reg)
+   *   8   multi-party + complex regulation
+   *   9   strategic depth (math + adversarial choice)
+   *  10   boss / capstone
+   *
+   * Ties are fine — the point is comparative ranking on a shared scale,
+   * not unique slot per case. Edit freely; the level-editor renders
+   * these as chips + can sort by difficulty.
+   */
+  difficulty: number
 }
 
 export const CASE_ORDER: CaseEntry[] = [
@@ -54,6 +73,7 @@ export const CASE_ORDER: CaseEntry[] = [
     hasRuntimeSpec: true,
     legacyLevel: 1,
     gloss: "Anjali handed her husband's insurance card at check-in. Subscriber ID mismatch.",
+    difficulty: 1,
   },
   {
     id: 'fog',
@@ -63,6 +83,7 @@ export const CASE_ORDER: CaseEntry[] = [
     hasRuntimeSpec: true,
     legacyLevel: 2,
     gloss: 'Stale insurance card; new plan since the patient changed jobs.',
+    difficulty: 2,
   },
   {
     id: 'gatekeeper',
@@ -72,6 +93,7 @@ export const CASE_ORDER: CaseEntry[] = [
     hasRuntimeSpec: true,
     legacyLevel: 3,
     gloss: 'No auth on file for an MRI. Polite, immovable, fixable.',
+    difficulty: 3,
   },
   {
     id: 'wraith',
@@ -81,6 +103,7 @@ export const CASE_ORDER: CaseEntry[] = [
     hasRuntimeSpec: true,
     legacyLevel: 3,
     gloss: 'CO-50 echo denial. Citation-chain appeal across three sources.',
+    difficulty: 5,
   },
   {
     id: 'bundle',
@@ -90,6 +113,7 @@ export const CASE_ORDER: CaseEntry[] = [
     hasRuntimeSpec: true,
     legacyLevel: 4,
     gloss: 'CO-97 bundle. Modifier 25 + chart support for a separately identifiable E&M.',
+    difficulty: 4,
   },
   {
     id: 'swarm',
@@ -99,6 +123,7 @@ export const CASE_ORDER: CaseEntry[] = [
     hasRuntimeSpec: true,
     legacyLevel: 6,
     gloss: 'CO-16 catch-all batch. Read the RARC, find the upstream break.',
+    difficulty: 5,
   },
   {
     id: 'reaper',
@@ -108,6 +133,7 @@ export const CASE_ORDER: CaseEntry[] = [
     hasRuntimeSpec: true,
     legacyLevel: 7,
     gloss: 'CO-29 timely filing. 277CA evidence + extenuating-circumstances waiver.',
+    difficulty: 6,
   },
   {
     id: 'surprise-bill',
@@ -117,6 +143,7 @@ export const CASE_ORDER: CaseEntry[] = [
     hasRuntimeSpec: true,
     legacyLevel: 8,
     gloss: 'NSA-protected balance bill. Recalculate cost-share, route the OON fight to IDR.',
+    difficulty: 6,
   },
   {
     id: 'lighthouse',
@@ -126,6 +153,7 @@ export const CASE_ORDER: CaseEntry[] = [
     hasRuntimeSpec: true,
     legacyLevel: 8,
     gloss: 'Charity-care / §501(r) financial assistance for a patient with no path to pay.',
+    difficulty: 4,
   },
   {
     id: 'doppelganger',
@@ -135,6 +163,7 @@ export const CASE_ORDER: CaseEntry[] = [
     hasRuntimeSpec: true,
     legacyLevel: 9,
     gloss: 'CO-18 duplicate. Frequency-code-7 replacement referencing the original ICN.',
+    difficulty: 5,
   },
   {
     id: 'audit-boss',
@@ -144,6 +173,7 @@ export const CASE_ORDER: CaseEntry[] = [
     hasRuntimeSpec: true,
     legacyLevel: 10,
     gloss: 'Three audit findings. RECEIPT vs AMEND. The reckoning.',
+    difficulty: 10,
   },
 
   // ===== Catalog-only cases (legacy: prototype-only, never wired in-game) =====
@@ -159,6 +189,7 @@ export const CASE_ORDER: CaseEntry[] = [
     hasRuntimeSpec: false,
     legacyLevel: null,
     gloss: 'Multi-payer coordination of benefits — Medicare + retiree + spouse plan cascade.',
+    difficulty: 7,
   },
   {
     id: 'phantom-patient',
@@ -168,6 +199,7 @@ export const CASE_ORDER: CaseEntry[] = [
     hasRuntimeSpec: false,
     legacyLevel: null,
     gloss: 'Identity-matching collision — two patients, one demographic profile.',
+    difficulty: 6,
   },
   {
     id: 'credentialing-lattice',
@@ -177,6 +209,7 @@ export const CASE_ORDER: CaseEntry[] = [
     hasRuntimeSpec: false,
     legacyLevel: null,
     gloss: "Provider credentialing gap — claim denied because the doc isn't credentialed with this plan yet.",
+    difficulty: 5,
   },
 
   // Coding
@@ -188,6 +221,7 @@ export const CASE_ORDER: CaseEntry[] = [
     hasRuntimeSpec: false,
     legacyLevel: null,
     gloss: 'CMS-1500 vs UB-04 — which form does this service belong on?',
+    difficulty: 3,
   },
   {
     id: 'cpt-licensure-mire',
@@ -197,6 +231,7 @@ export const CASE_ORDER: CaseEntry[] = [
     hasRuntimeSpec: false,
     legacyLevel: null,
     gloss: 'AMA CPT licensing edges — code mapping, derivative-work limits, public-domain alternatives.',
+    difficulty: 7,
   },
   {
     id: 'outpatient-surgery-grouper',
@@ -206,6 +241,7 @@ export const CASE_ORDER: CaseEntry[] = [
     hasRuntimeSpec: false,
     legacyLevel: null,
     gloss: 'APC grouping for outpatient surgery — packaging rules + status indicators.',
+    difficulty: 7,
   },
   {
     id: 'risk-adj-hollow',
@@ -215,6 +251,7 @@ export const CASE_ORDER: CaseEntry[] = [
     hasRuntimeSpec: false,
     legacyLevel: null,
     gloss: 'HCC capture — chronic condition coded once a year, dropped the next, RAF score evaporates.',
+    difficulty: 6,
   },
   {
     id: 'two-midnight-mire',
@@ -224,6 +261,7 @@ export const CASE_ORDER: CaseEntry[] = [
     hasRuntimeSpec: false,
     legacyLevel: null,
     gloss: 'Inpatient vs observation — Medicare 2-midnight rule + medical-necessity overlay.',
+    difficulty: 6,
   },
 
   // Billing — underpayments + carve-outs
@@ -235,6 +273,7 @@ export const CASE_ORDER: CaseEntry[] = [
     hasRuntimeSpec: true, // wired via legacy `specter` spec (catalog ↔ runtime mismatch)
     legacyLevel: null,
     gloss: 'CO-45 underpayment — contract says one rate, payment shows another.',
+    difficulty: 6,
   },
   {
     id: 'case-rate-specter',
@@ -244,6 +283,7 @@ export const CASE_ORDER: CaseEntry[] = [
     hasRuntimeSpec: false,
     legacyLevel: null,
     gloss: 'Case-rate vs per-diem mismatch — multi-day stay paid as a single bundle.',
+    difficulty: 7,
   },
   {
     id: 'chemo-bundle-specter',
@@ -253,6 +293,7 @@ export const CASE_ORDER: CaseEntry[] = [
     hasRuntimeSpec: false,
     legacyLevel: null,
     gloss: 'Chemotherapy bundled into the case rate; admin code dropped, claim under-pays.',
+    difficulty: 7,
   },
   {
     id: 'implant-carveout-specter',
@@ -262,6 +303,7 @@ export const CASE_ORDER: CaseEntry[] = [
     hasRuntimeSpec: false,
     legacyLevel: null,
     gloss: 'Implant cost above stoploss — invoice carve-out missed by the contract.',
+    difficulty: 7,
   },
   {
     id: 'ob-perdiem-specter',
@@ -271,6 +313,7 @@ export const CASE_ORDER: CaseEntry[] = [
     hasRuntimeSpec: false,
     legacyLevel: null,
     gloss: 'OB per-diem with C-section escalator — payer paid the base rate only.',
+    difficulty: 7,
   },
   {
     id: 'stoploss-reckoner',
@@ -280,6 +323,7 @@ export const CASE_ORDER: CaseEntry[] = [
     hasRuntimeSpec: false,
     legacyLevel: null,
     gloss: 'High-cost case crossing the stoploss threshold — % outlier vs charges audit.',
+    difficulty: 8,
   },
   {
     id: 'three-forty-b-specter',
@@ -289,6 +333,7 @@ export const CASE_ORDER: CaseEntry[] = [
     hasRuntimeSpec: false,
     legacyLevel: null,
     gloss: '340B-eligible drug paid at non-340B rate post-Becerra clawback.',
+    difficulty: 8,
   },
   {
     id: 'asp-wac-apothecary',
@@ -298,6 +343,7 @@ export const CASE_ORDER: CaseEntry[] = [
     hasRuntimeSpec: false,
     legacyLevel: null,
     gloss: 'Part B drug pricing — ASP vs WAC, J-code unit dose, NDC↔HCPCS crosswalk.',
+    difficulty: 7,
   },
   {
     id: 'carveout-phantom',
@@ -307,6 +353,7 @@ export const CASE_ORDER: CaseEntry[] = [
     hasRuntimeSpec: false,
     legacyLevel: null,
     gloss: 'Two bills for one ER visit — NSA carve-out routes the OON physician fight to IDR.',
+    difficulty: 6,
   },
 
   // Appeals / Compliance
@@ -318,6 +365,7 @@ export const CASE_ORDER: CaseEntry[] = [
     hasRuntimeSpec: false,
     legacyLevel: null,
     gloss: 'Baseball-style arbitration — submit one number, pick a number, defend the math.',
+    difficulty: 9,
   },
   {
     id: 'gfe-oracle',
@@ -327,6 +375,7 @@ export const CASE_ORDER: CaseEntry[] = [
     hasRuntimeSpec: false,
     legacyLevel: null,
     gloss: 'GFE accuracy — patient billed over the threshold, opens the appeal path.',
+    difficulty: 5,
   },
   {
     id: 'mrf-cartographer',
@@ -336,6 +385,7 @@ export const CASE_ORDER: CaseEntry[] = [
     hasRuntimeSpec: false,
     legacyLevel: null,
     gloss: 'Machine-Readable Files — read the payer rate sheet, find the negotiated rate hidden in 8 GB of JSON.',
+    difficulty: 7,
   },
   {
     id: 'hipaa-spider',
@@ -345,6 +395,7 @@ export const CASE_ORDER: CaseEntry[] = [
     hasRuntimeSpec: false,
     legacyLevel: null,
     gloss: 'Breach response — four-factor assessment, notification thresholds, OCR follow-up.',
+    difficulty: 8,
   },
 
   // Release-valve / patient-facing
@@ -356,6 +407,7 @@ export const CASE_ORDER: CaseEntry[] = [
     hasRuntimeSpec: false,
     legacyLevel: null,
     gloss: 'No-show fee policy — when to waive, when to enforce, what the patient hears.',
+    difficulty: 3,
   },
 ]
 
