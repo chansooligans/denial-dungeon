@@ -1,9 +1,9 @@
-// Chemo Bundle Specter @ L6 — OP Surg Group / UnitedHealthcare Case.
+// Chemo Bundle Specter @ L6 — UnitedHealthcare chemo bundling Case.
 //
 // First Case where the bug isn't on the claim — it's upstream in
 // the chargemaster. Hard-coding (CDM auto-mapping of charges to
-// CPT/HCPCS codes) is correct in the abstract, but the OP Surg
-// Group's chargemaster doesn't know that under UHC's contract
+// CPT/HCPCS codes) is correct in the abstract, but the Cancer
+// Center's chargemaster doesn't know that under UHC's contract
 // section 8.3(c), CPT 96413 + Revenue Code 0335 triggers a chemo
 // case rate that *includes* the chemotherapy drug (J-codes).
 //
@@ -85,7 +85,7 @@ interface GlossaryEntry {
 
 const PATIENT = 'Sarah Khan'
 const PAYER = 'UnitedHealthcare PPO'
-const FACILITY = 'OP Surg Group at Mercy'
+const FACILITY = 'Mercy Cancer Center'
 const DOS = '2026-04-18'
 const ADMIN_CPT = '96413'
 const ADMIN_DESCRIPTOR = 'Chemotherapy administration, IV infusion, up to 1 hour'
@@ -100,7 +100,7 @@ const clauses: ContractClause[] = [
     id: 'case-rate',
     section: 'Section 8.3(c) — Chemotherapy Case Rate',
     label: 'Chemo case rate (96413 + Rev 0335) bundles infused drugs',
-    text: `When CPT ${ADMIN_CPT} is billed under revenue code ${REV_CODE} at an OP Surgical Group facility, payment shall be the contracted chemotherapy case rate of $${CASE_RATE.toLocaleString()} per session. This case rate constitutes payment in full for the chemotherapy session including all infused or injected chemotherapy drugs reported with HCPCS Level II J-codes (J9000–J9999). Separate billing of bundled drug J-codes is not reimbursable.`,
+    text: `When CPT ${ADMIN_CPT} is billed under revenue code ${REV_CODE} for outpatient oncology services, payment shall be the contracted chemotherapy case rate of $${CASE_RATE.toLocaleString()} per session. This case rate constitutes payment in full for the chemotherapy session including all infused or injected chemotherapy drugs reported with HCPCS Level II J-codes (J9000–J9999). Separate billing of bundled drug J-codes is not reimbursable.`,
     governs: true,
     feedbackApplies: `Yes — this is the lever. Section 8.3(c) is exactly the case-rate provision: chemo admin under Rev ${REV_CODE} triggers the case rate, drug J-codes are bundled. UHC's CO-234 denials are correct.`,
     feedbackRejects: `This IS the governing clause. It explicitly bundles the drug. Look again — the chemo case-rate language is unambiguous.`,
@@ -180,7 +180,7 @@ const cdmEntries: CdmEntry[] = [
 const resolutions: Resolution[] = [
   {
     id: 'fix-cdm',
-    label: 'Update the chargemaster: switch the OP Surg Group chemo session to the bundled case-rate charge entry on UHC contracts. Suppress the individual J-code line drops when CPT 96413 + Rev 0335 are present. Re-run the charge-capture audit on the affected accounts.',
+    label: 'Update the chargemaster: switch the Cancer Center chemo session to the bundled case-rate charge entry on UHC contracts. Suppress the individual J-code line drops when CPT 96413 + Rev 0335 are present. Re-run the charge-capture audit on the affected accounts.',
     correct: true,
     feedback: 'Right move. The chargemaster fix is the actual answer; the claim adjudication was correct. Going forward, chemo sessions on UHC drop a single case-rate line and the J-codes don\'t get billed at all (much less denied). Existing accounts get cleaned via re-bill, not appeal.',
   },
@@ -194,7 +194,7 @@ const resolutions: Resolution[] = [
     id: 'modifier-59',
     label: 'Resubmit the J-codes with modifier 59 (distinct procedural service) to break the bundling edit.',
     correct: false,
-    feedback: 'Modifier 59 is for NCCI procedure-pair edits — completely different mechanism. The bundling here is contractual (UHC\'s OP Surg Group case rate), not NCCI. Modifier 59 won\'t move it; if anything it triggers payer-side fraud heuristics.',
+    feedback: 'Modifier 59 is for NCCI procedure-pair edits — completely different mechanism. The bundling here is contractual (UHC\'s chemo case rate), not NCCI. Modifier 59 won\'t move it; if anything it triggers payer-side fraud heuristics.',
   },
   {
     id: 'ppdr',
@@ -252,9 +252,9 @@ const glossary: Record<string, GlossaryEntry> = {
     term: 'CO-234 (procedure or service is not separately reimbursable)',
     plain: "CARC indicating the line is bundled into another service on the claim and not separately payable. Different from CO-97 (procedure or service is bundled per NCCI edit — usually fixable with a modifier) and CO-45 (charge exceeds fee schedule — usually a contractual write-off). CO-234 most often signals a contractual bundling rule that no modifier will break; the fix is to stop billing the bundled line in the first place, or to accept the bundling as designed.",
   },
-  'OP Surg Group': {
-    term: 'OP Surg Group (Outpatient Surgical Group)',
-    plain: "An outpatient-surgery-focused unit, often with its own payer contracts distinct from the parent hospital's main facility contracts. Handles ambulatory cases (chemo administration, endoscopy, minor surgery) where the patient doesn't need an overnight stay. Contracts here are denser with case-rate provisions — payers like the predictability and providers like the volume.",
+  'Cancer Center': {
+    term: 'Mercy Cancer Center',
+    plain: "Mercy's outpatient oncology service line. Handles infused/injected chemotherapy administration, supportive infusions, and oncology follow-up visits. Contracts negotiated separately from the inpatient hospital because the cost structure (per-session case rates with bundled drug coverage) doesn't fit a DRG model.",
   },
   'revenue code': {
     term: 'Revenue code (UB-04 FL 42)',
@@ -343,7 +343,7 @@ function renderHeader(): string {
   return `
     <header class="page-h">
       <div class="title-row">
-        <h1>Chemo Bundle Specter <span class="muted">@ L6 — first sketch (OP Surg Group / UHC)</span></h1>
+        <h1>Chemo Bundle Specter <span class="muted">@ L6 — UHC chemo bundling (chargemaster fix)</span></h1>
         <div class="header-actions">
           ${recallBtn}
           <a class="back-link" href="./prototypes.html">← back to catalog</a>
@@ -352,7 +352,7 @@ function renderHeader(): string {
       ${state.briefingDone ? '' : `
         <p class="lede">
           ${escape(PATIENT)}'s chemo session at the
-          ${term('OP Surg Group')} came back with two
+          ${term('Cancer Center')} came back with two
           ${term('CO-234')} denials on the chemo drug
           ${term('J-code', 'J-codes')}.
           Looks like an underpayment. It isn't —
@@ -370,7 +370,7 @@ function renderHeader(): string {
 function renderHospitalIntro(): string {
   return `
     <section class="hospital-intro">
-      <div class="register hospital">HOSPITAL · OP Surg Group billing</div>
+      <div class="register hospital">HOSPITAL · Cancer Center billing</div>
       <p>
         The variance report flagged ${escape(PATIENT)}'s chemo session
         ${escape(DOS)}. ${escape(PAYER)} paid ${money(CASE_RATE)} on
@@ -382,7 +382,7 @@ function renderHospitalIntro(): string {
       </p>
       <p>
         Maybe. But the contract has a ${term('case rate')} clause
-        for chemo at the ${term('OP Surg Group')}, and the
+        for chemo at the ${term('Cancer Center')}, and the
         denials are CO-234 — bundled, not contractually short-paid.
         Before filing anything, walk the contract. Then walk the
         ${term('CDM')}.
@@ -717,7 +717,7 @@ function renderVictory(): string {
       </p>
       <div class="register hospital">HOSPITAL · later that morning</div>
       <p>
-        Bola pulls the variance report fresh: ${escape("the OP Surg Group's")}
+        Bola pulls the variance report fresh: ${escape("the Cancer Center's")}
         last 90 days have 47 sessions with the same pattern.
         "${escape("That's")} 47 phantom appeals we don't have to file
         anymore. And another 80% reduction in CO-234 noise on the

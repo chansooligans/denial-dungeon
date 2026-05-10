@@ -142,7 +142,7 @@ export default defineConfig({
         // PRICE / CONVERT / APPEAL. Lives at
         // /asp-wac-apothecary-prototype.html.
         aspWacApothecary: resolve(__dirname, 'asp-wac-apothecary-prototype.html'),
-        // Chemo Bundle Specter: OP Surg Group / UHC Case. Chemo
+        // Chemo Bundle Specter: UHC chemo bundling Case. Chemo
         // admin (CPT 96413) + Rev 0335 triggers a chemo case
         // rate that bundles the drug J-codes — but the
         // chargemaster is hard-coded to drop the drugs as
@@ -154,6 +154,15 @@ export default defineConfig({
         // chargemaster, not the claim. Lives at
         // /chemo-bundle-specter-prototype.html.
         chemoBundleSpecter: resolve(__dirname, 'chemo-bundle-specter-prototype.html'),
+        // Outpatient Surgery Grouper: UHC OPG variance Case. CPT in
+        // the right grouper level, but the chargemaster dropped the
+        // wrong rev code → grouper bypassed → default fee schedule
+        // adjudication → quiet underpayment. Sibling to Chemo Bundle
+        // Specter (same upstream-fix muscle, different UHC mechanism).
+        // Verbs: VERIFY-GROUPER / DIAGNOSE-VARIANCE / CORRECT.
+        // Reference: uhcprovider.com 7/1/25 OPG Exhibit. Lives at
+        // /outpatient-surgery-grouper-prototype.html.
+        outpatientSurgeryGrouper: resolve(__dirname, 'outpatient-surgery-grouper-prototype.html'),
         // Implant Carve-out Specter: high-cost implant unflagged
         // at billing, rolled into the DRG case rate when the
         // contract appendix carves it out at invoice +20%. Verbs:
