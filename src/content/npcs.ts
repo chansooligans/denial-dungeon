@@ -162,6 +162,18 @@ export const NPCS: Record<string, NPC> = {
     dialogueKey: 'joe_intro',
     description: 'Janitor. Has been here longer than anyone else on the floor.',
   },
+  // Stands in the SW corridor blocking the path to Billing / PFS / Lab /
+  // Lecture Hall during the early game. Disappears at L7 once the
+  // last of those rooms (lecture hall, L7) unlocks. Sprite reused
+  // from joe — both are facilities-coded so the visual reads coherently.
+  maintenance_worker: {
+    id: 'maintenance_worker',
+    name: 'Cal',
+    department: 'Facilities',
+    spriteKey: 'npc_maintenance_worker',
+    dialogueKey: 'maintenance_worker_intro',
+    description: 'Contractor. Renovating the back wing. Mop and ladder; politely impassable.',
+  },
   noah: {
     id: 'noah',
     name: 'Noah',

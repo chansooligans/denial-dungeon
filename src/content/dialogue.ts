@@ -709,6 +709,15 @@ export const DIALOGUES: Record<string, DialogueNode> = {
     text: "Modifier 91 on the second draw, modifier 59 on the urinalysis. They keep coming back NCCI-bundled because nobody copy-pastes the right modifier.",
   },
 
+  // SW-corridor blocker. Cal stands in the south-wing trough at L1-6
+  // and politely will not move; disappears at L7 when the last room
+  // behind him (lecture hall) finally unlocks.
+  maintenance_worker_intro: {
+    id: 'maintenance_worker_intro',
+    speaker: 'Cal',
+    text: "Sorry, sorry — back wing's torn up. Billing, the phones, the lab, the lecture hall. Wiring, mostly. Ceiling tiles came down on Tuesday. Couple weeks and you'll be walking through here like nothing happened.",
+  },
+
   // === Round 5 — Data Sandbox (R&D) + Turquoise Lounge ===
   chansoo_intro: {
     id: 'chansoo_intro',

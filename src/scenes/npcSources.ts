@@ -42,6 +42,11 @@ export const NPC_SOURCES: Record<string, string> = {
   officer_reyes: 'npc4_1', // security
   joe:           'npc4_2', // janitor
   noah:          'npc4_3', // visitor
+  // SW-corridor blocker. Reuses joe's janitor slot — both read as
+  // facilities staff, and the player only ever sees one of them in
+  // frame at a time (Cal in the SW trough corridor at L1-6, Joe in
+  // Med Records at all levels but L1 doesn't unlock Med Records yet).
+  maintenance_worker: 'npc4_2',
   // Round 2 — sheets npc6.png … npc15.png (May 2026 batch).
   rad_tech:           'npc7_0',  // Radiology: female tech, white coat + pony-tail
   records_clerk:      'npc11_0', // Med Records: woman in tan jacket

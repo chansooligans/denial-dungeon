@@ -1246,22 +1246,23 @@ export const LEVEL_1_MAP: MapDef = {
     // of-house (lobby + main hub) because their dedicated rooms are
     // still phase-locked. From L2 onwards they disperse to their
     // stations as those rooms unlock.
-    // Dana removed from the Lobby — at L1 she stays at her primary
-    // station (Patient Services); the room is locked from the
-    // player but her placement is unaffected (the player meets her
-    // first at L2 when PS opens).
     { npcId: 'kim',    tileX: LOBBY.x + 22, tileY: LOBBY.y + 5, facing: 'left',
       levels: [1] },
     { npcId: 'jordan', tileX: MAIN_HUB.x + 9, tileY: MAIN_HUB.y + 5,
       levels: [1] },
 
-    // Dana — Patient Services (L2-9) at the west side of the room
-    // near the door + intake desks; Audit conference room (L10),
-    // south of the table looking west toward the rest of the team.
-    { npcId: 'dana', tileX: PATIENT_SVC.x + 3, tileY: PATIENT_SVC.y + 4,
-      levels: [2, 3, 4, 5, 6, 7, 8, 9] },
-    { npcId: 'dana', tileX: AUDIT.x + 14, tileY: AUDIT.y + 5, facing: 'left',
-      levels: [10] },
+    // Dana — REMOVED from the map. The "Dana's notebook" briefing
+    // voice that runs across every Case is meant to read as her
+    // narration, not an in-ear stranger; placing her as a
+    // walk-up-and-talk NPC in Patient Services + the Audit room
+    // collided with that framing. (See L1 npcsActive comment for
+    // the same reasoning applied earlier.)
+    //
+    // NOTE: L10 boss intake (`dana_l10_intake` → `triggerDescent`
+    // for `boss_audit`) currently has no in-game trigger because
+    // Dana was the only path. Re-route to one of the auditors or
+    // re-add a Dana placement at L10 only when the boss flow gets
+    // its next pass.
 
     // Kim — Registration counter (L2+, once the room unlocks).
     // Default 'down' so she faces the lobby-side approach.
@@ -1452,6 +1453,18 @@ export const LEVEL_1_MAP: MapDef = {
 
     // 2F Lounge — analyst-lunch ambient. Unlocks at L6.
     { npcId: 'nicole',        tileX: LOUNGE_2F.x + 6,      tileY: LOUNGE_2F.y + 3,      facing: 'down',  ambient: true, levels: [6, 7, 8, 9, 10] },
+
+    // SW-corridor blocker — Cal stands in the south-wing trough
+    // corridor (y=49, the east-west run that connects HIM / Billing /
+    // PFS / Lab / Lecture Hall) just east of where the lobby south-
+    // door corridor descends at x=18. Blocks eastward passage to
+    // Billing (L6) / PFS (L6) / Lab (L5) / Lecture Hall (L7) until
+    // the latest of those rooms unlocks at L7. HIM (L4, west of the
+    // descent) is still reachable. Faces 'left' so he reads as
+    // looking toward the player as they approach from the lobby.
+    // ambient: true so npcsActive doesn't gate him.
+    { npcId: 'maintenance_worker', tileX: 21, tileY: SW_TROUGH_Y, facing: 'left',
+      ambient: true, levels: [1, 2, 3, 4, 5, 6] },
 
     // (Kitchen stays unpopulated — back-of-house is invisible-by-design.)
 
