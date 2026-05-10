@@ -163,6 +163,11 @@ export default defineConfig({
         // Reference: uhcprovider.com 7/1/25 OPG Exhibit. Lives at
         // /outpatient-surgery-grouper-prototype.html.
         outpatientSurgeryGrouper: resolve(__dirname, 'outpatient-surgery-grouper-prototype.html'),
+        // COB Cascade Spider: birthday rule + MSP working-aged +
+        // payer-of-last-resort across three patients on one
+        // household policy. Verbs: VERIFY-ELIGIBILITY /
+        // APPLY-CASCADE / REFILE.
+        cobCascadeSpider: resolve(__dirname, 'cob-cascade-spider-prototype.html'),
         // Implant Carve-out Specter: high-cost implant unflagged
         // at billing, rolled into the DRG case rate when the
         // contract appendix carves it out at invoice +20%. Verbs:
