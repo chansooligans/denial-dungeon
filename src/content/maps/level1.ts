@@ -469,13 +469,16 @@ const { layout, tileMeta } = buildMap({
         { dx: 22, dy: 7, ch: 'w' }, // doubles as a tall lamp visually with the warm tint
         { dx: 24, dy: 7, ch: 'P' }, // corner plant
         // Side-door exit mat — teleports to the outdoor parking
-        // lot (paired in stairs[]). Sits on the WEST interior wall
-        // column. The lobby's south door still leads to the south
-        // wing; this 'O' tile is a separate side exit. Officer
+        // lot (paired in stairs[]). Sits flush against the WEST
+        // interior wall. The lobby's south door still leads to the
+        // south wing; this 'O' tile is a separate side exit. Officer
         // Reyes stands one tile east, watching it.
-        // (Lobby origin is (4, 32); dx=1/dy=4 → world (5, 36),
-        // matching EXIT_LOBBY_OUT.from.)
-        { dx: 1, dy: 4, ch: 'O' },
+        // 2026-05: was dx=1/dy=4 (world (6, 37)) which placed the
+        // visible mat one tile IN from the wall AND mismatched the
+        // teleport pair (EXIT_LOBBY_OUT.from = (5, 36)). Fixed to
+        // dx=0/dy=3 → world (5, 36): mat lines up with the teleport
+        // trigger and reads as a real exit door.
+        { dx: 0, dy: 3, ch: 'O' },
       ],
     },
 
@@ -613,35 +616,58 @@ const { layout, tileMeta } = buildMap({
         // North-wall plants flanking door entry.
         { dx: 0,  dy: 0, ch: 'P' },
         { dx: 17, dy: 0, ch: 'P' },
-        // Audience rows (dy=1..6), facing south toward the stage.
-        // 2026-05: 'h' (waiting-room chair) → 's' (auditorium seat
-        // with padded armrest). Walkable like h_chair so the path-
-        // finding is identical.
-        // Two aisles: center along dx=9 (clear) and east along
-        // dx=11 (clear, also serves as the door entry path from the
-        // north door at offset 12 → interior dx=11 dy=0).
-        { dx: 1,  dy: 1, ch: 's' }, { dx: 3,  dy: 1, ch: 's' }, { dx: 5,  dy: 1, ch: 's' },
-        { dx: 7,  dy: 1, ch: 's' },
-        { dx: 13, dy: 1, ch: 's' }, { dx: 15, dy: 1, ch: 's' }, { dx: 17, dy: 1, ch: 's' },
-        { dx: 1,  dy: 2, ch: 's' }, { dx: 3,  dy: 2, ch: 's' }, { dx: 5,  dy: 2, ch: 's' },
-        { dx: 7,  dy: 2, ch: 's' },
-        { dx: 13, dy: 2, ch: 's' }, { dx: 15, dy: 2, ch: 's' }, { dx: 17, dy: 2, ch: 's' },
-        { dx: 1,  dy: 3, ch: 's' }, { dx: 3,  dy: 3, ch: 's' }, { dx: 5,  dy: 3, ch: 's' },
-        { dx: 7,  dy: 3, ch: 's' },
-        { dx: 13, dy: 3, ch: 's' }, { dx: 15, dy: 3, ch: 's' }, { dx: 17, dy: 3, ch: 's' },
-        { dx: 1,  dy: 5, ch: 's' }, { dx: 3,  dy: 5, ch: 's' }, { dx: 5,  dy: 5, ch: 's' },
-        { dx: 7,  dy: 5, ch: 's' },
-        { dx: 13, dy: 5, ch: 's' }, { dx: 15, dy: 5, ch: 's' }, { dx: 17, dy: 5, ch: 's' },
-        { dx: 1,  dy: 6, ch: 's' }, { dx: 3,  dy: 6, ch: 's' }, { dx: 5,  dy: 6, ch: 's' },
-        { dx: 7,  dy: 6, ch: 's' },
-        { dx: 13, dy: 6, ch: 's' }, { dx: 15, dy: 6, ch: 's' }, { dx: 17, dy: 6, ch: 's' },
-        // South-end stage at dy=8..9: lectern + chalkboard + flanking
-        // counters. 2026-05: 'B' (whiteboard) → 'k' (chalkboard).
-        // Old-school clinical teaching read.
+        // 2026-05 redraw — two-aisle stadium layout (stadium pick from
+        // /room-redraw-preview.html). Denser seating: 6 rows of 15
+        // seats each = 90 seats total. Three aisles keep navigation
+        // open: vertical aisles at dx=4 + dx=11 (door entry path),
+        // and a horizontal cross-aisle at dy=4. Stage runs the full
+        // south wall — counter at dy=9 with lectern + chalkboard
+        // centered at dy=8.
+        // Audience rows (dy=1..3, dy=5..7), facing south toward stage.
+        // Cols: [1,2,3,5,6,7,8,9,10,12,13,14,15,16,17] — skips dx=4
+        // (left aisle), dx=11 (door entry aisle), dx=0/17 (plants).
+        { dx: 1,  dy: 1, ch: 's' }, { dx: 2,  dy: 1, ch: 's' }, { dx: 3,  dy: 1, ch: 's' },
+        { dx: 5,  dy: 1, ch: 's' }, { dx: 6,  dy: 1, ch: 's' }, { dx: 7,  dy: 1, ch: 's' },
+        { dx: 8,  dy: 1, ch: 's' }, { dx: 9,  dy: 1, ch: 's' }, { dx: 10, dy: 1, ch: 's' },
+        { dx: 12, dy: 1, ch: 's' }, { dx: 13, dy: 1, ch: 's' }, { dx: 14, dy: 1, ch: 's' },
+        { dx: 15, dy: 1, ch: 's' }, { dx: 16, dy: 1, ch: 's' },
+        { dx: 1,  dy: 2, ch: 's' }, { dx: 2,  dy: 2, ch: 's' }, { dx: 3,  dy: 2, ch: 's' },
+        { dx: 5,  dy: 2, ch: 's' }, { dx: 6,  dy: 2, ch: 's' }, { dx: 7,  dy: 2, ch: 's' },
+        { dx: 8,  dy: 2, ch: 's' }, { dx: 9,  dy: 2, ch: 's' }, { dx: 10, dy: 2, ch: 's' },
+        { dx: 12, dy: 2, ch: 's' }, { dx: 13, dy: 2, ch: 's' }, { dx: 14, dy: 2, ch: 's' },
+        { dx: 15, dy: 2, ch: 's' }, { dx: 16, dy: 2, ch: 's' },
+        { dx: 1,  dy: 3, ch: 's' }, { dx: 2,  dy: 3, ch: 's' }, { dx: 3,  dy: 3, ch: 's' },
+        { dx: 5,  dy: 3, ch: 's' }, { dx: 6,  dy: 3, ch: 's' }, { dx: 7,  dy: 3, ch: 's' },
+        { dx: 8,  dy: 3, ch: 's' }, { dx: 9,  dy: 3, ch: 's' }, { dx: 10, dy: 3, ch: 's' },
+        { dx: 12, dy: 3, ch: 's' }, { dx: 13, dy: 3, ch: 's' }, { dx: 14, dy: 3, ch: 's' },
+        { dx: 15, dy: 3, ch: 's' }, { dx: 16, dy: 3, ch: 's' },
+        // (cross-aisle at dy=4)
+        { dx: 1,  dy: 5, ch: 's' }, { dx: 2,  dy: 5, ch: 's' }, { dx: 3,  dy: 5, ch: 's' },
+        { dx: 5,  dy: 5, ch: 's' }, { dx: 6,  dy: 5, ch: 's' }, { dx: 7,  dy: 5, ch: 's' },
+        { dx: 8,  dy: 5, ch: 's' }, { dx: 9,  dy: 5, ch: 's' }, { dx: 10, dy: 5, ch: 's' },
+        { dx: 12, dy: 5, ch: 's' }, { dx: 13, dy: 5, ch: 's' }, { dx: 14, dy: 5, ch: 's' },
+        { dx: 15, dy: 5, ch: 's' }, { dx: 16, dy: 5, ch: 's' },
+        { dx: 1,  dy: 6, ch: 's' }, { dx: 2,  dy: 6, ch: 's' }, { dx: 3,  dy: 6, ch: 's' },
+        { dx: 5,  dy: 6, ch: 's' }, { dx: 6,  dy: 6, ch: 's' }, { dx: 7,  dy: 6, ch: 's' },
+        { dx: 8,  dy: 6, ch: 's' }, { dx: 9,  dy: 6, ch: 's' }, { dx: 10, dy: 6, ch: 's' },
+        { dx: 12, dy: 6, ch: 's' }, { dx: 13, dy: 6, ch: 's' }, { dx: 14, dy: 6, ch: 's' },
+        { dx: 15, dy: 6, ch: 's' }, { dx: 16, dy: 6, ch: 's' },
+        { dx: 1,  dy: 7, ch: 's' }, { dx: 2,  dy: 7, ch: 's' }, { dx: 3,  dy: 7, ch: 's' },
+        { dx: 5,  dy: 7, ch: 's' }, { dx: 6,  dy: 7, ch: 's' }, { dx: 7,  dy: 7, ch: 's' },
+        { dx: 8,  dy: 7, ch: 's' }, { dx: 9,  dy: 7, ch: 's' }, { dx: 10, dy: 7, ch: 's' },
+        { dx: 12, dy: 7, ch: 's' }, { dx: 13, dy: 7, ch: 's' }, { dx: 14, dy: 7, ch: 's' },
+        { dx: 15, dy: 7, ch: 's' }, { dx: 16, dy: 7, ch: 's' },
+        // Stage at dy=8..9: lectern + chalkboard centered, full-width
+        // counter row south. 'k' (chalkboard) at dy=8 next to lectern
+        // is solid — students see it from all rows.
         { dx: 8,  dy: 8, ch: 'c' }, // lectern
-        { dx: 9,  dy: 9, ch: 'k' }, // chalkboard
-        { dx: 0,  dy: 9, ch: 'R' }, { dx: 1,  dy: 9, ch: 'R' },
-        { dx: 16, dy: 9, ch: 'R' }, { dx: 17, dy: 9, ch: 'R' },
+        { dx: 9,  dy: 8, ch: 'k' }, // chalkboard (was at dy=9)
+        { dx: 0,  dy: 9, ch: 'R' }, { dx: 1,  dy: 9, ch: 'R' }, { dx: 2,  dy: 9, ch: 'R' },
+        { dx: 3,  dy: 9, ch: 'R' }, { dx: 4,  dy: 9, ch: 'R' }, { dx: 5,  dy: 9, ch: 'R' },
+        { dx: 6,  dy: 9, ch: 'R' }, { dx: 7,  dy: 9, ch: 'R' }, { dx: 8,  dy: 9, ch: 'R' },
+        { dx: 9,  dy: 9, ch: 'R' }, { dx: 10, dy: 9, ch: 'R' }, { dx: 11, dy: 9, ch: 'R' },
+        { dx: 12, dy: 9, ch: 'R' }, { dx: 13, dy: 9, ch: 'R' }, { dx: 14, dy: 9, ch: 'R' },
+        { dx: 15, dy: 9, ch: 'R' }, { dx: 16, dy: 9, ch: 'R' }, { dx: 17, dy: 9, ch: 'R' },
       ],
     },
 
