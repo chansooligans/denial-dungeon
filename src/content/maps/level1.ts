@@ -641,10 +641,14 @@ const { layout, tileMeta } = buildMap({
     {
       id: 'cancerCenter',
       ...CANCER_CENTER,
-      // West door at offset 5 → world (51, 7). Pairs with the east-
-      // wing trunk corridor extended NORTH from its previous
-      // top endpoint (50, 21) up to (50, 7).
-      doors: [{ side: 'W', offset: 5 }],
+      // South door at offset 5 → world (56, 14). The room sits on the
+      // top edge of the map north of Prior Auth's footprint, so a west
+      // door would have required a corridor at x=50 carving through
+      // Prior Auth's east wall (PA spans y=3..12). Routing through the
+      // south wall instead keeps Prior Auth sealed: the east-wing
+      // trunk now tops out at (50, 14) and an east-going connector
+      // at y=14 reaches the door at (56, 14).
+      doors: [{ side: 'S', offset: 5 }],
       // Oncology infusion suite + supportive-care wing. The room
       // canon-named in the Chemo Bundle Specter Case (#200) finally
       // exists in the world. Layout: north row of infusion bays
@@ -968,12 +972,23 @@ const { layout, tileMeta } = buildMap({
       width: 1,
     },
     // East-wing trunk: vertical corridor at x=50 connecting all three
-    // east-wing rooms' west doors PLUS the Cancer Center top-right
-    // suite (extended NORTH past Radiology to (50, 7) in 2026-05).
+    // east-wing rooms' west doors. Top endpoint sits at y=14 — south
+    // of Prior Auth's footprint (PA spans y=3..12) so its east wall
+    // stays intact.
     {
       points: [
-        [CANCER_CENTER.x - 1, CANCER_CENTER.y + 5], // (50, 7)  — cancer center door row
-        [MED_RECORDS.x - 1,   MED_RECORDS.y + 5],   // (50, 42) — med-records door row
+        [CANCER_CENTER.x - 1, CANCER_CENTER.y + 12], // (50, 14) — south of Prior Auth
+        [MED_RECORDS.x - 1,   MED_RECORDS.y + 5],    // (50, 42) — med-records door row
+      ],
+      width: 1,
+    },
+    // Cancer Center connector: from the trunk's top endpoint east
+    // along y=14 to Cancer Center's south door at (56, 14). Threads
+    // just below Prior Auth (which ends at y=12).
+    {
+      points: [
+        [CANCER_CENTER.x - 1, CANCER_CENTER.y + 12], // (50, 14) — trunk junction
+        [CANCER_CENTER.x + 5, CANCER_CENTER.y + 12], // (56, 14) — cancer center S door
       ],
       width: 1,
     },
