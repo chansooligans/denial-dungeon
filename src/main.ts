@@ -8,6 +8,7 @@ import { PuzzleBattleScene } from './scenes/PuzzleBattleScene'
 import { FormScene } from './scenes/FormScene'
 import { WaitingRoomScene } from './scenes/WaitingRoomScene'
 import { CodexScene } from './scenes/CodexScene'
+import { TipsTerminalScene } from './scenes/TipsTerminalScene'
 import { TouchOverlay } from './scenes/TouchOverlay'
 import { installDevPanel } from './dev/devPanel'
 import { installDebugRibbon, debugEvent } from './scenes/debugRibbon'
@@ -36,7 +37,7 @@ const config: Phaser.Types.Core.GameConfig = {
       debug: false,
     },
   },
-  scene: [BootScene, IntroScene, TitleScene, HospitalScene, DialogueScene, PuzzleBattleScene, FormScene, WaitingRoomScene, CodexScene, TouchOverlay],
+  scene: [BootScene, IntroScene, TitleScene, HospitalScene, DialogueScene, PuzzleBattleScene, FormScene, WaitingRoomScene, CodexScene, TipsTerminalScene, TouchOverlay],
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,

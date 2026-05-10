@@ -48,6 +48,11 @@ export interface MapDef {
     tileY: number
     /** If set, this placement is only used when `currentLevel` is in the list. */
     levels?: number[]
+    /** If set, this placement only spawns when *all* listed encounter ids
+     *  appear in `state.defeatedObstacles`. Used for post-game / hidden
+     *  reveals (e.g. Chris + Adam in Turquoise Lounge appear only after
+     *  the player has beaten `boss_audit`). */
+    requiresDefeated?: string[]
     /** Ambient NPCs (background populace — janitors, visitors, etc.)
      *  bypass the per-level `npcsActive` filter and appear regardless
      *  of which level the player is on. Story-relevant NPCs leave
@@ -150,6 +155,15 @@ export interface RoomDef {
    * Set to 1 (or omit) for rooms unlocked from the start.
    */
   lockedUntilLevel?: number
+  /**
+   * If set, the room's doors stay locked until *all* listed encounter ids
+   * appear in `state.defeatedObstacles`. Pairs with `lockedUntilLevel` —
+   * if both are set, both gates must pass for the room to unlock.
+   *
+   * Used for post-game / hidden rewards: e.g. Turquoise Lounge unlocks
+   * only after the player has beaten `boss_audit`.
+   */
+  lockedUntilDefeated?: string[]
 }
 
 /**
@@ -286,11 +300,12 @@ function stampRoom(
     }
   }
   // Door is "locked at this build" if explicitly marked locked OR if the
-  // room is gated by `lockedUntilLevel`. The latter is a starting state
-  // — `applyUnlocks` flips them to 'D' at scene entry once the player
-  // is at the right level. Doors with explicit `locked: true` stay 'L'
+  // room is gated by `lockedUntilLevel` / `lockedUntilDefeated`. The
+  // latter two are starting states — `applyUnlocks` flips them to 'D'
+  // at scene entry once the player meets the gate (level threshold +
+  // boss defeat list). Doors with explicit `locked: true` stay 'L'
   // forever (they're plot/ambient locks, not progression gates).
-  const phaseLocked = r.lockedUntilLevel != null
+  const phaseLocked = r.lockedUntilLevel != null || r.lockedUntilDefeated != null
   for (const d of r.doors ?? []) {
     const [dx, dy] = doorWorldPos(r, d)
     if (dx >= 0 && dx < width && dy >= 0 && dy < height) {
@@ -338,27 +353,39 @@ export function applyTileOverrides(
 
 /**
  * Phase-unlock helper. Walk the rooms list and, for each room whose
- * `lockedUntilLevel <= playerLevel`, flip any 'L' door tiles back to
- * 'D' so the player can enter. Doors that were originally
- * `locked: true` (not phase-gated) keep their 'L' since they're
- * still locked in the underlying RoomDef.
+ * gates have all passed, flip any 'L' door tiles back to 'D' so the
+ * player can enter. Two gate types are supported (a room can have
+ * either, both, or neither):
+ *   - `lockedUntilLevel`:     unlocks when `playerLevel >= threshold`.
+ *   - `lockedUntilDefeated`:  unlocks when every listed encounter id
+ *                             appears in `defeatedObstacles`.
+ * If both are set, both must pass (AND).
+ *
+ * Doors that were originally `locked: true` (not phase-gated) keep
+ * their 'L' since they're still locked in the underlying RoomDef.
  *
  * Pure: returns a new layout, does not mutate the input.
  *
  * Usage in HospitalScene.create:
  *   this.mapDef = { ...HOSPITAL_MAP,
- *     layout: applyUnlocks(HOSPITAL_MAP.layout, ROOMS_BY_PHASE, currentLevel) }
+ *     layout: applyUnlocks(HOSPITAL_MAP.layout, ROOMS_BY_PHASE,
+ *                          currentLevel, defeatedObstacles) }
  */
 export function applyUnlocks(
   layout: string[],
   rooms: RoomDef[],
-  playerLevel: number
+  playerLevel: number,
+  defeatedObstacles: string[] = []
 ): string[] {
+  const defeated = new Set(defeatedObstacles)
   // Collect coords of phase-unlocked doors.
   const unlocks: Array<[number, number]> = []
   for (const r of rooms) {
-    if (r.lockedUntilLevel == null) continue
-    if (playerLevel < r.lockedUntilLevel) continue
+    const hasLevelGate = r.lockedUntilLevel != null
+    const hasDefeatGate = r.lockedUntilDefeated != null && r.lockedUntilDefeated.length > 0
+    if (!hasLevelGate && !hasDefeatGate) continue
+    if (hasLevelGate && playerLevel < r.lockedUntilLevel!) continue
+    if (hasDefeatGate && !r.lockedUntilDefeated!.every(id => defeated.has(id))) continue
     for (const d of r.doors ?? []) {
       if (d.locked) continue   // explicit lock overrides phase-unlock
       unlocks.push(doorWorldPos(r, d))

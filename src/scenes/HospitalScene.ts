@@ -166,6 +166,24 @@ interface NPCSprite {
   tileY: number
 }
 
+/** World tile of the Data Sandbox whiteboard / docs terminal.
+ *  In level1.ts: DATA_SANDBOX = (x:68, y:100, w:12, h:8) and the
+ *  whiteboard is the 'B' item at interior dx=6 dy=0, which the
+ *  builder places at world (r.x + 1 + dx, r.y + 1 + dy) = (75, 101).
+ *  Press-E facing this tile opens the TipsTerminalScene. */
+const TIPS_TERMINAL_TILE = { x: 75, y: 101 }
+
+/** Collect every encounter id that gates a room (lockedUntilDefeated)
+ *  so the dev "full map access" toggle can pretend they're all
+ *  defeated and pop those rooms open. */
+function collectAllGatedDefeats(rooms: { lockedUntilDefeated?: string[] }[]): string[] {
+  const all = new Set<string>()
+  for (const r of rooms) {
+    for (const id of r.lockedUntilDefeated ?? []) all.add(id)
+  }
+  return Array.from(all)
+}
+
 export class HospitalScene extends Phaser.Scene {
   private player!: Phaser.GameObjects.Sprite
   /** Direction the player is currently facing — drives which walk
@@ -247,8 +265,14 @@ export class HospitalScene extends Phaser.Scene {
     // unlocks at once. Useful for QA / map-redraw work without
     // grinding through level transitions.
     const effectiveLevel = state.devFullMapAccess ? 999 : state.currentLevel
+    // For the defeat-gated rooms (Turquoise Lounge etc.), pass the
+    // current defeated-obstacles list. devFullMapAccess pretends all
+    // gated obstacles are defeated so post-game rooms open immediately.
+    const effectiveDefeats = state.devFullMapAccess
+      ? collectAllGatedDefeats(HOSPITAL_MAP.roomDefs ?? [])
+      : state.defeatedObstacles
     const unlockedLayout = HOSPITAL_MAP.roomDefs
-      ? applyUnlocks(HOSPITAL_MAP.layout, HOSPITAL_MAP.roomDefs, effectiveLevel)
+      ? applyUnlocks(HOSPITAL_MAP.layout, HOSPITAL_MAP.roomDefs, effectiveLevel, effectiveDefeats)
       : HOSPITAL_MAP.layout
     this.mapDef = { ...HOSPITAL_MAP, layout: unlockedLayout }
 
@@ -659,9 +683,14 @@ export class HospitalScene extends Phaser.Scene {
     // placement whose `levels` filter matches the current level; fall
     // back to a placement with no filter (the default).
     const placedSoFar = new Set<string>()
+    const defeatedSet = new Set(state.defeatedObstacles)
     for (const p of this.mapDef.npcPlacements) {
       if (placedSoFar.has(p.npcId)) continue
       if (p.levels && !p.levels.includes(state.currentLevel)) continue
+      // requiresDefeated — placement is gated until *all* listed
+      // encounters are in defeatedObstacles. Used for post-boss
+      // reveals (e.g. chris/adam in Turquoise Lounge).
+      if (p.requiresDefeated && !p.requiresDefeated.every(id => defeatedSet.has(id))) continue
       // Ambient NPCs (background populace) bypass the activeNpcs
       // filter — they're scenery, not story.
       if (!p.ambient && !activeNpcs.includes(p.npcId)) continue
@@ -1273,9 +1302,23 @@ export class HospitalScene extends Phaser.Scene {
     const tx = this.playerTileX + dir.dx
     const ty = this.playerTileY + dir.dy
     const ch = this.mapDef.layout[ty]?.[tx]
+    if (this.tryOpenTipsTerminal(tx, ty)) return
     if (this.tryChartPull(ch, tx, ty)) return
     const flavor = ch ? flavorForTile(ch, tx, ty) : undefined
     if (flavor) this.flashFlavorToast(flavor)
+  }
+
+  /** Tips-terminal check. The Data Sandbox whiteboard ('B' at
+   *  the north wall, world (74, 100)) is the team's documentation
+   *  board. Press-E facing it pauses Hospital and launches the
+   *  TipsTerminal overlay. Returns true if handled. */
+  private tryOpenTipsTerminal(tx: number, ty: number): boolean {
+    if (tx !== TIPS_TERMINAL_TILE.x || ty !== TIPS_TERMINAL_TILE.y) return false
+    this.canMove = false
+    this.interactPrompt.setVisible(false)
+    this.scene.pause()
+    this.scene.launch('TipsTerminal', { callingScene: 'Hospital' })
+    return true
   }
 
   /** Chart-pull check. Returns true if the tile + level + state
