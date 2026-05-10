@@ -178,6 +178,15 @@ export default defineConfig({
         // opens a compliance review. Refile + refund + self-disclose.
         // Verbs: QUALIFY / MARK / DISCLOSE.
         threeFortyBSpecter: resolve(__dirname, 'three-forty-b-specter-prototype.html'),
+        // IDR Crucible: NSA Independent Dispute Resolution Case.
+        // OON emergency cath at in-network ED; payer paid the QPA
+        // off the wrong specialty+setting bucket; open negotiation
+        // lapsed; provider must file IDR. Baseball-style arbitration
+        // — one offer wins. Audit the QPA methodology, rebucket
+        // specialty+setting, submit the defensible market median.
+        // Verbs: AUDIT / REBUCKET / OFFER. Lives at
+        // /idr-crucible-prototype.html.
+        idrCrucible: resolve(__dirname, 'idr-crucible-prototype.html'),
         // Implant Carve-out Specter: high-cost implant unflagged
         // at billing, rolled into the DRG case rate when the
         // contract appendix carves it out at invoice +20%. Verbs:

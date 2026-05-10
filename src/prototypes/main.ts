@@ -209,6 +209,21 @@ const prototypes: Prototype[] = [
   },
 
   {
+    id: 'idr-crucible',
+    title: 'IDR Crucible',
+    subtitle: '@ L9 — NSA Independent Dispute Resolution',
+    archetype: 'Crucible',
+    carc: 'no CARC — IDR submission under 45 CFR 149.510',
+    level: 9,
+    status: 'shipped',
+    verbs: 'AUDIT + REBUCKET + OFFER',
+    testing: "Maria Vargas, BlueCross PPO, emergency cath at Mercy ED performed by Dr. Patel of CardioCare Group (OON). NSA carve-out applies: patient pays in-network cost-sharing; provider/plan dispute the rate. CardioCare billed $5,200; BlueCross paid the QPA ($1,840) — but used cardiology-elective bucket for an emergency-ED procedure. Methodology disclosure requested 14 days ago, still unanswered. 30-day open negotiation lapsed. Provider must file IDR within 4 business days. Player walks 4 QPA-methodology statements (median-of-contracts rule, SCA-exclusion trap, risk-bearing-payments exclusion, baseball-arbitration mechanic), picks the right specialty+setting bucket from 4 (cardiology-emergency-ED correct → corrected QPA $2,800; cardiology-elective is what payer used; anesthesiology-emergency is wrong specialty; all-specialty blend is invalid methodology per TMA v HHS), and picks the right final offer from 5 ($2,950 market median correct — backed by CardioCare contracts + Fair Health benchmark; $5,200 billed too high → arbitrator picks payer; $4,200 split-the-baby has no place in baseball arbitration; $1,900 just-above-QPA leaves money on the table; $1,840 accept-QPA is capitulation). Cousin to Surprise Bill Specter (NSA-dispute family, patient-side vs provider-side flip) and Carve-out Phantom (NSA universe).",
+    href: './idr-crucible-prototype.html',
+    district: 'appeals',
+    accent: '#b18bd6',
+  },
+
+  {
     id: 'two-midnight-mire',
     title: '2-Midnight Mire',
     subtitle: '@ L8 — Medicare 2-midnight rule + RAC observation reclassification',
