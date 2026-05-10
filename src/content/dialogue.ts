@@ -601,6 +601,18 @@ export const DIALOGUES: Record<string, DialogueNode> = {
     id: 'walter_intro',
     speaker: 'Walter',
     text: "Two hours. They said one. I'm not in a hurry. I just want to know.",
+    next: 'walter_intro_2',
+  },
+  walter_intro_2: {
+    id: 'walter_intro_2',
+    speaker: 'Walter',
+    text: "I had a procedure here in '92. Same lobby. Same chair, I think. They moved the magazine rack.",
+    next: 'walter_intro_3',
+  },
+  walter_intro_3: {
+    id: 'walter_intro_3',
+    speaker: 'Walter',
+    text: "Catch-22. If they call my name and I'm gone, they call the next one. If I'm here when they call mine, I'll have missed it daydreaming. So I sit very still and try not to think about anything important.",
   },
   dr_ethan_intro: {
     id: 'dr_ethan_intro',
@@ -611,16 +623,52 @@ export const DIALOGUES: Record<string, DialogueNode> = {
     id: 'officer_reyes_intro',
     speaker: 'Officer Reyes',
     text: "You new? You walk like you know where you're going. Most of them don't.",
+    next: 'officer_reyes_intro_2',
+  },
+  officer_reyes_intro_2: {
+    id: 'officer_reyes_intro_2',
+    speaker: 'Officer Reyes',
+    text: "Forty hours a week, the most exciting thing I see is a man try to push the door that pulls. They don't make it three inches before they stop and read the sign. Every time.",
+    next: 'officer_reyes_intro_3',
+  },
+  officer_reyes_intro_3: {
+    id: 'officer_reyes_intro_3',
+    speaker: 'Officer Reyes',
+    text: "I keep a notebook. Not for anything. Just to look like I'm doing a thing that matters. Saved me from a department review once. Whatever's in the notebook, whatever I'm writing — they assume it's important.",
   },
   joe_intro: {
     id: 'joe_intro',
     speaker: 'Joe',
     text: "Dust on these binders is older than the binders. Records doesn't throw anything out. Can't.",
+    next: 'joe_intro_2',
+  },
+  joe_intro_2: {
+    id: 'joe_intro_2',
+    speaker: 'Joe',
+    text: "Started here in '04. Floor's the same. Walls have been beige, then sage, then beige again. Painters don't even pretend it's a different color anymore.",
+    next: 'joe_intro_3',
+  },
+  joe_intro_3: {
+    id: 'joe_intro_3',
+    speaker: 'Joe',
+    text: "I find a thumb drive in a recycling bin twice a year. Two of them are private. One's a wedding video. Same wedding both times.",
   },
   noah_intro: {
     id: 'noah_intro',
     speaker: 'Noah',
     text: "Radiology. I know it's near the cafeteria. I keep ending up at the cafeteria.",
+    next: 'noah_intro_2',
+  },
+  noah_intro_2: {
+    id: 'noah_intro_2',
+    speaker: 'Noah',
+    text: "Brought my mom for the MRI an hour ago. Got coffee. Came back. The hallway's not the same hallway. I think they rotate the wings on Wednesdays.",
+    next: 'noah_intro_3',
+  },
+  noah_intro_3: {
+    id: 'noah_intro_3',
+    speaker: 'Noah',
+    text: "If you see a small woman in a red coat — that's her. Tell her I'm fine. I'm having the meatloaf again.",
   },
 
   // Round 2 ambient — east wing, 2F, outdoor.
@@ -628,16 +676,46 @@ export const DIALOGUES: Record<string, DialogueNode> = {
     id: 'rad_tech_intro',
     speaker: 'Adaeze',
     text: "Echo, MRI, two CTs since seven. Half are stat. The other half think they're stat.",
+    next: 'rad_tech_intro_2',
+  },
+  rad_tech_intro_2: {
+    id: 'rad_tech_intro_2',
+    speaker: 'Adaeze',
+    text: "The ER doc and the floor nurse will both swear theirs is the priority. They're both right and both wrong. The scanner doesn't care. The scanner is honest. The scanner is the most honest person in this hospital.",
   },
   records_clerk_intro: {
     id: 'records_clerk_intro',
     speaker: 'Marisol',
     text: "Whatever you're looking for is here. Whether you find it depends on what year it lived in.",
+    next: 'records_clerk_intro_2',
+  },
+  records_clerk_intro_2: {
+    id: 'records_clerk_intro_2',
+    speaker: 'Marisol',
+    text: "We migrated to electronic in '07. Migrated again in '14. The third migration is theoretical. There's a champion. They have a deck. The deck is from 2019.",
+    next: 'records_clerk_intro_3',
+  },
+  records_clerk_intro_3: {
+    id: 'records_clerk_intro_3',
+    speaker: 'Marisol',
+    text: "I knew a chart once that had four versions of the same op note. None of them said the same thing. The patient's still alive, far as I know. We send a card every December and nothing comes back.",
   },
   payer_rep_intro: {
     id: 'payer_rep_intro',
     speaker: 'Theresa',
     text: "I'm contracted to be onsite three days a week. Tuesday I do nothing but call my own auto-attendant on speakerphone.",
+    next: 'payer_rep_intro_2',
+  },
+  payer_rep_intro_2: {
+    id: 'payer_rep_intro_2',
+    speaker: 'Theresa',
+    text: "Press one for claims. Press two for eligibility. Press three to leave a message that gets reviewed in six to eight weeks. I press three. I leave nothing. Six weeks later I get a denial letter for a question I didn't ask.",
+    next: 'payer_rep_intro_3',
+  },
+  payer_rep_intro_3: {
+    id: 'payer_rep_intro_3',
+    speaker: 'Theresa',
+    text: "We call it a closed-loop system. Internally we call it the wail. Don't put that in the meeting notes.",
   },
   payer_supervisor_intro: {
     id: 'payer_supervisor_intro',
@@ -660,6 +738,12 @@ export const DIALOGUES: Record<string, DialogueNode> = {
     id: 'smoker_outdoor_b_intro',
     speaker: 'Sandra',
     text: "I quit twice. Last time stuck three years. Then payroll switched the schedule and here I am.",
+    next: 'smoker_outdoor_b_intro_2',
+  },
+  smoker_outdoor_b_intro_2: {
+    id: 'smoker_outdoor_b_intro_2',
+    speaker: 'Sandra',
+    text: "I'm calling it the maintenance dose. My doctor says that's not how nicotine works. My doctor smokes. We disagree about a lot.",
   },
   paramedic_intro: {
     id: 'paramedic_intro',
@@ -670,6 +754,18 @@ export const DIALOGUES: Record<string, DialogueNode> = {
     id: 'flower_visitor_intro',
     speaker: 'Greta',
     text: "Lilies again. She always says they're fine. She knows I know they're not her favorite.",
+    next: 'flower_visitor_intro_2',
+  },
+  flower_visitor_intro_2: {
+    id: 'flower_visitor_intro_2',
+    speaker: 'Greta',
+    text: "Forty-two years married. I know what her favorite is. I stopped buying it because once she said 'they're fine' and meant it. So now I bring lilies. Spite. After forty-two years, you call it spite, you laugh about it, you keep doing it.",
+    next: 'flower_visitor_intro_3',
+  },
+  flower_visitor_intro_3: {
+    id: 'flower_visitor_intro_3',
+    speaker: 'Greta',
+    text: "She's recovering well. The doctor said. She told me. I'll see for myself in eight minutes when visiting hours start. Then we'll fight about the lilies. It's the best part of my week, honestly.",
   },
   elder_patient_intro: {
     id: 'elder_patient_intro',
@@ -682,6 +778,18 @@ export const DIALOGUES: Record<string, DialogueNode> = {
     id: 'cafeteria_worker_intro',
     speaker: 'Manny',
     text: "We had meatloaf today. We always have meatloaf today. They like the consistency.",
+    next: 'cafeteria_worker_intro_2',
+  },
+  cafeteria_worker_intro_2: {
+    id: 'cafeteria_worker_intro_2',
+    speaker: 'Manny',
+    text: "Recipe hasn't changed since '98. I changed the recipe in '02. Switched it back the next week. They knew. I never figured out how. Maybe a chef tasted it. Maybe a nurse. Maybe meatloaf has its own information network and I'm just a node.",
+    next: 'cafeteria_worker_intro_3',
+  },
+  cafeteria_worker_intro_3: {
+    id: 'cafeteria_worker_intro_3',
+    speaker: 'Manny',
+    text: "Don't ever ask what's in the binder. The binder is everything. The binder is meatloaf. Some questions you don't ask.",
   },
   cashier_intro: {
     id: 'cashier_intro',
@@ -692,21 +800,51 @@ export const DIALOGUES: Record<string, DialogueNode> = {
     id: 'server_intro',
     speaker: 'Reggie',
     text: "Tray here, tray there. Don't sit at the corner table — leg's loose, swore I told them last week.",
+    next: 'server_intro_2',
+  },
+  server_intro_2: {
+    id: 'server_intro_2',
+    speaker: 'Reggie',
+    text: "Filed a work order in February. They sent a guy. The guy looked at it. Walked away. Filed another work order. We're now in a self-sustaining loop. Some philosopher could write a paper.",
   },
   bike_emt_intro: {
     id: 'bike_emt_intro',
     speaker: 'Chase',
     text: "Three miles in eight minutes. The rig was still on the freeway. They paid me less than the rig made waiting.",
+    next: 'bike_emt_intro_2',
+  },
+  bike_emt_intro_2: {
+    id: 'bike_emt_intro_2',
+    speaker: 'Chase',
+    text: "Got into bike EMS because the lecture said 'urban response time.' Last week I responded to a guy on the eighteenth floor. Stairs. With a defib on my back. The lecture didn't cover stairs. The lecture didn't cover the eighteenth floor. The lecture covered very little, in retrospect.",
   },
   dr_park_intro: {
     id: 'dr_park_intro',
     speaker: 'Dr. Park',
     text: "I rounded twenty-two patients before the auditor's email. I'm not reading it until the cafeteria runs out of coffee.",
+    next: 'dr_park_intro_2',
+  },
+  dr_park_intro_2: {
+    id: 'dr_park_intro_2',
+    speaker: 'Dr. Park',
+    text: "They want to know why I documented an ICU admit with no critical-care minutes. I documented it because the patient was dying. The minutes were used dying.",
+    next: 'dr_park_intro_3',
+  },
+  dr_park_intro_3: {
+    id: 'dr_park_intro_3',
+    speaker: 'Dr. Park',
+    text: "I'm going to retire in six years. My wife says four. We're negotiating. The negotiation has been going for two years. Every year I say six and she says four. The math is starting to bother her.",
   },
   lab_tech_intro: {
     id: 'lab_tech_intro',
     speaker: 'Roni',
     text: "Modifier 91 on the second draw, modifier 59 on the urinalysis. They keep coming back NCCI-bundled because nobody copy-pastes the right modifier.",
+    next: 'lab_tech_intro_2',
+  },
+  lab_tech_intro_2: {
+    id: 'lab_tech_intro_2',
+    speaker: 'Roni',
+    text: "I wrote a macro that adds the modifiers automatically. Compliance turned it off because the auditors flagged it as 'systematic modifier abuse.' Now I add them by hand. Same modifiers. Same audit risk. Less efficient. Compliant. The job became a tribute to the job.",
   },
 
   // SW-corridor blocker. Cal stands in the south-wing trough at L1-6
@@ -723,6 +861,18 @@ export const DIALOGUES: Record<string, DialogueNode> = {
     id: 'chansoo_intro',
     speaker: 'Chansoo',
     text: "Pulling the denial regression. Cleanest signal from the dirtiest data — every reason code is a different kind of lie.",
+    next: 'chansoo_intro_2',
+  },
+  chansoo_intro_2: {
+    id: 'chansoo_intro_2',
+    speaker: 'Chansoo',
+    text: "Built a whole game about this once. Educational. People kept asking why it was scary. I said: have you read a denial letter? It's a horror genre. The denial letter invented the cliffhanger.",
+    next: 'chansoo_intro_3',
+  },
+  chansoo_intro_3: {
+    id: 'chansoo_intro_3',
+    speaker: 'Chansoo',
+    text: "If a model gets the right answer for the wrong reason, it's not the right answer. It's just expensive. Same goes for hospitals. Same goes for lunch.",
   },
   nicole_intro: {
     id: 'nicole_intro',
@@ -748,6 +898,12 @@ export const DIALOGUES: Record<string, DialogueNode> = {
     id: 'adam_intro',
     speaker: 'Adam',
     text: "Standing up the chargemaster diff. Five hundred million rows; the diff fits on a screenshot. That's the bug.",
+    next: 'adam_intro_2',
+  },
+  adam_intro_2: {
+    id: 'adam_intro_2',
+    speaker: 'Adam',
+    text: "The transparency rule was supposed to make pricing public. So the hospitals publish the chargemaster. Eighteen thousand columns. Twelve formats per payer. PDF, JSON, sometimes a spreadsheet so wide it crashes Excel. Compliant. Useless. They wrote the rule that way on purpose, and the hospitals complied that way on purpose, and now everyone has plausible deniability.",
   },
 
   dana_l10_intake_back: {
