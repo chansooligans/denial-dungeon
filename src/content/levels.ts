@@ -10,7 +10,12 @@ export const LEVELS: LevelDef[] = [
     concepts: ['denial_rate', 'co_109', 'x12_270_271', 'eligibility'],
     encounters: ['intro_wrong_card'],
     cases: ['case_intro_patel'],
-    npcsActive: ['anjali', 'dana', 'kim', 'jordan'],
+    // Dana intentionally not in the L1 roster — her in-game intro
+    // overlaps with the "Dana's notebook" briefing voice that runs
+    // across every Case. Easier on the player's mental model to
+    // introduce her in person at L2 (Patient Services unlock) and
+    // keep L1 strictly Anjali + Kim + Jordan.
+    npcsActive: ['anjali', 'kim', 'jordan'],
     bossEncounter: undefined,
   },
   {
