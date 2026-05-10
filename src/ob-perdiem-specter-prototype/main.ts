@@ -16,7 +16,7 @@
 //     shortfall.
 //
 // Author: May 2026.
-import { BASE_CSS, districtVars, escape } from '../shared/prototype-base'
+import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
 
 // ===== Domain types =====
 
@@ -585,6 +585,20 @@ function renderTermPopover(): string {
   `
 }
 
+const RECAP: CaseRecap = {
+  oneLineRecap: 'You recovered an OB underpayment by parsing the case-rate + per-diem hybrid contract, allocating each day correctly, and filing the corrected claim with the per-diem days.',
+  keyConcepts: [
+    { term: 'Case-rate + per-diem hybrid', gist: 'Common in OB contracts: case rate covers days 1-2; per-diem (e.g. $1,400/day) for days 3+. Stays under 3 days = case rate only. Stays 3+ days = mixed payment.' },
+    { term: 'Mutually-INclusive provisions', gist: 'The trap: case rate AND per-diem both apply to the same stay (different days), not either-or. Reading "case rate covers days 1-2" as exclusive misses the per-diem days.' },
+    { term: 'Complications without re-DRGing', gist: "A complication that extends a stay (e.g. newborn phototherapy, maternal infection) often DOESN'T change the DRG — but does extend the stay into per-diem territory." },
+  ],
+  resources: [
+    { title: 'CMS — IPPS / DRG Files', url: 'https://www.cms.gov/medicare/payment/prospective-payment-systems/acute-inpatient-pps', note: 'DRG definitions + Medicare per-diem methodologies (model for many commercial contracts).' },
+    { title: 'AHIMA — OB Coding & Billing', url: 'https://www.ahima.org/', note: 'Industry guidance on labor-and-delivery DRG assignment + complication coding.' },
+    { title: 'HFMA — Contract-Modeling Best Practices', url: 'https://www.hfma.org/topics/revenue-cycle/', note: 'Verification techniques for hybrid case-rate / per-diem contracts.' },
+  ],
+}
+
 function renderVictory(): string {
   return `
     <section class="victory">
@@ -610,6 +624,7 @@ function renderVictory(): string {
       <button class="btn primary" data-action="reset">Run it again</button>
       <a class="back-link inline" href="./prototypes.html">← back to catalog</a>
     </section>
+    ${renderCaseRecap(RECAP)}
   `
 }
 

@@ -19,7 +19,7 @@
 // common "your claim never got read" CARC.
 //
 // Author: May 2026.
-import { BASE_CSS, districtVars, escape } from '../shared/prototype-base'
+import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
 
 // ===== Domain types =====
 
@@ -656,6 +656,20 @@ function renderTermPopover(): string {
   `
 }
 
+const RECAP: CaseRecap = {
+  oneLineRecap: 'You detected a CMS-1500 / 837P that should have been UB-04 / 837I, mapped institutional-only fields to the right form locators, and rerouted the resubmission.',
+  keyConcepts: [
+    { term: 'UB-04 (837I) vs CMS-1500 (837P)', gist: 'Institutional services (hospitals, SNFs, home health) bill UB-04 / 837I. Professional services (physicians, NPPs) bill CMS-1500 / 837P. Wrong form = clearinghouse rejection (CO-95).' },
+    { term: 'Form locator vs box number', gist: 'UB-04 uses Form Locators (FL 1, FL 4, etc.). CMS-1500 uses Box numbers (Box 1, Box 24, etc.). Same data, different addresses.' },
+    { term: 'Institutional-only fields', gist: "Type of bill (FL 4), revenue codes, condition codes, occurrence codes — these don't exist on CMS-1500. A facility claim sent on CMS-1500 is missing the spine of its data." },
+  ],
+  resources: [
+    { title: 'CMS — UB-04 Claim Form Manual', url: 'https://www.cms.gov/medicare/billing/electronicbillingeditrans/medicarefeeforsvcclaims', note: 'The UB-04 reference + FL definitions.' },
+    { title: 'CMS — CMS-1500 Form Instructions', url: 'https://www.cms.gov/medicare/cms-forms/cms-forms/downloads/cms1500.pdf', note: 'The CMS-1500 box-by-box instructions.' },
+    { title: 'NUCC — CMS-1500 Reference Instruction Manual', url: 'https://www.nucc.org/index.php/1500-claim-form-mainmenu-35', note: 'Authoritative CMS-1500 instructions maintained by the National Uniform Claim Committee.' },
+  ],
+}
+
 function renderVictory(): string {
   return `
     <section class="victory">
@@ -684,6 +698,7 @@ function renderVictory(): string {
       <button class="btn primary" data-action="reset">Run it again</button>
       <a class="back-link inline" href="./prototypes.html">← back to catalog</a>
     </section>
+    ${renderCaseRecap(RECAP)}
   `
 }
 

@@ -14,7 +14,7 @@
 // (An Expert mode that strips this scaffolding is a future toggle.)
 
 import { CASES } from '../content/cases'
-import { BASE_CSS, districtVars, escape } from '../shared/prototype-base'
+import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
 
 interface PayerPhrase {
   id: string
@@ -706,6 +706,20 @@ function wraithSvg(): string {
   `
 }
 
+const RECAP: CaseRecap = {
+  oneLineRecap: 'You answered a CO-50 medical-necessity denial by citing payer policy + chart documentation chain — no shortcuts, just the receipts.',
+  keyConcepts: [
+    { term: 'CO-50 (medical necessity)', gist: "The payer says the service didn't meet their coverage criteria. Resolution requires citing the specific NCD/LCD or commercial medical-policy section AND the chart evidence that satisfies it." },
+    { term: 'NCD vs LCD', gist: 'NCDs (National Coverage Determinations) are CMS-wide; LCDs (Local Coverage Determinations) are MAC-specific. Commercial payers publish their own medical policies — usually online, sometimes by login.' },
+    { term: 'CITE vs AMEND', gist: 'CITE = pull authoritative text into the appeal letter. AMEND = change the claim itself (a code, a modifier). Medical-necessity fights are CITE-dominant; coding fights are AMEND-dominant.' },
+  ],
+  resources: [
+    { title: 'CMS Medicare Coverage Database', url: 'https://www.cms.gov/medicare-coverage-database', note: 'NCD + LCD search. Start here for any Medicare medical-necessity question.' },
+    { title: 'CMS Internet-Only Manual 100-08, Ch 13 — LCDs', url: 'https://www.cms.gov/regulations-and-guidance/guidance/manuals/internet-only-manuals-ioms-items/cms014961', note: 'How LCDs are written, the appeals window, the public-comment process.' },
+    { title: 'AAPC — Medical Necessity Documentation Guide', url: 'https://www.aapc.com/blog/topics/medical-necessity/', note: 'Practical CITE-craft for medical-necessity appeals.' },
+  ],
+}
+
 function renderVictory(): string {
   return `
     ${renderHeader()}
@@ -725,6 +739,7 @@ function renderVictory(): string {
       <button class="btn primary" data-action="reset">Run it again</button>
       <a class="back-link inline" href="./">← back to game</a>
     </section>
+    ${renderCaseRecap(RECAP)}
   `
 }
 

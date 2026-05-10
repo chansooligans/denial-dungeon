@@ -26,7 +26,7 @@
 // chain is the verb.
 //
 // Author: May 2026.
-import { BASE_CSS, districtVars, escape } from '../shared/prototype-base'
+import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
 
 // ===== Domain types =====
 
@@ -607,6 +607,20 @@ function renderTermPopover(): string {
   `
 }
 
+const RECAP: CaseRecap = {
+  oneLineRecap: 'You walked the contract chain on a two-bills-for-one-visit ER, applied the right NSA carve-out, and routed the rate dispute through IDR — not the patient.',
+  keyConcepts: [
+    { term: 'Facility vs physician billing', gist: 'In-network facility + OON physician group is the most common surprise-bill scenario. The NSA carve-out applies to the physician bill; the patient owes only in-network cost-sharing.' },
+    { term: 'Trace the contract chain', gist: "Each player — facility, physician group, anesthesiologist, radiologist — has a separate contract with the payer. The NSA applies based on each contract's in/out-of-network status." },
+    { term: 'IDR routes payer↔provider', gist: 'The patient is out of the rate dispute once cost-share is correctly calculated. The OON physician group + the payer fight in IDR.' },
+  ],
+  resources: [
+    { title: '45 CFR 149.110-130 — Patient Protections', url: 'https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-B/part-149/subpart-B', note: 'The NSA balance-billing protections.' },
+    { title: 'CMS — Provider Notice + Consent (149.420)', url: 'https://www.cms.gov/nosurprises/policies-and-resources/provider-requirements-and-resources', note: 'When OON providers may ask patients to waive NSA protections (post-stabilization, scheduled).' },
+    { title: 'AHA — NSA Implementation Guide', url: 'https://www.aha.org/no-surprises-act', note: 'Operational walkthrough for facility + physician group contract alignment.' },
+  ],
+}
+
 function renderVictory(): string {
   return `
     <section class="victory">
@@ -636,6 +650,7 @@ function renderVictory(): string {
       <button class="btn primary" data-action="reset">Run it again</button>
       <a class="back-link inline" href="./prototypes.html">← back to catalog</a>
     </section>
+    ${renderCaseRecap(RECAP)}
   `
 }
 

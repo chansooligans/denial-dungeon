@@ -28,7 +28,7 @@
 // walks out; the next person finds the lighthouse the same
 // way she did. The encounter is a kindness, not a victory.
 
-import { BASE_CSS, escape } from '../shared/prototype-base'
+import { BASE_CSS, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
 
 interface QuestionOption {
   id: string
@@ -695,6 +695,20 @@ function renderChecklist(): string {
   `
 }
 
+const RECAP: CaseRecap = {
+  oneLineRecap: "You screened a patient against the FPL ladder, qualified them for charity care under the hospital's 501(r) policy, and routed the $87,420 bill out of collections instead of into them.",
+  keyConcepts: [
+    { term: '501(r)', gist: 'The IRC section governing nonprofit hospital obligations: written financial-assistance policy (FAP), widely-publicized eligibility, limitations on charges to FAP-eligible patients.' },
+    { term: 'FPL ladder', gist: 'Federal Poverty Level. Hospitals set their own thresholds — usually 100% / 200% / 400% FPL — for free care, partial discount, sliding scale.' },
+    { term: 'Charity vs bad debt', gist: 'Charity care is unpaid by design (financial assistance policy granted). Bad debt is unpaid because collection failed. Treating one as the other costs the hospital + the patient.' },
+  ],
+  resources: [
+    { title: 'IRS § 501(r) — Hospital Requirements', url: 'https://www.irs.gov/charities-non-profits/charitable-hospitals-general-requirements-for-tax-exemption-under-section-501r', note: 'The federal requirements for nonprofit hospitals.' },
+    { title: 'Catholic Health Association — Financial Assistance Toolkit', url: 'https://www.chausa.org/finance/financial-assistance', note: 'Practical FAP design + screening protocols.' },
+    { title: 'HHS — Federal Poverty Level Guidelines', url: 'https://aspe.hhs.gov/topics/poverty-economic-mobility/poverty-guidelines', note: 'Annual FPL tables. The thresholds shift each January.' },
+  ],
+}
+
 function renderVictory(): string {
   return `
     <section class="victory lighthouse-victory">
@@ -724,6 +738,7 @@ function renderVictory(): string {
       <button class="btn primary" data-action="reset">Run it again</button>
       <a class="back-link inline" href="./">← back to game</a>
     </section>
+    ${renderCaseRecap(RECAP)}
   `
 }
 

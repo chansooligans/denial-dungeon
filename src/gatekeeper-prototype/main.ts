@@ -22,7 +22,7 @@
 // submit shape — different middle.
 
 import { CASES } from '../content/cases'
-import { BASE_CSS, districtVars, escape } from '../shared/prototype-base'
+import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
 
 interface RationaleOption {
   id: string
@@ -663,6 +663,20 @@ function renderChecklist(): string {
   `
 }
 
+const RECAP: CaseRecap = {
+  oneLineRecap: 'You filed a retroactive 278 prior-auth request, transcribed the auth number onto Box 23 of the resubmitted claim, and unblocked a CO-197 denial.',
+  keyConcepts: [
+    { term: 'CO-197 (precert/auth absent)', gist: "The service required prior authorization and one wasn't obtained — or wasn't recorded. Resolution: file the auth retroactively (some payers allow), then refile with the auth number on the claim." },
+    { term: 'X12 278 transaction', gist: 'The standard EDI prior-auth request/response. Most payers also accept fax + portal submissions; the 278 is what trading partners use.' },
+    { term: 'Box 23 / Field 63', gist: 'CMS-1500 Box 23 (or UB-04 Field 63) is where the auth number lives once it comes back. Forgetting to populate it = same denial again.' },
+  ],
+  resources: [
+    { title: 'CMS — Prior Authorization', url: 'https://www.cms.gov/research-statistics-data-and-systems/computer-data-and-systems/electronic-billing-edi-transactions/prior-authorization', note: 'The federal stance on PA, including the new (2026) interoperability rule.' },
+    { title: 'X12 — 278 Transaction Standard', url: 'https://www.x12.org/products/health-care', note: 'The EDI standard reference + implementation guides.' },
+    { title: 'CAQH CORE — PA Operating Rules', url: 'https://www.caqh.org/core/prior-authorization-rule', note: 'Industry operating rules for PA exchange. Most payers attest compliance with these.' },
+  ],
+}
+
 function renderVictory(): string {
   return `
     <section class="victory">
@@ -685,6 +699,7 @@ function renderVictory(): string {
       <button class="btn primary" data-action="reset">Run it again</button>
       <a class="back-link inline" href="./">← back to game</a>
     </section>
+    ${renderCaseRecap(RECAP)}
   `
 }
 

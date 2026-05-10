@@ -19,7 +19,7 @@
 // household, three patients, three different "primary" payers.
 //
 // Author: May 2026.
-import { BASE_CSS, districtVars, escape } from '../shared/prototype-base'
+import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
 
 // ===== Domain types =====
 
@@ -552,6 +552,20 @@ function renderTermPopover(): string {
   `
 }
 
+const RECAP: CaseRecap = {
+  oneLineRecap: 'You ran the COB cascade for three patients on one household policy — birthday rule, MSP working-aged, payer-of-last-resort — and refiled each claim against the right primary.',
+  keyConcepts: [
+    { term: 'Birthday rule', gist: "For dependent children with two parents on different plans, the parent whose birthday falls EARLIER in the calendar year is primary (year doesn't matter — month + day)." },
+    { term: 'MSP working-aged', gist: "For Medicare-eligible employees (age 65+) covered by an employer's GHP with 20+ employees, the GHP is primary; Medicare is secondary. Reverse for employers under 20." },
+    { term: 'Payer-of-last-resort', gist: 'Medicaid is always last. If the patient has any other coverage (Medicare, commercial), Medicaid pays only after those have adjudicated.' },
+  ],
+  resources: [
+    { title: 'CMS — Coordination of Benefits & Recovery Center', url: 'https://www.cms.gov/medicare/coordination-benefits-recovery', note: 'The Medicare COB program + the BCRC contractor.' },
+    { title: 'NAIC Coordination of Benefits Model Regulation', url: 'https://content.naic.org/sites/default/files/inline-files/MDL-120.pdf', note: 'The model COB rules most states adopt — birthday rule, primary/secondary order.' },
+    { title: 'SSA — Medicare Secondary Payer (MSP) Manual', url: 'https://www.ssa.gov/OP_Home/cfr20/404/404-0408.htm', note: 'Title XVIII rules on when Medicare is secondary.' },
+  ],
+}
+
 function renderVictory(): string {
   return `
     <section class="victory">
@@ -574,6 +588,7 @@ function renderVictory(): string {
       <button class="btn primary" data-action="reset">Run it again</button>
       <a class="back-link inline" href="./prototypes.html">← back to catalog</a>
     </section>
+    ${renderCaseRecap(RECAP)}
   `
 }
 

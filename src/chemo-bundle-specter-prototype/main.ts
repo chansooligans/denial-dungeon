@@ -30,7 +30,7 @@
 // here we mean the RCM-domain version.
 //
 // Author: May 2026.
-import { BASE_CSS, districtVars, escape } from '../shared/prototype-base'
+import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
 
 // ===== Domain types =====
 
@@ -698,6 +698,20 @@ function renderTermPopover(): string {
   `
 }
 
+const RECAP: CaseRecap = {
+  oneLineRecap: 'You recovered a chemo administration underpayment — initial vs sequential infusion codes, drug J-codes, frequency caveats — under the contract-management system overlay.',
+  keyConcepts: [
+    { term: 'Initial vs sequential infusion', gist: 'CPT 96413 (initial), 96415 (each additional hour), 96417 (sequential infusion of a different drug). Wrong sequence = CO-97 bundling denial.' },
+    { term: 'Drug J-codes', gist: 'Each chemo agent has its own J-code + dose units. Bevacizumab Q5107 (biosimilar) at 100mg/unit. Miscalculated units underpay 1:1.' },
+    { term: 'Contract-management systems', gist: 'Hospital CMS overlays maintain payer-specific reimbursement rules (oncology fee schedules, biosimilar substitutions, prior-auth requirements). EOB review against the CMS catches structural underpayments.' },
+  ],
+  resources: [
+    { title: 'CMS — Hospital Outpatient Prospective Payment System (OPPS)', url: 'https://www.cms.gov/medicare/payment/prospective-payment-systems/hospital-outpatient', note: 'OPPS rules including chemo administration + drug payment.' },
+    { title: 'ASCO — Coding & Reimbursement', url: 'https://www.asco.org/practice-policy/billing-coding', note: 'Oncology-specific billing guidance from the American Society of Clinical Oncology.' },
+    { title: 'CMS — Hospital Outpatient Quarterly Update Pricer', url: 'https://www.cms.gov/medicare/payment/prospective-payment-systems/hospital-outpatient-pps', note: 'Quarterly pricer files for chemo administration codes + drug payment rates.' },
+  ],
+}
+
 function renderVictory(): string {
   return `
     <section class="victory">
@@ -730,6 +744,7 @@ function renderVictory(): string {
       <button class="btn primary" data-action="reset">Run it again</button>
       <a class="back-link inline" href="./prototypes.html">← back to catalog</a>
     </section>
+    ${renderCaseRecap(RECAP)}
   `
 }
 

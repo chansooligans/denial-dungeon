@@ -11,7 +11,7 @@
 //   - BACKDATE: 4 reconsideration paths.
 //
 // Author: May 2026.
-import { BASE_CSS, districtVars, escape } from '../shared/prototype-base'
+import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
 
 interface MatrixCell {
   id: string
@@ -471,6 +471,20 @@ function renderTermPopover(): string {
   `
 }
 
+const RECAP: CaseRecap = {
+  oneLineRecap: 'You walked a credentialing problem — NPI types, taxonomy alignment, payer-specific delegation — and recovered the retroactive effective date so the claims could refile.',
+  keyConcepts: [
+    { term: 'Type 1 vs Type 2 NPIs', gist: 'Type 1 = individual provider. Type 2 = organization (group practice, hospital, clinic). Most claims need both — the rendering Type 1 + the billing Type 2.' },
+    { term: 'Taxonomy alignment', gist: 'Each NPI carries one or more taxonomy codes. The taxonomy on the claim must match what the payer has credentialed — mismatch = CO-185 or CO-208.' },
+    { term: 'Retroactive effective dates', gist: 'Credentialing delays are common. Most payers will backdate the effective date to the application-received date if you push — recovering 60-90 days of previously-denied claims.' },
+  ],
+  resources: [
+    { title: 'NPPES NPI Registry', url: 'https://npiregistry.cms.hhs.gov/', note: 'Look up any NPI for type, taxonomy, and registered locations.' },
+    { title: 'NUCC Provider Taxonomy Code Set', url: 'https://taxonomy.nucc.org/', note: 'The taxonomy hierarchy — Type 1 specialties, Type 2 group types.' },
+    { title: 'CAQH ProView', url: 'https://proview.caqh.org/', note: 'The industry credentialing data hub. Most commercial payers source from here.' },
+  ],
+}
+
 function renderVictory(): string {
   return `
     <section class="victory">
@@ -492,6 +506,7 @@ function renderVictory(): string {
       <button class="btn primary" data-action="reset">Run it again</button>
       <a class="back-link inline" href="./prototypes.html">← back to catalog</a>
     </section>
+    ${renderCaseRecap(RECAP)}
   `
 }
 

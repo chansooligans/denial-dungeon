@@ -23,7 +23,7 @@
 //   - DISCLOSE: pick the resolution path including HRSA self-disclosure.
 //
 // Author: May 2026.
-import { BASE_CSS, districtVars, escape } from '../shared/prototype-base'
+import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
 
 // ===== Domain types =====
 
@@ -568,6 +568,20 @@ function renderTermPopover(): string {
   `
 }
 
+const RECAP: CaseRecap = {
+  oneLineRecap: 'You walked the 340B program rules, marked the state Medicaid claim with modifier UD, and self-disclosed the duplicate-discount to HRSA — making the compliance review remedial, not punitive.',
+  keyConcepts: [
+    { term: '340B program', gist: '42 USC §256b. Manufacturers provide deeply-discounted outpatient drugs to qualifying covered entities (DSH ≥ 11.75%, CAH, RRC, SCH, FSCH, FQHC, Ryan White, etc.). Discount in exchange for safety-net mission.' },
+    { term: 'Duplicate-discount prohibition', gist: "Manufacturers can't pay BOTH the 340B discount AND a Medicaid drug rebate on the same dose. State Medicaid programs use an identifier modifier (most commonly UD) on claims to prevent it." },
+    { term: 'HRSA self-disclosure', gist: 'When a duplicate-discount slip happens, voluntary disclosure to HRSA is favored — typically remediation (refund + corrective action plan). Hiding makes review punitive (program termination, FCA exposure).' },
+  ],
+  resources: [
+    { title: 'HRSA — 340B Program Office of Pharmacy Affairs', url: 'https://www.hrsa.gov/opa', note: 'The 340B program home — eligibility, registration, compliance, self-disclosure.' },
+    { title: '42 USC §256b — 340B Statute', url: 'https://www.govinfo.gov/app/details/USCODE-2023-title42/USCODE-2023-title42-chap6A-subchapII-partD-subpartVII-sec256b', note: 'The statute itself, including the duplicate-discount prohibition.' },
+    { title: 'CMS — Medicaid 340B Identifier Crosswalk', url: 'https://www.medicaid.gov/medicaid/prescription-drugs/medicaid-drug-rebate-program/index.html', note: 'State-by-state 340B claim identifier reference (UD, JG, state-specific).' },
+  ],
+}
+
 function renderVictory(): string {
   return `
     <section class="victory">
@@ -594,6 +608,7 @@ function renderVictory(): string {
       <button class="btn primary" data-action="reset">Run it again</button>
       <a class="back-link inline" href="./prototypes.html">← back to catalog</a>
     </section>
+    ${renderCaseRecap(RECAP)}
   `
 }
 

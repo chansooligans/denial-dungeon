@@ -10,7 +10,7 @@
 //   - NOTIFY: 4 notification paths.
 //
 // Author: May 2026.
-import { BASE_CSS, districtVars, escape } from '../shared/prototype-base'
+import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
 
 interface AssessStatement {
   id: string
@@ -450,6 +450,20 @@ function renderTermPopover(): string {
   `
 }
 
+const RECAP: CaseRecap = {
+  oneLineRecap: 'You triaged a HIPAA breach event — risk-assessment, OCR self-disclosure, mitigation steps — without conflating accidental disclosure with willful neglect.',
+  keyConcepts: [
+    { term: 'Breach notification rule', gist: '45 CFR 164.400-414. Acquisition/access/use/disclosure of unsecured PHI not permitted under the Privacy Rule. Notification to affected individuals + HHS within 60 days for breaches affecting 500+; annual log otherwise.' },
+    { term: 'Risk assessment', gist: 'Probability that PHI was compromised — based on nature/extent of PHI, unauthorized recipient, whether PHI was actually viewed or acquired, mitigation extent. Determines whether an event is a breach.' },
+    { term: 'OCR self-disclosure', gist: "HIPAA's self-disclosure mechanism is the breach notification itself + voluntary corrective action. Cooperative posture vastly reduces penalties (willful neglect carries minimum $50,000/violation)." },
+  ],
+  resources: [
+    { title: 'HHS OCR — Breach Notification Portal', url: 'https://ocrportal.hhs.gov/ocr/breach/wizard_breach.jsf', note: 'The actual reporting mechanism + breach search archive.' },
+    { title: '45 CFR 164.400-414 — Breach Notification Rule', url: 'https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-C/part-164/subpart-D', note: 'The federal breach-notification regulation.' },
+    { title: 'HHS — HIPAA Privacy + Security Rules', url: 'https://www.hhs.gov/hipaa/for-professionals/privacy', note: 'Foundational HIPAA documentation for compliance programs.' },
+  ],
+}
+
 function renderVictory(): string {
   return `
     <section class="victory">
@@ -472,6 +486,7 @@ function renderVictory(): string {
       <button class="btn primary" data-action="reset">Run it again</button>
       <a class="back-link inline" href="./prototypes.html">← back to catalog</a>
     </section>
+    ${renderCaseRecap(RECAP)}
   `
 }
 

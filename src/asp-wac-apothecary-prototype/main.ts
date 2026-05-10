@@ -21,7 +21,7 @@
 // muscle.
 //
 // Author: May 2026.
-import { BASE_CSS, districtVars, escape } from '../shared/prototype-base'
+import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
 
 // ===== Domain types =====
 
@@ -609,6 +609,20 @@ function renderTermPopover(): string {
   `
 }
 
+const RECAP: CaseRecap = {
+  oneLineRecap: 'You decoded a Part B drug payment by reconciling ASP-vs-WAC pricing, J-code units, and NDC-vs-HCPCS — and recovered the right reimbursement.',
+  keyConcepts: [
+    { term: 'ASP+6%', gist: 'Medicare Part B pays drugs at the Average Sales Price + 6% (manufacturer-reported, CMS-published quarterly). 340B drugs paid at the same ASP+6% post-Becerra.' },
+    { term: 'WAC vs ASP', gist: 'WAC = Wholesale Acquisition Cost (list price). ASP = Average Sales Price (real, post-rebate). New drugs are paid at WAC + 3% until ASP data is available (~6 months).' },
+    { term: 'J-code units', gist: 'HCPCS J-codes describe the drug + the dose unit. Wrong unit count = systematic underpayment. E.g. J3490 50mg = 1 unit; if you bill 50 units the dispute is on you.' },
+  ],
+  resources: [
+    { title: 'CMS — Part B Drug Pricing Files', url: 'https://www.cms.gov/medicare/payment/fee-schedules/physician/medicare-part-b-drug-average-sales-price', note: 'Quarterly ASP files + the published ASP+6% rates.' },
+    { title: 'CMS — HCPCS J-Code Reference', url: 'https://www.cms.gov/medicare/coding-billing/healthcare-common-procedure-system', note: 'The J-code set + dose-unit definitions.' },
+    { title: 'FDA NDC Directory', url: 'https://www.accessdata.fda.gov/scripts/cder/ndc/', note: "Crosswalk NDC codes (manufacturer's SKU) to HCPCS J-codes." },
+  ],
+}
+
 function renderVictory(): string {
   return `
     <section class="victory">
@@ -635,6 +649,7 @@ function renderVictory(): string {
       <button class="btn primary" data-action="reset">Run it again</button>
       <a class="back-link inline" href="./prototypes.html">← back to catalog</a>
     </section>
+    ${renderCaseRecap(RECAP)}
   `
 }
 

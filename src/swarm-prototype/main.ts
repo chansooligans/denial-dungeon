@@ -20,7 +20,7 @@
 // different middle (a queue + batch actions instead of a
 // claim form + builder).
 
-import { BASE_CSS, districtVars, escape } from '../shared/prototype-base'
+import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
 
 interface QueueClaim {
   id: string
@@ -743,6 +743,20 @@ function renderChecklist(): string {
   `
 }
 
+const RECAP: CaseRecap = {
+  oneLineRecap: 'You batch-fixed 18 CO-16 rejections by finding the shared NPI/taxonomy root cause, swept the outliers individually, and patched the EHR profile so it stops happening Mondays.',
+  keyConcepts: [
+    { term: 'CO-16 (claim/service lacks information)', gist: 'Most often a missing or invalid identifier — NPI, taxonomy, ICN, member ID. The remark code (RARC) tells you which.' },
+    { term: 'Root-cause vs case-by-case', gist: 'When N denials share a root cause, fixing the root cause once is cheaper than appealing N times. The BATCH verb captures this.' },
+    { term: 'Upstream patches', gist: 'Fixing the claim AND the system that produced the bad claim. Usually means an EHR ticket — provider-profile field, taxonomy crosswalk, payer-specific submission rule.' },
+  ],
+  resources: [
+    { title: 'NUCC Provider Taxonomy Code Set', url: 'https://taxonomy.nucc.org/', note: "The taxonomy hierarchy. Every NPI must have at least one taxonomy code; CO-16 often means it's wrong." },
+    { title: 'NPPES NPI Registry', url: 'https://npiregistry.cms.hhs.gov/', note: 'Look up any NPI to verify the registered taxonomy + practice locations.' },
+    { title: 'CMS — Remittance Advice Remark Codes (RARCs)', url: 'https://x12.org/codes/remittance-advice-remark-codes', note: 'The current RARC list. Pair RARCs with CARCs to decode any 835 line.' },
+  ],
+}
+
 function renderVictory(): string {
   return `
     <section class="victory">
@@ -769,6 +783,7 @@ function renderVictory(): string {
       <button class="btn primary" data-action="reset">Run it again</button>
       <a class="back-link inline" href="./">← back to game</a>
     </section>
+    ${renderCaseRecap(RECAP)}
   `
 }
 

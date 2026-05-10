@@ -28,7 +28,7 @@
 // is the runtime game's job to land.
 
 import { CASES } from '../content/cases'
-import { BASE_CSS, districtVars, escape } from '../shared/prototype-base'
+import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
 
 interface Evidence {
   id: string
@@ -627,6 +627,20 @@ function renderChecklist(): string {
   `
 }
 
+const RECAP: CaseRecap = {
+  oneLineRecap: "You defended Margaret Holloway's UB-04 against three audit findings — picked RECEIPT for the two defensible ones, AMEND for the real billing error, kept the recoupment to $340 against an $11,970 exposure.",
+  keyConcepts: [
+    { term: 'RECEIPT vs AMEND', gist: "RECEIPT = defend the original work with chart evidence (you were right, here's the proof). AMEND = concede + accept the recoupment (you were wrong, here's the corrected claim)." },
+    { term: 'Audit defense rhythm', gist: "Read each finding cold. Distinguish documentation gaps from coding errors. Concede fast on real errors so you don't spend goodwill defending the indefensible." },
+    { term: 'RAC findings', gist: 'Recovery Audit Contractor findings are recoupment demands. You have appeal rights, but the burden of proof is on the provider. Documentation > argumentation.' },
+  ],
+  resources: [
+    { title: 'CMS — Recovery Audit Program', url: 'https://www.cms.gov/research-statistics-data-and-systems/monitoring-programs/medicare-ffs-compliance-programs/recovery-audit-program', note: 'The RAC framework + the appeal levels.' },
+    { title: 'CMS — Five Levels of Medicare Appeals', url: 'https://www.cms.gov/medicare/appeals-and-grievances/orgmedffsappeals', note: 'The full appeal chain from redetermination to federal court.' },
+    { title: 'AHIMA — Audit Response Best Practices', url: 'https://www.ahima.org/', note: 'Industry guidance on audit response programs + documentation.' },
+  ],
+}
+
 function renderVictory(): string {
   const total = totalRecoupment()
   const totalExposure = findings.reduce((s, f) => s + f.recoupmentAmount, 0)
@@ -666,6 +680,7 @@ function renderVictory(): string {
       <button class="btn primary" data-action="reset">Run it again</button>
       <a class="back-link inline" href="./">← back to game</a>
     </section>
+    ${renderCaseRecap(RECAP)}
   `
 }
 

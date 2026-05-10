@@ -43,6 +43,66 @@ export function escape(s: string): string {
 }
 
 /**
+ * Per-Case post-victory recap. Each Case authors its own recap data
+ * (key concepts the player learned + external links to the
+ * authoritative sources for further reading) and calls
+ * `renderRecap(recap)` from inside its `renderVictory` function.
+ *
+ * The recap is appended to the victory section so the player gets
+ * the win moment first, then the post-mortem. Keep `keyConcepts` to
+ * 3-5 bullet points and `resources` to 3-5 links — anything more
+ * starts to feel like homework.
+ *
+ * Resource links should point to authoritative sources: CFR/USC
+ * regulations, CMS / HHS / HRSA guidance, MLN articles, AMA / AHA
+ * professional pages. Avoid blogs, vendor marketing, and stale
+ * white papers — players are busy and we owe them the canonical
+ * source.
+ */
+export interface CaseRecap {
+  /** One-sentence framing of what the player just did, in their voice. */
+  oneLineRecap: string
+  /** 3-5 concept summaries — the doctrine takeaways. */
+  keyConcepts: { term: string; gist: string }[]
+  /** 3-5 external links — title + url + 1-line context. */
+  resources: { title: string; url: string; note: string }[]
+}
+
+export function renderCaseRecap(recap: CaseRecap): string {
+  return `
+    <section class="recap-page">
+      <div class="recap-h">
+        <span class="recap-tag">RECAP · WHAT YOU LEARNED</span>
+      </div>
+      <p class="recap-lede">${escape(recap.oneLineRecap)}</p>
+
+      <div class="recap-grid">
+        <div class="recap-block">
+          <h3>Key concepts</h3>
+          <ul class="recap-concepts">
+            ${recap.keyConcepts.map(c => `
+              <li><strong>${escape(c.term)}.</strong> ${escape(c.gist)}</li>
+            `).join('')}
+          </ul>
+        </div>
+
+        <div class="recap-block">
+          <h3>Learn more</h3>
+          <ul class="recap-resources">
+            ${recap.resources.map(r => `
+              <li>
+                <a href="${escape(r.url)}" target="_blank" rel="noopener noreferrer">${escape(r.title)}</a>
+                <span class="recap-resource-note">${escape(r.note)}</span>
+              </li>
+            `).join('')}
+          </ul>
+        </div>
+      </div>
+    </section>
+  `
+}
+
+/**
  * Universal CSS shared by every encounter prototype: the page
  * chrome, two-register flip (hospital warm / waiting-room
  * lavender), Dana briefing + popover, term glossary popover,
@@ -387,10 +447,32 @@ export const BASE_CSS = `
   .notes-cta { margin-top: 18px; font-size: 13px; color: var(--ink-dim); }
 
   /* Victory screen. */
-  .victory { background: var(--panel); border: 1px solid #232a36; border-radius: 8px; padding: 32px 28px; margin: 22px 0 60px; text-align: center; }
+  .victory { background: var(--panel); border: 1px solid #232a36; border-radius: 8px; padding: 32px 28px; margin: 22px 0 24px; text-align: center; }
   .victory h2 { font-size: 26px; margin-bottom: 16px; }
   .victory p { max-width: 560px; margin: 12px auto; }
   .victory .register { margin-top: 20px; }
   .victory .btn.primary { margin-top: 24px; }
   .victory .back-link.inline { display: block; margin-top: 16px; font-size: 12px; }
+
+  /* Recap page — appended after the victory section once the Case
+     completes. Tone is informative, not celebratory; the win
+     moment lives in .victory above. */
+  .recap-page { background: var(--panel); border: 1px solid #232a36; border-left: 4px solid var(--accent); border-radius: 8px; padding: 28px 32px; margin: 0 0 60px; }
+  .recap-page .recap-h { margin-bottom: 14px; }
+  .recap-page .recap-tag { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); }
+  .recap-page .recap-lede { font-size: 15px; line-height: 1.6; color: var(--ink); margin: 0 0 24px; max-width: 720px; }
+  .recap-page .recap-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+  @media (max-width: 880px) { .recap-page .recap-grid { grid-template-columns: 1fr; gap: 22px; } }
+  .recap-page .recap-block h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-dim); margin: 0 0 12px; font-weight: 700; }
+  .recap-page ul.recap-concepts,
+  .recap-page ul.recap-resources { list-style: none; padding-left: 0; margin: 0; }
+  .recap-page ul.recap-concepts li { font-size: 13.5px; line-height: 1.55; color: var(--ink); padding: 8px 0; border-bottom: 1px dashed #232a36; }
+  .recap-page ul.recap-concepts li:last-child { border-bottom: none; }
+  .recap-page ul.recap-concepts li strong { color: var(--accent); font-weight: 600; }
+  .recap-page ul.recap-resources li { padding: 8px 0; border-bottom: 1px dashed #232a36; display: flex; flex-direction: column; gap: 3px; }
+  .recap-page ul.recap-resources li:last-child { border-bottom: none; }
+  .recap-page ul.recap-resources a { font-size: 13.5px; color: var(--accent); text-decoration: none; font-weight: 600; }
+  .recap-page ul.recap-resources a:hover { text-decoration: underline; color: var(--accent-hover); }
+  .recap-page ul.recap-resources a::after { content: " ↗"; font-size: 11px; opacity: 0.6; }
+  .recap-page .recap-resource-note { font-size: 12px; color: var(--ink-dim); line-height: 1.45; }
 `
