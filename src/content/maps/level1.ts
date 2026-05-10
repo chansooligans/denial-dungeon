@@ -199,7 +199,7 @@ const STAIR_2F_TO_HUB   = { from: { x: 33, y: 96 }, to: { x: 18, y: 7  }, label:
 const EXIT_LOBBY_OUT    = { from: { x: 5,  y: 36 }, to: { x: 16, y: 67 }, label: '← EXIT' }
 const EXIT_OUT_LOBBY    = { from: { x: 16, y: 67 }, to: { x: 5,  y: 36 }, label: '← LOBBY' }
 
-const { layout, tileMeta } = buildMap({
+const { layout, tileMeta, rooms: BUILT_ROOMS } = buildMap({
   width: WIDTH,
   height: HEIGHT,
   background: 'W',
@@ -210,7 +210,7 @@ const { layout, tileMeta } = buildMap({
       ...MAIN_HUB,
       doors: [
         { side: 'S', offset: 10 },               // bottom door to corridor
-        { side: 'E', offset: 5, locked: true },  // locked door east → Prior Auth
+        { side: 'E', offset: 5 },                 // east door → Prior Auth (phase-locked via priorAuth.lockedUntilLevel)
         { side: 'W', offset: 4 },                // west door → STAIRWELL_1F
       ],
       items: [
@@ -247,11 +247,12 @@ const { layout, tileMeta } = buildMap({
     },
     {
       id: 'priorAuth',
+      lockedUntilLevel: 3,
       ...PRIOR_AUTH,
       // West door is shared with Main Hub's east locked door — same world
       // tile. Re-declaring it keeps the room self-describing; the builder
       // will overwrite the same cell with 'L', which is idempotent.
-      doors: [{ side: 'W', offset: 5, locked: true }],
+      doors: [{ side: 'W', offset: 5 }],
       items: [
         { dx: 2, dy: 2, ch: 'c' }, { dx: 2, dy: 3, ch: 'h' },
         { dx: 5, dy: 2, ch: 'c' }, { dx: 5, dy: 3, ch: 'h' },
@@ -263,6 +264,7 @@ const { layout, tileMeta } = buildMap({
     // ===== West wing — north of Patient Services =====
     {
       id: 'cafeteria',
+      lockedUntilLevel: 3,
       ...CAFETERIA,
       // East door at offset 2 → world (13, 4). Connects to the
       // main north-south corridor (extended north from the bend
@@ -297,6 +299,7 @@ const { layout, tileMeta } = buildMap({
     },
     {
       id: 'kitchen',
+      lockedUntilLevel: 4,
       ...KITCHEN,
       // North door at offset 3 → world (5, 13). Opens onto the
       // east-west cross-corridor at y=12.
@@ -313,6 +316,7 @@ const { layout, tileMeta } = buildMap({
     },
     {
       id: 'lounge',
+      lockedUntilLevel: 4,
       ...LOUNGE,
       // North door at offset 3 → world (11, 13).
       doors: [{ side: 'N', offset: 3 }],
@@ -327,6 +331,7 @@ const { layout, tileMeta } = buildMap({
 
     {
       id: 'patientServices',
+      lockedUntilLevel: 2,
       ...PATIENT_SVC,
       doors: [{ side: 'E', offset: 3 }],
       items: [
@@ -338,6 +343,7 @@ const { layout, tileMeta } = buildMap({
     },
     {
       id: 'registration',
+      lockedUntilLevel: 3,
       ...REGISTRATION,
       doors: [
         { side: 'W', offset: 3 },                                                  // west into corridor
@@ -354,6 +360,7 @@ const { layout, tileMeta } = buildMap({
     },
     {
       id: 'eligibility',
+      lockedUntilLevel: 2,
       ...ELIGIBILITY,
       // North door shared with Registration's south door — same world tile.
       doors: [{ side: 'N', offset: 4 }],
@@ -366,6 +373,7 @@ const { layout, tileMeta } = buildMap({
     // ===== East wing =====
     {
       id: 'radiology',
+      lockedUntilLevel: 4,
       ...RADIOLOGY,
       // West door at world y = 15+6 = 21, aligned with the spur corridor
       // running east from Registration's east door.
@@ -387,6 +395,7 @@ const { layout, tileMeta } = buildMap({
     },
     {
       id: 'pharmacy',
+      lockedUntilLevel: 5,
       ...PHARMACY,
       // West door at world y = 27+3 = 30.
       doors: [{ side: 'W', offset: 3 }],
@@ -401,6 +410,7 @@ const { layout, tileMeta } = buildMap({
     },
     {
       id: 'medRecords',
+      lockedUntilLevel: 5,
       ...MED_RECORDS,
       // West door at world y = 37+5 = 42.
       doors: [{ side: 'W', offset: 5 }],
@@ -485,6 +495,7 @@ const { layout, tileMeta } = buildMap({
     // ===== South wing =====
     {
       id: 'him',
+      lockedUntilLevel: 4,
       ...HIM,
       doors: [{ side: 'N', offset: 7 }],
       // Coding / CDI: monitors, code books, charts.
@@ -500,6 +511,7 @@ const { layout, tileMeta } = buildMap({
     },
     {
       id: 'billing',
+      lockedUntilLevel: 6,
       ...BILLING,
       doors: [{ side: 'N', offset: 7 }],
       // Clearinghouse / claim queue: terminals + scrubber screens.
@@ -515,6 +527,7 @@ const { layout, tileMeta } = buildMap({
     },
     {
       id: 'pfs',
+      lockedUntilLevel: 6,
       ...PFS,
       doors: [{ side: 'N', offset: 8 }],
       // Patient Financial Services: phone bank + paperwork mountain.
@@ -531,6 +544,7 @@ const { layout, tileMeta } = buildMap({
     },
     {
       id: 'lab',
+      lockedUntilLevel: 5,
       ...LAB,
       // North door at offset 4 → world (60, 50). Opens onto the SW
       // trough corridor at y=49 (extended east past PFS to reach
@@ -563,6 +577,7 @@ const { layout, tileMeta } = buildMap({
     // ===== Public-event rooms =====
     {
       id: 'auditorium',
+      lockedUntilLevel: 7,
       ...AUDITORIUM,
       // West door at offset 5 → world (30, 37) — pairs with lobby's
       // east door at (29, 37). They share adjacent wall columns; the
@@ -599,6 +614,7 @@ const { layout, tileMeta } = buildMap({
 
     {
       id: 'lectureHall',
+      lockedUntilLevel: 7,
       ...LECTURE_HALL,
       // North door at offset 12 → world (68, 58). Pairs with a
       // wraparound corridor that runs east from the SW trough past
@@ -673,6 +689,7 @@ const { layout, tileMeta } = buildMap({
 
     {
       id: 'cancerCenter',
+      lockedUntilLevel: 8,
       ...CANCER_CENTER,
       // South door at offset 5 → world (56, 14). The room sits on the
       // top edge of the map north of Prior Auth's footprint, so a west
@@ -792,6 +809,7 @@ const { layout, tileMeta } = buildMap({
     },
     {
       id: 'audit',
+      lockedUntilLevel: 7,
       ...AUDIT,
       // North door at offset 22 lines up with the 2F corridor running
       // east-west at y=99. Old (south wing) audit door + corridor stub
@@ -825,6 +843,7 @@ const { layout, tileMeta } = buildMap({
     },
     {
       id: 'payer',
+      lockedUntilLevel: 7,
       ...PAYER,
       // North door at offset 4 onto the 2F corridor.
       doors: [{ side: 'N', offset: 4 }],
@@ -908,6 +927,7 @@ const { layout, tileMeta } = buildMap({
     },
     {
       id: 'lounge2F',
+      lockedUntilLevel: 6,
       ...LOUNGE_2F,
       // North door at offset 4 → world (60, 100). Opens onto the
       // 2F trunk corridor extended east past PAYER.
@@ -938,6 +958,7 @@ const { layout, tileMeta } = buildMap({
     },
     {
       id: 'compliance',
+      lockedUntilLevel: 8,
       ...COMPLIANCE,
       // North door at offset 16 onto a vertical stub from the 2F
       // corridor.
@@ -1106,6 +1127,7 @@ export const LEVEL_1_MAP: MapDef = {
   height: HEIGHT,
   layout: applyTileOverrides(layout, tileOverrides),
   tileMeta,
+  roomDefs: BUILT_ROOMS,
   // Player spawns near the south of the lobby, looking up toward the chairs.
   playerStart: { x: LOBBY.x + 10, y: LOBBY.y + LOBBY.h - 3 },
   // Minimap labels — abbreviated by default, full names on click.
@@ -1312,11 +1334,43 @@ export const LEVEL_1_MAP: MapDef = {
     { npcId: 'chris', tileX: TURQUOISE_LOUNGE.x + 7,  tileY: TURQUOISE_LOUNGE.y + 2, ambient: true },
     { npcId: 'adam',  tileX: TURQUOISE_LOUNGE.x + 14, tileY: TURQUOISE_LOUNGE.y + 2, ambient: true },
 
-    // (Kitchen + 1F Lounge / 2F Staff Lounge are unpopulated for
-    // now — small rooms saved for a future cast pass.)
+    // 2026-05 cast pass — fill the late-game rooms (added in PR #217)
+    // and the previously-unpopulated 1F break rooms / Prior Auth.
+    // Most placements use `levels: [N+]` filters so they appear only
+    // once the room phase-unlocks (matching the room's
+    // `lockedUntilLevel`). Some duplicate existing roster NPCs into
+    // these new rooms — acceptable while the cast is small; we'll
+    // give the duplicates dedicated sprites in a follow-up if any
+    // read as visibly twinned.
+
+    // Cancer Center — oncology nurse + an infusion-bay patient.
+    // Unlocks at L8.
+    { npcId: 'liana',         tileX: CANCER_CENTER.x + 14, tileY: CANCER_CENTER.y + 5,  facing: 'down',  ambient: true, levels: [8, 9, 10] },
+    { npcId: 'elder_patient', tileX: CANCER_CENTER.x + 5,  tileY: CANCER_CENTER.y + 1,  facing: 'down',  ambient: true, levels: [8, 9, 10] },
+
+    // Lecture Hall — a couple of attendees seated mid-audience.
+    // Unlocks at L7.
+    { npcId: 'dr_priya',      tileX: LECTURE_HALL.x + 4,   tileY: LECTURE_HALL.y + 3,   facing: 'down',  ambient: true, levels: [7, 8, 9, 10] },
+    { npcId: 'dr_ethan',      tileX: LECTURE_HALL.x + 14,  tileY: LECTURE_HALL.y + 5,   facing: 'down',  ambient: true, levels: [7, 8, 9, 10] },
+
+    // Auditorium — bigger room, more attendees. Unlocks at L7.
+    { npcId: 'dr_park',       tileX: AUDITORIUM.x + 5,     tileY: AUDITORIUM.y + 3,     facing: 'down',  ambient: true, levels: [7, 8, 9, 10] },
+    { npcId: 'compliance_officer', tileX: AUDITORIUM.x + 15, tileY: AUDITORIUM.y + 3, facing: 'down', ambient: true, levels: [7, 8, 9, 10] },
+    { npcId: 'payer_rep',     tileX: AUDITORIUM.x + 10,    tileY: AUDITORIUM.y + 6,     facing: 'up',    ambient: true, levels: [7, 8, 9, 10] },
+
+    // Prior Auth — staff PA specialist at the desk. Unlocks at L3.
+    { npcId: 'martinez',      tileX: PRIOR_AUTH.x + 6,     tileY: PRIOR_AUTH.y + 3,     facing: 'left',  ambient: true, levels: [3, 4, 5, 6, 7, 8, 9, 10] },
+
+    // 1F Lounge — break-room ambient. Unlocks at L4.
+    { npcId: 'noah',          tileX: LOUNGE.x + 4,         tileY: LOUNGE.y + 3,         facing: 'down',  ambient: true, levels: [4, 5, 6, 7, 8, 9, 10] },
+
+    // 2F Lounge — analyst-lunch ambient. Unlocks at L6.
+    { npcId: 'nicole',        tileX: LOUNGE_2F.x + 6,      tileY: LOUNGE_2F.y + 3,      facing: 'down',  ambient: true, levels: [6, 7, 8, 9, 10] },
+
+    // (Kitchen stays unpopulated — back-of-house is invisible-by-design.)
 
     // Main Hub — extra hospitalist, joins the existing physician
     // crowd. Faces 'right' toward the hub bulletin / colleagues.
-    { npcId: 'dr_park',          tileX: MAIN_HUB.x + 3,  tileY: MAIN_HUB.y + 2, facing: 'right', ambient: true },
+    { npcId: 'dr_park',          tileX: MAIN_HUB.x + 3,  tileY: MAIN_HUB.y + 2, facing: 'right', ambient: true, levels: [1, 2, 3, 4, 5, 6] },
   ],
 }

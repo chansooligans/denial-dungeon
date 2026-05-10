@@ -1,4 +1,4 @@
-// Stoploss Reckoner @ L7 — math-heavy stoploss-provision Case.
+// Stoploss Reckoner @ L4 — math-heavy stoploss-provision Case (re-leveled from L7).
 // Sibling to Case Rate Specter and Implant Carve-out Specter (same
 // Anthem contract; different threshold-trip clause). The player
 // computes the trip, the new payment basis, and the shortfall.
@@ -257,7 +257,7 @@ function renderHeader(): string {
   return `
     <header class="page-h">
       <div class="title-row">
-        <h1>Stoploss Reckoner <span class="muted">@ L7 — first sketch</span></h1>
+        <h1>Stoploss Reckoner <span class="muted">@ L4 — first sketch</span></h1>
         <div class="header-actions">
           ${recallBtn}
           <a class="back-link" href="./prototypes.html">← back to catalog</a>
