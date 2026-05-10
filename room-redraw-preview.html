@@ -590,9 +590,11 @@ function renderRoom(variant) {
 
   const grid = buildGrid(w, h, items, doors);
 
-  // Tiles that fully paint themselves (no floor underneath needed).
-  // Everything else gets a floor draw first, then the object on top.
-  const FULL_TILES = new Set(['W', 'D', '.', '_', '=', 'r', 'C', 'O', 'S']);
+  // Tiles that fully paint themselves (no underlying floor needed).
+  // '.' is intentionally NOT in this set — the renderer chooses the
+  // floor based on the outdoor flag (asphalt outdoors, cream indoors)
+  // so empty interior cells follow the room's identity.
+  const FULL_TILES = new Set(['W', 'D', '_', '=', 'r', 'C', 'O', 'S']);
 
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
@@ -603,13 +605,16 @@ function renderRoom(variant) {
       if (FULL_TILES.has(ch)) {
         if (TILES[ch]) TILES[ch](ctx, sx, sy);
       } else {
-        // Floor first
+        // Floor first — outdoor rooms get asphalt, indoor rooms get
+        // cream linoleum. Applies to empty floor cells AND to any
+        // object cell (the object draws on top of the chosen floor).
         if (outdoor) TILES['_'](ctx, sx, sy);
         else TILES['.'](ctx, sx, sy);
-        // Object overlay (if any)
-        if (TILES[ch]) {
+        // Object overlay (if any). Skip when ch is '.' — the floor
+        // we just drew IS the rendered output.
+        if (ch !== '.' && TILES[ch]) {
           TILES[ch](ctx, sx, sy);
-        } else {
+        } else if (ch !== '.' && !TILES[ch]) {
           ctx.fillStyle = '#ff00ff';
           ctx.fillRect(sx, sy, T, T);
         }
