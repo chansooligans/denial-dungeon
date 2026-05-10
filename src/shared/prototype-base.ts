@@ -64,11 +64,51 @@ export interface CaseRecap {
   oneLineRecap: string
   /** 3-5 concept summaries — the doctrine takeaways. */
   keyConcepts: { term: string; gist: string }[]
-  /** 3-5 external links — title + url + 1-line context. */
-  resources: { title: string; url: string; note: string }[]
+  /**
+   * Authored external resources. Retained in the data files for
+   * reference / future reuse, but no longer rendered in the recap
+   * page — players were better served by an "ask an AI assistant"
+   * prompt that pulls the recap context with them than by a static
+   * list of URLs that age and rot. Optional going forward.
+   */
+  resources?: { title: string; url: string; note: string }[]
+}
+
+/**
+ * Build a prompt that takes the player's recap context to an AI
+ * assistant. We don't link to a fixed URL list anymore — the
+ * landscape moves, and a one-shot list of CMS / HHS pages doesn't
+ * actually answer "but what does this mean for my situation?"
+ *
+ * The prompt embeds: the one-line recap, the key concepts (term +
+ * gist), and a request for examples + authoritative source pointers.
+ * URL-encoded into the assistant's `?q=` query parameter.
+ */
+function buildAiPromptUrl(provider: 'claude' | 'chatgpt', recap: CaseRecap): string {
+  const lines: string[] = []
+  lines.push("I just played through a case in an educational game about the US healthcare revenue cycle.")
+  lines.push("")
+  lines.push(`The case in one line: ${recap.oneLineRecap}`)
+  lines.push("")
+  lines.push("Concepts I want to go deeper on:")
+  for (const c of recap.keyConcepts) {
+    lines.push(`- ${c.term}: ${c.gist}`)
+  }
+  lines.push("")
+  lines.push(
+    "Can you explain each concept in more depth — real-world examples, common pitfalls, " +
+    "and pointers to authoritative sources (CFR / USC / CMS / HHS / payer policy)?"
+  )
+  const prompt = lines.join("\n")
+  const base = provider === 'claude'
+    ? 'https://claude.ai/new?q='
+    : 'https://chatgpt.com/?q='
+  return base + encodeURIComponent(prompt)
 }
 
 export function renderCaseRecap(recap: CaseRecap): string {
+  const claudeUrl = buildAiPromptUrl('claude', recap)
+  const chatgptUrl = buildAiPromptUrl('chatgpt', recap)
   return `
     <section class="recap-page">
       <div class="recap-h">
@@ -87,15 +127,18 @@ export function renderCaseRecap(recap: CaseRecap): string {
         </div>
 
         <div class="recap-block">
-          <h3>Learn more</h3>
-          <ul class="recap-resources">
-            ${recap.resources.map(r => `
-              <li>
-                <a href="${escape(r.url)}" target="_blank" rel="noopener noreferrer">${escape(r.title)}</a>
-                <span class="recap-resource-note">${escape(r.note)}</span>
-              </li>
-            `).join('')}
-          </ul>
+          <h3>Go deeper</h3>
+          <p class="recap-go-deeper-blurb">
+            Open this recap in an AI assistant — it'll arrive with the case
+            context attached and can give you examples, pitfalls, and
+            source pointers tuned to whatever you want to ask next.
+          </p>
+          <div class="recap-go-deeper-actions">
+            <a href="${claudeUrl}" target="_blank" rel="noopener noreferrer"
+               class="recap-ai-btn recap-ai-claude">Ask Claude ↗</a>
+            <a href="${chatgptUrl}" target="_blank" rel="noopener noreferrer"
+               class="recap-ai-btn recap-ai-chatgpt">Ask ChatGPT ↗</a>
+          </div>
         </div>
       </div>
     </section>
@@ -464,15 +507,37 @@ export const BASE_CSS = `
   .recap-page .recap-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
   @media (max-width: 880px) { .recap-page .recap-grid { grid-template-columns: 1fr; gap: 22px; } }
   .recap-page .recap-block h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-dim); margin: 0 0 12px; font-weight: 700; }
-  .recap-page ul.recap-concepts,
-  .recap-page ul.recap-resources { list-style: none; padding-left: 0; margin: 0; }
+  .recap-page ul.recap-concepts { list-style: none; padding-left: 0; margin: 0; }
   .recap-page ul.recap-concepts li { font-size: 13.5px; line-height: 1.55; color: var(--ink); padding: 8px 0; border-bottom: 1px dashed #232a36; }
   .recap-page ul.recap-concepts li:last-child { border-bottom: none; }
   .recap-page ul.recap-concepts li strong { color: var(--accent); font-weight: 600; }
-  .recap-page ul.recap-resources li { padding: 8px 0; border-bottom: 1px dashed #232a36; display: flex; flex-direction: column; gap: 3px; }
-  .recap-page ul.recap-resources li:last-child { border-bottom: none; }
-  .recap-page ul.recap-resources a { font-size: 13.5px; color: var(--accent); text-decoration: none; font-weight: 600; }
-  .recap-page ul.recap-resources a:hover { text-decoration: underline; color: var(--accent-hover); }
-  .recap-page ul.recap-resources a::after { content: " ↗"; font-size: 11px; opacity: 0.6; }
-  .recap-page .recap-resource-note { font-size: 12px; color: var(--ink-dim); line-height: 1.45; }
+
+  /* Go-deeper block — replaces the old "Learn more" URL list.
+     Static URL lists rot; the AI-assistant prompt carries the recap
+     context with it, so the player can interrogate whatever they
+     want from a sensible starting point. */
+  .recap-page .recap-go-deeper-blurb {
+    font-size: 13px; color: var(--ink-dim); line-height: 1.55;
+    margin: 0 0 14px;
+  }
+  .recap-page .recap-go-deeper-actions {
+    display: flex; gap: 10px; flex-wrap: wrap;
+  }
+  .recap-page .recap-ai-btn {
+    flex: 1; min-width: 140px;
+    padding: 10px 14px;
+    border-radius: 5px;
+    border: 1px solid #2a3142;
+    background: var(--panel-2);
+    color: var(--ink);
+    text-decoration: none;
+    font-size: 13px; font-weight: 600;
+    text-align: center;
+    transition: all 0.15s;
+  }
+  .recap-page .recap-ai-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: #232b3a;
+  }
 `

@@ -651,27 +651,18 @@ function renderCardRecap(recap: CaseRecap): string {
       <summary>What this Case teaches <span class="card-recap-caret">▾</span></summary>
       <div class="card-recap-body">
         <p class="card-recap-lede">${escape(recap.oneLineRecap)}</p>
-        <div class="card-recap-grid">
-          <div class="card-recap-block">
-            <h4>Key concepts</h4>
-            <ul class="card-recap-concepts">
-              ${recap.keyConcepts.map(c => `
-                <li><strong>${escape(c.term)}.</strong> ${escape(c.gist)}</li>
-              `).join('')}
-            </ul>
-          </div>
-          <div class="card-recap-block">
-            <h4>Learn more</h4>
-            <ul class="card-recap-resources">
-              ${recap.resources.map(r => `
-                <li>
-                  <a href="${escape(r.url)}" target="_blank" rel="noopener noreferrer">${escape(r.title)}</a>
-                  <span class="card-recap-resource-note">${escape(r.note)}</span>
-                </li>
-              `).join('')}
-            </ul>
-          </div>
+        <div class="card-recap-block">
+          <h4>Key concepts</h4>
+          <ul class="card-recap-concepts">
+            ${recap.keyConcepts.map(c => `
+              <li><strong>${escape(c.term)}.</strong> ${escape(c.gist)}</li>
+            `).join('')}
+          </ul>
         </div>
+        <p class="card-recap-go-deeper">
+          Play the Case, then use the post-victory recap page to open
+          the concepts in an AI assistant.
+        </p>
       </div>
     </details>
   `
@@ -914,8 +905,6 @@ const css = `
   .card-recap[open] .card-recap-caret { transform: rotate(180deg); }
   .card-recap-body { padding: 4px 0 12px; }
   .card-recap-lede { font-size: 13px; line-height: 1.55; color: var(--ink); margin: 0 0 14px; }
-  .card-recap-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-  @media (max-width: 720px) { .card-recap-grid { grid-template-columns: 1fr; } }
   .card-recap-block h4 {
     font-size: 10.5px;
     text-transform: uppercase;
@@ -924,8 +913,7 @@ const css = `
     margin: 0 0 6px;
     font-weight: 700;
   }
-  .card-recap-concepts,
-  .card-recap-resources { list-style: none; padding-left: 0; margin: 0; }
+  .card-recap-concepts { list-style: none; padding-left: 0; margin: 0; }
   .card-recap-concepts li {
     font-size: 12px;
     line-height: 1.5;
@@ -935,23 +923,10 @@ const css = `
   }
   .card-recap-concepts li:last-child { border-bottom: none; }
   .card-recap-concepts li strong { color: var(--card-accent); font-weight: 600; }
-  .card-recap-resources li {
-    padding: 5px 0;
-    border-bottom: 1px dashed #232a36;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
+  .card-recap-go-deeper {
+    font-size: 11.5px; color: var(--ink-dim); line-height: 1.5;
+    margin: 14px 0 0; font-style: italic;
   }
-  .card-recap-resources li:last-child { border-bottom: none; }
-  .card-recap-resources a {
-    font-size: 12px;
-    color: var(--card-accent);
-    text-decoration: none;
-    font-weight: 600;
-  }
-  .card-recap-resources a:hover { text-decoration: underline; }
-  .card-recap-resources a::after { content: " ↗"; font-size: 10px; opacity: 0.6; }
-  .card-recap-resource-note { font-size: 11px; color: var(--ink-dim); line-height: 1.4; }
   .card-cta {
     display: inline-block;
     padding: 6px 14px;
