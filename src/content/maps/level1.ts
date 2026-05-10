@@ -1183,36 +1183,50 @@ export const LEVEL_1_MAP: MapDef = {
     // on the player's column, three tiles north of spawn. Default
     // 'down' so she greets Chloe head-on.
     { npcId: 'anjali',   tileX: LOBBY.x + 10,       tileY: LOBBY.y + 4 },
-    // Kim sits at the registration counter (interior dy=2, just
-    // south of the public-facing R counter row). Default 'down' so
-    // she faces the lobby-side approach.
-    { npcId: 'kim',      tileX: REGISTRATION.x + 4, tileY: REGISTRATION.y + 2 },
     // Martinez looks 'left' across the hub toward Alex / the
-    // bulletin board, not back at the wall.
-    { npcId: 'martinez', tileX: MAIN_HUB.x + 14,    tileY: MAIN_HUB.y + 4, facing: 'left' },
+    // bulletin board, not back at the wall. Gated [1, 2] only —
+    // at L3+ he moves to PRIOR_AUTH (see ambient placement below).
+    { npcId: 'martinez', tileX: MAIN_HUB.x + 14,    tileY: MAIN_HUB.y + 4, facing: 'left',
+      levels: [1, 2] },
 
     // === Per-level placements ===
-    // Dana — Patient Services (L1-9) at the west side of the room
+    // Day-one mentor pass: at L1, Dana / Kim / Jordan all gather
+    // in the front-of-house (lobby + main hub) because their
+    // dedicated rooms are still phase-locked. From L2 onwards they
+    // disperse to their stations as those rooms unlock.
+    { npcId: 'dana',   tileX: LOBBY.x + 13, tileY: LOBBY.y + 4,
+      levels: [1] },
+    { npcId: 'kim',    tileX: LOBBY.x + 22, tileY: LOBBY.y + 5, facing: 'left',
+      levels: [1] },
+    { npcId: 'jordan', tileX: MAIN_HUB.x + 9, tileY: MAIN_HUB.y + 5,
+      levels: [1] },
+
+    // Dana — Patient Services (L2-9) at the west side of the room
     // near the door + intake desks; Audit conference room (L10),
     // south of the table looking west toward the rest of the team.
     { npcId: 'dana', tileX: PATIENT_SVC.x + 3, tileY: PATIENT_SVC.y + 4,
-      levels: [1, 2, 3, 4, 5, 6, 7, 8, 9] },
+      levels: [2, 3, 4, 5, 6, 7, 8, 9] },
     { npcId: 'dana', tileX: AUDIT.x + 14, tileY: AUDIT.y + 5, facing: 'left',
       levels: [10] },
 
-    // Jordan — Eligibility (L1-7) at the kiosk; PFS (L8+) at the
+    // Kim — Registration counter (L2+, once the room unlocks).
+    // Default 'down' so she faces the lobby-side approach.
+    { npcId: 'kim', tileX: REGISTRATION.x + 4, tileY: REGISTRATION.y + 2,
+      levels: [2, 3, 4, 5, 6, 7, 8, 9, 10] },
+
+    // Jordan — Eligibility (L2-7) at the kiosk; PFS (L8+) at the
     // desk row. Both spots she's facing right (the F cabinet at
     // eligibility, the water cooler at PFS).
     { npcId: 'jordan', tileX: ELIGIBILITY.x + 5, tileY: ELIGIBILITY.y + 3, facing: 'right',
-      levels: [1, 2, 3, 4, 5, 6, 7] },
+      levels: [2, 3, 4, 5, 6, 7] },
     { npcId: 'jordan', tileX: PFS.x + 6, tileY: PFS.y + 5, facing: 'right',
       levels: [8, 9, 10] },
 
-    // Pat — Registration (L1-3) faces left toward Kim; HIM (L4+)
+    // Pat — Registration (L2-3) faces left toward Kim; HIM (L4+)
     // default 'down' (sits at the desk row on entry, not yet
     // turned to a particular workstation).
     { npcId: 'pat', tileX: REGISTRATION.x + 14, tileY: REGISTRATION.y + 4, facing: 'left',
-      levels: [1, 2, 3] },
+      levels: [2, 3] },
     { npcId: 'pat', tileX: HIM.x + 5, tileY: HIM.y + 5,
       levels: [4, 5, 6, 7, 8, 9, 10] },
 
@@ -1246,14 +1260,18 @@ export const LEVEL_1_MAP: MapDef = {
     // the west wall; Officer Reyes covers the SW corner; Walter
     // and Noah occupy the northern half.
     { npcId: 'walter',         tileX: LOBBY.x + 20, tileY: LOBBY.y + 2, ambient: true },
-    { npcId: 'noah',           tileX: LOBBY.x + 18, tileY: LOBBY.y + 7, facing: 'left', ambient: true },
+    // Noah gated [1-3] so he falls through to the LOUNGE placement
+    // at L4+ (1F break room opens then).
+    { npcId: 'noah',           tileX: LOBBY.x + 18, tileY: LOBBY.y + 7, facing: 'left', ambient: true, levels: [1, 2, 3] },
     // Officer Reyes shifted one tile east of his old spot — the
     // 'O' exit-mat tile now sits at (LOBBY.x+1, LOBBY.y+4), and
     // having him on top of it would block the teleport. Faces
     // 'left' toward the door, watching who comes through.
     { npcId: 'officer_reyes',  tileX: LOBBY.x + 2,  tileY: LOBBY.y + 4, facing: 'left', ambient: true },
     { npcId: 'flower_visitor', tileX: LOBBY.x + 24, tileY: LOBBY.y + 5, facing: 'left', ambient: true },
-    { npcId: 'elder_patient',  tileX: LOBBY.x + 5,  tileY: LOBBY.y + 3, ambient: true },
+    // Elder patient gated [1-7] so he falls through to the
+    // CANCER_CENTER infusion-bay placement at L8+.
+    { npcId: 'elder_patient',  tileX: LOBBY.x + 5,  tileY: LOBBY.y + 3, ambient: true, levels: [1, 2, 3, 4, 5, 6, 7] },
 
     // PFS — Dev faces 'left' toward the water cooler at PFS dy=5
     // dx=9 (one tile west + one tile south of him).
@@ -1262,8 +1280,12 @@ export const LEVEL_1_MAP: MapDef = {
     // Main Hub — physician floor. Priya defaults to 'down' (she's
     // standing south-of-center, easy to read). Ethan still looks
     // left toward her (mid-conversation about a discharge).
-    { npcId: 'dr_priya', tileX: MAIN_HUB.x + 9,  tileY: MAIN_HUB.y + 6, ambient: true },
-    { npcId: 'dr_ethan', tileX: MAIN_HUB.x + 14, tileY: MAIN_HUB.y + 8, facing: 'left', ambient: true },
+    // Both gated [1-6] so they fall through to the LECTURE_HALL
+    // placement at L7+ (without this, the de-dupe loop in placeNPCs
+    // would keep them in MAIN_HUB and the lecture-hall placement
+    // would never fire).
+    { npcId: 'dr_priya', tileX: MAIN_HUB.x + 9,  tileY: MAIN_HUB.y + 6, ambient: true, levels: [1, 2, 3, 4, 5, 6] },
+    { npcId: 'dr_ethan', tileX: MAIN_HUB.x + 14, tileY: MAIN_HUB.y + 8, facing: 'left', ambient: true, levels: [1, 2, 3, 4, 5, 6] },
 
     // East wing.
     //  - Rad tech faces 'right' toward the H (hospital bed) on the
@@ -1274,7 +1296,9 @@ export const LEVEL_1_MAP: MapDef = {
     //  - Marisol the records clerk faces 'right' toward the
     //    pull-desk one tile east (where charts get reviewed).
     { npcId: 'rad_tech',      tileX: RADIOLOGY.x + 6,   tileY: RADIOLOGY.y + 5,   facing: 'right', ambient: true },
-    { npcId: 'liana',         tileX: PHARMACY.x + 6,    tileY: PHARMACY.y + 4,    ambient: true },
+    // Liana gated [5-7] so she falls through to the CANCER_CENTER
+    // placement at L8+ (oncology nurse rotation).
+    { npcId: 'liana',         tileX: PHARMACY.x + 6,    tileY: PHARMACY.y + 4,    ambient: true, levels: [5, 6, 7] },
     { npcId: 'joe',           tileX: MED_RECORDS.x + 7, tileY: MED_RECORDS.y + 5, facing: 'right', ambient: true },
     { npcId: 'records_clerk', tileX: MED_RECORDS.x + 4, tileY: MED_RECORDS.y + 5, facing: 'right', ambient: true },
 
@@ -1282,9 +1306,12 @@ export const LEVEL_1_MAP: MapDef = {
     //  - Theresa (payer rep) faces 'right' toward Diane.
     //  - Diane (supervisor) faces 'left' toward Theresa, mirror.
     //  - Theo faces 'right' toward the east cluster of binders.
-    { npcId: 'payer_rep',          tileX: PAYER.x + 5,      tileY: PAYER.y + 3,      facing: 'right', ambient: true },
+    // payer_rep gated [8-10] (PAYER opens L7, but at L7 he's in the
+    // auditorium for the contract-review meeting — see AUDITORIUM
+    // placement below). Same pattern for compliance_officer.
+    { npcId: 'payer_rep',          tileX: PAYER.x + 5,      tileY: PAYER.y + 3,      facing: 'right', ambient: true, levels: [8, 9, 10] },
     { npcId: 'payer_supervisor',   tileX: PAYER.x + 12,     tileY: PAYER.y + 3,      facing: 'left',  ambient: true },
-    { npcId: 'compliance_officer', tileX: COMPLIANCE.x + 6, tileY: COMPLIANCE.y + 5, facing: 'right', ambient: true },
+    { npcId: 'compliance_officer', tileX: COMPLIANCE.x + 6, tileY: COMPLIANCE.y + 5, facing: 'right', ambient: true, levels: [8, 9, 10] },
 
     // Outdoor — parking lot ambient. Smoker NPCs are *outdoor-only*
     // by design (cigarette is part of the sprite); placing them
@@ -1324,7 +1351,9 @@ export const LEVEL_1_MAP: MapDef = {
     { npcId: 'chansoo', tileX: DATA_SANDBOX.x + 1,  tileY: DATA_SANDBOX.y + 5, ambient: true },
     { npcId: 'monika',  tileX: DATA_SANDBOX.x + 4,  tileY: DATA_SANDBOX.y + 5, ambient: true },
     { npcId: 'nick',    tileX: DATA_SANDBOX.x + 7,  tileY: DATA_SANDBOX.y + 5, ambient: true },
-    { npcId: 'nicole',  tileX: DATA_SANDBOX.x + 10, tileY: DATA_SANDBOX.y + 5, ambient: true },
+    // Nicole gated [1-5] so she falls through to LOUNGE_2F at L6+
+    // (2F break room opens then).
+    { npcId: 'nicole',  tileX: DATA_SANDBOX.x + 10, tileY: DATA_SANDBOX.y + 5, ambient: true, levels: [1, 2, 3, 4, 5] },
 
     // Turquoise Lounge — partner-vendor break room. Chris and Adam
     // standing on the couch row at dy=1; both default 'down' so
@@ -1353,10 +1382,13 @@ export const LEVEL_1_MAP: MapDef = {
     { npcId: 'dr_priya',      tileX: LECTURE_HALL.x + 4,   tileY: LECTURE_HALL.y + 3,   facing: 'down',  ambient: true, levels: [7, 8, 9, 10] },
     { npcId: 'dr_ethan',      tileX: LECTURE_HALL.x + 14,  tileY: LECTURE_HALL.y + 5,   facing: 'down',  ambient: true, levels: [7, 8, 9, 10] },
 
-    // Auditorium — bigger room, more attendees. Unlocks at L7.
-    { npcId: 'dr_park',       tileX: AUDITORIUM.x + 5,     tileY: AUDITORIUM.y + 3,     facing: 'down',  ambient: true, levels: [7, 8, 9, 10] },
-    { npcId: 'compliance_officer', tileX: AUDITORIUM.x + 15, tileY: AUDITORIUM.y + 3, facing: 'down', ambient: true, levels: [7, 8, 9, 10] },
-    { npcId: 'payer_rep',     tileX: AUDITORIUM.x + 10,    tileY: AUDITORIUM.y + 6,     facing: 'up',    ambient: true, levels: [7, 8, 9, 10] },
+    // Auditorium — bigger room. dr_park stays for the resident-
+    // lecture series (L7-10). compliance_officer + payer_rep are
+    // here ONLY at L7 for the quarterly all-hands meeting; at L8+
+    // they're back at their primary stations (COMPLIANCE / PAYER).
+    { npcId: 'dr_park',            tileX: AUDITORIUM.x + 5,  tileY: AUDITORIUM.y + 3, facing: 'down', ambient: true, levels: [7, 8, 9, 10] },
+    { npcId: 'compliance_officer', tileX: AUDITORIUM.x + 15, tileY: AUDITORIUM.y + 3, facing: 'down', ambient: true, levels: [7] },
+    { npcId: 'payer_rep',          tileX: AUDITORIUM.x + 10, tileY: AUDITORIUM.y + 6, facing: 'up',   ambient: true, levels: [7] },
 
     // Prior Auth — staff PA specialist at the desk. Unlocks at L3.
     { npcId: 'martinez',      tileX: PRIOR_AUTH.x + 6,     tileY: PRIOR_AUTH.y + 3,     facing: 'left',  ambient: true, levels: [3, 4, 5, 6, 7, 8, 9, 10] },
