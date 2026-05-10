@@ -102,6 +102,7 @@ Everything ships alongside the game on the same Vite + GitHub Pages deploy:
 |---|---|
 | **`/map-editor.html`** | Visual editor for `level1.ts`'s placed objects + NPCs. Drag to move, F flips, R cycles facing. Outputs paste-back `tileMeta` + `tileOverrides` + `npcPlacements`. |
 | **`/intro-editor.html`** | Beat-by-beat intro cinematic editor. Voiceover scrubber per text beat, drag-and-drop cover art, "open game at this beat" deep-link, paste-back TS export. |
+| **`/level-editor.html`** | Drag-reorder the 32 Cases. Planning surface for the "one level per case" narrative re-work. Reads `src/content/case-order.ts`; outputs paste-back `CASE_ORDER` array. |
 | **`/sprites.html`** | Sprite library + mapping UI. NPC tab grouped by character type with active-in-game badges and per-cell remap dropdowns. |
 | **`/prototypes.html`** | Case Prototypes catalog. One playable HTML per Case, with collapsible per-card recap content (key concepts + further-reading links). |
 | **`/sprite-redraw-preview.html`** | Click-to-pick gallery of 16×16 sprite variants (cars, lampposts, recliners, etc.). Each variant rendered on canvas with the same Phaser primitives `BootScene` uses, so what you see is what the game renders. |
@@ -153,6 +154,7 @@ src/
 │                                 #   (wraith, idr-crucible, two-midnight-mire, …)
 ├── map-editor/                   # Map-editor page
 ├── intro-editor/                 # Intro-editor page
+├── level-editor/                 # Case-order editor page
 ├── dev/                          # In-game dev panel
 └── store/                        # State store helpers
 

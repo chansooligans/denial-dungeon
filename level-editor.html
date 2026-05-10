@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Level / case-order editor — The Waiting Room</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <style>
+    html, body {
+      margin: 0; padding: 0;
+      background: #0a0e14; color: #d0d8e0;
+      font: 13px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+    }
+    #app {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 28px 24px 80px;
+    }
+    h1 { color: #7ee2c1; margin: 0 0 4px; font-size: 22px; }
+    .lede { color: #8a93a3; margin: 0 0 22px; max-width: 720px; }
+    a.back { color: #7ee2c1; text-decoration: none; font-size: 12px; }
+    a.back:hover { text-decoration: underline; }
+
+    .toolbar {
+      position: sticky; top: 0; z-index: 10;
+      background: #0a0e14;
+      padding: 12px 0 14px;
+      margin: 0 0 16px;
+      border-bottom: 1px dashed #2a323d;
+      display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+    }
+    .toolbar button {
+      background: #15191f;
+      border: 1px solid #2a323d;
+      border-radius: 4px;
+      color: #d0d8e0;
+      padding: 6px 14px;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .toolbar button:hover { border-color: #7ee2c1; color: #7ee2c1; }
+    .toolbar button.primary {
+      background: #1a3a30;
+      border-color: #3a6b58;
+      color: #7ee2c1;
+    }
+    .toolbar button.primary:hover { background: #224a3e; }
+    .toolbar button.warn { color: #ef5b7b; border-color: #4a2a32; }
+    .toolbar button.warn:hover { border-color: #ef5b7b; }
+    #status {
+      flex: 1;
+      text-align: right;
+      color: #7ee2c1;
+      font-size: 11px;
+      opacity: 0;
+      transition: opacity 0.25s;
+    }
+
+    #summary {
+      margin: 0 0 14px;
+      font-size: 12px;
+      color: #8a93a3;
+    }
+    .sum-chip {
+      display: inline-block;
+      padding: 1px 8px;
+      border-radius: 3px;
+      border: 1px solid;
+      font-size: 11px;
+      margin-left: 6px;
+    }
+
+    #case-list { display: flex; flex-direction: column; gap: 6px; }
+
+    .card {
+      display: grid;
+      grid-template-columns: 28px 48px 1fr 60px;
+      align-items: center;
+      gap: 12px;
+      background: #15191f;
+      border: 1px solid #2a323d;
+      border-radius: 6px;
+      padding: 12px 14px;
+      cursor: grab;
+      transition: border-color 80ms, transform 80ms, opacity 80ms;
+    }
+    .card:hover { border-color: #3a4658; }
+    .card.dragging { opacity: 0.4; cursor: grabbing; }
+    .card.drop-target-top { box-shadow: 0 -3px 0 0 #7ee2c1; }
+    .card.drop-target-bot { box-shadow: 0 3px 0 0 #7ee2c1; }
+    .grip {
+      color: #5a6a7a;
+      font-size: 14px;
+      line-height: 1;
+      text-align: center;
+      user-select: none;
+      letter-spacing: -2px;
+    }
+    .pos {
+      font: 700 13px/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      color: #7ee2c1;
+      text-align: center;
+      letter-spacing: 0.04em;
+    }
+    .body { min-width: 0; }
+    .head {
+      display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+      margin-bottom: 4px;
+    }
+    .name {
+      font-weight: 700;
+      color: #d8dee9;
+      font-size: 14px;
+    }
+    .archetype {
+      color: #8a93a3;
+      font-size: 11px;
+      letter-spacing: 0.04em;
+    }
+    .gloss {
+      font-size: 12.5px;
+      color: #b8c0cc;
+      line-height: 1.5;
+      margin-bottom: 6px;
+    }
+    .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+    .chips span {
+      font: 700 10px/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      padding: 3px 7px;
+      border-radius: 3px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      border: 1px solid;
+    }
+    .chip-district { /* color set inline per district */ }
+    .chip-spec { color: #7ee2c1; background: rgba(126, 226, 193, 0.10); border-color: #3a6b58; }
+    .chip-catalog { color: #5a6a7a; background: rgba(90, 106, 122, 0.10); border-color: #2a323d; }
+    .chip-legacy { color: #f4d06f; background: rgba(244, 208, 111, 0.10); border-color: #6b5938; }
+    .chip-id { color: #5a6a7a; background: transparent; border-color: #2a323d; }
+    .nudge { display: flex; flex-direction: column; gap: 4px; }
+    .nudge button {
+      background: #1a1f28; border: 1px solid #2a323d;
+      color: #b8c0cc; border-radius: 3px;
+      width: 26px; height: 22px; padding: 0;
+      cursor: pointer; font: 12px/1 monospace;
+    }
+    .nudge button:hover:not(:disabled) {
+      border-color: #7ee2c1; color: #7ee2c1;
+    }
+    .nudge button:disabled { opacity: 0.3; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <a href="./dev.html" class="back">← Dev tools</a>
+    <h1>Level / case-order editor</h1>
+    <p class="lede">
+      Drag-reorder the 32 Cases. The current sequence is the planning
+      target for the narrative re-work — eventually a "one level per
+      case" rebuild of <code>levels.ts</code>. For now this is a planning
+      surface; the in-game flow still uses the legacy 10-level shape.
+      Use ↑/↓ buttons on touch.
+    </p>
+
+    <div class="toolbar">
+      <button id="copy-ts" class="primary">Copy paste-back TS</button>
+      <button id="copy-ids">Copy ids only</button>
+      <button id="reset" class="warn">Reset to source</button>
+      <div id="status"></div>
+    </div>
+
+    <div id="summary"></div>
+    <div id="case-list"></div>
+  </div>
+
+  <script type="module" src="./src/level-editor/main.ts"></script>
+</body>
+</html>
