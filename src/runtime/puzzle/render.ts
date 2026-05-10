@@ -6,7 +6,8 @@
 // puzzle reads visually identical to the standalone HTML prototypes.
 // District accent comes from districtVars(spec.district).
 
-import { escape } from '../../shared/prototype-base'
+import { escape, renderCaseRecap } from '../../shared/prototype-base'
+import { CASE_RECAPS } from '../../content/case-recaps'
 import type {
   PuzzleSpec,
   PuzzlePayerPhrase,
@@ -441,11 +442,17 @@ function renderAmendModal(spec: PuzzleSpec, state: PuzzleState): string {
 }
 
 function renderVictory(spec: PuzzleSpec): string {
+  // Pull the post-victory recap from CASE_RECAPS using the spec's id
+  // as the key. Recap data is shared with the standalone Case
+  // prototypes + the catalog cards; same content, three surfaces.
+  // Skipped for specs without a matching recap (intro, hydra).
+  const recap = CASE_RECAPS[spec.id]
   return `
     <section class="victory">
       <h2>${escape(spec.victory.headline)}</h2>
       ${spec.victory.paragraphs.map(p => `<p>${p}</p>`).join('')}
       <button class="btn primary" data-action="finish">Continue</button>
     </section>
+    ${recap ? renderCaseRecap(recap) : ''}
   `
 }
