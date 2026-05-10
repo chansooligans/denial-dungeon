@@ -10,11 +10,12 @@ export const LEVELS: LevelDef[] = [
     concepts: ['denial_rate', 'co_109', 'x12_270_271', 'eligibility'],
     encounters: ['intro_wrong_card'],
     cases: ['case_intro_patel'],
-    // Dana intentionally not in the L1 roster — her in-game intro
-    // overlaps with the "Dana's notebook" briefing voice that runs
-    // across every Case. Easier on the player's mental model to
-    // introduce her in person at L2 (Patient Services unlock) and
-    // keep L1 strictly Anjali + Kim + Jordan.
+    // Dana intentionally not in the roster at any level — her in-game
+    // presence as a walk-up NPC overlapped with the "Dana's notebook"
+    // briefing voice that runs across every Case. Removed from the
+    // map entirely. (NOTE: the L10 boss intake currently has no
+    // trigger; re-route or re-add a Dana placement at L10 when the
+    // boss flow gets its next pass.)
     npcsActive: ['anjali', 'kim', 'jordan'],
     bossEncounter: undefined,
   },
@@ -27,7 +28,7 @@ export const LEVELS: LevelDef[] = [
     concepts: ['cms1500', 'x12_837', 'icd10_cm', 'cpt'],
     encounters: ['eligibility_fog'],
     cases: ['case_level1_cms', 'case_fog_nguyen'],
-    npcsActive: ['dana', 'kim', 'alex'],
+    npcsActive: ['kim', 'alex'],
   },
   {
     id: 3,
@@ -38,7 +39,7 @@ export const LEVELS: LevelDef[] = [
     concepts: ['prior_auth', 'x12_278', 'medical_necessity'],
     encounters: ['co_197', 'co_50'],
     cases: ['case_gatekeeper_okafor', 'case_wraith_walker'],
-    npcsActive: ['dana', 'martinez', 'sam'],
+    npcsActive: ['martinez', 'sam'],
   },
   {
     id: 4,
@@ -60,7 +61,7 @@ export const LEVELS: LevelDef[] = [
     concepts: ['medical_policy', 'fee_schedule', 'contract_terms'],
     encounters: ['co_50'],
     cases: ['case_wraith_walker'],
-    npcsActive: ['dana', 'sam'],
+    npcsActive: ['sam'],
   },
   {
     id: 6,
@@ -95,7 +96,7 @@ export const LEVELS: LevelDef[] = [
     concepts: ['cost_share', 'deductible', 'coinsurance', 'copay', 'oop_max'],
     encounters: ['surprise_bill_specter', 'lighthouse_charity'],
     cases: [],
-    npcsActive: ['jordan', 'dana'],
+    npcsActive: ['jordan'],
   },
   {
     id: 9,
@@ -121,7 +122,7 @@ export const LEVELS: LevelDef[] = [
     concepts: ['audit', 'compliance', 'upcoding', 'documentation'],
     encounters: ['boss_audit'],
     cases: ['case_audit_finale'],
-    npcsActive: ['dana', 'martinez', 'pat', 'sam', 'auditor_carl', 'auditor_chen', 'auditor_rivera', 'auditor_eddi'],
+    npcsActive: ['martinez', 'pat', 'sam', 'auditor_carl', 'auditor_chen', 'auditor_rivera', 'auditor_eddi'],
     bossEncounter: 'boss_audit',
   },
 ]
