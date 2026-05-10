@@ -1,107 +1,78 @@
 # The Waiting Room
 
-A turn-based RPG that teaches the US healthcare revenue cycle. Walk through a hospital, talk to billing staff, fight claim denials, and discover the surreal "Waiting Room" beneath the building where lost claims go.
+An educational top-down RPG that teaches the US healthcare revenue cycle. You play Chloe, an analyst on her first shift at Mercy General. Walk the hospital, talk to your colleagues, and — when a denied claim slides across your desk — descend into the Waiting Room: the surreal place beneath the building where lost claims, missing modifiers, and unsigned authorizations go.
 
-**[Play it](https://chansooligans.github.io/the-waiting-room/)** (GitHub Pages) &middot; **[Case Prototypes](https://chansooligans.github.io/the-waiting-room/prototypes.html)** (one playable sketch per Case)
+**[Play it](https://chansooligans.github.io/the-waiting-room/)** · **[Case Prototypes](https://chansooligans.github.io/the-waiting-room/prototypes.html)** · **[Dev Tools](https://chansooligans.github.io/the-waiting-room/dev.html)**
 
-> **Glossary:** a **Case** is the player-side problem they solve in a single encounter — what older notes called a "problem." A **Case Prototype** is one self-contained HTML page exercising that Case end-to-end. The catalog above is the index of all of them.
+> **Glossary.** A **Case** is the player-side problem solved in a single encounter — what older notes called a "problem." A **Case Prototype** is one self-contained HTML page exercising that Case end-to-end. There are 32 of them; the catalog is the index.
 
-## What You'll Learn
+## What you'll learn
 
 The game progressively teaches across 10 levels:
 
-- Claim forms (CMS-1500, UB-04)
-- Medical coding (ICD-10, CPT, HCPCS, modifiers)
-- X12 transactions (270/271 eligibility, 837 claims, 835 remittance)
-- CARC/RARC denial codes and how to resolve them
-- Prior authorization, coordination of benefits, patient cost share
-- CDI, audit compliance, payer policy navigation
+- Claim forms (CMS-1500, UB-04) and X12 transactions (270/271 eligibility, 837 claim, 835 ERA, 278 prior auth)
+- Coding (ICD-10-CM/PCS, CPT, HCPCS Level II, modifiers, NCCI edits)
+- CARC/RARC denial codes — what they mean, what's appealable, what's a real billing error
+- Prior authorization, coordination of benefits, the Medicare 2-midnight rule, the No Surprises Act + IDR
+- Contract mechanics — case rates, per-diem, stoploss provisions, implant carve-outs, drug-pricing (ASP/WAC/340B)
+- Compliance — HIPAA, RAC audits, MRF transparency, charity care under §501(r)
 
-## How to Play
+Each Case ends with a recap: the key concepts you just exercised + links to the canonical regulation or guidance (CMS / HHS / HRSA / eCFR).
+
+## How to play
 
 **Desktop**
 - **Arrow keys / WASD** — Move
 - **E / Space** — Talk to NPCs, interact with objects, advance dialogue
-- **1-9** — Select tools / actions during battle
-- **ESC** — Skip intro cutscene; flee battle
+- **ESC** — Skip intro cutscene; back out of menus
+- **Backtick (`~`)** — Open the in-game dev panel (auto-on in `npm run dev`)
 
 **Mobile / touch**
-- On-screen virtual D-pad (bottom-left) for movement
+- Virtual D-pad (bottom-left) for movement
 - **E** button (bottom-right) to interact
-- **ESC** button (top-right) to skip intro / flee battle
-- Battle tools, dialogue choices, and obstacle markers all respond to taps
+- **ESC** button (top-right) to skip intro
+- Dialogue choices, Case verbs, and inline glossary terms all respond to taps
 
-Walk through the hospital lobby, talk to NPCs in offices, and (when an NPC hands you a Case) descend into The Waiting Room. Engage the pulsing purple obstacle markers to fight claim denials in turn-based combat. The mechanic varies per Case archetype: some are HP fights, some are case-file investigations against a real CMS-1500, some are races against a timely-filing clock — see the [Case Prototypes catalog](https://chansooligans.github.io/the-waiting-room/prototypes.html) for one playable sketch of each.
+Walk the lobby, take the stairs to the second floor, and keep your eyes open for objects to examine — every desk, cabinet, plant, parked car, and exam table has its own short flavor note in one of seven voice registers (procedural fragment, overheard quote, lowercase narrative, patient perspective, Lynchian aside, etc.). Talking to a colleague who hands you a Case will descend you into the Waiting Room for the encounter.
 
-## Tech Stack
+## Cases — the encounter framework
 
-- **Phaser 3** — Game engine
-- **TypeScript** — Type safety
-- **Vite** — Dev server and bundler
+The 32 Case Prototypes share a chassis (`src/shared/prototype-base.ts`) and a common shape: a hospital intro, a brief register-flip into the Waiting Room, three issues to resolve via three verbs, and a recap on completion.
 
-Art is a mix:
-- **Hospital + Waiting Room object sprites** (desks, chairs, plants, counters, beds, etc.) are drawn procedurally at runtime via Phaser's `Graphics` API in `BootScene.makeHospitalTiles` / `makeWaitingRoomTiles`. No image files; per-room tints reskin the same source textures.
-- **Chloe (player) + NPCs** are PNG sprites under `public/sprites/` generated from a LoRA-trained Stable Diffusion pipeline (chroma-key cleanup → trim → 64×64 squares). See `reference/sprite-cleanup.md` for the cleanup procedure + parameter cheat-sheet.
-- **Comic-page intro pages** are full-bleed PNGs under `public/intro/`.
-- **Voiceover** is one MP3 per text beat under `public/audio/intro/`, plus ambient music tracks for the Hospital + Waiting Room layers.
+Cases are organized by **district**, each with its own accent color:
 
-### Generating new NPC contact sheets (ChatGPT prompt)
+| District | Color | What it teaches |
+|---|---|---|
+| Eligibility (mint) | `#7ee2c1` | Coverage, COB, prior auth, identity matching, credentialing |
+| Coding (orange) | `#f0a868` | Medical necessity, modifiers, HCC capture, form selection, CPT licensing |
+| Billing (rose) | `#ef5b7b` | Underpayments, stoploss, drug pricing, NSA carve-outs, surprise bills |
+| Appeals (purple) | `#b18bd6` | Timely filing, RAC defense, IDR, 340B, audit response |
+| Release-valve (yellow) | `#e8c074` | Charity care, no-show policies — patient-facing, restorative |
 
-When adding new NPCs, sheets generated with this prompt drop straight into the cleanup pipeline (`tools/process-npc-sheets.sh`) without parameter tuning. Save the result as `sprite-source/npcs/npcN.png` and run the script.
+Archetypes you'll meet: **Wraith** (medical-necessity citation chains), **Bundle** (modifier 25), **Reaper** (timely-filing countdowns), **Specter** (hidden underpayments behind CO-45), **Spider** (COB cascades), **Mire** (regulatory swamps), **Crucible** (baseball-arbitration IDR), **Phantom** (carve-out routing), **Audit Boss** (the finale). The names track real procedural failure modes — see the catalog for the full bestiary.
 
-```
-A pixel-art character contact sheet for a 2D top-down RPG.
+The map progresses in **phases**. At L1 you can only access the Lobby, Main Hub, the stairwell, and two 2F break rooms (Turquoise Lounge + Data Sandbox). Other rooms — Patient Services, Eligibility, Registration, HIM, Billing, the Cancer Center, the Audit office where the Boss waits — unlock as your `currentLevel` advances. You can see the locked doors on the minimap; you just can't enter them yet.
 
-Layout:
-- 4 rows × 4 columns. Each row is one character; each column is the
-  same character in a different directional pose, in this exact
-  order:
-    Col 0 — three-quarter FRONT (character facing the camera; you
-            see their face)
-    Col 1 — character facing the camera's LEFT (character's body and
-            face are turned toward the LEFT side of the canvas; you
-            see their RIGHT shoulder closest to camera)
-    Col 2 — character facing the camera's RIGHT (mirror image of
-            col 1; you see their LEFT shoulder closest to camera)
-    Col 3 — back (character facing AWAY from camera; you see the
-            back of their head and body)
-- DO NOT confuse "facing left" with "left side profile." We want
-  the character TURNED TOWARD the screen-left edge in col 1.
-- All cells must be the same height. Don't resize between poses.
-- Characters are full-body, standing, idle, arms relaxed.
+## Tech stack
 
-Style:
-- Crisp pixel art, ~64-pixel-tall characters at 1× scale (the sheet
-  itself is much larger — render at high res; the cleanup script
-  downsamples).
-- Dark outlines around silhouettes. Hand-feel pixels — not blurred
-  or anti-aliased into mush.
-- Warm earth-tone palette consistent with hospital interiors:
-  cream / tan / walnut / brick / mustard / avocado / sepia. Avoid
-  oversaturated primaries.
+- **Phaser 3** + **TypeScript** + **Vite**
+- 16×16 procedural pixel-art for hospital props (drawn at runtime in `BootScene.makeHospitalTiles` via Phaser's `Graphics` API; per-tile tints + per-room floor variants reskin the same source textures)
+- 64×64 PNG sprites for Chloe + NPCs, generated from a LoRA-trained Stable Diffusion pipeline and cleaned with `tools/sprite-sheet-to-frames.py` (chroma-key removal, halo erosion, blob filter, downscale)
+- One MP3 per intro voiceover beat under `public/audio/intro/`; ambient music for Hospital + Waiting Room registers
 
-Background — CRITICAL:
-- Solid uniform black (#000000) across the ENTIRE sheet, behind
-  every cell. No gradient, no color blocks, no stage lighting.
-- Black is the chroma key the cleanup script removes. Orange / red /
-  yellow backgrounds also work but require a tighter cleanup
-  parameter pass — black is preferred.
-- Do NOT add character shadows that bleed into the bg.
-- Do NOT add cell borders, grid lines, or labels on the sheet.
+### Adding a new NPC
 
-Characters (4 of them — describe each one row by row):
-- Row 0: [character description, e.g. "Brunette woman, 30s,
-  navy scrubs with ID badge, hair in a bun"]
-- Row 1: [...]
-- Row 2: [...]
-- Row 3: [...]
+The NPC pipeline expects a 4-row × 4-column contact sheet on a black, orange, or green chroma background. The current production prompt (drops into ChatGPT, output goes to `sprite-source/npcs/npcN.png`) is in `reference/sprite-cleanup.md` along with the cleanup parameter cheat-sheet. Workflow:
 
-Tone: realistic-but-warm, hospital ambient. No fantasy elements,
-no exaggerated poses, no weapons. People you'd see at Mercy
-General Hospital on a regular Friday afternoon.
+```bash
+# 1. Generate sheet → sprite-source/npcs/npc27.png
+# 2. Run the cleanup
+bash tools/process-npc-sheets.sh
+# 3. Add the slot mapping in src/scenes/npcSources.ts
+# 4. Place the NPC in src/content/maps/level1.ts (npcPlacements[])
 ```
 
-Drop the resulting PNG into `sprite-source/npcs/` named `npc{N}.png` (next number after the existing sheets), then run `bash tools/process-npc-sheets.sh`. The cleanup will produce the per-cell PNGs and `BootScene.preload` picks them up via `NPC_SOURCES` (`src/scenes/npcSources.ts`) once you map an id to the new slot.
+For warm-chroma sheets (orange) or single-character sheets (Data Sandbox cast), pass `--no-global-erase` to preserve face detail — the dominance-based pass eats skin pixels otherwise. See `reference/sprite-cleanup.md` for the full parameter notes.
 
 ## Development
 
@@ -112,45 +83,96 @@ npm run build        # Production build to dist/
 npx tsc --noEmit     # Type-check
 ```
 
-## Dev Tools
+## Dev tools
 
-**Single index page: [`/dev.html`](https://chansooligans.github.io/the-waiting-room/dev.html)** — one card per tool, with descriptions. Bookmark it.
+Single index page: **[`/dev.html`](https://chansooligans.github.io/the-waiting-room/dev.html)** — one card per tool, with descriptions. Bookmark it.
 
 Everything ships alongside the game on the same Vite + GitHub Pages deploy:
 
-- **`/map-editor.html`** — Visual editor for `level1.ts`'s placed objects + NPCs. Drag to move, F flips an object, R cycles an NPC's facing. Outputs paste-back `tileMeta` + `tileOverrides` + `npcPlacements`.
-- **`/intro-editor.html`** — Beat-by-beat intro cinematic editor. Voiceover scrubber per text beat, drag-and-drop cover art, "open game at this beat" deep-link, paste-back TS export.
-- **`/sprites.html`** — Sprite library + mapping UI. NPC tab grouped by character type (Doctors, Nurses & Techs, etc.) with active-in-game badges and per-cell remap dropdowns.
-- **`/prototypes.html`** — **Case Prototypes** catalog. One playable HTML per Case (Wraith, Bundle, Reaper, …). The URL stays `prototypes.html` for link stability; the visible name is "Case Prototypes."
-- **In-game dev panel** — backtick (`~`) in any scene. Save presets per level, jump-to-room teleports, chart-pull toggles, copy/paste/clear save. Auto-on in `npm run dev`; append `?dev=1` on the deployed site if you need it.
+| Page | What it does |
+|---|---|
+| **`/map-editor.html`** | Visual editor for `level1.ts`'s placed objects + NPCs. Drag to move, F flips, R cycles facing. Outputs paste-back `tileMeta` + `tileOverrides` + `npcPlacements`. |
+| **`/intro-editor.html`** | Beat-by-beat intro cinematic editor. Voiceover scrubber per text beat, drag-and-drop cover art, "open game at this beat" deep-link, paste-back TS export. |
+| **`/sprites.html`** | Sprite library + mapping UI. NPC tab grouped by character type with active-in-game badges and per-cell remap dropdowns. |
+| **`/prototypes.html`** | Case Prototypes catalog. One playable HTML per Case, with collapsible per-card recap content (key concepts + further-reading links). |
+| **`/sprite-redraw-preview.html`** | Click-to-pick gallery of 16×16 sprite variants (cars, lampposts, recliners, etc.). Each variant rendered on canvas with the same Phaser primitives `BootScene` uses, so what you see is what the game renders. |
+| **`/room-redraw-preview.html`** | Click-to-pick gallery of full-room layouts (parking lot, lecture hall, lobby, etc.). Walls + doors + props rendered to canvas at game scale. |
+| **In-game dev panel** | Backtick (`~`) in any scene. Save presets per level, jump-to-room teleports, chart-pull toggles, copy/paste/clear save. Auto-on in `npm run dev`; append `?dev=1` on the deployed site if you need it. |
 
-URL deep-link: `/?introBeat=N` jumps the cinematic to beat `N` (used by the intro editor's "open at this beat" button).
+URL deep-links: `/?introBeat=N` jumps the cinematic to beat N (used by the intro editor's "open at this beat" button).
 
-## Project Structure
+## Project structure
 
 ```
 src/
-├── main.ts                 # Phaser config, scene registry
-├── types.ts                # Game types
-├── state.ts                # Save/load via localStorage
-├── battle/                 # Battle engine (mechanic dispatch, ClaimSheet, screens, toolMenu)
-├── content/                # Game data (maps, NPCs, dialogue, encounters, codex)
-├── scenes/                 # Phaser scenes (Boot, Intro, Title, Hospital,
-│                           #   Dialogue, Battle, Form, WaitingRoom, Codex,
-│                           #   TouchOverlay) + introBeats data + objectSources
-├── map-editor/             # Map-editor page entry + data
-└── intro-editor/           # Intro-editor page entry
+├── main.ts                       # Phaser config, scene registry
+├── types.ts                      # Game types
+├── state.ts                      # Save/load via localStorage; level progression
+├── scenes/                       # Phaser scenes
+│   ├── BootScene.ts              # Procedural sprite generators (hospital tiles, NPCs)
+│   ├── IntroScene.ts             # Comic-page cinematic + voiceover
+│   ├── TitleScene.ts             # Title screen
+│   ├── HospitalScene.ts          # Top-down hospital, NPC interaction, fog-of-war
+│   ├── DialogueScene.ts          # Speaker-color dialogue overlay
+│   ├── PuzzleBattleScene.ts      # In-game encounter mechanic dispatch
+│   ├── FormScene.ts              # Claim-form workbench (CMS-1500 / UB-04)
+│   ├── WaitingRoomScene.ts       # The supernatural register
+│   ├── CodexScene.ts             # Concept reference / glossary
+│   ├── TouchOverlay.ts           # Mobile virtual d-pad + interact button
+│   ├── hospitalFlavor.ts         # Tile flavor text (~620 lines, 7 voice registers)
+│   ├── objectSources.ts          # Object texture-key fallback colors
+│   └── npcSources.ts             # NPC id → contact-sheet slot map
+├── content/                      # Game data
+│   ├── levels.ts                 # 10 levels: title, npcsActive, encounters, cases
+│   ├── cases.ts                  # In-game Case data (claim forms, errors, etc.)
+│   ├── case-recaps.ts            # Post-victory recap data — single source of
+│   │                             #   truth for both the Case prototypes AND the
+│   │                             #   prototype catalog cards
+│   ├── enemies.ts                # In-game encounter / obstacle data
+│   ├── dialogue.ts               # Dialogue trees keyed by speaker
+│   ├── npcs.ts                   # NPC display names + descriptions
+│   ├── codex.ts                  # Concept index for the Codex scene
+│   ├── abilities.ts              # In-game player tools / abilities
+│   ├── mapBuilder.ts             # MapDef compiler: rooms + corridors → tile grid
+│   └── maps/level1.ts            # The hospital map (rooms, doors, items, NPCs)
+├── runtime/puzzle/               # Verb-puzzle runtime + Case specs
+├── shared/prototype-base.ts      # Shared chassis for the Case prototypes:
+│                                 #   district colors, BASE_CSS, escape(),
+│                                 #   renderCaseRecap()
+├── prototypes/main.ts            # Case Prototypes catalog page
+├── <case>-prototype/main.ts      # 32 Case prototypes — one dir each
+│                                 #   (wraith, idr-crucible, two-midnight-mire, …)
+├── map-editor/                   # Map-editor page
+├── intro-editor/                 # Intro-editor page
+├── dev/                          # In-game dev panel
+└── store/                        # State store helpers
 
 public/
-├── sprites/                # Player + NPC art (PNG, LoRA-generated)
-├── intro/                  # Cinematic comic pages (PNG/JPG)
-├── audio/                  # Per-line voiceover MP3s + ambient tracks
-└── *.html                  # Dev-tool entry points
+├── sprites/                      # Player + NPC PNGs (LoRA pipeline)
+├── intro/                        # Cinematic comic pages
+├── audio/                        # Voiceover MP3s + ambient tracks
+└── *.html                        # Dev-tool entry points
+
+reference/                        # Authoring + design references
+├── analysis/                     # Critical essays on the work
+├── curriculum/                   # Learning-objective design
+├── narrative/                    # Story design
+├── puzzles/                      # Puzzle-design notes
+└── sprite-cleanup.md             # NPC pipeline runbook + parameter cheatsheet
+
+tools/                            # Build-time helpers (sprite cleanup, etc.)
 ```
 
 ## Deploy
 
-`.github/workflows/deploy.yml` builds and publishes `dist/` to GitHub Pages on every push to `main`. Requires the repo's Pages source to be set to **GitHub Actions** in repo Settings → Pages.
+`.github/workflows/deploy.yml` builds and publishes `dist/` to GitHub Pages on every push to `main`. Pages source must be set to **GitHub Actions** in repo Settings → Pages.
+
+## Reference
+
+- **`reference/sprite-cleanup.md`** — full NPC pipeline including the LoRA prompt, chroma-key parameters, and per-character notes
+- **`reference/CLAUDE.md`** — the working brief used while authoring the game
+- **`reference/analysis/`** — critical essays (film-analyst register, literary-criticism register) on the work as a literary object
+- **`reference/curriculum/`**, **`narrative/`**, **`puzzles/`** — design notes per discipline
 
 ## License
 
