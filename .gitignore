@@ -32,3 +32,6 @@ sprite-source/**/*.jpeg
 sprite-source/**/*.webp
 tools/__pycache__/
 .venv-tools/
+
+# Local scratch notes (RCM reviews, drafts, etc.) — never push.
+scratch/
