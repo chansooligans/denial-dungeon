@@ -193,7 +193,11 @@ const issues: Issue[] = [
 const glossary: Record<string, GlossaryEntry> = {
   'ASP': {
     term: 'ASP (Average Sales Price)',
-    plain: "Quarterly average price drug manufacturers report to CMS, net of rebates and discounts. Medicare Part B drug payments are set at ASP + 6% — that's the federal benchmark for outpatient drug reimbursement. CMS publishes the ASP file every quarter; the file lists per-HCPCS-unit rates that update each January, April, July, October. Most commercial payer contracts for J-codes mirror ASP+6%.",
+    plain: "Quarterly average price drug manufacturers report to CMS, net of rebates and discounts. Medicare Part B drug payments are nominally set at ASP + 6% — that's the federal benchmark for outpatient drug reimbursement. **Real Medicare math is reduced by the BCA sequester** (2% reduction applied to the entire Part B payment), so net Medicare payment is closer to ASP + 4.3%. Commercial contracts mirror the nominal ASP+6% (no sequester). CMS publishes the ASP file every quarter; per-HCPCS-unit rates update January, April, July, October.",
+  },
+  'biosimilars': {
+    term: 'Biosimilars (J9035 vs Q-codes)',
+    plain: "Most large-molecule biologic drugs now have biosimilar versions with their own HCPCS J-code or Q-code. Bevacizumab originator is J9035; biosimilars include Mvasi (Q5107), Zirabev (Q5118), Vegzelma (Q5129), Alymsys (Q5126). Each has its own ASP rate; switching from originator to biosimilar can drop drug spend significantly. Real-world bevacizumab use in 2026 is dominated by biosimilars; the Case uses J9035 for clarity but in your environment the active code is likely a Q-code.",
   },
   'WAC': {
     term: 'WAC (Wholesale Acquisition Cost)',

@@ -212,7 +212,7 @@ const glossary: Record<string, GlossaryEntry> = {
   },
   'rev codes': {
     term: 'Revenue code routing',
-    plain: "Payers route claims through different rate engines based on revenue code. For UHC outpatient surgical procedures, Rev 0490 (Ambulatory Surgery Services) is the standard accepted rev code that triggers OPG application. Rev 0750 (Gastrointestinal Services) routes to GI services rate engine, which doesn't apply OPG. CDM hard-coding has to drop the right rev code or the grouper never fires.",
+    plain: "Payers route claims through different rate engines based on revenue code. For UHC outpatient surgical procedures, Rev 0490 (Ambulatory Surgery Services) is the standard accepted rev code that triggers OPG application. Rev 0750 (Gastrointestinal Services) routes to GI services rate engine, which doesn't apply OPG. CDM hard-coding has to drop the right rev code or the grouper never fires. CAVEAT: real UHC routing is more complex than 'right rev code → grouper fires.' Some rev codes still trigger OPG with reduced grouping (partial fire); some routes deny outright (CO-95 wrong-claim-type) instead of falling back to default fee schedule. The full rev-code-to-engine map is in the contract appendix; the binary 'fires or doesn't' framing in this Case is a simplification.",
   },
   'CDM': {
     term: 'CDM (Chargemaster)',

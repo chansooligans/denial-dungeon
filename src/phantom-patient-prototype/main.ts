@@ -119,7 +119,7 @@ const splitStrategies: SplitStrategy[] = [
     label: 'Issue a fresh MRN for today\'s encounter',
     detail: 'Spawn a new MRN to disambiguate; abandon both existing ones for this visit.',
     correct: false,
-    feedback: 'Splitting a chart by creating a new MRN duplicates one of the patients in the system. Now there are three MRNs for two humans, eligibility matches none, and tomorrow\'s registration faces three hits instead of two. The MPI gets worse, not better.',
+    feedback: 'In some MPI scenarios spawning a new MRN IS right — when both existing MRNs are confirmed-broken merges that need full unwind first, or when the patient genuinely has no prior chart at this facility. In Marisol\'s case, MRN 0044-9112 already exists and is hers; the right move is to identify-verify and route to that existing chart. Spawning a third MRN now duplicates her in the system; tomorrow\'s registration faces three hits instead of two. Don\'t spawn unnecessarily.',
   },
   {
     id: 'just-resubmit',

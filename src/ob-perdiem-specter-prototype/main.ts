@@ -60,7 +60,7 @@ interface GlossaryEntry {
 // ===== Encounter data =====
 
 const PATIENT = 'Imani Carter'
-const PROCEDURE = 'Vaginal delivery (DRG 775), complicated by chorioamnionitis'
+const PROCEDURE = 'Vaginal delivery (DRG 775), extended for newborn phototherapy'
 const ADMIT = '2026-04-02'
 const DISCHARGE = '2026-04-07' // 5-day stay
 const CASE_RATE = 7_200
@@ -94,18 +94,18 @@ const parseStatements: ParseStatement[] = [
   },
   {
     id: 's4',
-    text: `The chorioamnionitis complication automatically promotes the stay to a higher-DRG case rate.`,
+    text: `A maternal complicating diagnosis on day 3 promoted the stay to a higher-DRG case rate.`,
     truth: false,
-    reason: 'A complication can change DRG assignment in some cases (e.g. with-MCC vs without-MCC), but ${escape(PATIENT)}\'s grouping stayed at DRG 775. The fix here is the per-diem days, not a DRG change. Don\'t conflate "complication that affected length of stay" with "complication that changed the DRG."',
+    reason: 'No maternal complication on the chart. The extended stay is *newborn-driven* — baby Carter required phototherapy for hyperbilirubinemia, and Imani stayed bedside until the newborn cleared. Mother\'s coding is unchanged (no new maternal Dx); DRG 775 holds. Per-diem applies because mother\'s stay extended past the inlier ceiling, not because anything maternal changed.',
   },
 ]
 
 const inpatientDays: InpatientDay[] = [
   { num: 1, notes: 'Admission, labor + delivery', correct: 'case-rate' },
   { num: 2, notes: 'Postpartum recovery, mother + newborn', correct: 'case-rate' },
-  { num: 3, notes: 'Fever spike to 102.4°F; chorioamnionitis dx; IV antibiotics started', correct: 'per-diem' },
-  { num: 4, notes: 'Continued IV antibiotics; fever resolving', correct: 'per-diem' },
-  { num: 5, notes: 'Afebrile 24h; transition to PO antibiotics; discharge planning', correct: 'per-diem' },
+  { num: 3, notes: 'Newborn jaundice flagged; phototherapy started for baby; mother stays bedside (no new maternal Dx)', correct: 'per-diem' },
+  { num: 4, notes: 'Newborn continues phototherapy; mother stable', correct: 'per-diem' },
+  { num: 5, notes: 'Newborn bilirubin clearing; mother + baby cleared for joint discharge', correct: 'per-diem' },
 ]
 
 const appealOptions: AppealOption[] = [
@@ -139,7 +139,7 @@ const issues: Issue[] = [
   {
     id: 'parse',
     label: 'Parse: walk the case-rate + per-diem mechanics. Mark each statement true/false.',
-    recap: `Parsed. Case rate covers days 1-${CASE_RATE_DAYS}; per-diem covers days ${CASE_RATE_DAYS + 1}+. Both stack (mutually inclusive — different from Case Rate Specter / Stoploss). DRG complication didn't change the assignment.`,
+    recap: `Parsed. Case rate covers days 1-${CASE_RATE_DAYS}; per-diem covers days ${CASE_RATE_DAYS + 1}+. Both stack (mutually inclusive — different from Case Rate Specter / Stoploss). Maternal DRG didn't move because there's no new maternal Dx — the extension is newborn-driven.`,
     verb: 'parse',
   },
   {
@@ -169,9 +169,9 @@ const glossary: Record<string, GlossaryEntry> = {
     term: 'Mutually inclusive (clauses)',
     plain: "When two contract clauses both apply to the same stay, with their payments adding together (rather than one displacing the other). Case rate + per-diem hybrid is mutually inclusive: case rate pays days 1-2, per-diem pays days 3+, both stack. Compare to mutually exclusive (Case Rate Specter / Stoploss Reckoner) where one clause replaces another.",
   },
-  'chorioamnionitis': {
-    term: 'Chorioamnionitis',
-    plain: "Infection of the fetal membranes (chorion + amnion). Can complicate labor and delivery, often drives extended postpartum stays for IV antibiotics. Doesn't always change the DRG assignment (which is the trap here — \"complication\" doesn't automatically mean \"different DRG\"); it just changes the length of stay, which is exactly what per-diem clauses are designed to handle.",
+  'newborn-driven extension': {
+    term: 'Newborn-driven maternal stay extension',
+    plain: "When the mother\'s discharge is delayed by the newborn\'s clinical needs (most often phototherapy for hyperbilirubinemia, NICU observation, or feeding establishment), her hospital days extend without any new *maternal* diagnosis. Mother\'s DRG stays put (no new maternal Dx → no re-grouping); newborn is on a separate claim with their own DRG. Per-diem clauses apply to mother\'s extra days because her LOS exceeded the inlier ceiling, even though clinically she's well.",
   },
   'CO-45': {
     term: 'CO-45 (charge exceeds fee schedule)',
@@ -256,8 +256,8 @@ function renderHeader(): string {
       </div>
       ${state.briefingDone ? '' : `
         <p class="lede">
-          ${escape(PATIENT)}'s 5-day delivery (complicated by
-          ${term('chorioamnionitis')}). Anthem paid the case rate
+          ${escape(PATIENT)}'s 5-day delivery (extended by
+          ${term('newborn-driven extension', 'newborn phototherapy')}). Anthem paid the case rate
           alone; the contract is a ${term('case rate + per-diem hybrid', 'hybrid')}
           — case rate covers days 1-${CASE_RATE_DAYS}, ${term('per-diem')} covers
           days ${CASE_RATE_DAYS + 1}+. ${PER_DIEM_DAYS} per-diem days at
@@ -276,8 +276,9 @@ function renderHospitalIntro(): string {
       <div class="register hospital">HOSPITAL · this morning</div>
       <p>
         Bola walks ${escape(PATIENT)}'s file across. Day 5 discharge,
-        ${term('chorioamnionitis')} on day 3, IV antibiotics through day 5.
-        Anthem paid the ${money(CASE_RATE)} case rate. "${escape("Days 3–5 are missing.")}
+        newborn phototherapy days 3-5 keeping mother bedside. No new
+        maternal Dx; mother coded as a clean DRG 775. Anthem paid the
+        ${money(CASE_RATE)} case rate. "${escape("Days 3–5 are missing.")}
         We bill those at the per-diem rate, not zero."
       </p>
       <p>
@@ -333,9 +334,10 @@ function briefingContent(): string {
         <li>
           <strong>Split-days.</strong> Five inpatient days. Click
           each to assign to case-rate window or per-diem.
-          Days 1-${CASE_RATE_DAYS} are case-rate; the
-          chorioamnionitis fever on day 3 doesn't change the
-          DRG, just extends the stay into per-diem territory.
+          Days 1-${CASE_RATE_DAYS} are case-rate; the newborn
+          phototherapy starting day 3 doesn't change the maternal
+          DRG (no new maternal Dx) — just extends mother's stay
+          into per-diem territory.
           <em>New verb: SPLIT-DAYS.</em>
         </li>
         <li>
@@ -385,7 +387,7 @@ function renderParsePanel(): string {
       <div class="pp-h">
         <span class="pp-tag">PARSE CONTRACT · 4 statements</span>
         <span class="pp-sub">${done
-          ? 'Parsed. Case rate covers days 1-2; per-diem stacks on days 3+; chorioamnionitis didn\'t change DRG.'
+          ? 'Parsed. Case rate covers days 1-2; per-diem stacks on days 3+; maternal DRG didn\'t change (newborn-driven extension, no new maternal Dx).'
           : 'Mark each true/false. Watch the mutually-inclusive trap.'}</span>
       </div>
       <ul class="stmt-list">

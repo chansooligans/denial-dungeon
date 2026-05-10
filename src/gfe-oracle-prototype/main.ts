@@ -183,7 +183,11 @@ const glossary: Record<string, GlossaryEntry> = {
   },
   'AEOB': {
     term: 'AEOB (Advanced Explanation of Benefits)',
-    plain: "The payer-side companion to the GFE. When a patient with insurance schedules an elective service, the payer is supposed to send an AEOB showing what the plan will cover, what the patient owes, and the network status of every co-provider. AEOB requirements were finalized in late 2024; enforcement is staged through 2026. Hospitals' GFE process feeds the payer's AEOB.",
+    plain: "The payer-side companion to the GFE. When a patient with insurance schedules an elective service, the payer is supposed to send an AEOB showing what the plan will cover, what the patient owes, and the network status of every co-provider. AEOB requirements were proposed in 2022 but **CMS deferred enforcement indefinitely** pending technical-standards rulemaking — as of 2024-2026 the AEOB is not actively enforced. The same enforcement-deferral applies to convening-provider GFE aggregation (the requirement that a hospital's GFE include co-provider expected charges). Currently, each provider gives the patient their own GFE separately; the convening provider just discloses *who* the co-providers are without pricing them.",
+  },
+  'deferred-enforcement': {
+    term: 'NSA convening-provider GFE / AEOB — deferred enforcement',
+    plain: "Two NSA pieces are in deferred-enforcement limbo: (a) the convening-provider GFE rule that would require a hospital's GFE to aggregate expected co-provider charges into a single document for the patient; and (b) the AEOB rule for insured patients. Both were proposed in 2022; CMS deferred enforcement pending technical standards. As of 2024-2026, this Case treats the deferred-enforcement state as the operative rule — Mercy gives Maya a GFE for Mercy lines only, names co-providers without pricing them, and each co-provider sends their own GFE on the same NSA timeline. If/when CMS finalizes the convening-provider rule, the bucket assignment for co-providers will change from \"disclose only\" to \"include in our GFE.\"",
   },
   'NSA': {
     term: 'NSA (No Surprises Act)',

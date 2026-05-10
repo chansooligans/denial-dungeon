@@ -179,6 +179,10 @@ const glossary: Record<string, GlossaryEntry> = {
     term: '500-record threshold',
     plain: "Two notification triggers fire at 500+ affected records: (a) immediate (within 60 days) report to HHS, posted on the public OCR Breach Portal; (b) prominent media notice in the state(s) affected. Under 500 = individual notice + annual aggregate to HHS only. The threshold is per-breach, not annual.",
   },
+  'business associate breach': {
+    term: 'Business Associate (BA) breach',
+    plain: "Most modern HIPAA breaches happen at vendors (EHR providers, billing companies, transcription services, cloud-storage providers) holding PHI under a Business Associate Agreement (BAA). The covered entity (Mercy) remains responsible for notifying patients even if the breach happened entirely on the BA's side. Containment is split: the BA does the technical investigation; the covered entity verifies the BA's notification, runs its own four-factor assessment using BA-supplied facts, and meets the 60-day individual-notice clock. This Case uses a fax breach for clarity, but in 2026 most real breaches are EHR access, ransomware, or BA breaches — not faxes.",
+  },
 }
 
 // ===== Runtime state =====
