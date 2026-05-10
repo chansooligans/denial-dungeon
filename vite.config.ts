@@ -172,6 +172,13 @@ export default defineConfig({
         // vs inpatient classification + RAC defense. Verbs:
         // CLOCK / CLASSIFY / RECLASSIFY.
         twoMidnightMire: resolve(__dirname, 'two-midnight-mire-prototype.html'),
+        // 340B Drug Pricing Specter: duplicate-discount Case.
+        // Outpatient 340B-acquired drug billed to state Medicaid
+        // without the state-specific 340B identifier; manufacturer
+        // pays both the 340B discount + the Medicaid rebate; HRSA
+        // opens a compliance review. Refile + refund + self-disclose.
+        // Verbs: QUALIFY / MARK / DISCLOSE.
+        threeFortyBSpecter: resolve(__dirname, 'three-forty-b-specter-prototype.html'),
         // Implant Carve-out Specter: high-cost implant unflagged
         // at billing, rolled into the DRG case rate when the
         // contract appendix carves it out at invoice +20%. Verbs:
