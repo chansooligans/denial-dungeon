@@ -92,10 +92,17 @@ run_strip_one() {
     echo "missing: $input — skipping $prefix"
     return
   fi
+  # 2026-05: --no-global-erase. The dominance-based pass was eating
+  # interior skin pixels on the single-character warm-chroma sheets
+  # (chansoo, chris, adam) — skin's r-dominance overlapped the
+  # orange chroma's pattern after downscale, leaving holes in faces.
+  # Corner flood-fill alone is enough on these sheets because the
+  # chroma is uniform and the character is well-separated.
   python3 tools/sprite-sheet-to-frames.py \
     --input "$input" --rows 1 --frames 4 \
     --prefix "$prefix" --size "$SIZE" \
     --fuzz 30 --halo-fuzz 28 --halo-passes 1 --dilate 4 \
+    --no-global-erase \
     --out "$OUT"
   # Re-shape `<prefix>_<i>.png` → `<prefix>_0_<i>.png` so the slot
   # is `npc<N>_0` like every other multi-character sheet.
@@ -112,10 +119,18 @@ run_grid_2x2_one() {
     echo "missing: $input — skipping $prefix"
     return
   fi
+  # 2026-05: --no-cool-bump + --no-global-erase on Data-Sandbox
+  # green-chroma sheets. The default cool-chroma halo-fuzz auto-bump
+  # (130) + dominance-based global erase were eating face details +
+  # ID badges with green-tinged anti-aliasing. Together these flags
+  # preserve face features at the cost of slightly more visible
+  # green halos (cleaned up by --halo-passes 1 + the explicit
+  # --halo-fuzz 28).
   python3 tools/sprite-sheet-to-frames.py \
     --input "$input" --rows 2 --frames 2 \
     --prefix "$prefix" --size "$SIZE" \
     --fuzz 30 --halo-fuzz 28 --halo-passes 1 --dilate 4 \
+    --no-cool-bump --no-global-erase \
     --out "$OUT"
   # Row-major flatten of (row,col) → directional pose:
   #   (0,0) → _0_0 (front)         (already correct)
