@@ -228,6 +228,12 @@ export default defineConfig({
         // (BootScene reads the URL param and forwards to IntroScene).
         // Lives at /intro-editor.html.
         introEditor: resolve(__dirname, 'intro-editor.html'),
+        // Level / case-order editor: drag-reorder the 32 Case
+        // entries in src/content/case-order.ts. Outputs a paste-back
+        // TS snippet. Planning surface for the narrative re-work
+        // toward a "one level per case" model. Lives at
+        // /level-editor.html.
+        levelEditor: resolve(__dirname, 'level-editor.html'),
         // Dev tools index — single page that links every authoring +
         // diagnostic page in one place. Bookmark this. Lives at
         // /dev.html on GitHub Pages.
