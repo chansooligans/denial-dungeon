@@ -118,18 +118,59 @@ export class DialogueScene extends Phaser.Scene {
     const visibleChoices = (node.choices ?? []).filter(c => this.choiceVisible(c))
 
     if (visibleChoices.length > 0) {
+      // Selected-choice highlight cursor: tracks the currently focused
+      // option for arrow-key + Enter selection. Defaults to 0; mouse
+      // hover and clicks update it so keyboard + pointer don't fight
+      // each other.
+      let selected = 0
+      const choiceTexts: Phaser.GameObjects.Text[] = []
+      const setSelected = (i: number) => {
+        selected = ((i % visibleChoices.length) + visibleChoices.length) % visibleChoices.length
+        choiceTexts.forEach((t, k) => {
+          if (k === selected) {
+            t.setColor('#ffffff')
+            t.setText(`▸ ${visibleChoices[k].text}`)
+          } else {
+            t.setColor('#f4d06f')
+            t.setText(`  ${visibleChoices[k].text}`)
+          }
+        })
+      }
+
       visibleChoices.forEach((choice, i) => {
         const y = height - choiceTopOffset + i * choiceStep
-        const ct = this.add.text(60, y, `> ${choice.text}`, {
+        const ct = this.add.text(60, y, `  ${choice.text}`, {
           fontSize: `${choiceSize}px`, fontFamily: 'monospace', color: '#f4d06f',
         }).setInteractive({ useHandCursor: true })
 
-        ct.on('pointerover', () => ct.setColor('#ffffff'))
-        ct.on('pointerout', () => ct.setColor('#f4d06f'))
+        ct.on('pointerover', () => setSelected(i))
         ct.on('pointerdown', () => this.selectChoice(choice))
 
+        choiceTexts.push(ct)
         this.choiceTexts.push(ct)
       })
+
+      setSelected(0)
+
+      // Keyboard navigation: ↑/↓ (or W/S) cycles the selection;
+      // Enter/Space confirms. Listener cleaned up on scene shutdown
+      // OR when a choice is selected (so a stray keystroke after
+      // selection doesn't fire on the next dialogue node).
+      const onKey = (e: KeyboardEvent) => {
+        if (e.code === 'ArrowDown' || e.code === 'KeyS') {
+          e.preventDefault()
+          setSelected(selected + 1)
+        } else if (e.code === 'ArrowUp' || e.code === 'KeyW') {
+          e.preventDefault()
+          setSelected(selected - 1)
+        } else if (e.code === 'Enter' || e.code === 'Space') {
+          e.preventDefault()
+          window.removeEventListener('keydown', onKey)
+          this.selectChoice(visibleChoices[selected])
+        }
+      }
+      window.addEventListener('keydown', onKey)
+      this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => window.removeEventListener('keydown', onKey))
     } else if (node.next) {
       const advanceText = this.add.text(width - 60, height - 30, 'click or space ▸', {
         fontSize: m ? '40px' : '14px', fontFamily: 'monospace', color: '#5a6a7a',

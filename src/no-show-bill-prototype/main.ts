@@ -211,7 +211,7 @@ function term(termId: string, displayText?: string): string {
   const entry = glossary[termId]
   const text = displayText ?? termId
   if (!entry) return escape(text)
-  return `<span class="term" data-action="open-term" data-term="${termId}">${escape(text)}<span class="term-icon">?</span></span>`
+  return `<span class="term" data-action="open-term" data-term="${termId}" title="${escape(entry.plain)}">${escape(text)}<span class="term-icon">?</span></span>`
 }
 
 function render(): string {

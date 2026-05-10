@@ -49,6 +49,7 @@ export class PuzzleBattleScene extends Phaser.Scene {
   private overlay!: HTMLDivElement
   private styleTag!: HTMLStyleElement
   private clickHandler!: (e: MouseEvent) => void
+  private keyHandler!: (e: KeyboardEvent) => void
 
   constructor() {
     super('PuzzleBattle')
@@ -171,6 +172,23 @@ export class PuzzleBattleScene extends Phaser.Scene {
   private attachClickHandler() {
     this.clickHandler = (e: MouseEvent) => this.handleClick(e)
     this.overlay.addEventListener('click', this.clickHandler)
+    // ESC closes the briefing popover or amend modal (whichever is
+    // open). Mirrors the standalone Case prototype behavior.
+    this.keyHandler = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      let changed = false
+      if (this.puzzleState.briefingOpen) {
+        this.puzzleState.briefingOpen = false
+        changed = true
+      }
+      if (this.puzzleState.amendOpen) {
+        this.puzzleState.amendOpen = null
+        this.puzzleState.amendFeedback = null
+        changed = true
+      }
+      if (changed) this.rerender()
+    }
+    window.addEventListener('keydown', this.keyHandler)
   }
 
   private rerender() {
@@ -198,7 +216,19 @@ export class PuzzleBattleScene extends Phaser.Scene {
     switch (action) {
       case 'dismiss-briefing':
         this.puzzleState.briefingDone = true
+        this.puzzleState.briefingOpen = false
         break
+      case 'show-briefing':
+        // Recall — opens the notebook overlay mid-encounter.
+        this.puzzleState.briefingOpen = true
+        break
+      case 'close-briefing':
+        this.puzzleState.briefingOpen = false
+        break
+      case 'noop':
+        // Inner popover swallows clicks so they don't bubble up to
+        // the backdrop's close-briefing handler. Intentional no-op.
+        return
       case 'select-payer':
         this.puzzleState.selectedPayerId = id || null
         this.puzzleState.feedback = ''
@@ -455,6 +485,9 @@ export class PuzzleBattleScene extends Phaser.Scene {
   private teardown() {
     if (this.clickHandler && this.overlay) {
       this.overlay.removeEventListener('click', this.clickHandler)
+    }
+    if (this.keyHandler) {
+      window.removeEventListener('keydown', this.keyHandler)
     }
     const overlay = document.getElementById(OVERLAY_ID)
     if (overlay && overlay.parentElement) overlay.parentElement.removeChild(overlay)
