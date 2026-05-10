@@ -877,33 +877,87 @@ export const DIALOGUES: Record<string, DialogueNode> = {
   nicole_intro: {
     id: 'nicole_intro',
     speaker: 'Nicole',
-    text: "Spinning up a sandbox env. One model per department, one schema per payer. Don't ask me which one Aetna's running today.",
+    text: "Spinning up a sandbox env. One environment per region, one schema per payer, all provisioned through code.",
+    next: 'nicole_intro_2',
+  },
+  nicole_intro_2: {
+    id: 'nicole_intro_2',
+    speaker: 'Nicole',
+    text: "My job is reliability. Customers don't see the platform when it works — they see it when it doesn't. So if we're doing our jobs, you've never thought about me. If you have, somebody woke me up at 2 a.m.",
+    next: 'nicole_intro_3',
+  },
+  nicole_intro_3: {
+    id: 'nicole_intro_3',
+    speaker: 'Nicole',
+    text: "Thing I'm proudest of from last quarter: we ingested eight billion new rate rows and three new payer formats and the customer-facing UI never blinked. Reliability isn't loud. But it's how trust gets built.",
   },
   nick_intro: {
     id: 'nick_intro',
     speaker: 'Nick',
-    text: "PRD's in Notion, Linear's in flames, retro's at four. We ship Tuesday.",
+    text: "Price transparency PM. Five years ago this product category didn't exist. The federal rule shipped in 2021; we shipped our first version of the product a few months later.",
+    next: 'nick_intro_2',
+  },
+  nick_intro_2: {
+    id: 'nick_intro_2',
+    speaker: 'Nick',
+    text: "Half my job is translating. Hospitals and payers don't say 'I want a percentile breakdown of negotiated rates by CPT code.' They say 'I just want to know if I'm paying too much.' My job is to make the second question answerable with the first one.",
+    next: 'nick_intro_3',
+  },
+  nick_intro_3: {
+    id: 'nick_intro_3',
+    speaker: 'Nick',
+    text: "Best feature we shipped last year was a one-click 'show me the highest-leverage rate to renegotiate' button. CFOs use it. Procurement teams use it. First time I saw a hospital save real money from it, I went home early. Then I came back the next morning and started on the next one.",
   },
   monika_intro: {
     id: 'monika_intro',
     speaker: 'Monika',
     text: "Joining claim adjudications to remit codes. Two LEFT JOINs deep and still finding nulls where the patient should be.",
+    next: 'monika_intro_2',
+  },
+  monika_intro_2: {
+    id: 'monika_intro_2',
+    speaker: 'Monika',
+    text: "A NULL is supposed to mean 'unknown.' In this dataset it means 'someone didn't finish a sentence.' Sometimes a registrar missed a checkbox. Sometimes the patient declined to answer. Sometimes the row exists for an audit reason and was never supposed to be queried. I have to guess every time.",
+    next: 'monika_intro_3',
+  },
+  monika_intro_3: {
+    id: 'monika_intro_3',
+    speaker: 'Monika',
+    text: "That's the job, honestly — guessing accurately about why somebody didn't write something down. Sounds depressing on paper. Most days it's just interesting.",
   },
   chris_intro: {
     id: 'chris_intro',
     speaker: 'Chris',
-    text: "Pricing transparency rules. Hospitals love them in the press release, hate them in the spreadsheet.",
+    text: "Pricing transparency. The data exists now, in a way it didn't five years ago. Every quarter the picture gets a little sharper.",
+    next: 'chris_intro_2',
+  },
+  chris_intro_2: {
+    id: 'chris_intro_2',
+    speaker: 'Chris',
+    text: "Most of my week is conversations with hospital CFOs. Five years ago I'd have to explain why this matters. Now they call us. The market caught up to the rule.",
+    next: 'chris_intro_3',
+  },
+  chris_intro_3: {
+    id: 'chris_intro_3',
+    speaker: 'Chris',
+    text: "Best moment of the job is when a buyer asks us a question we couldn't have answered last quarter, and we can. There aren't a lot of fields where you can feel the floor moving under you in a good way.",
   },
   adam_intro: {
     id: 'adam_intro',
     speaker: 'Adam',
-    text: "Standing up the chargemaster diff. Five hundred million rows; the diff fits on a screenshot. That's the bug.",
+    text: "Working on the chargemaster diff. Five hundred million rows of negotiated rates. Five years ago you couldn't get this data; now we can compare it across every hospital in the country.",
     next: 'adam_intro_2',
   },
   adam_intro_2: {
     id: 'adam_intro_2',
     speaker: 'Adam',
-    text: "The transparency rule was supposed to make pricing public. So the hospitals publish the chargemaster. Eighteen thousand columns. Twelve formats per payer. PDF, JSON, sometimes a spreadsheet so wide it crashes Excel. Compliant. Useless. They wrote the rule that way on purpose, and the hospitals complied that way on purpose, and now everyone has plausible deniability.",
+    text: "Every payer publishes it a little differently — different formats, different field names, their own quirks. We harmonize it. Once it's harmonized, you can ask real questions: what's the median rate for a CT scan in Houston, how does Phoenix compare. Questions nobody could answer a few years ago.",
+    next: 'adam_intro_3',
+  },
+  adam_intro_3: {
+    id: 'adam_intro_3',
+    speaker: 'Adam',
+    text: "Long project. The kind where every quarter the data set gets cleaner and a few more questions become askable. Not glamorous. Slowly important.",
   },
 
   dana_l10_intake_back: {
