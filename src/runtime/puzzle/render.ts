@@ -486,7 +486,7 @@ function renderVictory(spec: PuzzleSpec): string {
   // Pull the post-victory recap from CASE_RECAPS using the spec's id
   // as the key. Recap data is shared with the standalone Case
   // prototypes + the catalog cards; same content, three surfaces.
-  // Skipped for specs without a matching recap (intro, hydra).
+  // Skipped for specs without a matching recap (e.g. hydra).
   const recap = CASE_RECAPS[spec.id]
   return `
     <section class="victory">

@@ -11,6 +11,21 @@
 import type { CaseRecap } from '../shared/prototype-base'
 
 export const CASE_RECAPS: Record<string, CaseRecap> = {
+  'intro': {
+    oneLineRecap: "You amended Anjali Patel's claim to her own subscriber ID — the card she handed over at the counter was her husband's, the 837 went out under his ID, and the 271 eligibility response showed her on the plan as a dependent under her own ID all along.",
+    keyConcepts: [
+      { term: 'Subscriber vs dependent', gist: 'On a family plan, the subscriber is the policyholder; spouses and children are dependents. Each member has their own subscriber ID. Boxes 1a (insured ID) and 4 (insured name) on the CMS-1500 must match the payer\'s roster for the patient — not the household.' },
+      { term: '270/271 eligibility', gist: 'The X12 270 is the real-time "is this patient covered?" query; the 271 is the payer\'s response. Run it before the visit (or before resubmitting after a CO-31). It\'s the source of truth for member ID, plan, effective dates, and copay — not the photocopy of the card.' },
+      { term: 'CO-31 (patient cannot be identified as our insured)', gist: 'Clerical denial: the demographic info on the claim doesn\'t match the payer\'s member record. Almost always fixed by amending Box 1a or the patient name to match the 271 response, then resubmitting. No appeal needed — just a clean correction.' },
+      { term: 'AMEND verb', gist: 'The first verb you learn. Open the disputed field on the claim, pick the value the chart + payer record actually support, resubmit. Most denials in your queue will be exactly this: a small thing, fixed cleanly, before it becomes someone\'s collections problem.' },
+    ],
+    resources: [
+      { title: 'CMS — CMS-1500 Form Instructions', url: 'https://www.cms.gov/medicare/billing/electronicbillingeditrans/15001500', note: 'Field-by-field instructions for the CMS-1500, including Boxes 1a–11 (insured info).' },
+      { title: 'X12 — 270/271 Eligibility Transactions', url: 'https://x12.org/examples/005010x279/eligibility-benefit-inquiry-and-response', note: 'The standard for real-time eligibility queries. Mandated under HIPAA for electronic transactions.' },
+      { title: 'CAQH CORE — Eligibility Operating Rules', url: 'https://www.caqh.org/core/eligibility-and-benefits-rules', note: 'Operating rules that bind payers to specific 271 response content (member ID, copay, deductible).' },
+      { title: 'WPC — CARC/RARC Code Lists', url: 'https://x12.org/codes/claim-adjustment-reason-codes', note: 'Authoritative list of Claim Adjustment Reason Codes — including CO-31 and the rest of the demographic-mismatch family.' },
+    ],
+  },
   'asp-wac-apothecary': {
     oneLineRecap: 'You decoded a Part B drug payment by reconciling ASP-vs-WAC pricing, J-code units, and NDC-vs-HCPCS — and recovered the right reimbursement.',
     keyConcepts: [
