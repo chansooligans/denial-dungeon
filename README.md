@@ -51,7 +51,7 @@ Cases are organized by **district**, each with its own accent color:
 
 Archetypes you'll meet: **Wraith** (medical-necessity citation chains), **Bundle** (modifier 25), **Reaper** (timely-filing countdowns), **Specter** (hidden underpayments behind CO-45), **Spider** (COB cascades), **Mire** (regulatory swamps), **Crucible** (baseball-arbitration IDR), **Phantom** (carve-out routing), **Audit Boss** (the finale). The names track real procedural failure modes — see the catalog for the full bestiary.
 
-The map progresses in **phases**. At L1 you can only access the Lobby, Main Hub, the stairwell, and two 2F break rooms (Turquoise Lounge + Data Sandbox). Other rooms — Patient Services, Eligibility, Registration, HIM, Billing, the Cancer Center, the Audit office where the Boss waits — unlock as your `currentLevel` advances. You can see the locked doors on the minimap; you just can't enter them yet.
+The map progresses in **phases**. At L1 you can only access the Lobby, Main Hub, the Cafeteria, the stairwell, and two 2F break rooms (Turquoise Lounge + Data Sandbox). Other rooms — Patient Services, Eligibility, Registration, HIM, Billing, the Cancer Center, the Audit office where the Boss waits — unlock as your `currentLevel` advances. You can see the locked doors on the minimap; you just can't enter them yet.
 
 ## Tech stack
 

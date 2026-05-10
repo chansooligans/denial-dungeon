@@ -354,7 +354,7 @@ const { layout, tileMeta, rooms: BUILT_ROOMS } = buildMap({
     // ===== West wing — north of Patient Services =====
     {
       id: 'cafeteria',
-      lockedUntilLevel: 3,
+      lockedUntilLevel: 1,
       ...CAFETERIA,
       // East door at offset 2 → world (13, 4). Connects to the
       // main north-south corridor (extended north from the bend
