@@ -28,7 +28,8 @@
 // walks out; the next person finds the lighthouse the same
 // way she did. The encounter is a kindness, not a victory.
 
-import { BASE_CSS, escape } from '../shared/prototype-base'
+import { BASE_CSS, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
+import { CASE_RECAPS } from '../content/case-recaps'
 
 interface QuestionOption {
   id: string
@@ -695,6 +696,8 @@ function renderChecklist(): string {
   `
 }
 
+const RECAP: CaseRecap = CASE_RECAPS['lighthouse']
+
 function renderVictory(): string {
   return `
     <section class="victory lighthouse-victory">
@@ -724,6 +727,7 @@ function renderVictory(): string {
       <button class="btn primary" data-action="reset">Run it again</button>
       <a class="back-link inline" href="./">← back to game</a>
     </section>
+    ${renderCaseRecap(RECAP)}
   `
 }
 

@@ -1,4 +1,4 @@
-// Stoploss Reckoner @ L7 — math-heavy stoploss-provision Case.
+// Stoploss Reckoner @ L4 — math-heavy stoploss-provision Case (re-leveled from L7).
 // Sibling to Case Rate Specter and Implant Carve-out Specter (same
 // Anthem contract; different threshold-trip clause). The player
 // computes the trip, the new payment basis, and the shortfall.
@@ -14,7 +14,8 @@
 // player computes IS the number they file.
 //
 // Author: May 2026.
-import { BASE_CSS, districtVars, escape } from '../shared/prototype-base'
+import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
+import { CASE_RECAPS } from '../content/case-recaps'
 
 // ===== Domain types =====
 
@@ -257,7 +258,7 @@ function renderHeader(): string {
   return `
     <header class="page-h">
       <div class="title-row">
-        <h1>Stoploss Reckoner <span class="muted">@ L7 — first sketch</span></h1>
+        <h1>Stoploss Reckoner <span class="muted">@ L4 — first sketch</span></h1>
         <div class="header-actions">
           ${recallBtn}
           <a class="back-link" href="./prototypes.html">← back to catalog</a>
@@ -594,6 +595,8 @@ function renderTermPopover(): string {
   `
 }
 
+const RECAP: CaseRecap = CASE_RECAPS['stoploss-reckoner']
+
 function renderVictory(): string {
   return `
     <section class="victory">
@@ -620,6 +623,7 @@ function renderVictory(): string {
       <button class="btn primary" data-action="reset">Run it again</button>
       <a class="back-link inline" href="./prototypes.html">← back to catalog</a>
     </section>
+    ${renderCaseRecap(RECAP)}
   `
 }
 

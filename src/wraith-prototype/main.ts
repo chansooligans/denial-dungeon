@@ -14,7 +14,8 @@
 // (An Expert mode that strips this scaffolding is a future toggle.)
 
 import { CASES } from '../content/cases'
-import { BASE_CSS, districtVars, escape } from '../shared/prototype-base'
+import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
+import { CASE_RECAPS } from '../content/case-recaps'
 
 interface PayerPhrase {
   id: string
@@ -706,6 +707,8 @@ function wraithSvg(): string {
   `
 }
 
+const RECAP: CaseRecap = CASE_RECAPS['wraith']
+
 function renderVictory(): string {
   return `
     ${renderHeader()}
@@ -725,6 +728,7 @@ function renderVictory(): string {
       <button class="btn primary" data-action="reset">Run it again</button>
       <a class="back-link inline" href="./">← back to game</a>
     </section>
+    ${renderCaseRecap(RECAP)}
   `
 }
 

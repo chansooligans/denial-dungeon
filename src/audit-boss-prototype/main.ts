@@ -28,7 +28,8 @@
 // is the runtime game's job to land.
 
 import { CASES } from '../content/cases'
-import { BASE_CSS, districtVars, escape } from '../shared/prototype-base'
+import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
+import { CASE_RECAPS } from '../content/case-recaps'
 
 interface Evidence {
   id: string
@@ -627,6 +628,8 @@ function renderChecklist(): string {
   `
 }
 
+const RECAP: CaseRecap = CASE_RECAPS['audit-boss']
+
 function renderVictory(): string {
   const total = totalRecoupment()
   const totalExposure = findings.reduce((s, f) => s + f.recoupmentAmount, 0)
@@ -666,6 +669,7 @@ function renderVictory(): string {
       <button class="btn primary" data-action="reset">Run it again</button>
       <a class="back-link inline" href="./">← back to game</a>
     </section>
+    ${renderCaseRecap(RECAP)}
   `
 }
 

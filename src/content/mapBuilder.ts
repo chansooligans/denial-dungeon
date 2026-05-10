@@ -76,6 +76,12 @@ export interface MapDef {
    *  `label` is rendered as a floating text widget over the source
    *  tile so the player knows where it leads ("↑ 2F", "EXIT"). */
   stairs?: { from: { x: number; y: number }; to: { x: number; y: number }; label?: string }[]
+  /** Full RoomDef list re-exposed by buildMap so consumers (mainly
+   *  HospitalScene) can call `applyUnlocks(layout, roomDefs, level)`
+   *  at scene entry to flip phase-locked doors open as the player
+   *  progresses. Populated automatically when MapDef is constructed
+   *  from a buildMap result. */
+  roomDefs?: RoomDef[]
 }
 
 // ---------------------------------------------------------------------------
@@ -136,6 +142,14 @@ export interface RoomDef {
   fill?: string
   /** Decorations placed inside the room interior. */
   items?: RoomItem[]
+  /**
+   * If set, the room's doors stamp as 'L' (locked) at module load and only
+   * convert to 'D' (open) once the player reaches this currentLevel via
+   * `applyUnlocks` at scene entry. Use to gate progression — players can
+   * see locked rooms on the map but can't enter until the right level.
+   * Set to 1 (or omit) for rooms unlocked from the start.
+   */
+  lockedUntilLevel?: number
 }
 
 /**
@@ -178,8 +192,11 @@ export function buildMapLayout(spec: MapSpec): string[] {
  * sidecar lifted from any `rot` / `flipX` fields on `RoomItem`. Use
  * this when the level needs rotated objects; legacy levels can keep
  * calling `buildMapLayout` and ignore the meta.
+ *
+ * Also re-exposes the `rooms` array so consumers can call
+ * `applyUnlocks(layout, rooms, playerLevel)` at scene entry.
  */
-export function buildMap(spec: MapSpec): { layout: string[]; tileMeta: TileMeta } {
+export function buildMap(spec: MapSpec): { layout: string[]; tileMeta: TileMeta; rooms: RoomDef[] } {
   const { width, height } = spec
   const bg = spec.background ?? 'W'
   const grid: string[][] = []
@@ -208,7 +225,7 @@ export function buildMap(spec: MapSpec): { layout: string[]; tileMeta: TileMeta 
     grid[y][width - 1] = 'W'
   }
 
-  return { layout: grid.map(row => row.join('')), tileMeta }
+  return { layout: grid.map(row => row.join('')), tileMeta, rooms: spec.rooms }
 }
 
 function carveCorridor(
@@ -268,10 +285,16 @@ function stampRoom(
       grid[py][px] = onEdge ? 'W' : fill
     }
   }
+  // Door is "locked at this build" if explicitly marked locked OR if the
+  // room is gated by `lockedUntilLevel`. The latter is a starting state
+  // — `applyUnlocks` flips them to 'D' at scene entry once the player
+  // is at the right level. Doors with explicit `locked: true` stay 'L'
+  // forever (they're plot/ambient locks, not progression gates).
+  const phaseLocked = r.lockedUntilLevel != null
   for (const d of r.doors ?? []) {
     const [dx, dy] = doorWorldPos(r, d)
     if (dx >= 0 && dx < width && dy >= 0 && dy < height) {
-      grid[dy][dx] = d.locked ? 'L' : 'D'
+      grid[dy][dx] = (d.locked || phaseLocked) ? 'L' : 'D'
     }
   }
   for (const item of r.items ?? []) {
@@ -313,7 +336,45 @@ export function applyTileOverrides(
   return grid.map(row => row.join(''))
 }
 
-function doorWorldPos(r: RoomDef, d: DoorDef): [number, number] {
+/**
+ * Phase-unlock helper. Walk the rooms list and, for each room whose
+ * `lockedUntilLevel <= playerLevel`, flip any 'L' door tiles back to
+ * 'D' so the player can enter. Doors that were originally
+ * `locked: true` (not phase-gated) keep their 'L' since they're
+ * still locked in the underlying RoomDef.
+ *
+ * Pure: returns a new layout, does not mutate the input.
+ *
+ * Usage in HospitalScene.create:
+ *   this.mapDef = { ...HOSPITAL_MAP,
+ *     layout: applyUnlocks(HOSPITAL_MAP.layout, ROOMS_BY_PHASE, currentLevel) }
+ */
+export function applyUnlocks(
+  layout: string[],
+  rooms: RoomDef[],
+  playerLevel: number
+): string[] {
+  // Collect coords of phase-unlocked doors.
+  const unlocks: Array<[number, number]> = []
+  for (const r of rooms) {
+    if (r.lockedUntilLevel == null) continue
+    if (playerLevel < r.lockedUntilLevel) continue
+    for (const d of r.doors ?? []) {
+      if (d.locked) continue   // explicit lock overrides phase-unlock
+      unlocks.push(doorWorldPos(r, d))
+    }
+  }
+  if (unlocks.length === 0) return layout
+  const grid = layout.map(row => row.split(''))
+  for (const [x, y] of unlocks) {
+    if (y >= 0 && y < grid.length && x >= 0 && x < grid[y].length) {
+      if (grid[y][x] === 'L') grid[y][x] = 'D'
+    }
+  }
+  return grid.map(row => row.join(''))
+}
+
+export function doorWorldPos(r: RoomDef, d: DoorDef): [number, number] {
   switch (d.side) {
     case 'N': return [r.x + d.offset, r.y]
     case 'S': return [r.x + d.offset, r.y + r.h - 1]

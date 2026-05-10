@@ -3,6 +3,7 @@ import { NPCS } from '../content/npcs'
 import { LEVELS } from '../content/levels'
 import { HOSPITAL_MAP } from '../content/maps'
 import type { MapDef } from '../content/maps'
+import { applyUnlocks } from '../content/mapBuilder'
 import { getState, saveGame, consumePendingLevelBanner } from '../state'
 import { showNarration } from './narration'
 import { isTouchDevice } from './device'
@@ -225,7 +226,15 @@ export class HospitalScene extends Phaser.Scene {
 
   create() {
     const state = getState()
-    this.mapDef = HOSPITAL_MAP
+    // Apply phase-based door unlocks. Rooms with `lockedUntilLevel` set
+    // stamp as 'L' (locked) at module load; here we flip them to 'D'
+    // (open) for any room whose threshold the player has reached. Plot
+    // doors with explicit `locked: true` keep their 'L' regardless of
+    // level — those aren't progression gates.
+    const unlockedLayout = HOSPITAL_MAP.roomDefs
+      ? applyUnlocks(HOSPITAL_MAP.layout, HOSPITAL_MAP.roomDefs, state.currentLevel)
+      : HOSPITAL_MAP.layout
+    this.mapDef = { ...HOSPITAL_MAP, layout: unlockedLayout }
 
     // If we're returning from a puzzle round-trip (NPC handed us a case
     // → descended → solved → coming back), respawn at the saved tile

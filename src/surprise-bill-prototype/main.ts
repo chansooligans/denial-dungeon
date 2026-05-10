@@ -26,7 +26,8 @@
 // curriculum because they teach two different responsibilities
 // the PFS counter has to carry.
 
-import { BASE_CSS, districtVars, escape } from '../shared/prototype-base'
+import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
+import { CASE_RECAPS } from '../content/case-recaps'
 
 interface ClassifyOption {
   id: string
@@ -649,6 +650,8 @@ function renderChecklist(): string {
   `
 }
 
+const RECAP: CaseRecap = CASE_RECAPS['surprise-bill']
+
 function renderVictory(): string {
   return `
     <section class="victory">
@@ -676,6 +679,7 @@ function renderVictory(): string {
       <button class="btn primary" data-action="reset">Run it again</button>
       <a class="back-link inline" href="./">← back to game</a>
     </section>
+    ${renderCaseRecap(RECAP)}
   `
 }
 

@@ -23,7 +23,8 @@
 //
 // Author: May 2026. Modeled on src/specter-prototype/main.ts —
 // share the dragon, swap the lever.
-import { BASE_CSS, districtVars, escape } from '../shared/prototype-base'
+import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
+import { CASE_RECAPS } from '../content/case-recaps'
 
 // ===== Domain types =====
 
@@ -676,6 +677,8 @@ function renderTermPopover(): string {
   `
 }
 
+const RECAP: CaseRecap = CASE_RECAPS['case-rate-specter']
+
 function renderVictory(): string {
   return `
     <section class="victory">
@@ -703,6 +706,7 @@ function renderVictory(): string {
       <button class="btn primary" data-action="reset">Run it again</button>
       <a class="back-link inline" href="./prototypes.html">← back to catalog</a>
     </section>
+    ${renderCaseRecap(RECAP)}
   `
 }
 
