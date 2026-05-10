@@ -39,12 +39,11 @@ export default defineConfig({
         // amend against the 271 response. Lives at
         // /fog-prototype.html.
         fog: resolve(__dirname, 'fog-prototype.html'),
-        // Hydra prototype: sixth sibling introducing the
-        // SEQUENCE verb — three payers (BCBS / Medicare /
-        // Medicaid), one claim. Fix the COB chain, then walk
-        // it forward through three adjudications with running
-        // balance. Lives at /hydra-prototype.html.
-        hydra: resolve(__dirname, 'hydra-prototype.html'),
+        // Hydra prototype REMOVED 2026-05 — superseded by COB
+        // Cascade Spider (cobCascadeSpider input below). The Hydra
+        // mechanic was a thin three-payer SEQUENCE sketch; COB
+        // Cascade Spider provides the full per-patient cascade
+        // (birthday rule, MSP, payer-of-last-resort) at L9.
         // Swarm prototype: seventh sibling introducing the
         // BATCH verb — 18 weekend CO-16 rejections, 14 sharing
         // one root cause; fix the cluster as a group, sweep

@@ -185,26 +185,13 @@ const prototypes: Prototype[] = [
     district: 'billing',
     accent: '#ef5b7b',
   },
-  {
-    id: 'hydra',
-    title: 'Coordination Hydra',
-    // Pulled out of L9 main rotation 2026-05 — the COB-sequencing
-    // mechanic is solid as a sketch but overlapped Kim's other
-    // teaching beats and didn't read as a satisfying late-game
-    // climax. Prototype HTML stays available; archetype is in the
-    // freezer until we revisit (likely as a side-case on the Payer
-    // floor, not a primary level handoff).
-    subtitle: 'archived from L9 — prototype-only',
-    archetype: 'Hydra',
-    carc: 'OA-23',
-    level: 9,
-    status: 'shipped',
-    verbs: 'SEQUENCE + SUBMIT',
-    testing: 'New verb: SEQUENCE. Three payers (BCBS Federal / Medicare / Medicaid), one claim. Fix the COB chain in the right order — primary, secondary, tertiary — then adjudicate each tier in turn with a running balance. First prototype with multiple sub-claims and per-tier 835 line items.',
-    href: './hydra-prototype.html',
-    district: 'billing',
-    accent: '#ef5b7b',
-  },
+  // Coordination Hydra — REMOVED from catalog 2026-05 in favor of
+  // COB Cascade Spider (#213). Hydra's three-payer SEQUENCE mechanic
+  // was a thin sketch; COB Cascade Spider replaces it with the full
+  // cascade (birthday rule, MSP working-aged, payer-of-last-resort,
+  // court orders) across multiple patients on one household policy.
+  // The Hydra prototype HTML is no longer linked from the catalog;
+  // source files retained for git history at src/hydra-prototype/.
 
   {
     id: 'three-forty-b-specter',
