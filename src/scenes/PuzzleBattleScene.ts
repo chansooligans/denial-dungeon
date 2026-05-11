@@ -194,15 +194,38 @@ export class PuzzleBattleScene extends Phaser.Scene {
   private rerender() {
     const root = document.getElementById('__puzzle_root__')
     if (!root) return
-    root.innerHTML = render(this.spec, this.puzzleState)
+    try {
+      root.innerHTML = render(this.spec, this.puzzleState)
+    } catch (err) {
+      // Surface render exceptions to the debug ribbon AND a visible
+      // error card inside the overlay. Mobile players can't open
+      // devtools; a crash that leaves the puzzle blank is hard to
+      // report. This makes the failure self-describing.
+      const msg = (err as Error)?.message ?? String(err)
+      const stack = (err as Error)?.stack?.split('\n').slice(0, 4).join(' | ') ?? ''
+      debugEvent(`render-err: ${msg.slice(0, 60)}`)
+      root.innerHTML = `
+        <div style="margin:40px auto;max-width:640px;padding:24px;background:#1d2330;border:1px solid #ef5b7b;border-radius:8px;color:#d8dee9;font:14px/1.55 system-ui,sans-serif;">
+          <div style="color:#ef5b7b;font-weight:700;letter-spacing:0.08em;font-size:11px;margin-bottom:8px;">PUZZLE RENDER ERROR</div>
+          <div style="margin-bottom:8px;">${escapeHtml(msg)}</div>
+          <details><summary style="color:#8a93a3;font-size:12px;cursor:pointer;">stack</summary>
+          <pre style="font-size:10px;white-space:pre-wrap;color:#8a93a3;margin-top:6px;">${escapeHtml(stack)}</pre>
+          </details>
+          <div style="margin-top:14px;display:flex;gap:8px;">
+            <button data-action="flee" style="padding:6px 12px;border-radius:4px;background:transparent;color:#f0a868;border:1px solid #4a3a2a;cursor:pointer;font:inherit;">⏎ Leave</button>
+          </div>
+        </div>
+      `
+    }
   }
 
   private handleClick(e: MouseEvent) {
-    const target = e.target as HTMLElement
+    const target = e.target as HTMLElement | null
+    if (!target) return
     // Backdrop click closes amend modal (the inner modal stops propagation
     // by virtue of having data-action="amend-modal-stop", which falls into
     // the default branch and does nothing).
-    if (target.classList.contains('amend-modal-backdrop')) {
+    if (target.classList?.contains('amend-modal-backdrop')) {
       this.puzzleState.amendOpen = null
       this.puzzleState.amendFeedback = null
       this.rerender()
@@ -515,6 +538,15 @@ export class PuzzleBattleScene extends Phaser.Scene {
     const styleTag = document.getElementById(STYLE_ID)
     if (styleTag && styleTag.parentElement) styleTag.parentElement.removeChild(styleTag)
   }
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
 }
 
 // Tiny extra CSS layered on top of BASE_CSS for runtime-puzzle-specific
