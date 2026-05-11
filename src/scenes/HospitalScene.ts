@@ -1802,30 +1802,20 @@ export class HospitalScene extends Phaser.Scene {
       onComplete: () => flash.destroy(),
     })
 
-    // Camera fade-to-black + start the destination scene on
-    // completion. For runtime-spec encounters that means the WR
-    // (player wanders, finds the obstacle, engages). For iframe
-    // encounters (catalog cases), the cinematic still plays so the
-    // descent reads the same — but at the end we go straight to
-    // PrototypeIframeScene rather than WR.
+    // Camera fade-to-black + start WR on completion. Every encounter
+    // (both runtime-spec and iframe) lands in the WR — the player
+    // walks the parallel-room layer to the obstacle and presses E.
+    // WR.tryEngageObstacle dispatches to PuzzleBattleScene or
+    // PrototypeIframeScene based on the encounter's fields.
     const spawnTileX = this.playerTileX
     const spawnTileY = this.playerTileY
-    const enc = ENCOUNTERS[activeEncounterId]
     this.cameras.main.fadeOut(900, 0, 0, 0)
     this.cameras.main.once('camerafadeoutcomplete', () => {
       const state = getState()
       state.inWaitingRoom = true
       saveGame()
-      if (enc?.prototypeIframeUrl) {
-        debugEvent(`descent:starting-iframe ${activeEncounterId}`)
-        this.scene.start('PrototypeIframe', {
-          encounterId: activeEncounterId,
-          returnScene: 'Hospital',
-        })
-      } else {
-        debugEvent(`descent:starting-WR ${activeEncounterId} @ ${spawnTileX},${spawnTileY}`)
-        this.scene.start('WaitingRoom', { activeEncounterId, spawnTileX, spawnTileY })
-      }
+      debugEvent(`descent:starting-WR ${activeEncounterId} @ ${spawnTileX},${spawnTileY}`)
+      this.scene.start('WaitingRoom', { activeEncounterId, spawnTileX, spawnTileY })
     })
   }
 

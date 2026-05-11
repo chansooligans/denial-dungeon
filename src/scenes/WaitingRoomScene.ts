@@ -77,8 +77,10 @@ interface ObstacleMarker {
 // for Pat means descending into HIM's mirror, not wandering the
 // entire underworld map.
 const LOBBY_BOUNDS        = { x: 4,  y: 32, w: 26, h: 10 }
+const MAIN_HUB_BOUNDS     = { x: 20, y: 3,  w: 18, h: 10 }
 const PATIENT_SVC_BOUNDS  = { x: 2,  y: 17, w: 12, h: 8  }
 const REGISTRATION_BOUNDS = { x: 15, y: 17, w: 22, h: 8  }
+const ELIGIBILITY_BOUNDS  = { x: 24, y: 24, w: 10, h: 6  }
 const HIM_BOUNDS          = { x: 4,  y: 50, w: 14, h: 10 }
 const BILLING_BOUNDS      = { x: 22, y: 50, w: 14, h: 10 }
 const PFS_BOUNDS          = { x: 40, y: 50, w: 16, h: 10 }
@@ -119,7 +121,50 @@ const OBSTACLES: ObstacleMarker[] = [
 
   // AUDIT — Dana hands the boss. Audit moved to second floor; the
   // boss obstacle moves with it so the WR mirror lines up.
-  { tileX: 18, tileY: 105, encounterId: 'boss_audit',          bounds: AUDIT_BOUNDS },        // Boss      (L10)
+  { tileX: 18, tileY: 105, encounterId: 'boss_audit',          bounds: AUDIT_BOUNDS },        // Boss      (L33)
+
+  // ===== Catalog encounters (iframe-mounted) =====
+  // Each marker is placed in the parallel layer of the room where
+  // its case-handing NPC stands at the matching level. WR.tryEngage-
+  // Obstacle dispatches to PrototypeIframeScene for these (the
+  // encounter's `prototypeIframeUrl` field is the discriminator).
+
+  // MAIN HUB — Alex (L2 asp-wac, L4 stoploss).
+  { tileX: 26, tileY: 7,  encounterId: 'catalog_asp_wac_apothecary',        bounds: MAIN_HUB_BOUNDS },
+  { tileX: 30, tileY: 7,  encounterId: 'catalog_stoploss_reckoner',         bounds: MAIN_HUB_BOUNDS },
+
+  // REGISTRATION — Kim (L16 credentialing, L22 phantom-patient, L27 cob),
+  //                Pat (L6 form-mirror, L7 outpatient-grouper) until L9.
+  { tileX: 18, tileY: 21, encounterId: 'catalog_form_mirror',               bounds: REGISTRATION_BOUNDS },
+  { tileX: 22, tileY: 21, encounterId: 'catalog_outpatient_surgery_grouper', bounds: REGISTRATION_BOUNDS },
+  { tileX: 26, tileY: 21, encounterId: 'catalog_credentialing_lattice',     bounds: REGISTRATION_BOUNDS },
+  { tileX: 28, tileY: 21, encounterId: 'catalog_phantom_patient',           bounds: REGISTRATION_BOUNDS },
+  { tileX: 34, tileY: 21, encounterId: 'catalog_cob_cascade_spider',        bounds: REGISTRATION_BOUNDS },
+
+  // ELIGIBILITY — Jordan (L8 no-show, L10 lighthouse).
+  { tileX: 27, tileY: 27, encounterId: 'catalog_no_show_bill',              bounds: ELIGIBILITY_BOUNDS },
+  { tileX: 30, tileY: 27, encounterId: 'lighthouse_charity',                bounds: ELIGIBILITY_BOUNDS },
+
+  // PATIENT SERVICES — Sam (L11 gfe, L29 mrf, L30 idr, L32 hipaa).
+  { tileX: 4,  tileY: 21, encounterId: 'catalog_gfe_oracle',                bounds: PATIENT_SVC_BOUNDS },
+  { tileX: 9,  tileY: 22, encounterId: 'catalog_mrf_cartographer',          bounds: PATIENT_SVC_BOUNDS },
+  { tileX: 6,  tileY: 22, encounterId: 'catalog_idr_crucible',              bounds: PATIENT_SVC_BOUNDS },
+  { tileX: 10, tileY: 23, encounterId: 'catalog_hipaa_spider',              bounds: PATIENT_SVC_BOUNDS },
+
+  // HIM / Coding — Pat from L9 onwards (L18 cpt, L23 risk-adj, L25 two-midnight).
+  { tileX: 9,  tileY: 55, encounterId: 'catalog_cpt_licensure_mire',        bounds: HIM_BOUNDS },
+  { tileX: 14, tileY: 55, encounterId: 'catalog_risk_adj_hollow',           bounds: HIM_BOUNDS },
+  { tileX: 7,  tileY: 56, encounterId: 'catalog_two_midnight_mire',         bounds: HIM_BOUNDS },
+
+  // BILLING — Alex from L13 onwards (L15 implant, L17 carveout-phantom,
+  // L21 ob-perdiem, L24 chemo, L26 underpayment, L28 case-rate, L31 340b).
+  { tileX: 27, tileY: 55, encounterId: 'catalog_implant_carveout_specter',  bounds: BILLING_BOUNDS },
+  { tileX: 31, tileY: 55, encounterId: 'catalog_carveout_phantom',          bounds: BILLING_BOUNDS },
+  { tileX: 33, tileY: 55, encounterId: 'catalog_ob_perdiem_specter',        bounds: BILLING_BOUNDS },
+  { tileX: 25, tileY: 56, encounterId: 'catalog_chemo_bundle_specter',      bounds: BILLING_BOUNDS },
+  { tileX: 28, tileY: 56, encounterId: 'underpayment_specter',              bounds: BILLING_BOUNDS },
+  { tileX: 31, tileY: 56, encounterId: 'catalog_case_rate_specter',         bounds: BILLING_BOUNDS },
+  { tileX: 34, tileY: 56, encounterId: 'catalog_three_forty_b_specter',     bounds: BILLING_BOUNDS },
 ]
 
 interface ObstacleSprite {
