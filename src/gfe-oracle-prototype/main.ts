@@ -25,7 +25,7 @@
 //
 // Author: May 2026. Modeled on MRF Cartographer with a co-provider
 // classification axis added.
-import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
+import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap, notifyParentVictory} from '../shared/prototype-base'
 import { CASE_RECAPS } from '../content/case-recaps'
 
 // ===== Domain types =====
@@ -782,6 +782,7 @@ function attemptSubmit() {
   if (state.resolvedIssues.has('itemize') && state.resolvedIssues.has('estimate')) {
     state.resolvedIssues.add('commit')
     state.packetSubmitted = true
+    notifyParentVictory('gfe-oracle')
   }
 }
 

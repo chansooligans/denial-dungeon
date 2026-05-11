@@ -43,6 +43,41 @@ export function escape(s: string): string {
 }
 
 /**
+ * Embedded-mode helpers — let the standalone prototype pages double
+ * as in-game encounters when mounted in an iframe by
+ * PrototypeIframeScene.
+ *
+ * The runtime game loads each catalog prototype via
+ * `<iframe src="/<case>-prototype.html?embedded=1">`. The prototype
+ * detects the flag, hides its dev chrome (back-link, design notes),
+ * and on case-victory posts a `case-completed` message back up to
+ * the parent window so the scene can mark the encounter defeated
+ * and transition out.
+ */
+export function isEmbedded(): boolean {
+  try {
+    return new URLSearchParams(window.location.search).get('embedded') === '1'
+  } catch {
+    return false
+  }
+}
+
+/** Post a `case-completed` message to the parent window. No-op
+ *  unless the prototype is running inside an iframe in embedded mode.
+ *  Call this in the prototype at the same site where
+ *  `state.packetSubmitted = true` flips (i.e. the moment the player
+ *  wins). */
+export function notifyParentVictory(caseId: string): void {
+  if (!isEmbedded()) return
+  try {
+    window.parent.postMessage({ type: 'case-completed', caseId }, '*')
+  } catch {
+    // postMessage shouldn't throw, but if it does we don't want to
+    // break the prototype's own victory flow.
+  }
+}
+
+/**
  * Per-Case post-victory recap. Each Case authors its own recap data
  * (key concepts the player learned + external links to the
  * authoritative sources for further reading) and calls

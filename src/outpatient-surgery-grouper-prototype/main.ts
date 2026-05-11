@@ -28,7 +28,7 @@
 // applied to a different UHC mechanism.
 //
 // Author: May 2026.
-import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
+import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap, notifyParentVictory} from '../shared/prototype-base'
 import { CASE_RECAPS } from '../content/case-recaps'
 
 // ===== Domain types =====
@@ -779,6 +779,7 @@ function applyResolution(id: string) {
 function attemptSubmit() {
   if (issues.every(i => state.resolvedIssues.has(i.id))) {
     state.packetSubmitted = true
+    notifyParentVictory('outpatient-surgery-grouper')
   }
 }
 

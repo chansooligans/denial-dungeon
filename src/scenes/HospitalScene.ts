@@ -1742,6 +1742,24 @@ export class HospitalScene extends Phaser.Scene {
     // before us). No guard needed.
     this.canMove = false
 
+    // Catalog cases (iframe-mounted prototypes) carry their own
+    // hospital-intro → register-flip → waiting-room narrative beat
+    // inside the prototype HTML page. Skipping the in-game WR
+    // descent for those avoids duplicating the beat.
+    const enc = ENCOUNTERS[activeEncounterId]
+    if (enc?.prototypeIframeUrl) {
+      this.fadeOutHospitalAmbience(700)
+      this.cameras.main.fadeOut(700, 0, 0, 0)
+      this.cameras.main.once('camerafadeoutcomplete', () => {
+        debugEvent(`descent:starting-iframe ${activeEncounterId}`)
+        this.scene.start('PrototypeIframe', {
+          encounterId: activeEncounterId,
+          returnScene: 'Hospital',
+        })
+      })
+      return
+    }
+
     // Cross-fade hospital ambience out so the WR's red_room track can
     // fade in without overlap.
     this.fadeOutHospitalAmbience(900)

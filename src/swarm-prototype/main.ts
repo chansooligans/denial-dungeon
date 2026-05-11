@@ -20,7 +20,7 @@
 // different middle (a queue + batch actions instead of a
 // claim form + builder).
 
-import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
+import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap, notifyParentVictory} from '../shared/prototype-base'
 import { CASE_RECAPS } from '../content/case-recaps'
 
 interface QueueClaim {
@@ -916,6 +916,7 @@ function submitTicket() {
 function attemptSubmit() {
   if (state.resolvedIssues.size < issues.length) return
   state.packetSubmitted = true
+  notifyParentVictory('swarm')
 }
 
 function reset() {

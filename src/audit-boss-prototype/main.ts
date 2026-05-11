@@ -28,7 +28,7 @@
 // is the runtime game's job to land.
 
 import { CASES } from '../content/cases'
-import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
+import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap, notifyParentVictory} from '../shared/prototype-base'
 import { CASE_RECAPS } from '../content/case-recaps'
 
 interface Evidence {
@@ -817,6 +817,7 @@ function pickVerbAmend(findingId: string) {
 function attemptSubmit() {
   if (!allResolved()) return
   state.packetSubmitted = true
+  notifyParentVictory('audit-boss')
 }
 
 function reset() {

@@ -28,7 +28,7 @@
 // walks out; the next person finds the lighthouse the same
 // way she did. The encounter is a kindness, not a victory.
 
-import { BASE_CSS, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
+import { BASE_CSS, escape, renderCaseRecap, type CaseRecap, notifyParentVictory} from '../shared/prototype-base'
 import { CASE_RECAPS } from '../content/case-recaps'
 
 interface QuestionOption {
@@ -846,6 +846,7 @@ function pickTier(id: 'charity-100' | 'charity-75' | 'charity-50' | 'plan-only' 
 function attemptSubmit() {
   if (state.resolvedIssues.size < issues.length) return
   state.packetSubmitted = true
+  notifyParentVictory('lighthouse')
 }
 
 function reset() {
