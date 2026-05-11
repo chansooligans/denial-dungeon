@@ -1694,13 +1694,21 @@ export class HospitalScene extends Phaser.Scene {
     const cell = this.miniMapCell
     const ox = this.miniMapX + this.miniMapPad
     const oy = this.miniMapY + this.miniMapPad
-    this.miniMapNpcMarker.fillStyle(0xf4c430, 1)
-    this.miniMapNpcMarker.fillRect(
-      ox + ns.tileX * cell - 1,
-      oy + ns.tileY * cell - 1,
-      cell + 2,
-      cell + 2
-    )
+    // Center of the NPC's tile
+    const cx = ox + ns.tileX * cell + cell / 2
+    const cy = oy + ns.tileY * cell + cell / 2
+    // 5-pointed star: outer radius slightly larger than a tile so it
+    // stands out clearly at collapsed scale (cell=6 → outerR=10).
+    const outerR = cell + 4
+    const innerR = outerR * 0.42
+    const pts: { x: number; y: number }[] = []
+    for (let i = 0; i < 10; i++) {
+      const a = (i * Math.PI / 5) - Math.PI / 2
+      const r = i % 2 === 0 ? outerR : innerR
+      pts.push({ x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r })
+    }
+    this.miniMapNpcMarker.fillStyle(0xff3050, 1)
+    this.miniMapNpcMarker.fillPoints(pts, true)
   }
 
   private checkNpcProximity() {
