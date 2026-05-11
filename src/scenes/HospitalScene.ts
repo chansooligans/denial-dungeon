@@ -481,6 +481,24 @@ export class HospitalScene extends Phaser.Scene {
       this.canMove = true
       this.refreshHUD()
 
+      // Reset the player sprite from the descent cinematic's end-state
+      // (alpha:0 / scaleY:0.6 / angle:220 / y offset). Without this,
+      // the player stays invisible + squished + rotated + sunk through
+      // the floor when Hospital wakes for the post-puzzle thanks
+      // sequence. Snap them back to their pre-descent tile/pose.
+      const playerTargetX = this.playerTileX * TILE + TILE / 2
+      const playerTargetY = (this.playerTileY + 1) * TILE
+      this.player.setPosition(playerTargetX, playerTargetY)
+      this.player.setAlpha(1)
+      this.player.setAngle(0)
+      this.player.setScale(CHARACTER_SCALE)
+      this.player.setTexture(`player_idle_${this.playerFacing}`)
+
+      // Reapply NPC visibility against the fog state — defensive in
+      // case any NPC alpha drifted during sleep. Anjali's thanks
+      // sequence depends on her being visible at the desk.
+      try { this.applyEntityVisibility() } catch { /* swallow */ }
+
       this.cameras.main.resetFX()
       this.cameras.main.fadeIn(450, 0, 0, 0)
       this.time.delayedCall(700, () => { this.cameras.main.setAlpha(1) })
