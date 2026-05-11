@@ -251,6 +251,28 @@ export const BASE_CSS = `
   body.embedded .design-notes {
     display: none !important;
   }
+  /* In embedded mode, center the briefing card on the viewport —
+     narrower than full-width, vertically centered. Mirrors the
+     runtime puzzle scene's pre-dismiss centering for L1 and friends.
+     Use flex on body so a tall post-dismiss content stack (claim +
+     workbench + checklist) overflows naturally, while a single
+     briefing pre-dismiss gets centered in the available space. */
+  body.embedded {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  body.embedded #prototype-root {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  body.embedded .briefing {
+    max-width: 640px;
+    margin: 0 auto;
+    width: 100%;
+  }
   body::before {
     content: ""; position: fixed; inset: 0; pointer-events: none;
     background:
