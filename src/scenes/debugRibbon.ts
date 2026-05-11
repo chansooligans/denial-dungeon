@@ -69,7 +69,19 @@ export function debugEvent(label: string) {
   if (!installed) return
   const t = new Date()
   const ts = `${String(t.getMinutes()).padStart(2, '0')}:${String(t.getSeconds()).padStart(2, '0')}`
-  events.push(`${ts} ${label}`)
+  // Sniff memory if the runtime exposes it. Chrome/Edge/Android Chrome
+  // implement performance.memory (non-standard). iOS Safari does not,
+  // so this is best-effort — when available, it gives a real signal on
+  // mobile crashes that smell like memory pressure.
+  let memTag = ''
+  try {
+    const m = (performance as any).memory
+    if (m && m.usedJSHeapSize) {
+      const mb = Math.round(m.usedJSHeapSize / (1024 * 1024))
+      memTag = ` [${mb}MB]`
+    }
+  } catch {}
+  events.push(`${ts} ${label}${memTag}`)
   while (events.length > 12) events.shift()
   refresh()
 }
