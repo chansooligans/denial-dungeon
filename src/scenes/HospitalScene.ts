@@ -465,12 +465,14 @@ export class HospitalScene extends Phaser.Scene {
     // round-trip (descendThroughGap sleeps instead of stops Hospital).
     this.events.on(Phaser.Scenes.Events.SLEEP, () => {
       cachedTileVisState = this.tileVisState.map(row => [...row])
+      debugEvent('hosp:sleep')
     })
 
     // Wake: fired when PuzzleBattleScene calls scene.wake('Hospital')
     // instead of scene.start('Hospital'). Restores movement, camera,
     // ambience, and post-puzzle state without rebuilding 10k tiles.
     this.events.on(Phaser.Scenes.Events.WAKE, () => {
+      debugEvent('hosp:wake-fired')
       const s = getState()
       s.pendingHospitalSpawn = null  // position preserved in sleeping scene
       s.inWaitingRoom = false

@@ -462,9 +462,11 @@ export class PuzzleBattleScene extends Phaser.Scene {
   // avoids rebuilding 10k tiles on mobile (which exceeds WebGL limits).
   // Falls back to scene.start for any return scene that isn't sleeping.
   private _transitionToReturn() {
-    if (this.scene.isSleeping(this.returnScene)) {
-      this.scene.wake(this.returnScene)
+    const sleeping = this.scene.isSleeping(this.returnScene)
+    debugEvent(`return:${this.returnScene} sleeping=${sleeping}`)
+    if (sleeping) {
       this.scene.stop()
+      this.scene.wake(this.returnScene)
     } else {
       this.scene.start(this.returnScene)
     }
