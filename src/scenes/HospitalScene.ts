@@ -1742,24 +1742,6 @@ export class HospitalScene extends Phaser.Scene {
     // before us). No guard needed.
     this.canMove = false
 
-    // Catalog cases (iframe-mounted prototypes) carry their own
-    // hospital-intro → register-flip → waiting-room narrative beat
-    // inside the prototype HTML page. Skipping the in-game WR
-    // descent for those avoids duplicating the beat.
-    const enc = ENCOUNTERS[activeEncounterId]
-    if (enc?.prototypeIframeUrl) {
-      this.fadeOutHospitalAmbience(700)
-      this.cameras.main.fadeOut(700, 0, 0, 0)
-      this.cameras.main.once('camerafadeoutcomplete', () => {
-        debugEvent(`descent:starting-iframe ${activeEncounterId}`)
-        this.scene.start('PrototypeIframe', {
-          encounterId: activeEncounterId,
-          returnScene: 'Hospital',
-        })
-      })
-      return
-    }
-
     // Cross-fade hospital ambience out so the WR's red_room track can
     // fade in without overlap.
     this.fadeOutHospitalAmbience(900)
@@ -1820,19 +1802,30 @@ export class HospitalScene extends Phaser.Scene {
       onComplete: () => flash.destroy(),
     })
 
-    // Camera fade-to-black + start WR on completion. Pass the
-    // player's current Hospital tile so the WR layer drops them at
-    // the corresponding tile in the parallel layer (same map, same
-    // room, same coords) instead of teleporting to the map's gapTile.
+    // Camera fade-to-black + start the destination scene on
+    // completion. For runtime-spec encounters that means the WR
+    // (player wanders, finds the obstacle, engages). For iframe
+    // encounters (catalog cases), the cinematic still plays so the
+    // descent reads the same — but at the end we go straight to
+    // PrototypeIframeScene rather than WR.
     const spawnTileX = this.playerTileX
     const spawnTileY = this.playerTileY
+    const enc = ENCOUNTERS[activeEncounterId]
     this.cameras.main.fadeOut(900, 0, 0, 0)
     this.cameras.main.once('camerafadeoutcomplete', () => {
       const state = getState()
       state.inWaitingRoom = true
       saveGame()
-      debugEvent(`descent:starting-WR ${activeEncounterId} @ ${spawnTileX},${spawnTileY}`)
-      this.scene.start('WaitingRoom', { activeEncounterId, spawnTileX, spawnTileY })
+      if (enc?.prototypeIframeUrl) {
+        debugEvent(`descent:starting-iframe ${activeEncounterId}`)
+        this.scene.start('PrototypeIframe', {
+          encounterId: activeEncounterId,
+          returnScene: 'Hospital',
+        })
+      } else {
+        debugEvent(`descent:starting-WR ${activeEncounterId} @ ${spawnTileX},${spawnTileY}`)
+        this.scene.start('WaitingRoom', { activeEncounterId, spawnTileX, spawnTileY })
+      }
     })
   }
 
