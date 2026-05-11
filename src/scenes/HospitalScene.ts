@@ -459,6 +459,58 @@ export class HospitalScene extends Phaser.Scene {
         }
       }, 0)
     })
+
+    // Sleep: snapshot fog-of-war so a hard-reload while sleeping still
+    // has the last-known vis state. Also used by the sleep/wake WR
+    // round-trip (descendThroughGap sleeps instead of stops Hospital).
+    this.events.on(Phaser.Scenes.Events.SLEEP, () => {
+      cachedTileVisState = this.tileVisState.map(row => [...row])
+    })
+
+    // Wake: fired when PuzzleBattleScene calls scene.wake('Hospital')
+    // instead of scene.start('Hospital'). Restores movement, camera,
+    // ambience, and post-puzzle state without rebuilding 10k tiles.
+    this.events.on(Phaser.Scenes.Events.WAKE, () => {
+      const s = getState()
+      s.pendingHospitalSpawn = null  // position preserved in sleeping scene
+      s.inWaitingRoom = false
+      saveGame()
+
+      this.canMove = true
+      this.refreshHUD()
+
+      this.cameras.main.resetFX()
+      this.cameras.main.fadeIn(450, 0, 0, 0)
+      this.time.delayedCall(700, () => { this.cameras.main.setAlpha(1) })
+
+      try { this.startHospitalAmbience() } catch (e) { debugEvent('wake:ambience-err') }
+
+      const advancedLevel = consumePendingLevelBanner()
+      if (advancedLevel !== null) {
+        const isPostAnjaliL2 = advancedLevel === 2 && !s.anjaliThanked
+        if (isPostAnjaliL2) {
+          this.deferredLevelBanner = advancedLevel
+        } else {
+          try { this.showLevelAdvanceBanner(advancedLevel) } catch (e) { debugEvent('wake:banner-err') }
+        }
+      }
+
+      if (s.pendingClaimSubmitted) {
+        const sub = s.pendingClaimSubmitted
+        s.pendingClaimSubmitted = null
+        saveGame()
+        debugEvent(`wake:claim-submitted ${sub.encounterId}`)
+        this.runWakeUpTransition(sub.claimId, () => {
+          this.maybeRunAnjaliThanks()
+        })
+      } else {
+        this.maybeRunAnjaliThanks()
+      }
+
+      if (isTouchDevice() && !this.scene.isActive('TouchOverlay')) {
+        this.scene.launch('TouchOverlay')
+      }
+    })
   }
 
   private buildMap() {
@@ -1853,7 +1905,8 @@ export class HospitalScene extends Phaser.Scene {
       state.inWaitingRoom = true
       saveGame()
       debugEvent(`descent:starting-WR ${activeEncounterId} @ ${spawnTileX},${spawnTileY}`)
-      this.scene.start('WaitingRoom', { activeEncounterId, spawnTileX, spawnTileY })
+      this.scene.launch('WaitingRoom', { activeEncounterId, spawnTileX, spawnTileY })
+      this.scene.sleep()
     })
   }
 

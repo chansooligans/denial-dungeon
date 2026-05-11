@@ -448,14 +448,26 @@ export class PuzzleBattleScene extends Phaser.Scene {
     this.fadeOutRedRoomAmbience(1500)
     this.cameras.main.once('camerafadeoutcomplete', () => {
       debugEvent(`fadeOutComplete -> ${this.returnScene}`)
-      this.scene.start(this.returnScene)
+      this._transitionToReturn()
     })
     this.time.delayedCall(1600, () => {
       if (this.scene.isActive(this.scene.key)) {
         debugEvent('fadeOut backstop fired')
-        this.scene.start(this.returnScene)
+        this._transitionToReturn()
       }
     })
+  }
+
+  // Wake a sleeping Hospital rather than recreating it from scratch —
+  // avoids rebuilding 10k tiles on mobile (which exceeds WebGL limits).
+  // Falls back to scene.start for any return scene that isn't sleeping.
+  private _transitionToReturn() {
+    if (this.scene.isSleeping(this.returnScene)) {
+      this.scene.wake(this.returnScene)
+      this.scene.stop()
+    } else {
+      this.scene.start(this.returnScene)
+    }
   }
 
   /** Fade out any red_room_* ambience that's playing globally, then
