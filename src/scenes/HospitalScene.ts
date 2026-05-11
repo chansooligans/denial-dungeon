@@ -1905,8 +1905,12 @@ export class HospitalScene extends Phaser.Scene {
       state.inWaitingRoom = true
       saveGame()
       debugEvent(`descent:starting-WR ${activeEncounterId} @ ${spawnTileX},${spawnTileY}`)
-      this.scene.launch('WaitingRoom', { activeEncounterId, spawnTileX, spawnTileY })
+      // Sleep BEFORE launch so Hospital stops rendering before WR's
+      // buildMap allocates tile sprites. If launch ran first, Hospital's
+      // ~20k objects would still be active in the WebGL pipeline during
+      // WR.create() and push total objects past the mobile limit.
       this.scene.sleep()
+      this.scene.launch('WaitingRoom', { activeEncounterId, spawnTileX, spawnTileY })
     })
   }
 
