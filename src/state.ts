@@ -80,6 +80,15 @@ function migrateState(loaded: Partial<GameState> & Record<string, unknown>): Gam
   for (const toolId of base.tools) {
     if (!merged.tools.includes(toolId)) merged.tools.push(toolId)
   }
+  // Top up the per-level arrays in case the save predates a level-count
+  // expansion (e.g. the 10→33 migration). Length never shrinks; missing
+  // slots fill with the default value.
+  while (merged.levelComplete.length < base.levelComplete.length) {
+    merged.levelComplete.push(false)
+  }
+  while (merged.levelStars.length < base.levelStars.length) {
+    merged.levelStars.push(0)
+  }
   return merged
 }
 
@@ -122,7 +131,7 @@ export function loadGame(): boolean {
   try {
     const raw = localStorage.getItem(SAVE_KEY)
     if (raw) {
-      currentState = JSON.parse(raw)
+      currentState = migrateState(JSON.parse(raw))
       return true
     }
   } catch { /* ignore */ }
