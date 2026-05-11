@@ -426,9 +426,21 @@ export class WaitingRoomScene extends Phaser.Scene {
   private buildMap() {
     const { width: mw, height: mh, layout } = this.mapDef
 
-    for (let y = 0; y < mh; y++) {
+    // The WR map mirrors the full hospital (80×130 = 10,400 tiles).
+    // NPC-triggered sessions are always bounded to one room via
+    // sessionBounds, so we only build tiles within that room + a
+    // generous padding buffer. On mobile this cuts objects from ~15k
+    // down to ~1-2k, preventing the WebGL crash on entry.
+    // Free-roam mode (no sessionBounds, e.g. dev panel) builds everything.
+    const PAD = 12
+    const x0 = this.sessionBounds ? Math.max(0,  this.sessionBounds.x - PAD) : 0
+    const x1 = this.sessionBounds ? Math.min(mw, this.sessionBounds.x + this.sessionBounds.w + PAD) : mw
+    const y0 = this.sessionBounds ? Math.max(0,  this.sessionBounds.y - PAD) : 0
+    const y1 = this.sessionBounds ? Math.min(mh, this.sessionBounds.y + this.sessionBounds.h + PAD) : mh
+
+    for (let y = y0; y < y1; y++) {
       const row = layout[y] || ''
-      for (let x = 0; x < mw; x++) {
+      for (let x = x0; x < x1; x++) {
         const ch = row[x] || '.'
         const px = x * TILE + TILE / 2
         const py = y * TILE + TILE / 2
@@ -498,8 +510,8 @@ export class WaitingRoomScene extends Phaser.Scene {
     // first counter tile we find. This sits in the Hospital's lobby
     // counter or the Registration counter; either reads thematically.
     let counterFound = false
-    for (let y = 0; y < mh && !counterFound; y++) {
-      for (let x = 0; x < mw && !counterFound; x++) {
+    for (let y = y0; y < y1 && !counterFound; y++) {
+      for (let x = x0; x < x1 && !counterFound; x++) {
         if (layout[y]?.[x] === 'R') {
           const px = x * TILE + TILE / 2
           const py = y * TILE + TILE / 2 - 6
