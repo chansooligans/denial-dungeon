@@ -62,6 +62,19 @@ export function isEmbedded(): boolean {
   }
 }
 
+// Tag the document body with .embedded at module load so the chrome-
+// suppression CSS rules in BASE_CSS take effect without each
+// prototype having to wire it manually. Runs once, idempotent.
+if (typeof document !== 'undefined' && isEmbedded()) {
+  if (document.body) {
+    document.body.classList.add('embedded')
+  } else {
+    document.addEventListener('DOMContentLoaded', () => {
+      document.body.classList.add('embedded')
+    }, { once: true })
+  }
+}
+
 /** Post a `case-completed` message to the parent window. No-op
  *  unless the prototype is running inside an iframe in embedded mode.
  *  Call this in the prototype at the same site where
@@ -222,6 +235,21 @@ export const BASE_CSS = `
     padding: 28px 20px 80px;
     max-width: 1180px; margin: 0 auto;
     position: relative;
+  }
+  /* Embedded mode — when the prototype runs inside the in-game
+     PrototypeIframeScene (URL has ?embedded=1), suppress the dev
+     chrome: page-h title block + back-to-catalog links + the
+     hospital-intro section (the in-game descent cinematic plays
+     it) + design-notes section at the bottom. Body padding gets
+     trimmed too so the puzzle UI starts near the top edge. */
+  body.embedded {
+    padding: 20px 20px 40px;
+  }
+  body.embedded .page-h,
+  body.embedded .back-link,
+  body.embedded .hospital-intro,
+  body.embedded .design-notes {
+    display: none !important;
   }
   body::before {
     content: ""; position: fixed; inset: 0; pointer-events: none;
