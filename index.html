@@ -54,6 +54,12 @@
            viewport as browser chrome shows/hides. */
         height: 100vh;
         height: 100dvh;
+        /* viewport-fit=cover extends the viewport into the notch /
+           safe-area zone. Push the Phaser canvas back into the safe
+           region so the top isn't hidden behind the status bar in
+           landscape (where safe-area-inset-top is non-zero). */
+        padding: env(safe-area-inset-top) env(safe-area-inset-right)
+                 env(safe-area-inset-bottom) env(safe-area-inset-left);
         background-color: #0e1116;
         /* No flex centering — Phaser's Scale.CENTER_BOTH already
            centers the canvas inside this div via margin. Layering
