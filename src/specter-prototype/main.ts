@@ -18,7 +18,7 @@
 // teaching weight as form-fixing, and reads as RCM-real (AR
 // analysts spend half their time hunting these).
 
-import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
+import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap, notifyParentVictory} from '../shared/prototype-base'
 import { CASE_RECAPS } from '../content/case-recaps'
 
 interface FeeScheduleLine {
@@ -799,6 +799,7 @@ function pickAppeal(idx: number) {
 function attemptSubmit() {
   if (state.resolvedIssues.size < issues.length) return
   state.packetSubmitted = true
+  notifyParentVictory('specter')
 }
 
 function reset() {

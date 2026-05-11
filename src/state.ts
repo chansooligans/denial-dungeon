@@ -4,8 +4,8 @@ const SAVE_KEY = 'denial_dungeon_save'
 
 const DEFAULT_STATE: GameState = {
   currentLevel: 1,
-  levelComplete: Array(10).fill(false),
-  levelStars: Array(10).fill(0),
+  levelComplete: Array(33).fill(false),
+  levelStars: Array(33).fill(0),
   resources: {
     hp: 100,
     maxHp: 100,
@@ -80,6 +80,15 @@ function migrateState(loaded: Partial<GameState> & Record<string, unknown>): Gam
   for (const toolId of base.tools) {
     if (!merged.tools.includes(toolId)) merged.tools.push(toolId)
   }
+  // Top up the per-level arrays in case the save predates a level-count
+  // expansion (e.g. the 10→33 migration). Length never shrinks; missing
+  // slots fill with the default value.
+  while (merged.levelComplete.length < base.levelComplete.length) {
+    merged.levelComplete.push(false)
+  }
+  while (merged.levelStars.length < base.levelStars.length) {
+    merged.levelStars.push(0)
+  }
   return merged
 }
 
@@ -122,7 +131,7 @@ export function loadGame(): boolean {
   try {
     const raw = localStorage.getItem(SAVE_KEY)
     if (raw) {
-      currentState = JSON.parse(raw)
+      currentState = migrateState(JSON.parse(raw))
       return true
     }
   } catch { /* ignore */ }
@@ -145,21 +154,45 @@ export function newGame() {
  */
 export const LEVEL_DEFEAT_THRESHOLD: number[] = [
   1,  // L1 → 1 defeat to advance (intro)
-  2,  // L2 → +1
-  3,  // L3 → +1
-  4,  // L4 → +1
-  5,  // L5 → +1
-  6,  // L6 → +1
-  7,  // L7 → +1
-  8,  // L8 → +1
-  9,  // L9 → +1
-  10, // L10 → +1 (audit boss completes the run)
+  2,  // L2  asp-wac-apothecary
+  3,  // L3  fog
+  4,  // L4  stoploss-reckoner
+  5,  // L5  gatekeeper
+  6,  // L6  form-mirror
+  7,  // L7  outpatient-surgery-grouper
+  8,  // L8  no-show-bill
+  9,  // L9  bundle
+  10, // L10 lighthouse
+  11, // L11 gfe-oracle
+  12, // L12 wraith
+  13, // L13 swarm
+  14, // L14 doppelganger
+  15, // L15 implant-carveout-specter
+  16, // L16 credentialing-lattice
+  17, // L17 carveout-phantom
+  18, // L18 cpt-licensure-mire
+  19, // L19 reaper
+  20, // L20 surprise-bill
+  21, // L21 ob-perdiem-specter
+  22, // L22 phantom-patient
+  23, // L23 risk-adj-hollow
+  24, // L24 chemo-bundle-specter
+  25, // L25 two-midnight-mire
+  26, // L26 specter (underpayment)
+  27, // L27 cob-cascade-spider
+  28, // L28 case-rate-specter
+  29, // L29 mrf-cartographer
+  30, // L30 idr-crucible
+  31, // L31 three-forty-b-specter
+  32, // L32 hipaa-spider
+  33, // L33 audit-boss — capstone
 ]
 
 /**
  * Check whether the current cumulative defeat count crosses the
  * threshold for the player's current level. If so, advance
- * `currentLevel` (capped at 10) and mark the prior level complete.
+ * `currentLevel` (capped at the LEVEL_DEFEAT_THRESHOLD length) and
+ * mark the prior level complete.
  *
  * Returns the new level if advanced, else null. Callers can show a
  * banner / play a sting based on the return value.
@@ -169,7 +202,7 @@ export const LEVEL_DEFEAT_THRESHOLD: number[] = [
 export function checkLevelProgression(): number | null {
   const defeats = currentState.defeatedObstacles.length
   const lvl = currentState.currentLevel
-  if (lvl >= 10) return null
+  if (lvl >= LEVEL_DEFEAT_THRESHOLD.length) return null
   const threshold = LEVEL_DEFEAT_THRESHOLD[lvl - 1]
   if (defeats < threshold) return null
   // Advance.

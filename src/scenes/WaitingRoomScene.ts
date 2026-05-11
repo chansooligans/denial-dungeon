@@ -802,11 +802,10 @@ export class WaitingRoomScene extends Phaser.Scene {
     if (state.defeatedObstacles.includes(os.marker.encounterId)) return
     const enc = ENCOUNTERS[os.marker.encounterId]
     if (!enc) return
-    if (!enc.puzzleSpecId) {
-      // Engagement requires a puzzle spec. Encounters without one
-      // exist as codex/lore data only (or are still being authored).
-      return
-    }
+    // Engagement requires EITHER a runtime puzzle spec OR a prototype
+    // iframe URL (catalog cases). Encounters with neither exist as
+    // codex/lore data only.
+    if (!enc.puzzleSpecId && !enc.prototypeIframeUrl) return
 
     this.canMove = false
     this.engagePrompt.setVisible(false)
@@ -818,11 +817,19 @@ export class WaitingRoomScene extends Phaser.Scene {
     // to another obstacle.
     const returnScene = this.activeEncounterId ? 'Hospital' : 'WaitingRoom'
 
-    this.scene.start('PuzzleBattle', {
-      encounterId: enc.id,
-      puzzleSpecId: enc.puzzleSpecId,
-      returnScene,
-    })
+    if (enc.puzzleSpecId) {
+      this.scene.start('PuzzleBattle', {
+        encounterId: enc.id,
+        puzzleSpecId: enc.puzzleSpecId,
+        returnScene,
+      })
+    } else {
+      // Catalog case — mount its standalone prototype in an iframe.
+      this.scene.start('PrototypeIframe', {
+        encounterId: enc.id,
+        returnScene,
+      })
+    }
   }
 
   private buildHUD() {

@@ -107,6 +107,17 @@ export interface Encounter {
   payerNote?: string
   /** Required for engagement. Key into `src/runtime/puzzle/specs/index.ts`. */
   puzzleSpecId?: string
+  /**
+   * Alternative to puzzleSpecId. For Cases whose only implementation
+   * is a standalone prototype HTML page (the 21 catalog Cases), this
+   * URL is mounted in an iframe via PrototypeIframeScene. The
+   * embedded prototype posts a `case-completed` message back via
+   * postMessage when the player submits, and the scene mirrors
+   * PuzzleBattleScene's victory plumbing (defeatedObstacles,
+   * resources, codex, level progression). Mutually exclusive with
+   * `puzzleSpecId` — the dispatch picks one or the other.
+   */
+  prototypeIframeUrl?: string
 }
 
 // === Tickets ===

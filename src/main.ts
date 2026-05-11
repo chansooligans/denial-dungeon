@@ -5,6 +5,7 @@ import { TitleScene } from './scenes/TitleScene'
 import { HospitalScene } from './scenes/HospitalScene'
 import { DialogueScene } from './scenes/DialogueScene'
 import { PuzzleBattleScene } from './scenes/PuzzleBattleScene'
+import { PrototypeIframeScene } from './scenes/PrototypeIframeScene'
 import { FormScene } from './scenes/FormScene'
 import { WaitingRoomScene } from './scenes/WaitingRoomScene'
 import { CodexScene } from './scenes/CodexScene'
@@ -37,7 +38,7 @@ const config: Phaser.Types.Core.GameConfig = {
       debug: false,
     },
   },
-  scene: [BootScene, IntroScene, TitleScene, HospitalScene, DialogueScene, PuzzleBattleScene, FormScene, WaitingRoomScene, CodexScene, TipsTerminalScene, TouchOverlay],
+  scene: [BootScene, IntroScene, TitleScene, HospitalScene, DialogueScene, PuzzleBattleScene, PrototypeIframeScene, FormScene, WaitingRoomScene, CodexScene, TipsTerminalScene, TouchOverlay],
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,

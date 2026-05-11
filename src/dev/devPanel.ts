@@ -204,16 +204,39 @@ function renderStateInspector(): string {
  *  flags. Reloads the page so BootScene picks up the fresh state. */
 type LevelPreset = { level: number; label: string; note: string }
 const LEVEL_PRESETS: LevelPreset[] = [
-  { level: 1,  label: 'L1 — Orientation',           note: 'fresh start' },
-  { level: 2,  label: 'L2 — Front Door',             note: 'Kim · fog' },
-  { level: 3,  label: 'L3 — The Gate',               note: 'Sam · gatekeeper' },
-  { level: 4,  label: 'L4 — The Copy',               note: 'Pat · bundle' },
-  { level: 5,  label: 'L5 — The Library',            note: 'Sam · wraith' },
-  { level: 6,  label: 'L6 — The Conveyor',           note: 'Alex · swarm' },
-  { level: 7,  label: 'L7 — The Courtroom',          note: 'Sam · reaper' },
-  { level: 8,  label: 'L8 — The River',              note: 'Jordan · specter' },
-  { level: 9,  label: 'L9 — The Mirror',             note: 'Kim · doppelgänger' },
-  { level: 10, label: 'L10 — The Audit',             note: 'Dana · boss' },
+  { level: 1,  label: 'L1 — The Wrong Card',             note: 'Anjali · intro' },
+  { level: 2,  label: 'L2 — ASP / WAC Apothecary',       note: 'Alex · catalog' },
+  { level: 3,  label: 'L3 — Eligibility Fog',            note: 'Kim · fog' },
+  { level: 4,  label: 'L4 — Stoploss Reckoner',          note: 'Alex · catalog' },
+  { level: 5,  label: 'L5 — Prior-Auth Gatekeeper',      note: 'Martinez · gatekeeper' },
+  { level: 6,  label: 'L6 — Form Mirror',                note: 'Pat · catalog' },
+  { level: 7,  label: 'L7 — Outpatient Surgery Grouper', note: 'Pat · catalog' },
+  { level: 8,  label: 'L8 — No-Show Bill',               note: 'Jordan · catalog' },
+  { level: 9,  label: 'L9 — Bundling Beast',             note: 'Pat · bundle' },
+  { level: 10, label: 'L10 — Lighthouse',                note: 'Jordan · charity' },
+  { level: 11, label: 'L11 — GFE Oracle',                note: 'Sam · catalog' },
+  { level: 12, label: 'L12 — Medical Necessity Wraith',  note: 'Sam · wraith' },
+  { level: 13, label: 'L13 — Documentation Sprite Swarm', note: 'Alex · swarm' },
+  { level: 14, label: 'L14 — Doppelgänger',              note: 'Kim · doppel' },
+  { level: 15, label: 'L15 — Implant Carve-Out',         note: 'Alex · catalog' },
+  { level: 16, label: 'L16 — Credentialing Lattice',     note: 'Kim · catalog' },
+  { level: 17, label: 'L17 — Carve-Out Phantom',         note: 'Alex · catalog' },
+  { level: 18, label: 'L18 — CPT Licensure Mire',        note: 'Pat · catalog' },
+  { level: 19, label: 'L19 — Timely Filing Reaper',      note: 'Sam · reaper' },
+  { level: 20, label: 'L20 — Surprise Bill Specter',     note: 'Jordan · NSA' },
+  { level: 21, label: 'L21 — OB Per-Diem Specter',       note: 'Alex · catalog' },
+  { level: 22, label: 'L22 — Phantom Patient',           note: 'Kim · catalog' },
+  { level: 23, label: 'L23 — Risk Adjustment Hollow',    note: 'Pat · catalog' },
+  { level: 24, label: 'L24 — Chemo Bundle Specter',      note: 'Alex · catalog' },
+  { level: 25, label: 'L25 — Two-Midnight Mire',         note: 'Pat · catalog' },
+  { level: 26, label: 'L26 — Underpayment Specter',      note: 'Alex · CO-45' },
+  { level: 27, label: 'L27 — COB Cascade Spider',        note: 'Kim · catalog' },
+  { level: 28, label: 'L28 — Case-Rate Specter',         note: 'Alex · catalog' },
+  { level: 29, label: 'L29 — MRF Cartographer',          note: 'Sam · catalog' },
+  { level: 30, label: 'L30 — IDR Crucible',              note: 'Sam · catalog' },
+  { level: 31, label: 'L31 — 340B Specter',              note: 'Alex · catalog' },
+  { level: 32, label: 'L32 — HIPAA Spider',              note: 'Sam · catalog' },
+  { level: 33, label: 'L33 — The Quarterly Audit',       note: 'Dana · boss' },
 ]
 
 /** Hospital-scene room teleports. Each entry sets
@@ -251,16 +274,39 @@ const ROOM_JUMPS: { id: string; label: string; x: number; y: number }[] = [
 /** Encounter id used to mark the "previous level done" for each
  *  level transition. Order matches LEVEL_DEFEAT_THRESHOLD = [1,2,…]. */
 const PRESET_DEFEAT_SEQUENCE = [
-  'intro_wrong_card',      // L1
-  'eligibility_fog',       // L2
-  'co_197',                // L3
-  'co_97',                 // L4
-  'co_50',                 // L5
-  'co_16_swarm',           // L6
-  'co_29_reaper',          // L7
-  'surprise_bill_specter', // L8
-  'co_18_doppelganger',    // L9 — was oa_23_hydra (hydra demoted to prototype-only)
-  'boss_audit',            // L10
+  'intro_wrong_card',                  // L1  intro
+  'catalog_asp_wac_apothecary',        // L2  asp-wac
+  'eligibility_fog',                   // L3  fog
+  'catalog_stoploss_reckoner',         // L4  stoploss
+  'co_197',                            // L5  gatekeeper
+  'catalog_form_mirror',               // L6  form-mirror
+  'catalog_outpatient_surgery_grouper',// L7  outpatient-surgery-grouper
+  'catalog_no_show_bill',              // L8  no-show
+  'co_97',                             // L9  bundle
+  'lighthouse_charity',                // L10 lighthouse
+  'catalog_gfe_oracle',                // L11 gfe-oracle
+  'co_50',                             // L12 wraith
+  'co_16_swarm',                       // L13 swarm
+  'co_18_doppelganger',                // L14 doppelganger
+  'catalog_implant_carveout_specter',  // L15 implant
+  'catalog_credentialing_lattice',     // L16 credentialing
+  'catalog_carveout_phantom',          // L17 carveout-phantom
+  'catalog_cpt_licensure_mire',        // L18 cpt-licensure
+  'co_29_reaper',                      // L19 reaper
+  'surprise_bill_specter',             // L20 surprise-bill
+  'catalog_ob_perdiem_specter',        // L21 ob-perdiem
+  'catalog_phantom_patient',           // L22 phantom-patient
+  'catalog_risk_adj_hollow',           // L23 risk-adj
+  'catalog_chemo_bundle_specter',      // L24 chemo-bundle
+  'catalog_two_midnight_mire',         // L25 two-midnight
+  'underpayment_specter',              // L26 specter
+  'catalog_cob_cascade_spider',        // L27 cob-cascade
+  'catalog_case_rate_specter',         // L28 case-rate
+  'catalog_mrf_cartographer',          // L29 mrf
+  'catalog_idr_crucible',              // L30 idr-crucible
+  'catalog_three_forty_b_specter',     // L31 340b
+  'catalog_hipaa_spider',              // L32 hipaa
+  'boss_audit',                        // L33 audit-boss
 ]
 
 /** Intro skip-to anchors. Indexes into BEATS in introBeats.ts — pick
@@ -285,16 +331,16 @@ const INTRO_BEATS: { beat: number; label: string }[] = [
 ]
 
 function buildPresetSave(targetLevel: number): string {
-  const lvl = Math.max(1, Math.min(10, targetLevel))
+  const lvl = Math.max(1, Math.min(33, targetLevel))
   // Need (lvl - 1) defeats so threshold for the previous level is met,
   // landing the player AT `lvl` ready to take its case.
   const defeats = PRESET_DEFEAT_SEQUENCE.slice(0, lvl - 1)
-  const levelComplete = Array(10).fill(false)
+  const levelComplete = Array(33).fill(false)
   for (let i = 0; i < lvl - 1; i++) levelComplete[i] = true
   const state = {
     currentLevel: lvl,
     levelComplete,
-    levelStars: Array(10).fill(0),
+    levelStars: Array(33).fill(0),
     resources: { hp: 100, maxHp: 100, cash: 0, reputation: 50, auditRisk: 0, stress: 0 },
     tools: ['submit_837p', 'eligibility_270', 'claim_scrubber', 'cdi_query', 'appeal_letter'],
     codexUnlocked: [],

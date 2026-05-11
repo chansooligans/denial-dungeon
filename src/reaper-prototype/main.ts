@@ -20,7 +20,7 @@
 // bits will be obvious to extract.
 
 import { CASES } from '../content/cases'
-import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
+import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap, notifyParentVictory} from '../shared/prototype-base'
 import { CASE_RECAPS } from '../content/case-recaps'
 
 interface SubscriberOption {
@@ -970,6 +970,7 @@ function attemptSubmit() {
   // Mark submitted first; spendDays() guards filingClosed on !packetSubmitted,
   // so a clutch submit that lands the clock exactly at 0 still counts as a win.
   state.packetSubmitted = true
+  notifyParentVictory('reaper')
   spendDays(COST.submit, `filed the waiver packet`)
 }
 

@@ -24,7 +24,7 @@
 // citation builder).
 
 import { CASES } from '../content/cases'
-import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
+import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap, notifyParentVictory} from '../shared/prototype-base'
 import { CASE_RECAPS } from '../content/case-recaps'
 
 interface FrequencyOption {
@@ -820,6 +820,7 @@ function pickSubscriber(id: string) {
 function attemptSubmit() {
   if (state.resolvedIssues.size < issues.length) return
   state.packetSubmitted = true
+  notifyParentVictory('doppelganger')
 }
 
 function reset() {

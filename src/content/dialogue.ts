@@ -966,20 +966,605 @@ export const DIALOGUES: Record<string, DialogueNode> = {
     text: "They're not in a hurry. They never are.",
     choices: [{ text: '(Step away.)' }],
   },
+
+  // ===== 33-level migration: catalog-case intake dialogues =====
+  // Each one a 3-node tree (intro → ask → optional back-out). The
+  // case body uses the gloss from case-order.ts; the descent fires
+  // the corresponding catalog_* encounter id which routes through
+  // PrototypeIframeScene.
+
+  // L2 — Alex, ASP / WAC Apothecary
+  alex_asp_wac_intake: {
+    id: 'alex_asp_wac_intake',
+    speaker: 'Alex',
+    text: "Got a Part B drug denial — J-code units don't reconcile with ASP+6%. NDC↔HCPCS crosswalk might be off. Look interesting?",
+    next: 'alex_asp_wac_intake_2',
+  },
+  alex_asp_wac_intake_2: {
+    id: 'alex_asp_wac_intake_2',
+    speaker: 'Alex',
+    text: "Want to chase it down? Pricing math is mostly checking the units against the dose. If you spot the mistake, it's a clean recover.",
+    choices: [
+      { text: '(Pull the J-code file.)',
+        effect: { triggerDescent: { encounterId: 'catalog_asp_wac_apothecary' } } },
+      { text: 'Maybe later.', next: 'alex_asp_wac_intake_back' },
+    ],
+  },
+  alex_asp_wac_intake_back: {
+    id: 'alex_asp_wac_intake_back',
+    speaker: 'Alex',
+    text: "Fair. The pricing files don't move on us.",
+    choices: [{ text: '(Step away.)' }],
+  },
+
+  // L4 — Alex, Stoploss Reckoner
+  alex_stoploss_intake: {
+    id: 'alex_stoploss_intake',
+    speaker: 'Alex',
+    text: "Trauma case from last quarter — total charges crossed the stoploss threshold, but the payment looks like they paid the case rate flat. Contract's reckoning is off.",
+    next: 'alex_stoploss_intake_2',
+  },
+  alex_stoploss_intake_2: {
+    id: 'alex_stoploss_intake_2',
+    speaker: 'Alex',
+    text: "I need someone to walk the math + the clause. Want to take it?",
+    choices: [
+      { text: '(Pull the EOR + contract.)',
+        effect: { triggerDescent: { encounterId: 'catalog_stoploss_reckoner' } } },
+      { text: 'Not yet.', next: 'alex_stoploss_intake_back' },
+    ],
+  },
+  alex_stoploss_intake_back: {
+    id: 'alex_stoploss_intake_back',
+    speaker: 'Alex',
+    text: "The variance report's still going to be there.",
+    choices: [{ text: '(Step away.)' }],
+  },
+
+  // L6 — Pat, Form Mirror
+  pat_form_mirror_intake: {
+    id: 'pat_form_mirror_intake',
+    speaker: 'Pat',
+    text: "Coding flagged a form question. Same service, two different bill types — CMS-1500 or UB-04 depending on who's billing. Want to settle it?",
+    next: 'pat_form_mirror_intake_2',
+  },
+  pat_form_mirror_intake_2: {
+    id: 'pat_form_mirror_intake_2',
+    speaker: 'Pat',
+    text: "Routing question, mostly. If we pick wrong, the claim lands in the wrong adjudication path.",
+    choices: [
+      { text: '(Open the file.)',
+        effect: { triggerDescent: { encounterId: 'catalog_form_mirror' } } },
+      { text: 'I\'ll come back.', next: 'pat_form_mirror_intake_back' },
+    ],
+  },
+  pat_form_mirror_intake_back: {
+    id: 'pat_form_mirror_intake_back',
+    speaker: 'Pat',
+    text: "Fine. I'll keep the chart out.",
+    choices: [{ text: '(Step away.)' }],
+  },
+
+  // L7 — Pat, Outpatient Surgery Grouper
+  pat_outpatient_surgery_intake: {
+    id: 'pat_outpatient_surgery_intake',
+    speaker: 'Pat',
+    text: "Outpatient surgery case where the APC grouper put a 'T' code into a packaged-N bundle. The line should pay separately; it isn't.",
+    next: 'pat_outpatient_surgery_intake_2',
+  },
+  pat_outpatient_surgery_intake_2: {
+    id: 'pat_outpatient_surgery_intake_2',
+    speaker: 'Pat',
+    text: "Status indicators are the lever. Want to read the chart and run the grouper logic?",
+    choices: [
+      { text: '(Pull the case.)',
+        effect: { triggerDescent: { encounterId: 'catalog_outpatient_surgery_grouper' } } },
+      { text: 'Later.', next: 'pat_outpatient_surgery_intake_back' },
+    ],
+  },
+  pat_outpatient_surgery_intake_back: {
+    id: 'pat_outpatient_surgery_intake_back',
+    speaker: 'Pat',
+    text: "It's a quarterly issue. We'll see it again.",
+    choices: [{ text: '(Step away.)' }],
+  },
+
+  // L8 — Jordan, No-Show Bill (release-valve)
+  jordan_no_show_intake: {
+    id: 'jordan_no_show_intake',
+    speaker: 'Jordan',
+    text: "Patient missed an appointment, billing department auto-fee'd them, they're calling to push back. There's a clinical reason — they were in the ER that morning.",
+    next: 'jordan_no_show_intake_2',
+  },
+  jordan_no_show_intake_2: {
+    id: 'jordan_no_show_intake_2',
+    speaker: 'Jordan',
+    text: "Want to walk the no-show policy and decide if we waive? Patient-facing call, no codes.",
+    choices: [
+      { text: '(Take the call.)',
+        effect: { triggerDescent: { encounterId: 'catalog_no_show_bill' } } },
+      { text: 'Not now.', next: 'jordan_no_show_intake_back' },
+    ],
+  },
+  jordan_no_show_intake_back: {
+    id: 'jordan_no_show_intake_back',
+    speaker: 'Jordan',
+    text: "She's on hold. I'll keep her warm.",
+    choices: [{ text: '(Step away.)' }],
+  },
+
+  // L10 — Jordan, Lighthouse (charity)
+  jordan_lighthouse_intake: {
+    id: 'jordan_lighthouse_intake',
+    speaker: 'Jordan',
+    text: "A patient who can't pay. Walked into the ER three weeks ago with no insurance and no income above 200% FPL. We have §501(r) for exactly this; the application's open.",
+    next: 'jordan_lighthouse_intake_2',
+  },
+  jordan_lighthouse_intake_2: {
+    id: 'jordan_lighthouse_intake_2',
+    speaker: 'Jordan',
+    text: "Want to walk the screen + the presumptive eligibility check?",
+    choices: [
+      { text: '(Open the application.)',
+        effect: { triggerDescent: { encounterId: 'lighthouse_charity' } } },
+      { text: 'Give me a minute.', next: 'jordan_lighthouse_intake_back' },
+    ],
+  },
+  jordan_lighthouse_intake_back: {
+    id: 'jordan_lighthouse_intake_back',
+    speaker: 'Jordan',
+    text: "He's not going anywhere. He's been in this lobby longer than I have.",
+    choices: [{ text: '(Step away.)' }],
+  },
+
+  // L11 — Sam, GFE Oracle
+  sam_gfe_intake: {
+    id: 'sam_gfe_intake',
+    speaker: 'Sam',
+    text: "Patient says the bill came in $1,200 over their GFE. NSA dispute path opens at $400. They've already started the paperwork.",
+    next: 'sam_gfe_intake_2',
+  },
+  sam_gfe_intake_2: {
+    id: 'sam_gfe_intake_2',
+    speaker: 'Sam',
+    text: "I need someone to itemize the GFE vs. the actual bill and find the gap. Want it?",
+    choices: [
+      { text: '(Take it.)',
+        effect: { triggerDescent: { encounterId: 'catalog_gfe_oracle' } } },
+      { text: 'Later.', next: 'sam_gfe_intake_back' },
+    ],
+  },
+  sam_gfe_intake_back: {
+    id: 'sam_gfe_intake_back',
+    speaker: 'Sam',
+    text: "Patient has 30 days to file. Don't make me chase you.",
+    choices: [{ text: '(Step away.)' }],
+  },
+
+  // L15 — Alex, Implant Carve-Out
+  alex_implant_carveout_intake: {
+    id: 'alex_implant_carveout_intake',
+    speaker: 'Alex',
+    text: "Surgical case where the implant invoice was $14K above the stoploss threshold. Contract carves it out — payer paid the bundled case rate anyway.",
+    next: 'alex_implant_carveout_intake_2',
+  },
+  alex_implant_carveout_intake_2: {
+    id: 'alex_implant_carveout_intake_2',
+    speaker: 'Alex',
+    text: "Pull the manufacturer invoice + the contract clause. Walk the math. Game?",
+    choices: [
+      { text: '(Open the case.)',
+        effect: { triggerDescent: { encounterId: 'catalog_implant_carveout_specter' } } },
+      { text: 'Not yet.', next: 'alex_implant_carveout_intake_back' },
+    ],
+  },
+  alex_implant_carveout_intake_back: {
+    id: 'alex_implant_carveout_intake_back',
+    speaker: 'Alex',
+    text: "Six figures in aggregate. I'll wait.",
+    choices: [{ text: '(Step away.)' }],
+  },
+
+  // L16 — Kim, Credentialing Lattice
+  kim_credentialing_intake: {
+    id: 'kim_credentialing_intake',
+    speaker: 'Kim',
+    text: "New hire denied — Aetna says the doc isn't credentialed yet. He's been seeing patients for six weeks under a covering attending, but the bill went out under his own NPI.",
+    next: 'kim_credentialing_intake_2',
+  },
+  kim_credentialing_intake_2: {
+    id: 'kim_credentialing_intake_2',
+    speaker: 'Kim',
+    text: "Retro-credential request? Re-route under covering? Want to figure it out?",
+    choices: [
+      { text: '(Pull the credentialing file.)',
+        effect: { triggerDescent: { encounterId: 'catalog_credentialing_lattice' } } },
+      { text: 'Maybe later.', next: 'kim_credentialing_intake_back' },
+    ],
+  },
+  kim_credentialing_intake_back: {
+    id: 'kim_credentialing_intake_back',
+    speaker: 'Kim',
+    text: "Sixty days from charge to denial. Clock's running.",
+    choices: [{ text: '(Step away.)' }],
+  },
+
+  // L17 — Alex, Carve-Out Phantom (NSA carve-out)
+  alex_carveout_phantom_intake: {
+    id: 'alex_carveout_phantom_intake',
+    speaker: 'Alex',
+    text: "ER visit, facility in-network, anesthesiologist group OON. Patient got two bills — facility's fine, physician's a balance bill that NSA should be capping.",
+    next: 'alex_carveout_phantom_intake_2',
+  },
+  alex_carveout_phantom_intake_2: {
+    id: 'alex_carveout_phantom_intake_2',
+    speaker: 'Alex',
+    text: "Recalculate cost-share. Route the OON ↔ payer fight to IDR. Want it?",
+    choices: [
+      { text: '(Take the case.)',
+        effect: { triggerDescent: { encounterId: 'catalog_carveout_phantom' } } },
+      { text: 'Not now.', next: 'alex_carveout_phantom_intake_back' },
+    ],
+  },
+  alex_carveout_phantom_intake_back: {
+    id: 'alex_carveout_phantom_intake_back',
+    speaker: 'Alex',
+    text: "Patient escalated to the state AG once. Don't make that happen again.",
+    choices: [{ text: '(Step away.)' }],
+  },
+
+  // L18 — Pat, CPT Licensure Mire
+  pat_cpt_licensure_intake: {
+    id: 'pat_cpt_licensure_intake',
+    speaker: 'Pat',
+    text: "Compliance flagged our internal CPT crosswalk tool — AMA's licensing terms changed and our use might've drifted out of compliance.",
+    next: 'pat_cpt_licensure_intake_2',
+  },
+  pat_cpt_licensure_intake_2: {
+    id: 'pat_cpt_licensure_intake_2',
+    speaker: 'Pat',
+    text: "Need someone to read the license, audit the tool's usage, and find the right HCPCS equivalent where it matters. You game?",
+    choices: [
+      { text: '(Take the audit.)',
+        effect: { triggerDescent: { encounterId: 'catalog_cpt_licensure_mire' } } },
+      { text: 'Pass for now.', next: 'pat_cpt_licensure_intake_back' },
+    ],
+  },
+  pat_cpt_licensure_intake_back: {
+    id: 'pat_cpt_licensure_intake_back',
+    speaker: 'Pat',
+    text: "License doesn't lapse. But our copy of the manual does.",
+    choices: [{ text: '(Step away.)' }],
+  },
+
+  // L21 — Alex, OB Per-Diem Specter
+  alex_ob_perdiem_intake: {
+    id: 'alex_ob_perdiem_intake',
+    speaker: 'Alex',
+    text: "L&D case — vaginal delivery converted to C-section mid-labor. Payer paid the OB per-diem base rate; the C-section escalator never triggered.",
+    next: 'alex_ob_perdiem_intake_2',
+  },
+  alex_ob_perdiem_intake_2: {
+    id: 'alex_ob_perdiem_intake_2',
+    speaker: 'Alex',
+    text: "Probably a coding-side miss. Pull the contract clause + the procedure record. Want to chase it?",
+    choices: [
+      { text: '(Pull the case.)',
+        effect: { triggerDescent: { encounterId: 'catalog_ob_perdiem_specter' } } },
+      { text: 'Not yet.', next: 'alex_ob_perdiem_intake_back' },
+    ],
+  },
+  alex_ob_perdiem_intake_back: {
+    id: 'alex_ob_perdiem_intake_back',
+    speaker: 'Alex',
+    text: "The escalator's worth four figures per case. We see this a lot.",
+    choices: [{ text: '(Step away.)' }],
+  },
+
+  // L22 — Kim, Phantom Patient
+  kim_phantom_patient_intake: {
+    id: 'kim_phantom_patient_intake',
+    speaker: 'Kim',
+    text: "Two patients with the same name, same DOB, same zip code. They collided into one MRN at intake. Treatment histories tangled.",
+    next: 'kim_phantom_patient_intake_2',
+  },
+  kim_phantom_patient_intake_2: {
+    id: 'kim_phantom_patient_intake_2',
+    speaker: 'Kim',
+    text: "Walk the chart timelines, separate them at the source. Both patients are real; both deserve their own MRN. Take it?",
+    choices: [
+      { text: '(Open both charts.)',
+        effect: { triggerDescent: { encounterId: 'catalog_phantom_patient' } } },
+      { text: 'Give me a minute.', next: 'kim_phantom_patient_intake_back' },
+    ],
+  },
+  kim_phantom_patient_intake_back: {
+    id: 'kim_phantom_patient_intake_back',
+    speaker: 'Kim',
+    text: "Don't take long. Both of them are getting bills that aren't theirs.",
+    choices: [{ text: '(Step away.)' }],
+  },
+
+  // L23 — Pat, Risk Adjustment Hollow
+  pat_risk_adj_intake: {
+    id: 'pat_risk_adj_intake',
+    speaker: 'Pat',
+    text: "Annual HCC capture — patient with documented chronic conditions last year, none captured this year. RAF score dropped by 0.8. Reimbursement follows.",
+    next: 'pat_risk_adj_intake_2',
+  },
+  pat_risk_adj_intake_2: {
+    id: 'pat_risk_adj_intake_2',
+    speaker: 'Pat',
+    text: "Pull the chart. See what's actually documented this year. Recapture what we can. Game?",
+    choices: [
+      { text: '(Take the review.)',
+        effect: { triggerDescent: { encounterId: 'catalog_risk_adj_hollow' } } },
+      { text: 'Not yet.', next: 'pat_risk_adj_intake_back' },
+    ],
+  },
+  pat_risk_adj_intake_back: {
+    id: 'pat_risk_adj_intake_back',
+    speaker: 'Pat',
+    text: "Year-end closes the capture window. Don't sleep on it.",
+    choices: [{ text: '(Step away.)' }],
+  },
+
+  // L24 — Alex, Chemo Bundle Specter
+  alex_chemo_bundle_intake: {
+    id: 'alex_chemo_bundle_intake',
+    speaker: 'Alex',
+    text: "Oncology case — chemo administration codes (96413, 96415) dropped from the claim. Payer paid the drug + a case rate that doesn't cover admin time.",
+    next: 'alex_chemo_bundle_intake_2',
+  },
+  alex_chemo_bundle_intake_2: {
+    id: 'alex_chemo_bundle_intake_2',
+    speaker: 'Alex',
+    text: "Pull the infusion record, the claim, and the contract. Find the missing units. Take it?",
+    choices: [
+      { text: '(Open the file.)',
+        effect: { triggerDescent: { encounterId: 'catalog_chemo_bundle_specter' } } },
+      { text: 'Pass.', next: 'alex_chemo_bundle_intake_back' },
+    ],
+  },
+  alex_chemo_bundle_intake_back: {
+    id: 'alex_chemo_bundle_intake_back',
+    speaker: 'Alex',
+    text: "Six-figure aggregate every quarter. Don't pass long.",
+    choices: [{ text: '(Step away.)' }],
+  },
+
+  // L25 — Pat, Two-Midnight Mire
+  pat_two_midnight_intake: {
+    id: 'pat_two_midnight_intake',
+    speaker: 'Pat',
+    text: "Medicare admit, 38 hours total stay. Payer downgraded to observation. Clinical narrative supports inpatient — physician documented the 2-midnight expectation.",
+    next: 'pat_two_midnight_intake_2',
+  },
+  pat_two_midnight_intake_2: {
+    id: 'pat_two_midnight_intake_2',
+    speaker: 'Pat',
+    text: "Walk the H&P, progress notes, and discharge summary. Build the inpatient defense. You up?",
+    choices: [
+      { text: '(Pull the chart.)',
+        effect: { triggerDescent: { encounterId: 'catalog_two_midnight_mire' } } },
+      { text: 'Later.', next: 'pat_two_midnight_intake_back' },
+    ],
+  },
+  pat_two_midnight_intake_back: {
+    id: 'pat_two_midnight_intake_back',
+    speaker: 'Pat',
+    text: "The clock on the appeal isn't generous.",
+    choices: [{ text: '(Step away.)' }],
+  },
+
+  // L26 — Alex, Underpayment Specter
+  alex_specter_intake: {
+    id: 'alex_specter_intake',
+    speaker: 'Alex',
+    text: "CO-45 streak across one payer this quarter — paid amounts running 8-12% below contract. Either fee schedule loaded wrong or someone's adjudicating to a different one.",
+    next: 'alex_specter_intake_2',
+  },
+  alex_specter_intake_2: {
+    id: 'alex_specter_intake_2',
+    speaker: 'Alex',
+    text: "Pull the EOR + the contract rate. Build the dispute. Take it?",
+    choices: [
+      { text: '(Open the case.)',
+        effect: { triggerDescent: { encounterId: 'underpayment_specter' } } },
+      { text: 'Not yet.', next: 'alex_specter_intake_back' },
+    ],
+  },
+  alex_specter_intake_back: {
+    id: 'alex_specter_intake_back',
+    speaker: 'Alex',
+    text: "Underpayment dollars are silent. Until you look.",
+    choices: [{ text: '(Step away.)' }],
+  },
+
+  // L27 — Kim, COB Cascade Spider
+  kim_cob_cascade_intake: {
+    id: 'kim_cob_cascade_intake',
+    speaker: 'Kim',
+    text: "Patient with three coverages — Medicare, retiree plan through wife, employer plan through self. All three 271s say 'secondary.' Nobody wants to pay first.",
+    next: 'kim_cob_cascade_intake_2',
+  },
+  kim_cob_cascade_intake_2: {
+    id: 'kim_cob_cascade_intake_2',
+    speaker: 'Kim',
+    text: "Walk the COB rules + the actual order. Run fresh inquiries. Take it?",
+    choices: [
+      { text: '(Pull the file.)',
+        effect: { triggerDescent: { encounterId: 'catalog_cob_cascade_spider' } } },
+      { text: 'Later.', next: 'kim_cob_cascade_intake_back' },
+    ],
+  },
+  kim_cob_cascade_intake_back: {
+    id: 'kim_cob_cascade_intake_back',
+    speaker: 'Kim',
+    text: "Patient called four times last week. He's not going to stop.",
+    choices: [{ text: '(Step away.)' }],
+  },
+
+  // L28 — Alex, Case-Rate Specter
+  alex_case_rate_intake: {
+    id: 'alex_case_rate_intake',
+    speaker: 'Alex',
+    text: "Eight-day stay paid as one case rate. Contract has a per-diem trigger at day 5 that should've kicked in. Payer's adjudication didn't.",
+    next: 'alex_case_rate_intake_2',
+  },
+  alex_case_rate_intake_2: {
+    id: 'alex_case_rate_intake_2',
+    speaker: 'Alex',
+    text: "Walk the LOS + contract clauses. Build the per-diem dispute. Want it?",
+    choices: [
+      { text: '(Take the case.)',
+        effect: { triggerDescent: { encounterId: 'catalog_case_rate_specter' } } },
+      { text: 'Pass.', next: 'alex_case_rate_intake_back' },
+    ],
+  },
+  alex_case_rate_intake_back: {
+    id: 'alex_case_rate_intake_back',
+    speaker: 'Alex',
+    text: "Three or four of these a month. Aggregate matters.",
+    choices: [{ text: '(Step away.)' }],
+  },
+
+  // L29 — Sam, MRF Cartographer
+  sam_mrf_intake: {
+    id: 'sam_mrf_intake',
+    speaker: 'Sam',
+    text: "Contract dispute on a specialty drug. Payer says their negotiated rate is what they paid; provider says no. The MRF should settle it — if we can read it.",
+    next: 'sam_mrf_intake_2',
+  },
+  sam_mrf_intake_2: {
+    id: 'sam_mrf_intake_2',
+    speaker: 'Sam',
+    text: "8 GB of JSON. jq + grep. Find the rate for J-code 9120. Game?",
+    choices: [
+      { text: '(Open the MRF.)',
+        effect: { triggerDescent: { encounterId: 'catalog_mrf_cartographer' } } },
+      { text: 'Not yet.', next: 'sam_mrf_intake_back' },
+    ],
+  },
+  sam_mrf_intake_back: {
+    id: 'sam_mrf_intake_back',
+    speaker: 'Sam',
+    text: "The file is updated monthly. Yours won't be the only one.",
+    choices: [{ text: '(Step away.)' }],
+  },
+
+  // L30 — Sam, IDR Crucible
+  sam_idr_intake: {
+    id: 'sam_idr_intake',
+    speaker: 'Sam',
+    text: "IDR submission due Friday. Payer's offer is 60% of QPA. Our position is 110% based on complexity. Three days to pick a number and defend the math.",
+    next: 'sam_idr_intake_2',
+  },
+  sam_idr_intake_2: {
+    id: 'sam_idr_intake_2',
+    speaker: 'Sam',
+    text: "Want to walk the QPA calc + the case-specific factors? Baseball arbitration — the arbiter picks one number, no middle ground.",
+    choices: [
+      { text: '(Take the submission.)',
+        effect: { triggerDescent: { encounterId: 'catalog_idr_crucible' } } },
+      { text: 'Later.', next: 'sam_idr_intake_back' },
+    ],
+  },
+  sam_idr_intake_back: {
+    id: 'sam_idr_intake_back',
+    speaker: 'Sam',
+    text: "Friday's not moving.",
+    choices: [{ text: '(Step away.)' }],
+  },
+
+  // L31 — Alex, 340B Specter
+  alex_340b_intake: {
+    id: 'alex_340b_intake',
+    speaker: 'Alex',
+    text: "340B-eligible drug reimbursed at the non-340B rate post-Becerra. Either we lose the discount on this DOS or the payer's reading the clawback rule wrong.",
+    next: 'alex_340b_intake_2',
+  },
+  alex_340b_intake_2: {
+    id: 'alex_340b_intake_2',
+    speaker: 'Alex',
+    text: "Pull the eligibility + the DOS + the policy. Walk it. Take it?",
+    choices: [
+      { text: '(Open the case.)',
+        effect: { triggerDescent: { encounterId: 'catalog_three_forty_b_specter' } } },
+      { text: 'Not now.', next: 'alex_340b_intake_back' },
+    ],
+  },
+  alex_340b_intake_back: {
+    id: 'alex_340b_intake_back',
+    speaker: 'Alex',
+    text: "Pharmacy's keeping a tally. They'll appreciate the recover.",
+    choices: [{ text: '(Step away.)' }],
+  },
+
+  // L32 — Sam, HIPAA Spider
+  sam_hipaa_intake: {
+    id: 'sam_hipaa_intake',
+    speaker: 'Sam',
+    text: "Fax-machine misroute Tuesday — six pages of PHI to a podiatrist's office that isn't ours. Four-factor assessment hasn't started.",
+    next: 'sam_hipaa_intake_2',
+  },
+  sam_hipaa_intake_2: {
+    id: 'sam_hipaa_intake_2',
+    speaker: 'Sam',
+    text: "Don't say breach yet — assess first. Walk the four factors, document, decide on notification. Take it?",
+    choices: [
+      { text: '(Open the file.)',
+        effect: { triggerDescent: { encounterId: 'catalog_hipaa_spider' } } },
+      { text: 'Compliance can wait one more day.', next: 'sam_hipaa_intake_back' },
+    ],
+  },
+  sam_hipaa_intake_back: {
+    id: 'sam_hipaa_intake_back',
+    speaker: 'Sam',
+    text: "Sixty-day notification clock starts when we knew. We know now.",
+    choices: [{ text: '(Step away.)' }],
+  },
 }
 
 /** Per-level dialogue overrides. When `state.currentLevel` matches a
  *  key here, the matching NPC opens the listed dialogue tree instead
  *  of their default `dialogueKey`. Lets one NPC carry different cases
- *  across levels without forking their identity. */
+ *  across levels without forking their identity.
+ *
+ *  33-level structure — each level routes its case-handing NPC to
+ *  the right intake tree. Existing dialogues from the 10-level shape
+ *  are reused where the case is unchanged (only the level number moved). */
 export const LEVEL_NPC_DIALOGUES: Record<number, Record<string, string>> = {
-  2:  { kim:      'kim_l2_intake' },
-  3:  { sam:      'sam_l3_intake' },
-  4:  { pat:      'pat_l4_intake' },
-  5:  { sam:      'sam_l5_intake' },
-  6:  { alex:     'alex_l6_intake' },
-  7:  { sam:      'sam_l7_intake' },
-  8:  { jordan:   'jordan_l8_intake' },
-  9:  { kim:      'kim_l9_intake' },
-  10: { dana:     'dana_l10_intake' },
+  2:  { alex:     'alex_asp_wac_intake' },
+  3:  { kim:      'kim_l2_intake' },             // fog
+  4:  { alex:     'alex_stoploss_intake' },
+  5:  { sam:      'sam_l3_intake' },             // gatekeeper
+  6:  { pat:      'pat_form_mirror_intake' },
+  7:  { pat:      'pat_outpatient_surgery_intake' },
+  8:  { jordan:   'jordan_no_show_intake' },
+  9:  { pat:      'pat_l4_intake' },             // bundle
+  10: { jordan:   'jordan_lighthouse_intake' },
+  11: { sam:      'sam_gfe_intake' },
+  12: { sam:      'sam_l5_intake' },             // wraith
+  13: { alex:     'alex_l6_intake' },            // swarm
+  14: { kim:      'kim_l9_intake' },             // doppelganger
+  15: { alex:     'alex_implant_carveout_intake' },
+  16: { kim:      'kim_credentialing_intake' },
+  17: { alex:     'alex_carveout_phantom_intake' },
+  18: { pat:      'pat_cpt_licensure_intake' },
+  19: { sam:      'sam_l7_intake' },             // reaper
+  20: { jordan:   'jordan_l8_intake' },          // surprise-bill
+  21: { alex:     'alex_ob_perdiem_intake' },
+  22: { kim:      'kim_phantom_patient_intake' },
+  23: { pat:      'pat_risk_adj_intake' },
+  24: { alex:     'alex_chemo_bundle_intake' },
+  25: { pat:      'pat_two_midnight_intake' },
+  26: { alex:     'alex_specter_intake' },
+  27: { kim:      'kim_cob_cascade_intake' },
+  28: { alex:     'alex_case_rate_intake' },
+  29: { sam:      'sam_mrf_intake' },
+  30: { sam:      'sam_idr_intake' },
+  31: { alex:     'alex_340b_intake' },
+  32: { sam:      'sam_hipaa_intake' },
+  33: { dana:     'dana_l10_intake' },           // boss
 }

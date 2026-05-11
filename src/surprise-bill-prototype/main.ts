@@ -26,7 +26,7 @@
 // curriculum because they teach two different responsibilities
 // the PFS counter has to carry.
 
-import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap } from '../shared/prototype-base'
+import { BASE_CSS, districtVars, escape, renderCaseRecap, type CaseRecap, notifyParentVictory} from '../shared/prototype-base'
 import { CASE_RECAPS } from '../content/case-recaps'
 
 interface ClassifyOption {
@@ -798,6 +798,7 @@ function pickDispute(id: string) {
 function attemptSubmit() {
   if (state.resolvedIssues.size < issues.length) return
   state.packetSubmitted = true
+  notifyParentVictory('surprise-bill')
 }
 
 function reset() {
