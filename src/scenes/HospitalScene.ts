@@ -213,6 +213,7 @@ export class HospitalScene extends Phaser.Scene {
   private miniMapBg!: Phaser.GameObjects.Graphics
   private miniMapTiles!: Phaser.GameObjects.Graphics
   private miniMapPlayer!: Phaser.GameObjects.Graphics
+  private miniMapNpcMarker!: Phaser.GameObjects.Graphics
   private miniMapCell = 2
   private miniMapX = 0
   private miniMapY = 0
@@ -1044,7 +1045,8 @@ export class HospitalScene extends Phaser.Scene {
 
     this.miniMapBg = this.add.graphics().setDepth(99)
     this.miniMapTiles = this.add.graphics().setDepth(100)
-    this.miniMapPlayer = this.add.graphics().setDepth(101)
+    this.miniMapNpcMarker = this.add.graphics().setDepth(101)
+    this.miniMapPlayer = this.add.graphics().setDepth(102)
 
     // Pre-create one label per room with its actual short text and a
     // baseline fontSize so Phaser's internal text texture is allocated
@@ -1096,7 +1098,8 @@ export class HospitalScene extends Phaser.Scene {
     }).setOrigin(0.5, 1).setDepth(102)
 
     const miniMapObjs: Phaser.GameObjects.GameObject[] = [
-      this.miniMapDim, this.miniMapBg, this.miniMapTiles, this.miniMapPlayer,
+      this.miniMapDim, this.miniMapBg, this.miniMapTiles,
+      this.miniMapNpcMarker, this.miniMapPlayer,
       ...this.miniMapLabels, this.miniMapHitZone, this.miniMapCloseHint,
       this.miniMapHint,
     ]
@@ -1668,6 +1671,33 @@ export class HospitalScene extends Phaser.Scene {
     this.miniMapPlayer.fillRect(
       ox + this.playerTileX * cell - 1,
       oy + this.playerTileY * cell - 1,
+      cell + 2,
+      cell + 2
+    )
+    this.updateMiniMapNpcMarker()
+  }
+
+  /** Draw a gold quest marker on the mini-map at the objective NPC's tile.
+   *  Always visible regardless of fog so the player always knows where to go.
+   *  The objective NPC is the first entry in the level's npcsActive list that
+   *  has a placed sprite. */
+  private updateMiniMapNpcMarker() {
+    this.miniMapNpcMarker.clear()
+    const state = getState()
+    const level = LEVELS[state.currentLevel - 1]
+    const objectiveId = (level?.npcsActive ?? []).find(id =>
+      this.npcSprites.some(ns => ns.npc.id === id)
+    )
+    if (!objectiveId) return
+    const ns = this.npcSprites.find(n => n.npc.id === objectiveId)
+    if (!ns) return
+    const cell = this.miniMapCell
+    const ox = this.miniMapX + this.miniMapPad
+    const oy = this.miniMapY + this.miniMapPad
+    this.miniMapNpcMarker.fillStyle(0xf4c430, 1)
+    this.miniMapNpcMarker.fillRect(
+      ox + ns.tileX * cell - 1,
+      oy + ns.tileY * cell - 1,
       cell + 2,
       cell + 2
     )

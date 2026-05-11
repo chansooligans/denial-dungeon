@@ -36,6 +36,7 @@ export class DialogueScene extends Phaser.Scene {
   private choiceTexts: Phaser.GameObjects.Text[] = []
   private textBox!: Phaser.GameObjects.Rectangle
   private callingScene!: string
+  private bodyY!: number
   private onComplete?: (effects: any[]) => void
   private collectedEffects: any[] = []
 
@@ -77,6 +78,7 @@ export class DialogueScene extends Phaser.Scene {
       fontSize: `${speakerSize}px`, fontFamily: 'monospace', color: '#7ee2c1', fontStyle: 'bold',
     })
 
+    this.bodyY = bodyY
     this.bodyText = this.add.text(40, bodyY, '', {
       fontSize: `${bodySize}px`, fontFamily: 'monospace', color: '#d0d8e0',
       wordWrap: { width: width - 80 },
@@ -106,11 +108,14 @@ export class DialogueScene extends Phaser.Scene {
 
     const m = isTouchDevice()
     // Choice text matches the body bump: 52px native ≈ 11px on a
-    // phone, 18px on iPad. Step + top-offset scaled up so multi-
-    // choice menus don't overlap the bigger lines.
+    // phone, 18px on iPad. Step scaled up so multi-choice menus
+    // don't crowd each other on bigger text.
     const choiceSize = m ? 52 : 17
     const choiceStep = m ? 88 : 30
-    const choiceTopOffset = m ? 340 : 100
+    // Choices are placed just below the body text so they never
+    // overlap on mobile when the NPC line wraps to many lines.
+    const choiceGap  = m ? 60 : 16
+    const choicesStartY = this.bodyY + this.bodyText.height + choiceGap
 
     // Filter choices by their `condition` against game state (e.g. a
     // descent option that should only appear once the relevant chart
@@ -138,7 +143,7 @@ export class DialogueScene extends Phaser.Scene {
       }
 
       visibleChoices.forEach((choice, i) => {
-        const y = height - choiceTopOffset + i * choiceStep
+        const y = choicesStartY + i * choiceStep
         const ct = this.add.text(60, y, `  ${choice.text}`, {
           fontSize: `${choiceSize}px`, fontFamily: 'monospace', color: '#f4d06f',
         }).setInteractive({ useHandCursor: true })
