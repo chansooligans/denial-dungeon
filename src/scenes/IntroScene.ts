@@ -36,6 +36,10 @@ export class IntroScene extends Phaser.Scene {
   // splash and carries through the rest of the cinematic.
   private introSong?: Phaser.Sound.BaseSound
   private introSongBoosted = false
+  // Web Audio context for the procedural typewriter click (see
+  // playTypewriterClick). Lazy-created on first keystroke and closed
+  // in skipToTitle so the scene doesn't leak audio nodes across runs.
+  private typewriterCtx?: AudioContext
 
   // Set by init() when scene.start('Intro', { skipToBeat: N }) is
   // called from the dev panel. Lets QA jump into a specific beat
@@ -511,6 +515,12 @@ export class IntroScene extends Phaser.Scene {
         callback: () => {
           charIndex++
           t.setText(line.substring(0, charIndex))
+          // Typewriter click per character. Skip whitespace so the
+          // cadence reads as "key strokes" rather than a noise wall —
+          // a real typewriter doesn't click on the space bar (it does,
+          // but quieter; muting it entirely sounds better in mix).
+          const ch = line[charIndex - 1]
+          if (ch && ch !== ' ') this.playTypewriterClick()
         },
       })
 
@@ -997,6 +1007,13 @@ export class IntroScene extends Phaser.Scene {
     this.advanceCallback = undefined
     this.canAdvance = false
     this.stopVoice()
+    // Tear down the typewriter audio context. Browsers cap the number
+    // of live AudioContexts (~6 on Chrome) so leaving one per scene
+    // run breaks the cinematic after a few skips/replays.
+    if (this.typewriterCtx) {
+      try { this.typewriterCtx.close() } catch { /* already closed */ }
+      this.typewriterCtx = undefined
+    }
     // Intentionally do NOT stop the intro song — it carries from the
     // cinematic into the title screen as a single bed of music. The
     // sound persists because Phaser's sound manager is game-global.
@@ -1016,18 +1033,76 @@ export class IntroScene extends Phaser.Scene {
     this.introSongBoosted = false
   }
 
-  /** Play the voiceover for the current text beat (1-indexed). Stops
-   *  any voice that was still playing from the previous beat. */
+  /** Formerly played the per-beat voiceover MP3 (intro_voice_NN). The
+   *  cinematic now uses a procedural typewriter click per typed
+   *  character (see playTypewriterClick + showText) in place of voice
+   *  narration — quieter, no asset to maintain, and pairs naturally
+   *  with the text-typing visual.
+   *
+   *  This stub stays so the existing call sites in playBeat (and the
+   *  cover-with-voice path) keep working: it still ticks
+   *  textBeatCounter for skip-to-beat math and boosts the music bed
+   *  exactly when voice narration used to. `remainingVoiceMs` returns
+   *  0 naturally without `currentVoice`, so 'wait' beats fall back to
+   *  their authored duration. */
   private playBeatVoice() {
     this.textBeatCounter += 1
-    this.stopVoice()
-    const key = `intro_voice_${String(this.textBeatCounter).padStart(2, '0')}`
-    if (!this.cache.audio.exists(key)) return
-    this.currentVoice = this.sound.add(key)
-    this.currentVoice.play()
-    // Bring the music bed up to its under-narration mix the moment
-    // narration starts. Idempotent — only fires on the first VO beat.
     this.boostIntroSongForVoice()
+  }
+
+  /** Procedural typewriter key click. Lazy-instantiates a Web Audio
+   *  context on first use and synthesizes a short, percussive noise
+   *  burst per call — ~40ms with an exponential decay envelope and a
+   *  small random pitch wobble so the cadence doesn't read as a
+   *  machine gun. No asset to preload; survives offline / cold builds.
+   *
+   *  Respects the global Phaser mute toggle (the speaker icon in the
+   *  HUD) — when muted, this is a no-op. Failures (no AudioContext,
+   *  suspended state, etc.) swallow silently rather than break the
+   *  intro typing animation. */
+  private playTypewriterClick() {
+    if (this.sound.mute) return
+    try {
+      if (!this.typewriterCtx) {
+        const AC = (window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext }).AudioContext
+          ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+        if (!AC) return
+        this.typewriterCtx = new AC()
+      }
+      const ctx = this.typewriterCtx
+      // Mobile autoplay gate: contexts created before a user gesture
+      // start in 'suspended'. The first cinematic click happens after
+      // "press any key to begin" which counts as the gesture.
+      if (ctx.state === 'suspended') ctx.resume()
+
+      const dur = 0.04
+      const sampleCount = Math.floor(ctx.sampleRate * dur)
+      const buf = ctx.createBuffer(1, sampleCount, ctx.sampleRate)
+      const data = buf.getChannelData(0)
+      for (let i = 0; i < sampleCount; i++) {
+        // White noise with a sharp exponential decay — the percussive
+        // body of the click. Decay constant tuned by ear.
+        const t = i / sampleCount
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-t * 14)
+      }
+
+      const src = ctx.createBufferSource()
+      src.buffer = buf
+      // Random pitch shimmer (±20%) so the clicks vary slightly. Real
+      // typewriters never sound identical twice in a row.
+      src.playbackRate.value = 0.85 + Math.random() * 0.3
+
+      const gain = ctx.createGain()
+      gain.gain.value = 0.12
+
+      src.connect(gain).connect(ctx.destination)
+      const now = ctx.currentTime
+      src.start(now)
+      src.stop(now + dur + 0.01)
+    } catch {
+      // AudioContext can fail in restricted iframe / privacy contexts.
+      // Falling back to silent typing is preferable to a broken intro.
+    }
   }
 
   private stopVoice() {
