@@ -382,7 +382,7 @@ function briefingContent(): string {
         "Pick fights with documented merit. Some RAC findings are
         wrong; this one isn't."
       </p>
-      <p class="briefing-sign">"Don't be most people. — D."</p>
+      <p class="briefing-sign">"The clinical narrative is the defense. — D."</p>
     </div>
   `
 }

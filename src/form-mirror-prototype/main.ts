@@ -423,7 +423,7 @@ function briefingContent(): string {
           rejection. Different remedy. <em>New verb: REROUTE.</em>
         </li>
       </ul>
-      <p class="briefing-sign">"Don't be most people. — D."</p>
+      <p class="briefing-sign">"The form is the routing. — D."</p>
     </div>
   `
 }

@@ -349,7 +349,7 @@ function briefingContent(): string {
         That's the rule. The card is what someone said; the
         271 is what's actually true today."
       </p>
-      <p class="briefing-sign">"Don't be most people. — D."</p>
+      <p class="briefing-sign">"Trust the 271, not the card. — D."</p>
     </div>
   `
 }

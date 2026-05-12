@@ -61,7 +61,7 @@ export const WRAITH_PUZZLE: PuzzleSpec = {
       'connect a chart fact and a policy clause to the payer\'s ' +
       'specific assertion. <em>That\'s an appeal.</em>',
     ],
-    signoff: '"Don\'t be most people. — D."',
+    signoff: '"Chart fact + policy clause + payer line. Three pieces, one issue. — D."',
   },
   claim: claimFromCase(),
   issues: [

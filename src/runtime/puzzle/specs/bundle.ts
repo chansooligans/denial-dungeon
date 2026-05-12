@@ -73,7 +73,7 @@ export const BUNDLE_PUZZLE: PuzzleSpec = {
       'really was separate from the procedure — connect a chart fact ' +
       'to the NCCI guidance. <em>This is the appeal-ready version.</em>',
     ],
-    signoff: '"Don\'t be most people. — D."',
+    signoff: '"Modifier 25 isn\'t a trick. It\'s a sentence. — D."',
   },
   claim: claimFromCase(),
   issues: [

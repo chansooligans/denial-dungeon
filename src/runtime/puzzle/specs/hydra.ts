@@ -47,7 +47,7 @@ export const HYDRA_PUZZLE: PuzzleSpec = {
       'responsibility, Medicaid covers the remainder. The Hydra stops ' +
       'fighting itself.',
     ],
-    signoff: '"Don\'t be most people. — D."',
+    signoff: '"Cut the right head. — D."',
   },
   issues: [
     {

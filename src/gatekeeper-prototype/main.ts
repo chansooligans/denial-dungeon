@@ -348,7 +348,7 @@ function briefingContent(): string {
         write it down. Wrong rationale on the 278 gets you
         denied — read the chart and the criteria first."
       </p>
-      <p class="briefing-sign">"Don't be most people. — D."</p>
+      <p class="briefing-sign">"Don't argue with the Gatekeeper. File the right form. — D."</p>
     </div>
   `
 }

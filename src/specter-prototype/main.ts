@@ -394,7 +394,7 @@ function briefingContent(): string {
         "The Specter looks like nothing's wrong. That's the
         whole game. Look closer."
       </p>
-      <p class="briefing-sign">"Don't be most people. — D."</p>
+      <p class="briefing-sign">"The Specter looks like nothing's wrong. That's the whole game. — D."</p>
     </div>
   `
 }

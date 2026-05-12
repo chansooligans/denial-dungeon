@@ -314,7 +314,7 @@ function briefingContent(): string {
         behind policy; don\'t escalate to collections.
         <em>New verb: WAIVE.</em></li>
       </ul>
-      <p class="briefing-sign">"Don\'t be most people. — D."</p>
+      <p class="briefing-sign">"The script IS the policy. — D."</p>
     </div>
   `
 }

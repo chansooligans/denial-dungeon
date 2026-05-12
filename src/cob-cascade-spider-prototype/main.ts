@@ -377,7 +377,7 @@ function briefingContent(): string {
           household."
         </li>
       </ul>
-      <p class="briefing-sign">"Don't be most people. — D."</p>
+      <p class="briefing-sign">"Primary, then secondary. Run the inquiry. — D."</p>
     </div>
   `
 }

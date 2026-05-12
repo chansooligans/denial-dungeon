@@ -414,7 +414,7 @@ function briefingContent(): string {
         aren't healthcare services under the NSA, cord-blood is a
         third-party vendor. They're not on this document."
       </p>
-      <p class="briefing-sign">"Don't be most people. — D."</p>
+      <p class="briefing-sign">"Four hundred dollars is a door. — D."</p>
     </div>
   `
 }

@@ -321,7 +321,7 @@ function briefingContent(): string {
         corrected effective date. Skip reconsideration and the
         adjudicator denies again. <em>New verb: BACKDATE.</em></li>
       </ul>
-      <p class="briefing-sign">"Don't be most people. — D."</p>
+      <p class="briefing-sign">"Retro-credentialing is a real thing. Ask. — D."</p>
     </div>
   `
 }

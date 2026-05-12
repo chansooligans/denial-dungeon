@@ -72,7 +72,7 @@ export const REAPER_PUZZLE: PuzzleSpec = {
       'at Aetna\'s own provider manual section that allows for this ' +
       'exact case. <em>This is what unlocks the appeal.</em>',
     ],
-    signoff: '"Don\'t be most people. — D."',
+    signoff: '"The clock isn\'t your enemy. The paperwork is. — D."',
   },
   claim: claimFromCase(),
   issues: [

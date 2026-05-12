@@ -398,7 +398,7 @@ function briefingContent(): string {
         on uhcprovider.com — search 'outpatient procedure codes
         for reimbursement.' The 7/1/25 update is the latest."
       </p>
-      <p class="briefing-sign">"Don't be most people. — D."</p>
+      <p class="briefing-sign">"Status indicators do the bundling. — D."</p>
     </div>
   `
 }

@@ -369,7 +369,7 @@ function briefingContent(): string {
         stop being a problem. Just one of them gets paid —
         which is what we wanted in the first place."
       </p>
-      <p class="briefing-sign">"Don't be most people. — D."</p>
+      <p class="briefing-sign">"Two claims, one ICN, one truth. — D."</p>
     </div>
   `
 }

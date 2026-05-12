@@ -378,7 +378,7 @@ function briefingContent(): string {
           right, four wrong.
         </li>
       </ul>
-      <p class="briefing-sign">"Don\'t be most people. — D."</p>
+      <p class="briefing-sign">"The unit is the appeal. — D."</p>
     </div>
   `
 }

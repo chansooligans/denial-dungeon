@@ -386,7 +386,7 @@ function briefingContent(): string {
         patch the source. Don't be the person who fixes the
         same fourteen claims every Monday."
       </p>
-      <p class="briefing-sign">"Don't be most people. — D."</p>
+      <p class="briefing-sign">"Don't be the person who fixes the same fourteen claims every Monday. — D."</p>
     </div>
   `
 }

@@ -458,7 +458,7 @@ function briefingContent(): string {
         chargemaster. ${term('hard-coding', 'Hard-coding')} is
         invisible right up until it isn't."
       </p>
-      <p class="briefing-sign">"Don't be most people. — D."</p>
+      <p class="briefing-sign">"Admin code or it didn't happen. — D."</p>
     </div>
   `
 }

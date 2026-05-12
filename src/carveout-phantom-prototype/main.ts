@@ -405,7 +405,7 @@ function briefingContent(): string {
         ${money(FACILITY_BILL)}, already done — and walks. The fight
         between Anthem and Riverside is a different room."
       </p>
-      <p class="briefing-sign">"Don't be most people. — D."</p>
+      <p class="briefing-sign">"Patient first, IDR second. — D."</p>
     </div>
   `
 }
