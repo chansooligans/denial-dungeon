@@ -503,6 +503,13 @@ export class HospitalScene extends Phaser.Scene {
       this.cameras.main.centerOn(playerTargetX, playerTargetY)
       debugEvent(`wake:player-reset @(${this.playerTileX},${this.playerTileY})`)
 
+      // If the level advanced during the puzzle round-trip, new NPCs
+      // become active (e.g. Alex at L2 once the intro is done). Re-run
+      // placeNPCs — it's idempotent now, so existing sprites stay
+      // and only the newly-active ones get spawned. Without this the
+      // player arrives in a "case-handler missing" Hospital.
+      try { this.placeNPCs() } catch (e) { debugEvent('wake:placeNPCs-err') }
+
       // Reapply NPC visibility against the fog state — defensive in
       // case any NPC alpha drifted during sleep. Anjali's thanks
       // sequence depends on her being visible at the desk.
@@ -764,7 +771,12 @@ export class HospitalScene extends Phaser.Scene {
     // level) so each NPC is placed exactly once. Per-NPC, prefer a
     // placement whose `levels` filter matches the current level; fall
     // back to a placement with no filter (the default).
-    const placedSoFar = new Set<string>()
+    //
+    // Seed `placedSoFar` with NPCs already in `this.npcSprites` so a
+    // re-run on Hospital wake doesn't double-place existing NPCs. This
+    // makes placeNPCs idempotent + additive: new level → new NPCs
+    // appear without rebuilding the whole roster.
+    const placedSoFar = new Set<string>(this.npcSprites.map(n => n.npc.id))
     const defeatedSet = new Set(state.defeatedObstacles)
     for (const p of this.mapDef.npcPlacements) {
       if (placedSoFar.has(p.npcId)) continue
