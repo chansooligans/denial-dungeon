@@ -515,7 +515,15 @@ export class HospitalScene extends Phaser.Scene {
       // sequence depends on her being visible at the desk.
       try { this.applyEntityVisibility() } catch { /* swallow */ }
 
+      // Force the camera fully visible + on-screen before kicking off
+      // the fadeIn. The descent's `fadeOut(900)` left the camera at
+      // alpha 0; sleep preserves that, so on wake we'd be staring at
+      // a black canvas. resetFX cancels in-flight fade tweens but
+      // doesn't reset the camera's drawn state — setAlpha(1) does.
+      // This is the "blank screen behind CLAIM SUBMITTED" bug.
       this.cameras.main.resetFX()
+      this.cameras.main.setAlpha(1)
+      this.cameras.main.setBackgroundColor(0x0e1116)
       this.cameras.main.fadeIn(450, 0, 0, 0)
       this.time.delayedCall(700, () => { this.cameras.main.setAlpha(1) })
 
@@ -537,6 +545,7 @@ export class HospitalScene extends Phaser.Scene {
         saveGame()
         debugEvent(`wake:claim-submitted ${sub.encounterId}`)
         this.runWakeUpTransition(sub.claimId, () => {
+          debugEvent('wake:claim-overlay-done')
           this.maybeRunAnjaliThanks()
         })
       } else {
