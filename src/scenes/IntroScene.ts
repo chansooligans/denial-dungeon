@@ -1075,50 +1075,30 @@ export class IntroScene extends Phaser.Scene {
       // "press any key to begin" which counts as the gesture.
       if (ctx.state === 'suspended') ctx.resume()
 
-      // A real typewriter click has two parts: a sharp noise transient
-      // (the hammer leaving its rest), then a brief tonal body (the
-      // type-bar smacking the platen). Pure noise reads as static; a
-      // tonal click feels like a key actually struck something. Mix
-      // both with their own envelopes.
-      const now = ctx.currentTime
-
-      // --- Tonal body: a damped sine around 1.5–2.5 kHz. The pitch
-      //     drifts ±15% per click so the cadence doesn't sound looped. ---
-      const osc = ctx.createOscillator()
-      osc.type = 'triangle' // a touch warmer than 'sine', less buzzy than 'square'
-      const baseFreq = 1800
-      osc.frequency.value = baseFreq * (0.85 + Math.random() * 0.3)
-      const oscGain = ctx.createGain()
-      oscGain.gain.setValueAtTime(0.22, now)
-      // ~25ms exponential decay — short and percussive.
-      oscGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.025)
-      osc.connect(oscGain).connect(ctx.destination)
-      osc.start(now)
-      osc.stop(now + 0.03)
-
-      // --- Noise transient: ~6ms of band-passed noise to give the
-      //     click its 'tick' attack. Without this it sounds like a tone
-      //     burst; without the tone, the previous all-noise version
-      //     sounded like radio static. ---
-      const noiseDur = 0.006
-      const noiseSamples = Math.floor(ctx.sampleRate * noiseDur)
-      const noiseBuf = ctx.createBuffer(1, noiseSamples, ctx.sampleRate)
-      const noiseData = noiseBuf.getChannelData(0)
-      for (let i = 0; i < noiseSamples; i++) {
-        const t = i / noiseSamples
-        noiseData[i] = (Math.random() * 2 - 1) * Math.exp(-t * 6)
+      const dur = 0.04
+      const sampleCount = Math.floor(ctx.sampleRate * dur)
+      const buf = ctx.createBuffer(1, sampleCount, ctx.sampleRate)
+      const data = buf.getChannelData(0)
+      for (let i = 0; i < sampleCount; i++) {
+        // White noise with a sharp exponential decay — the percussive
+        // body of the click. Decay constant tuned by ear.
+        const t = i / sampleCount
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-t * 14)
       }
-      const noiseSrc = ctx.createBufferSource()
-      noiseSrc.buffer = noiseBuf
-      // High-pass the noise so it reads as a 'tick' rather than a thump.
-      const hp = ctx.createBiquadFilter()
-      hp.type = 'highpass'
-      hp.frequency.value = 2500
-      const noiseGain = ctx.createGain()
-      noiseGain.gain.value = 0.18
-      noiseSrc.connect(hp).connect(noiseGain).connect(ctx.destination)
-      noiseSrc.start(now)
-      noiseSrc.stop(now + noiseDur + 0.005)
+
+      const src = ctx.createBufferSource()
+      src.buffer = buf
+      // Random pitch shimmer (±20%) so the clicks vary slightly. Real
+      // typewriters never sound identical twice in a row.
+      src.playbackRate.value = 0.85 + Math.random() * 0.3
+
+      const gain = ctx.createGain()
+      gain.gain.value = 0.12
+
+      src.connect(gain).connect(ctx.destination)
+      const now = ctx.currentTime
+      src.start(now)
+      src.stop(now + dur + 0.01)
     } catch {
       // AudioContext can fail in restricted iframe / privacy contexts.
       // Falling back to silent typing is preferable to a broken intro.
