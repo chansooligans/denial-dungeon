@@ -995,8 +995,10 @@ export class WaitingRoomScene extends Phaser.Scene {
         volume: 0,
         duration: durationMs,
         onComplete: () => {
+          // Defer destroy — Phaser writes the tween's final value
+          // post-onComplete and crashes on destroyed sounds.
           s.stop()
-          s.destroy()
+          setTimeout(() => { try { s.destroy() } catch { /* already gone */ } }, 0)
         },
       })
     }

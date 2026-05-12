@@ -514,8 +514,14 @@ export class PuzzleBattleScene extends Phaser.Scene {
         volume: 0,
         duration: durationMs,
         onComplete: () => {
+          // Defer destroy by one tick. Phaser's tween manager writes the
+          // final value to the target *after* onComplete fires; if we
+          // destroy() inside onComplete, the post-onComplete write hits
+          // a nulled currentConfig and throws "Cannot set properties of
+          // null (setting 'volume')". stop() is safe inline; destroy()
+          // has to wait until the tween has finished its frame.
           s.stop()
-          s.destroy()
+          setTimeout(() => { try { s.destroy() } catch { /* already gone */ } }, 0)
         },
       })
     }

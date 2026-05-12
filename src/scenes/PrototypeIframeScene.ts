@@ -263,8 +263,11 @@ export class PrototypeIframeScene extends Phaser.Scene {
         volume: 0,
         duration: durationMs,
         onComplete: () => {
+          // See PuzzleBattleScene.fadeOutRedRoomAmbience for why destroy
+          // is deferred — Phaser writes the tween's final value to the
+          // target after onComplete, which crashes on a destroyed sound.
           s.stop()
-          s.destroy()
+          setTimeout(() => { try { s.destroy() } catch { /* already gone */ } }, 0)
         },
       })
     }
