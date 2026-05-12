@@ -43,6 +43,7 @@ export function installDebugRibbon() {
   if (!isEnabled()) return
   installed = true
   ensureStyle()
+  installGlobalErrorListeners()
   ribbon = document.createElement('div')
   ribbon.id = RIBBON_ID
   ribbon.innerHTML = `
@@ -148,3 +149,100 @@ function refresh() {
   const rightEl = ribbon.querySelector('.right') as HTMLElement | null
   if (rightEl) rightEl.textContent = events.slice(-6).join(' · ')
 }
+
+// ============================================================
+// Global error overlay — surfaces uncaught JS errors as a visible
+// red banner over the canvas. Without this, runtime errors during
+// scene transitions blank the screen with no UI clue. Wired to
+// window.onerror + unhandledrejection so it catches both sync and
+// async crashes. Gated by isEnabled() (dev mode or ?dev=1).
+// ============================================================
+
+const ERROR_OVERLAY_ID = '__error_overlay__'
+const errors: { msg: string; stack: string; at: string }[] = []
+let errorsInstalled = false
+
+function timestamp(): string {
+  const t = new Date()
+  return `${String(t.getMinutes()).padStart(2, '0')}:${String(t.getSeconds()).padStart(2, '0')}`
+}
+
+function ensureErrorOverlay() {
+  if (document.getElementById(ERROR_OVERLAY_ID)) return
+  const div = document.createElement('div')
+  div.id = ERROR_OVERLAY_ID
+  div.style.cssText = `
+    position: fixed; left: 8px; right: 8px; bottom: 8px;
+    z-index: 99998;
+    background: rgba(40, 10, 16, 0.96);
+    color: #f3a4b6;
+    border: 1px solid #ef5b7b;
+    border-radius: 6px;
+    padding: 10px 14px;
+    font: 11px/1.45 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    max-height: 50vh;
+    overflow-y: auto;
+    pointer-events: auto;
+    display: none;
+  `
+  document.body.appendChild(div)
+}
+
+function renderErrors() {
+  const div = document.getElementById(ERROR_OVERLAY_ID) as HTMLDivElement | null
+  if (!div) return
+  if (errors.length === 0) {
+    div.style.display = 'none'
+    return
+  }
+  div.style.display = 'block'
+  // Show the most recent 3 errors. Older ones drop off.
+  const recent = errors.slice(-3).reverse()
+  div.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+      <span style="color:#ef5b7b;font-weight:700;letter-spacing:0.08em;">⚠ ERROR (${errors.length})</span>
+      <button type="button" style="background:transparent;color:#f3a4b6;border:1px solid #6b3742;border-radius:3px;padding:2px 8px;cursor:pointer;font:inherit;font-size:10px;" onclick="document.getElementById('${ERROR_OVERLAY_ID}').style.display='none'">dismiss</button>
+    </div>
+    ${recent.map(e => `
+      <div style="margin-bottom:6px;padding-bottom:6px;border-bottom:1px dashed #6b3742;">
+        <div style="color:#f3a4b6;font-weight:700;">[${e.at}] ${escapeForHtml(e.msg)}</div>
+        ${e.stack ? `<div style="color:#8a93a3;font-size:10px;margin-top:4px;white-space:pre-wrap;">${escapeForHtml(e.stack)}</div>` : ''}
+      </div>
+    `).join('')}
+  `
+}
+
+function escapeForHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
+/** Push a runtime error into the rolling list + render overlay. Also
+ *  drops a `err:` line into the regular debug-ribbon event tail so
+ *  the copy-paste log includes it. */
+export function reportError(msg: string, stack?: string) {
+  if (!isEnabled()) return
+  ensureErrorOverlay()
+  errors.push({ msg, stack: stack ?? '', at: timestamp() })
+  while (errors.length > 12) errors.shift()
+  renderErrors()
+  // Also surface to the debug ribbon's event tail for copy.
+  debugEvent(`err: ${msg.slice(0, 60)}`)
+}
+
+/** Install global window-level error listeners. Called from
+ *  installDebugRibbon. Idempotent. */
+function installGlobalErrorListeners() {
+  if (errorsInstalled) return
+  errorsInstalled = true
+  window.addEventListener('error', e => {
+    const stack = e.error?.stack?.split('\n').slice(0, 5).join('\n') ?? ''
+    reportError(e.message || 'Uncaught error', stack)
+  })
+  window.addEventListener('unhandledrejection', e => {
+    const reason = e.reason
+    const msg = reason?.message ?? String(reason)
+    const stack = reason?.stack?.split('\n').slice(0, 5).join('\n') ?? ''
+    reportError(`Unhandled rejection: ${msg}`, stack)
+  })
+}
+
