@@ -1,0 +1,190 @@
+  /* Blur-out played on the puzzle overlay when the player hits SUBMIT.
+     Pairs with the camera fade-to-black + scene transition into the
+     Hospital wake-up sequence. */
+  .puzzle-submit-out {
+    animation: puzzle-submit-blur 1500ms forwards;
+    pointer-events: none;
+  }
+  @keyframes puzzle-submit-blur {
+    0%   { filter: blur(0); opacity: 1; }
+    100% { filter: blur(16px); opacity: 0; }
+  }
+
+  /* Notebook-page treatment for the briefing card. Cream paper, ruled
+     lines, spiral binding holes down the left edge, slight rotation,
+     handwriting-leaning typeface. Overrides the BASE_CSS .briefing
+     panel styling for the runtime puzzle only. */
+  .briefing.notebook-page {
+    position: relative;
+    background: #f5e6c8 !important;
+    color: #2a1a0e !important;
+    border: none !important;
+    border-radius: 3px !important;
+    padding: 32px 40px 28px 64px !important;
+    box-shadow:
+      0 18px 42px rgba(0, 0, 0, 0.55),
+      inset 0 0 0 1px rgba(0, 0, 0, 0.06),
+      inset 0 -2px 0 rgba(0, 0, 0, 0.05) !important;
+    background-image:
+      /* spiral-binding holes down the left margin */
+      radial-gradient(circle at 24px 38px,  rgba(0,0,0,0.22) 0 4px, transparent 5px),
+      radial-gradient(circle at 24px 78px,  rgba(0,0,0,0.22) 0 4px, transparent 5px),
+      radial-gradient(circle at 24px 118px, rgba(0,0,0,0.22) 0 4px, transparent 5px),
+      radial-gradient(circle at 24px 158px, rgba(0,0,0,0.22) 0 4px, transparent 5px),
+      radial-gradient(circle at 24px 198px, rgba(0,0,0,0.22) 0 4px, transparent 5px),
+      radial-gradient(circle at 24px 238px, rgba(0,0,0,0.22) 0 4px, transparent 5px),
+      radial-gradient(circle at 24px 278px, rgba(0,0,0,0.22) 0 4px, transparent 5px),
+      radial-gradient(circle at 24px 318px, rgba(0,0,0,0.22) 0 4px, transparent 5px),
+      radial-gradient(circle at 24px 358px, rgba(0,0,0,0.22) 0 4px, transparent 5px),
+      radial-gradient(circle at 24px 398px, rgba(0,0,0,0.22) 0 4px, transparent 5px),
+      /* horizontal ruling */
+      repeating-linear-gradient(
+        to bottom,
+        transparent 0 23px,
+        rgba(72, 40, 16, 0.18) 23px 24px
+      );
+    background-size: auto, auto, auto, auto, auto, auto, auto, auto, auto, auto, 100% 24px;
+    background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 28px;
+    transform: rotate(-0.5deg);
+    font-family: 'Patrick Hand', 'Caveat', 'Marker Felt', 'Comic Sans MS', cursive;
+    font-size: 16px !important;
+    line-height: 24px !important;
+  }
+  .briefing.notebook-page::before {
+    /* red margin line, like a real spiral notebook */
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 48px;
+    width: 1px;
+    background: rgba(180, 30, 50, 0.45);
+  }
+  .briefing.notebook-page .notebook-header {
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    font-size: 11px;
+    color: rgba(72, 40, 16, 0.55);
+    margin: 0 0 8px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  .briefing.notebook-page .briefing-body { margin: 0 !important; }
+  .briefing.notebook-page .briefing-body p {
+    margin: 0 0 14px !important;
+    color: #2a1a0e !important;
+  }
+  .briefing.notebook-page .briefing-body ul {
+    margin: 6px 0 14px !important;
+    padding-left: 18px !important;
+  }
+  .briefing.notebook-page .briefing-body li {
+    margin-bottom: 6px;
+  }
+  .briefing.notebook-page .briefing-body strong {
+    color: #5a2820;
+    text-decoration: underline wavy rgba(90, 40, 32, 0.4);
+    text-underline-offset: 3px;
+  }
+  .briefing.notebook-page .briefing-body em {
+    color: #5a3a1a;
+  }
+  .briefing.notebook-page .briefing-sign {
+    margin-top: 12px !important;
+    font-style: italic;
+    color: #5a3a1a;
+  }
+  .briefing.notebook-page .btn.primary {
+    margin-top: 18px;
+    background: #f5d56a !important;
+    color: #1a1208 !important;
+    border: 2px dashed #2a1a0e !important;
+    border-radius: 4px !important;
+    font-family: 'Patrick Hand', 'Caveat', 'Marker Felt', cursive !important;
+    font-size: 15px !important;
+    transform: rotate(0.8deg);
+    box-shadow: 2px 3px 0 rgba(0, 0, 0, 0.18);
+    padding: 8px 16px !important;
+  }
+  .briefing.notebook-page .btn.primary:hover {
+    background: #f6dd80 !important;
+    transform: rotate(-0.4deg) translateY(-1px);
+  }
+
+  .back-link {
+    background: transparent;
+    color: var(--accent-2);
+    border: 1px solid #4a3a2a;
+    padding: 4px 12px;
+    border-radius: 14px;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .back-link:hover { background: rgba(240, 168, 104, 0.12); }
+  .amend-callouts-row {
+    display: flex;
+    gap: 12px;
+    margin: 0 0 22px;
+    flex-wrap: wrap;
+  }
+  .amend-callouts-row .amend-callout { flex: 1; min-width: 280px; }
+  .col-policy .col-tag { color: #a3c5ff; }
+  .col-prose .phrase { /* phrase already styled in BASE_CSS hover-tip block via custom prototypes — for runtime we render a simpler styling */ }
+  .phrase {
+    cursor: pointer;
+    background: rgba(239, 91, 123, 0.15);
+    border-bottom: 1px dashed var(--bad);
+    padding: 2px 5px;
+    border-radius: 3px;
+    transition: background 0.15s;
+    display: inline;
+  }
+  .phrase:hover { background: rgba(239, 91, 123, 0.32); }
+  .phrase.selected {
+    background: rgba(239, 91, 123, 0.5);
+    color: #fff;
+    box-shadow: inset 0 0 0 1px var(--bad);
+  }
+  .phrase.resolved {
+    text-decoration: line-through;
+    text-decoration-color: rgba(126, 226, 193, 0.7);
+    color: rgba(216, 222, 233, 0.55);
+    background: rgba(126, 226, 193, 0.08);
+    border-bottom: 1px solid rgba(126, 226, 193, 0.4);
+  }
+  .workbench { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 22px; }
+  @media (max-width: 980px) { .workbench { grid-template-columns: 1fr; } }
+  .col { background: var(--panel); border: 1px solid #232a36; border-radius: 8px; padding: 14px 16px; }
+  .col-h { display: flex; flex-direction: column; gap: 2px; margin-bottom: 8px; }
+  .col-tag { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+  .col-payer .col-tag { color: var(--bad); }
+  .col-chart .col-tag { color: var(--accent); }
+  .col-sub { font-size: 11.5px; color: var(--ink-dim); }
+  .col-prose { font-size: 13.5px; line-height: 1.7; margin: 0; }
+
+  .facts, .clauses { list-style: none; padding-left: 0; margin: 0; }
+  .fact, .clause { padding: 10px 12px; margin: 6px 0; background: var(--panel-2); border-radius: 5px; border-left: 3px solid transparent; cursor: pointer; transition: all 0.15s; }
+  .fact:hover, .clause:hover { background: #232b3a; }
+  .fact.selected { border-left-color: var(--accent); background: rgba(126, 226, 193, 0.08); }
+  .clause.selected { border-left-color: #a3c5ff; background: rgba(163, 197, 255, 0.08); }
+  .fact-plain, .clause-plain { font-size: 13.5px; color: var(--ink); line-height: 1.45; }
+  .fact-technical, .clause-technical { font-size: 11px; color: rgba(138, 147, 163, 0.65); margin-top: 6px; padding-top: 5px; border-top: 1px dashed rgba(138, 147, 163, 0.15); line-height: 1.4; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+  .fact-technical .src, .clause-technical .src { color: rgba(138, 147, 163, 0.45); text-transform: uppercase; letter-spacing: 0.06em; font-size: 10px; margin-right: 4px; font-family: inherit; }
+
+  /* Citation builder */
+  .builder { background: var(--panel); border: 1px solid #232a36; border-radius: 8px; padding: 16px 18px; margin-bottom: 22px; }
+  .builder-h { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-dim); margin-bottom: 10px; }
+  .builder-row { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: 10px; align-items: stretch; }
+  @media (max-width: 980px) { .builder-row { grid-template-columns: 1fr; } .connector { text-align: center; padding: 4px 0; } }
+  .slot { padding: 10px 12px; background: var(--panel-2); border: 1px dashed #2a3142; border-radius: 5px; min-height: 60px; }
+  .slot.filled { border-style: solid; border-color: #3a4658; }
+  .slot-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-dim); margin-bottom: 4px; }
+  .slot-text { font-size: 13px; }
+  .placeholder { color: var(--ink-dim); font-style: italic; }
+  .connector { color: var(--ink-dim); font-size: 12px; align-self: center; padding: 0 6px; font-style: italic; }
+  .builder-actions { margin-top: 12px; display: flex; gap: 10px; }
+
+  /* Modifier cell highlights inside the claim */
+  .modifier-cell { white-space: nowrap; }
+  .mod-missing { color: var(--bad); font-style: italic; font-weight: 600; }
+  .mod-applied { color: #1a6e52; font-weight: 700; background: rgba(126, 226, 193, 0.3); padding: 2px 8px; border-radius: 3px; }
