@@ -202,41 +202,54 @@ function renderStateInspector(): string {
  *  playing through. Each preset injects a save with `defeatedObstacles`
  *  populated to satisfy `LEVEL_DEFEAT_THRESHOLD` and clears any pending
  *  flags. Reloads the page so BootScene picks up the fresh state. */
-type LevelPreset = { level: number; label: string; note: string }
+type LevelPreset = {
+  level: number
+  label: string
+  note: string
+  /** Tile coords the player drops onto when this preset loads.
+   *  Should land the player in (or adjacent to) the room hosting
+   *  the case-handing NPC for that level — so QA isn't stuck
+   *  hunting for Alex/Kim/etc. through corridors after a jump.
+   *  Coords mirror level1.ts room centers; verify if rooms move. */
+  spawn: { x: number; y: number }
+}
+// Tile coords cribbed from ROOM_JUMPS below so the two stay in sync.
+// L5 (Martinez · gatekeeper) lives in PRIOR_AUTH which isn't in
+// ROOM_JUMPS — coord (44, 8) is the room interior from level1.ts.
 const LEVEL_PRESETS: LevelPreset[] = [
-  { level: 1,  label: 'L1 — The Wrong Card',             note: 'Anjali · intro' },
-  { level: 2,  label: 'L2 — ASP / WAC Apothecary',       note: 'Alex · catalog' },
-  { level: 3,  label: 'L3 — Eligibility Fog',            note: 'Kim · fog' },
-  { level: 4,  label: 'L4 — Stoploss Reckoner',          note: 'Alex · catalog' },
-  { level: 5,  label: 'L5 — Prior-Auth Gatekeeper',      note: 'Martinez · gatekeeper' },
-  { level: 6,  label: 'L6 — Form Mirror',                note: 'Pat · catalog' },
-  { level: 7,  label: 'L7 — Outpatient Surgery Grouper', note: 'Pat · catalog' },
-  { level: 8,  label: 'L8 — No-Show Bill',               note: 'Jordan · catalog' },
-  { level: 9,  label: 'L9 — Bundling Beast',             note: 'Pat · bundle' },
-  { level: 10, label: 'L10 — Lighthouse',                note: 'Jordan · charity' },
-  { level: 11, label: 'L11 — GFE Oracle',                note: 'Sam · catalog' },
-  { level: 12, label: 'L12 — Medical Necessity Wraith',  note: 'Sam · wraith' },
-  { level: 13, label: 'L13 — Documentation Sprite Swarm', note: 'Alex · swarm' },
-  { level: 14, label: 'L14 — Doppelgänger',              note: 'Kim · doppel' },
-  { level: 15, label: 'L15 — Implant Carve-Out',         note: 'Alex · catalog' },
-  { level: 16, label: 'L16 — Credentialing Lattice',     note: 'Kim · catalog' },
-  { level: 17, label: 'L17 — Carve-Out Phantom',         note: 'Alex · catalog' },
-  { level: 18, label: 'L18 — CPT Licensure Mire',        note: 'Pat · catalog' },
-  { level: 19, label: 'L19 — Timely Filing Reaper',      note: 'Sam · reaper' },
-  { level: 20, label: 'L20 — Surprise Bill Specter',     note: 'Jordan · NSA' },
-  { level: 21, label: 'L21 — OB Per-Diem Specter',       note: 'Alex · catalog' },
-  { level: 22, label: 'L22 — Phantom Patient',           note: 'Kim · catalog' },
-  { level: 23, label: 'L23 — Risk Adjustment Hollow',    note: 'Pat · catalog' },
-  { level: 24, label: 'L24 — Chemo Bundle Specter',      note: 'Alex · catalog' },
-  { level: 25, label: 'L25 — Two-Midnight Mire',         note: 'Pat · catalog' },
-  { level: 26, label: 'L26 — Underpayment Specter',      note: 'Alex · CO-45' },
-  { level: 27, label: 'L27 — COB Cascade Spider',        note: 'Kim · catalog' },
-  { level: 28, label: 'L28 — Case-Rate Specter',         note: 'Alex · catalog' },
-  { level: 29, label: 'L29 — MRF Cartographer',          note: 'Sam · catalog' },
-  { level: 30, label: 'L30 — IDR Crucible',              note: 'Sam · catalog' },
-  { level: 31, label: 'L31 — 340B Specter',              note: 'Alex · catalog' },
-  { level: 32, label: 'L32 — HIPAA Spider',              note: 'Sam · catalog' },
-  { level: 33, label: 'L33 — The Quarterly Audit',       note: 'Dana · boss' },
+  { level: 1,  label: 'L1 — The Wrong Card',             note: 'Anjali · intro',       spawn: { x: 14, y: 39 } },
+  { level: 2,  label: 'L2 — ASP / WAC Apothecary',       note: 'Alex · catalog',       spawn: { x: 28, y: 8  } },
+  { level: 3,  label: 'L3 — Eligibility Fog',            note: 'Kim · fog',            spawn: { x: 22, y: 21 } },
+  { level: 4,  label: 'L4 — Stoploss Reckoner',          note: 'Alex · catalog',       spawn: { x: 28, y: 8  } },
+  { level: 5,  label: 'L5 — Prior-Auth Gatekeeper',      note: 'Martinez · gatekeeper',spawn: { x: 44, y: 8  } },
+  { level: 6,  label: 'L6 — Form Mirror',                note: 'Pat · catalog',        spawn: { x: 22, y: 21 } },
+  { level: 7,  label: 'L7 — Outpatient Surgery Grouper', note: 'Pat · catalog',        spawn: { x: 22, y: 21 } },
+  { level: 8,  label: 'L8 — No-Show Bill',               note: 'Jordan · catalog',     spawn: { x: 28, y: 27 } },
+  { level: 9,  label: 'L9 — Bundling Beast',             note: 'Pat · bundle',         spawn: { x: 11, y: 55 } },
+  { level: 10, label: 'L10 — Lighthouse',                note: 'Jordan · charity',     spawn: { x: 28, y: 27 } },
+  { level: 11, label: 'L11 — GFE Oracle',                note: 'Sam · catalog',        spawn: { x: 8,  y: 21 } },
+  { level: 12, label: 'L12 — Medical Necessity Wraith',  note: 'Sam · wraith',         spawn: { x: 8,  y: 21 } },
+  { level: 13, label: 'L13 — Documentation Sprite Swarm', note: 'Alex · swarm',        spawn: { x: 29, y: 55 } },
+  { level: 14, label: 'L14 — Doppelgänger',              note: 'Kim · doppel',         spawn: { x: 22, y: 21 } },
+  { level: 15, label: 'L15 — Implant Carve-Out',         note: 'Alex · catalog',       spawn: { x: 29, y: 55 } },
+  { level: 16, label: 'L16 — Credentialing Lattice',     note: 'Kim · catalog',        spawn: { x: 22, y: 21 } },
+  { level: 17, label: 'L17 — Carve-Out Phantom',         note: 'Alex · catalog',       spawn: { x: 29, y: 55 } },
+  { level: 18, label: 'L18 — CPT Licensure Mire',        note: 'Pat · catalog',        spawn: { x: 11, y: 55 } },
+  { level: 19, label: 'L19 — Timely Filing Reaper',      note: 'Sam · reaper',         spawn: { x: 8,  y: 21 } },
+  { level: 20, label: 'L20 — Surprise Bill Specter',     note: 'Jordan · NSA',         spawn: { x: 48, y: 55 } },
+  { level: 21, label: 'L21 — OB Per-Diem Specter',       note: 'Alex · catalog',       spawn: { x: 29, y: 55 } },
+  { level: 22, label: 'L22 — Phantom Patient',           note: 'Kim · catalog',        spawn: { x: 22, y: 21 } },
+  { level: 23, label: 'L23 — Risk Adjustment Hollow',    note: 'Pat · catalog',        spawn: { x: 11, y: 55 } },
+  { level: 24, label: 'L24 — Chemo Bundle Specter',      note: 'Alex · catalog',       spawn: { x: 29, y: 55 } },
+  { level: 25, label: 'L25 — Two-Midnight Mire',         note: 'Pat · catalog',        spawn: { x: 11, y: 55 } },
+  { level: 26, label: 'L26 — Underpayment Specter',      note: 'Alex · CO-45',         spawn: { x: 29, y: 55 } },
+  { level: 27, label: 'L27 — COB Cascade Spider',        note: 'Kim · catalog',        spawn: { x: 22, y: 21 } },
+  { level: 28, label: 'L28 — Case-Rate Specter',         note: 'Alex · catalog',       spawn: { x: 29, y: 55 } },
+  { level: 29, label: 'L29 — MRF Cartographer',          note: 'Sam · catalog',        spawn: { x: 8,  y: 21 } },
+  { level: 30, label: 'L30 — IDR Crucible',              note: 'Sam · catalog',        spawn: { x: 8,  y: 21 } },
+  { level: 31, label: 'L31 — 340B Specter',              note: 'Alex · catalog',       spawn: { x: 29, y: 55 } },
+  { level: 32, label: 'L32 — HIPAA Spider',              note: 'Sam · catalog',        spawn: { x: 8,  y: 21 } },
+  { level: 33, label: 'L33 — The Quarterly Audit',       note: 'Dana · boss',          spawn: { x: 18, y: 105 } },
 ]
 
 /** Hospital-scene room teleports. Each entry sets
@@ -337,6 +350,12 @@ function buildPresetSave(targetLevel: number): string {
   const defeats = PRESET_DEFEAT_SEQUENCE.slice(0, lvl - 1)
   const levelComplete = Array(33).fill(false)
   for (let i = 0; i < lvl - 1; i++) levelComplete[i] = true
+  // Drop the player at the room that hosts this level's case NPC so QA
+  // isn't hunting through corridors after every jump. Falls back to the
+  // lobby if a preset is missing its spawn (shouldn't happen — type is
+  // required — but defensive in case the table goes out of sync).
+  const preset = LEVEL_PRESETS.find(p => p.level === lvl)
+  const spawn = preset?.spawn ?? { x: 14, y: 39 }
   const state = {
     currentLevel: lvl,
     levelComplete,
@@ -367,6 +386,9 @@ function buildPresetSave(targetLevel: number): string {
     // descent loop should walk to Medical Records explicitly. Use
     // the "Pull all charts" button to bypass when that's the goal.
     chartsPulled: {},
+    // Land the player at the case room's spawn tile (see LEVEL_PRESETS).
+    // HospitalScene.create() consumes this on next mount.
+    pendingHospitalSpawn: spawn,
   }
   return JSON.stringify(state)
 }
