@@ -1086,7 +1086,7 @@ export class IntroScene extends Phaser.Scene {
       //     drifts ±15% per click so the cadence doesn't sound looped. ---
       const osc = ctx.createOscillator()
       osc.type = 'triangle' // a touch warmer than 'sine', less buzzy than 'square'
-      const baseFreq = 1800
+      const baseFreq = 900
       osc.frequency.value = baseFreq * (0.85 + Math.random() * 0.3)
       const oscGain = ctx.createGain()
       oscGain.gain.setValueAtTime(0.22, now)
@@ -1113,7 +1113,7 @@ export class IntroScene extends Phaser.Scene {
       // High-pass the noise so it reads as a 'tick' rather than a thump.
       const hp = ctx.createBiquadFilter()
       hp.type = 'highpass'
-      hp.frequency.value = 2500
+      hp.frequency.value = 1500
       const noiseGain = ctx.createGain()
       noiseGain.gain.value = 0.18
       noiseSrc.connect(hp).connect(noiseGain).connect(ctx.destination)
