@@ -198,10 +198,14 @@ function renderErrors() {
   div.style.display = 'block'
   // Show the most recent 3 errors. Older ones drop off.
   const recent = errors.slice(-3).reverse()
+  const btnStyle = 'background:transparent;color:#f3a4b6;border:1px solid #6b3742;border-radius:3px;padding:2px 8px;cursor:pointer;font:inherit;font-size:10px;margin-left:6px;'
   div.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
       <span style="color:#ef5b7b;font-weight:700;letter-spacing:0.08em;">⚠ ERROR (${errors.length})</span>
-      <button type="button" style="background:transparent;color:#f3a4b6;border:1px solid #6b3742;border-radius:3px;padding:2px 8px;cursor:pointer;font:inherit;font-size:10px;" onclick="document.getElementById('${ERROR_OVERLAY_ID}').style.display='none'">dismiss</button>
+      <span>
+        <button type="button" data-err-act="copy" style="${btnStyle}">📋 copy</button>
+        <button type="button" data-err-act="dismiss" style="${btnStyle}">dismiss</button>
+      </span>
     </div>
     ${recent.map(e => `
       <div style="margin-bottom:6px;padding-bottom:6px;border-bottom:1px dashed #6b3742;">
@@ -210,6 +214,58 @@ function renderErrors() {
       </div>
     `).join('')}
   `
+  // Wire the buttons. innerHTML wipes prior listeners on every render
+  // so we have to re-bind after each write — cheap given the overlay
+  // is only visible when something already went wrong.
+  const copyBtn = div.querySelector('button[data-err-act="copy"]') as HTMLButtonElement | null
+  const dismissBtn = div.querySelector('button[data-err-act="dismiss"]') as HTMLButtonElement | null
+  if (copyBtn) copyBtn.addEventListener('click', copyErrorsToClipboard)
+  if (dismissBtn) dismissBtn.addEventListener('click', () => { div.style.display = 'none' })
+}
+
+/** Serialize all collected errors + the recent debug-ribbon event tail
+ *  into a single multiline blob and copy to clipboard. Falls back to
+ *  execCommand for non-HTTPS dev contexts where navigator.clipboard
+ *  is unavailable. Briefly flashes the button on success. */
+function copyErrorsToClipboard() {
+  const lines: string[] = []
+  lines.push(`ERROR REPORT (${errors.length})`)
+  lines.push(`UA: ${navigator.userAgent}`)
+  lines.push(`URL: ${location.href}`)
+  lines.push('')
+  for (const e of errors) {
+    lines.push(`[${e.at}] ${e.msg}`)
+    if (e.stack) lines.push(e.stack)
+    lines.push('')
+  }
+  if (events.length > 0) {
+    lines.push('--- recent events ---')
+    lines.push(...events)
+  }
+  const text = lines.join('\n')
+  const btn = document.querySelector(`#${ERROR_OVERLAY_ID} button[data-err-act="copy"]`) as HTMLButtonElement | null
+  const flash = (ok: boolean) => {
+    if (!btn) return
+    const orig = btn.textContent
+    btn.textContent = ok ? '✓ copied' : '✗ failed'
+    setTimeout(() => { btn.textContent = orig }, 1200)
+  }
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(() => flash(true), () => flash(false))
+      return
+    }
+  } catch { /* fall through to execCommand */ }
+  // Non-secure-context fallback: hidden textarea + execCommand.
+  const ta = document.createElement('textarea')
+  ta.value = text
+  ta.style.cssText = 'position:fixed;left:-9999px;top:0;'
+  document.body.appendChild(ta)
+  ta.select()
+  let ok = false
+  try { ok = document.execCommand('copy') } catch { ok = false }
+  ta.remove()
+  flash(ok)
 }
 
 function escapeForHtml(s: string): string {
