@@ -989,15 +989,17 @@ export class HospitalScene extends Phaser.Scene {
         volume: 0,
         duration: durationMs,
         onComplete: () => {
-          // Defer destroy by one tick. The hospital ambience tween is
-          // particularly bug-prone: if the scene sleeps mid-fade
-          // (descent to WR/puzzle), the tween freezes with the scene
-          // and resumes on wake — by which point an inline destroy
-          // would leave a dangling tween that steps on the destroyed
-          // sound the next frame. setTimeout(0) lets the tween finish
-          // before the sound goes away.
+          // Just stop — don't destroy. The earlier setTimeout(0)-defer
+          // pattern still leaked the "Cannot set properties of null
+          // (setting volume)" crash on some scene-transition orderings.
+          // Destroyed WebAudioSounds null their currentConfig, and any
+          // tween that survives a scene sleep/shut and resumes stepping
+          // crashes when its setter hits that null. Leaving the sound
+          // stopped-but-alive avoids the race entirely; the next entry
+          // to WR/Hospital syncs out leftover sounds via the
+          // top-of-function `for (k of keys) s.stop(); s.destroy()`
+          // sweep, which runs OUTSIDE any tween so it's safe.
           s.stop()
-          setTimeout(() => { try { s.destroy() } catch { /* already gone */ } }, 0)
         },
       })
     }

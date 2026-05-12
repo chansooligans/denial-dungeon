@@ -995,10 +995,8 @@ export class WaitingRoomScene extends Phaser.Scene {
         volume: 0,
         duration: durationMs,
         onComplete: () => {
-          // Defer destroy — Phaser writes the tween's final value
-          // post-onComplete and crashes on destroyed sounds.
+          // Stop, don't destroy — see HospitalScene.fadeOutHospitalAmbience.
           s.stop()
-          setTimeout(() => { try { s.destroy() } catch { /* already gone */ } }, 0)
         },
       })
     }
