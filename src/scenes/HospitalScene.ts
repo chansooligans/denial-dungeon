@@ -989,8 +989,15 @@ export class HospitalScene extends Phaser.Scene {
         volume: 0,
         duration: durationMs,
         onComplete: () => {
+          // Defer destroy by one tick. The hospital ambience tween is
+          // particularly bug-prone: if the scene sleeps mid-fade
+          // (descent to WR/puzzle), the tween freezes with the scene
+          // and resumes on wake — by which point an inline destroy
+          // would leave a dangling tween that steps on the destroyed
+          // sound the next frame. setTimeout(0) lets the tween finish
+          // before the sound goes away.
           s.stop()
-          s.destroy()
+          setTimeout(() => { try { s.destroy() } catch { /* already gone */ } }, 0)
         },
       })
     }
