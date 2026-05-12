@@ -60,6 +60,29 @@
 
 import { buildMap, applyTileOverrides, type MapDef, type RoomItem } from '../mapBuilder'
 
+// =====================================================================
+// TABLE OF CONTENTS — grep for any tag to jump:
+//
+//   ## ROOM_CONSTS           — Room bounding boxes by wing (north,
+//                              east, south, west, public-event,
+//                              outdoor, 2F). About 110 lines.
+//   ## STAIR_AND_EXIT        — Stair / exit teleport pair coordinates.
+//   ## CORRIDOR_ANCHORS      — Door + bend tile coords used by corridor
+//                              polylines below.
+//   ## ROOM_DEFS             — Full RoomDef[] (walls + doors +
+//                              lockedUntilLevel + interior items).
+//                              ~750 lines; the biggest section.
+//   ## CORRIDORS             — Polyline corridor definitions.
+//   ## LEVEL_1_MAP           — Final MapDef export. Composes the above
+//                              with `buildMap()` + applyTileOverrides,
+//                              then attaches rooms[] (label list),
+//                              stairs[], npcPlacements[].
+//   ## NPC_PLACEMENTS        — Inside LEVEL_1_MAP: per-NPC tileX/tileY/
+//                              levels[] filter. ~250 lines. Often
+//                              edited alone when level mapping shifts.
+// =====================================================================
+
+// ## ROOM_CONSTS ##
 const WIDTH = 80   // bumped from 66 to fit outdoor + payer office
 const HEIGHT = 130 // bumped from 72 to fit outdoor + second floor
 
@@ -171,6 +194,7 @@ const TURQUOISE_LOUNGE = { x: 38, y: 94, w: 22, h: 5 } // 20×3 interior
 const COMPLIANCE  = { x: 18, y: 113, w: 28, h: 10 } // HIPAA / binders / boss-prep
 
 // Door world-coords (used to plan corridor endpoints).
+// ## CORRIDOR_ANCHORS ##
 const HUB_SOUTH_DOOR    = { x: MAIN_HUB.x + 10,    y: MAIN_HUB.y + MAIN_HUB.h - 1 } // (30, 12)
 const LOBBY_NORTH_DOOR  = { x: LOBBY.x + 10,        y: LOBBY.y }                    // (14, 32)
 const LOBBY_SOUTH_DOOR  = { x: LOBBY.x + 14,        y: LOBBY.y + LOBBY.h - 1 }      // (18, 41)
@@ -180,6 +204,7 @@ const CORRIDOR_BEND     = { x: LOBBY_NORTH_DOOR.x,  y: HUB_SOUTH_DOOR.y + 1 }   
 // connects HIM/BILLING/PFS).
 const SW_TROUGH_Y       = 49 // east-west corridor running just north of the south-wing rooms
 
+// ## STAIR_AND_EXIT ##
 // === Stair / exit teleport pairs ===
 // Each entry is one-way; pair them to make round-trips. The 'S' / 'O'
 // glyphs render as tinted floors and trigger teleport in
@@ -289,6 +314,7 @@ function outdoorItems(): RoomItem[] {
   ]
 }
 
+// ## ROOM_DEFS ##
 const { layout, tileMeta, rooms: BUILT_ROOMS } = buildMap({
   width: WIDTH,
   height: HEIGHT,
@@ -1047,6 +1073,7 @@ const { layout, tileMeta, rooms: BUILT_ROOMS } = buildMap({
       ],
     },
   ],
+  // ## CORRIDORS ##
   corridors: [
     // L-shaped staff corridor: lobby door → north → bend east → Main Hub door.
     {
@@ -1189,6 +1216,7 @@ const tileOverrides: Array<{ x: number; y: number; ch: string }> = [
   { x: 7,  y: 34, ch: '' },
 ]
 
+// ## LEVEL_1_MAP ##
 export const LEVEL_1_MAP: MapDef = {
   width: WIDTH,
   height: HEIGHT,
@@ -1237,6 +1265,7 @@ export const LEVEL_1_MAP: MapDef = {
     STAIR_HUB_TO_2F, STAIR_2F_TO_HUB,
     EXIT_LOBBY_OUT,  EXIT_OUT_LOBBY,
   ],
+  // ## NPC_PLACEMENTS ##
   npcPlacements: [
     // === Facing convention ===
     // `facing` defaults to 'down' (front-facing toward the camera)

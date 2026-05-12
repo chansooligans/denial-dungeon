@@ -1,6 +1,33 @@
 import type { DialogueNode } from '../types'
 
+// =====================================================================
+// TABLE OF CONTENTS — grep for any tag to jump:
+//
+//   ## DEFAULT_NPC_INTROS    — One-shot intro line per case-handler NPC
+//                              (Dana, Kim, Martinez, Jordan, Pat, Alex,
+//                              Sam). Used when nothing more specific is
+//                              wired via LEVEL_NPC_DIALOGUES.
+//   ## ANJALI_L1             — Anjali's L1 intro tree + post-thanks.
+//   ## LEVEL_INTAKES         — Per-level case-handoff dialogues for the
+//                              12 in-game playable cases. Keys follow
+//                              `<npc>_l<N>_intake` for the legacy 10-
+//                              level shape and `<npc>_<case>_intake`
+//                              for the 33-level catalog adds.
+//   ## L10_AUDIT_TEAM        — Atmosphere lines for the four auditors
+//                              (one-shot, no case handoff).
+//   ## AMBIENT_NPCS          — One-line scenery dialogues (Liana,
+//                              Marisol, Walter, Greta, Joe, etc.).
+//   ## SANDBOX_AND_LOUNGE    — Data Sandbox crew (Chansoo, Monika, Nick,
+//                              Nicole) + Turquoise Lounge (Chris, Adam).
+//   ## CATALOG_INTAKES       — The 21 catalog-case intake dialogues
+//                              added during the 33-level migration.
+//   ## LEVEL_NPC_DIALOGUES   — Per-level override map at the bottom of
+//                              the file. Routes each level's case
+//                              handoff to the right intake tree.
+// =====================================================================
+
 export const DIALOGUES: Record<string, DialogueNode> = {
+  // ## DEFAULT_NPC_INTROS ##
   // === Dana — your mentor, Level 1 orientation ===
   dana_intro: {
     id: 'dana_intro',
@@ -247,6 +274,7 @@ export const DIALOGUES: Record<string, DialogueNode> = {
     ],
   },
 
+  // ## ANJALI_L1 ##
   // === Anjali — Level 1 intro patient. The wrong-card case. ===
   // The intern is part-time, undertrained, not supposed to help patients
   // directly. She does anyway — the patient looks like she's been
@@ -318,6 +346,7 @@ export const DIALOGUES: Record<string, DialogueNode> = {
     ],
   },
 
+  // ## LEVEL_INTAKES ##
   // === Level 2 — Kim hands off the eligibility-fog case ===
   kim_l2_intake: {
     id: 'kim_l2_intake',
@@ -555,6 +584,7 @@ export const DIALOGUES: Record<string, DialogueNode> = {
       { text: 'Give me a minute.', next: 'dana_l10_intake_back' },
     ],
   },
+  // ## L10_AUDIT_TEAM ##
   // === L10 audit team — atmosphere NPCs. Each speaks one line and
   //     ends. They don't hand off cases (that's Dana's job); they're
   //     here to make the conference room feel like a deposition. ===
@@ -579,6 +609,7 @@ export const DIALOGUES: Record<string, DialogueNode> = {
     text: "...",
   },
 
+  // ## AMBIENT_NPCS ##
   // === Ambient populace — one-line atmospheric exchanges. None hand
   //     off cases. Terminal nodes (no `next`, no `choices`) — the
   //     dialogue scene shows them with a click-to-close prompt. ===
@@ -856,6 +887,7 @@ export const DIALOGUES: Record<string, DialogueNode> = {
     text: "Sorry, sorry — back wing's torn up. Billing, the phones, the lab, the lecture hall. Wiring, mostly. Ceiling tiles came down on Tuesday. Couple weeks and you'll be walking through here like nothing happened.",
   },
 
+  // ## SANDBOX_AND_LOUNGE ##
   // === Round 5 — Data Sandbox (R&D) + Turquoise Lounge ===
   chansoo_intro: {
     id: 'chansoo_intro',
@@ -967,6 +999,7 @@ export const DIALOGUES: Record<string, DialogueNode> = {
     choices: [{ text: '(Step away.)' }],
   },
 
+  // ## CATALOG_INTAKES ##
   // ===== 33-level migration: catalog-case intake dialogues =====
   // Each one a 3-node tree (intro → ask → optional back-out). The
   // case body uses the gloss from case-order.ts; the descent fires
@@ -1526,6 +1559,7 @@ export const DIALOGUES: Record<string, DialogueNode> = {
   },
 }
 
+// ## LEVEL_NPC_DIALOGUES ##
 /** Per-level dialogue overrides. When `state.currentLevel` matches a
  *  key here, the matching NPC opens the listed dialogue tree instead
  *  of their default `dialogueKey`. Lets one NPC carry different cases
