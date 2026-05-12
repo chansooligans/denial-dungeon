@@ -1309,6 +1309,18 @@ export class HospitalScene extends Phaser.Scene {
       `Audit: ${state.resources.auditRisk}%  ` +
       `Stress: ${state.resources.stress}`
     )
+    this.refreshMiniMapHint()
+  }
+
+  /** Pull the current level's orientation hint into the minimap's
+   *  bottom-edge label. Called when the level changes (or whenever
+   *  the HUD refreshes) so the persistent hint stays current. */
+  private refreshMiniMapHint() {
+    if (!this.miniMapHint) return
+    const lvl = getState().currentLevel
+    const hintText = LEVEL_ORIENTATION_HINTS[lvl] ?? ''
+    this.miniMapHint.setText(hintText)
+    this.miniMapHint.setVisible(!this.miniMapExpanded && !!hintText)
   }
 
   update() {
@@ -1775,22 +1787,49 @@ export class HospitalScene extends Phaser.Scene {
     this.updateMiniMapPlayer()
   }
 
-  /** Set of every "x,y" tile coord inside any room the player
-   *  currently has access to (unlocked by level + defeated gates).
-   *  Used by the minimap to pre-reveal unlocked rooms so the player
-   *  can see the layout ahead of actually walking there. */
+  /** Set of every "x,y" tile coord the minimap should pre-reveal.
+   *  Includes:
+   *    - Tiles inside any room the player currently has access to
+   *      (unlocked by level + defeated gates).
+   *    - All corridor tiles (floor tiles outside any room).
+   *  Used by the minimap to pre-reveal the navigable layout so the
+   *  player can plan a route to unlocked rooms before walking them. */
   private collectAccessibleRoomTiles(): Set<string> {
     const tiles = new Set<string>()
     const state = getState()
     const effectiveLevel = state.devFullMapAccess ? 999 : state.currentLevel
     const defeated = new Set(state.defeatedObstacles)
-    for (const r of HOSPITAL_MAP.roomDefs ?? []) {
+    const roomDefs = HOSPITAL_MAP.roomDefs ?? []
+
+    // 1. Accessible rooms — include every tile inside (walls + interior + doors).
+    for (const r of roomDefs) {
       if (!this.isRoomAccessible(r, effectiveLevel, defeated)) continue
-      // Include every tile inside the room (walls + interior + doors).
       for (let yy = r.y; yy < r.y + r.h; yy++) {
         for (let xx = r.x; xx < r.x + r.w; xx++) {
           tiles.add(`${xx},${yy}`)
         }
+      }
+    }
+
+    // 2. Corridors — floor tiles ('.') that aren't inside ANY room.
+    // Room interiors are also '.', so we subtract the rooms (regardless
+    // of whether they're accessible — we want every corridor revealed
+    // so the player can read the topology).
+    const { width: mw, height: mh, layout } = this.mapDef
+    for (let y = 0; y < mh; y++) {
+      const row = layout[y]
+      if (!row) continue
+      for (let x = 0; x < mw; x++) {
+        if (row[x] !== '.') continue
+        // Skip if inside any room.
+        let inside = false
+        for (const r of roomDefs) {
+          if (x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h) {
+            inside = true
+            break
+          }
+        }
+        if (!inside) tiles.add(`${x},${y}`)
       }
     }
     return tiles
