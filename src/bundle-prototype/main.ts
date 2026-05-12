@@ -355,7 +355,7 @@ function briefingContent(): string {
         cite the chart against the bundling rule. Click any
         underlined term for what it means."
       </p>
-      <p class="briefing-sign">"Don't be most people. — D."</p>
+      <p class="briefing-sign">"Modifier 25 isn't a trick. It's a sentence. — D."</p>
     </div>
   `
 }

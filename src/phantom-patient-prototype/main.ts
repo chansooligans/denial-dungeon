@@ -342,7 +342,7 @@ function briefingContent(): string {
         <li><strong>Refile.</strong> Move the encounter to the
         right MRN, refile, and add a system-level guardrail."</li>
       </ul>
-      <p class="briefing-sign">"Don't be most people. — D."</p>
+      <p class="briefing-sign">"Two patients, two MRNs. — D."</p>
     </div>
   `
 }

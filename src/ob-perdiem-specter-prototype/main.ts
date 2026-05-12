@@ -346,7 +346,7 @@ function briefingContent(): string {
           reason. Wrong combo = denied even with right math."
         </li>
       </ul>
-      <p class="briefing-sign">"Don't be most people. — D."</p>
+      <p class="briefing-sign">"The escalator either fired or didn't. — D."</p>
     </div>
   `
 }

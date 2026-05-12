@@ -383,7 +383,7 @@ function briefingContent(): string {
         not the ones who walked in and said \"we found this; we're
         fixing it.\""
       </p>
-      <p class="briefing-sign">"Don't be most people. — D."</p>
+      <p class="briefing-sign">"Eligibility, then DOS, then policy. — D."</p>
     </div>
   `
 }

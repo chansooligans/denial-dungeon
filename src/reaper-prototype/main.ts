@@ -406,7 +406,7 @@ function briefingContent(): string {
         you submit, the file is closed forever. Move with
         purpose."
       </p>
-      <p class="briefing-sign">"Don't be most people. — D."</p>
+      <p class="briefing-sign">"The clock isn't your enemy. The paperwork is. — D."</p>
     </div>
   `
 }

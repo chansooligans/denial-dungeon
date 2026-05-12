@@ -130,6 +130,36 @@ export class PrototypeIframeScene extends Phaser.Scene {
     `
     leaveBtn.addEventListener('click', () => this.handleFlee())
     overlay.appendChild(leaveBtn)
+
+    // DEV-only one-click solver for the catalog (iframe) Cases.
+    // PuzzleBattleScene has its own 🐛 SOLVE button rendered inside
+    // its overlay; the iframe cases get an equivalent at the parent
+    // level (since the prototype's own HTML doesn't ship one). Tree-
+    // shakes out of prod via import.meta.env.DEV.
+    if (import.meta.env.DEV) {
+      const solveBtn = document.createElement('button')
+      solveBtn.textContent = '🐛 SOLVE'
+      solveBtn.title = 'DEV: skip the case — fires the victory flow'
+      solveBtn.style.cssText = `
+        position: fixed;
+        bottom: 12px;
+        right: 12px;
+        z-index: 600;
+        background: rgba(14, 20, 32, 0.92);
+        color: #f0a868;
+        border: 1px solid #4a3a2a;
+        border-radius: 999px;
+        padding: 6px 12px;
+        font: 700 11px/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+        letter-spacing: 0.1em;
+        cursor: pointer;
+        opacity: 0.6;
+      `
+      solveBtn.addEventListener('mouseenter', () => (solveBtn.style.opacity = '1'))
+      solveBtn.addEventListener('mouseleave', () => (solveBtn.style.opacity = '0.6'))
+      solveBtn.addEventListener('click', () => this.handleCaseComplete())
+      overlay.appendChild(solveBtn)
+    }
   }
 
   private attachHandlers() {

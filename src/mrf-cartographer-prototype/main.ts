@@ -489,7 +489,7 @@ function briefingContent(): string {
         even though the service is soft-coded. Read both axes
         carefully."
       </p>
-      <p class="briefing-sign">"Don't be most people. — D."</p>
+      <p class="briefing-sign">"It's in the JSON if the rule was followed. — D."</p>
     </div>
   `
 }

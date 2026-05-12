@@ -413,7 +413,7 @@ function briefingContent(): string {
         rules. Lou's at the counter; you know the rules; this
         one ends fast if you do it right."
       </p>
-      <p class="briefing-sign">"Don't be most people. — D."</p>
+      <p class="briefing-sign">"The Specter only haunts patients who don't know the rules. — D."</p>
     </div>
   `
 }

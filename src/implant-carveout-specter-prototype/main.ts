@@ -423,7 +423,7 @@ function briefingContent(): string {
         the claim said. We just didn't tell them about the
         carve-out line. Tell them now."
       </p>
-      <p class="briefing-sign">"Don't be most people. — D."</p>
+      <p class="briefing-sign">"Pull the invoice. The math is in the invoice. — D."</p>
     </div>
   `
 }

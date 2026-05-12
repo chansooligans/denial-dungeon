@@ -357,7 +357,7 @@ function briefingContent(): string {
           with right math = denied. The math IS the appeal."
         </li>
       </ul>
-      <p class="briefing-sign">"Don't be most people. — D."</p>
+      <p class="briefing-sign">"Contracts have edges. Find them. — D."</p>
     </div>
   `
 }

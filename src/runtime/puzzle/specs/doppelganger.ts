@@ -78,7 +78,7 @@ export const DOPPELGANGER_PUZZLE: PuzzleSpec = {
       'Box 1a on the replacement and confirm it matches Humana\'s ' +
       '271 response. <em>Pre-flight check before we send.</em>',
     ],
-    signoff: '"Don\'t be most people. — D."',
+    signoff: '"Two claims, one ICN, one truth. — D."',
   },
   claim: claimFromCase(),
   issues: [

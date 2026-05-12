@@ -379,7 +379,7 @@ function briefingContent(): string {
         a non-leading bundled CDI query. Leading queries
         violate AHIMA standards. <em>New verb: QUERY.</em></li>
       </ul>
-      <p class="briefing-sign">"Don't be most people. — D."</p>
+      <p class="briefing-sign">"If it isn't documented this year, it isn't coded this year. — D."</p>
     </div>
   `
 }

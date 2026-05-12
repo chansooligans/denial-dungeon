@@ -385,7 +385,7 @@ function briefingContent(): string {
         lost. The Mire is the situation; we get out of this audit by
         complying, not by litigating."
       </p>
-      <p class="briefing-sign">"Don't be most people. — D."</p>
+      <p class="briefing-sign">"Licenses don't lapse. The reading does. — D."</p>
     </div>
   `
 }

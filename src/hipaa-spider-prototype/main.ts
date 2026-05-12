@@ -317,7 +317,7 @@ function briefingContent(): string {
         aggregate. Not immediate HHS, not media, not OIG.
         <em>New verb: NOTIFY.</em></li>
       </ul>
-      <p class="briefing-sign">"Don't be most people. — D."</p>
+      <p class="briefing-sign">"Four factors before you say breach. — D."</p>
     </div>
   `
 }

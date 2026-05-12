@@ -396,7 +396,7 @@ function briefingContent(): string {
         explanation. There's a lot of jargon in this work; I
         got tired of pretending it's intuitive."
       </p>
-      <p class="briefing-sign">"Don't be most people. — D."</p>
+      <p class="briefing-sign">"Chart fact + policy clause + payer line. Three pieces, one issue. — D."</p>
     </div>
   `
 }

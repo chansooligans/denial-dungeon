@@ -423,7 +423,7 @@ function briefingContent(): string {
         Charges = $${TOTAL_CHARGES.toLocaleString()}. Don't trust me; trust
         the contract."
       </p>
-      <p class="briefing-sign">"Don't be most people. — D."</p>
+      <p class="briefing-sign">"LOS is the lever. — D."</p>
     </div>
   `
 }
