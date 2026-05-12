@@ -1708,6 +1708,26 @@ export class HospitalScene extends Phaser.Scene {
 
     g.clear()
 
+    // First pass: pre-reveal every room the player currently has
+    // access to. Renders at a dimmer alpha than "seen" tiles so the
+    // player can still tell explored areas apart from "unlocked but
+    // haven't walked here yet". Build a Set of accessible room tiles
+    // so the fog pass below knows to skip them.
+    const accessibleTiles = this.collectAccessibleRoomTiles()
+    for (const key of accessibleTiles) {
+      const [x, y] = key.split(',').map(Number)
+      const ch = layout[y]?.[x] || '.'
+      let color: number
+      if (ch === 'W') color = 0x4a3220
+      else if (ch === 'D' || ch === 'L') color = 0xc8a040
+      else color = 0xc8b090
+      g.fillStyle(color, 0.22)
+      g.fillRect(ox + x * cell, oy + y * cell, cell, cell)
+    }
+
+    // Second pass: fog-of-war. Overdraws the pre-revealed tiles at a
+    // higher alpha where the player has actually walked. VIS_CURRENT
+    // (the player's current FOV) gets the strongest alpha.
     for (let y = 0; y < mh; y++) {
       for (let x = 0; x < mw; x++) {
         const state = this.tileVisState[y][x]
@@ -1725,22 +1745,78 @@ export class HospitalScene extends Phaser.Scene {
       }
     }
 
-    // Reveal each room label once any tile inside it has been seen.
+    // Reveal each room label once the room is either currently
+    // accessible (door unlocked) OR has been seen by walking into it.
     const rooms = this.mapDef.rooms ?? []
+    const roomDefs = HOSPITAL_MAP.roomDefs ?? []
+    const accessibleRoomIds = new Set(this.collectAccessibleRoomIds())
     for (let i = 0; i < rooms.length; i++) {
       const r = rooms[i]
       const label = this.miniMapLabels[i]
       if (!label) continue
-      let seen = false
-      for (let yy = r.y; yy < r.y + r.h && !seen; yy++) {
-        for (let xx = r.x; xx < r.x + r.w; xx++) {
-          if (this.tileVisState[yy]?.[xx] !== VIS_HIDDEN) { seen = true; break }
+      // Map the rooms-list entry to its roomDef counterpart by bounds
+      // (rooms[] is a thin label-only list; roomDefs[] carries lock
+      // metadata). Match on x/y/w/h.
+      const matchingDef = roomDefs.find(d =>
+        d.x === r.x && d.y === r.y && d.w === r.w && d.h === r.h
+      )
+      const preRevealed = matchingDef?.id ? accessibleRoomIds.has(matchingDef.id) : false
+      let seen = preRevealed
+      if (!seen) {
+        for (let yy = r.y; yy < r.y + r.h && !seen; yy++) {
+          for (let xx = r.x; xx < r.x + r.w; xx++) {
+            if (this.tileVisState[yy]?.[xx] !== VIS_HIDDEN) { seen = true; break }
+          }
         }
       }
       label.setVisible(seen)
     }
 
     this.updateMiniMapPlayer()
+  }
+
+  /** Set of every "x,y" tile coord inside any room the player
+   *  currently has access to (unlocked by level + defeated gates).
+   *  Used by the minimap to pre-reveal unlocked rooms so the player
+   *  can see the layout ahead of actually walking there. */
+  private collectAccessibleRoomTiles(): Set<string> {
+    const tiles = new Set<string>()
+    const state = getState()
+    const effectiveLevel = state.devFullMapAccess ? 999 : state.currentLevel
+    const defeated = new Set(state.defeatedObstacles)
+    for (const r of HOSPITAL_MAP.roomDefs ?? []) {
+      if (!this.isRoomAccessible(r, effectiveLevel, defeated)) continue
+      // Include every tile inside the room (walls + interior + doors).
+      for (let yy = r.y; yy < r.y + r.h; yy++) {
+        for (let xx = r.x; xx < r.x + r.w; xx++) {
+          tiles.add(`${xx},${yy}`)
+        }
+      }
+    }
+    return tiles
+  }
+
+  /** Set of accessible room ids. Used for label visibility. */
+  private collectAccessibleRoomIds(): string[] {
+    const state = getState()
+    const effectiveLevel = state.devFullMapAccess ? 999 : state.currentLevel
+    const defeated = new Set(state.defeatedObstacles)
+    const ids: string[] = []
+    for (const r of HOSPITAL_MAP.roomDefs ?? []) {
+      if (!this.isRoomAccessible(r, effectiveLevel, defeated)) continue
+      if (r.id) ids.push(r.id)
+    }
+    return ids
+  }
+
+  private isRoomAccessible(
+    r: { id?: string; lockedUntilLevel?: number; lockedUntilDefeated?: string[] },
+    effectiveLevel: number,
+    defeated: Set<string>,
+  ): boolean {
+    if (r.lockedUntilLevel != null && effectiveLevel < r.lockedUntilLevel) return false
+    if (r.lockedUntilDefeated && !r.lockedUntilDefeated.every(id => defeated.has(id))) return false
+    return true
   }
 
   private updateMiniMapPlayer() {
