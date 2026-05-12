@@ -452,7 +452,9 @@ export class PuzzleBattleScene extends Phaser.Scene {
       claimId: this.spec.claim?.claimId ?? null,
     }
     saveGame()
-    checkLevelProgression()
+    const beforeLvl = gs.currentLevel
+    const newLvl = checkLevelProgression()
+    if (newLvl !== null) debugEvent(`level:advance ${beforeLvl}->${newLvl}`)
 
     // Show the victory page + post-victory recap (key concepts +
     // resources). The cinematic fade-to-black + wake-up transition

@@ -203,8 +203,10 @@ export class PrototypeIframeScene extends Phaser.Scene {
       claimId: enc.caseId ?? null,
     }
     saveGame()
-    checkLevelProgression()
+    const before = gs.currentLevel
+    const newLvl = checkLevelProgression()
     debugEvent(`prototype-iframe submit ${this.encounterId}`)
+    if (newLvl !== null) debugEvent(`level:advance ${before}->${newLvl}`)
 
     // Give the player a beat to see the prototype's own victory page
     // before fading out. The standalone prototype just rendered its

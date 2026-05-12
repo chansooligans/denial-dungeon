@@ -510,6 +510,14 @@ export class HospitalScene extends Phaser.Scene {
       // player arrives in a "case-handler missing" Hospital.
       try { this.placeNPCs() } catch (e) { debugEvent('wake:placeNPCs-err') }
 
+      // Re-apply phase-based room unlocks. Without this, doors that
+      // should open at the new level stay 'L' (locked) because
+      // applyUnlocks only ran during the original create(). The bug
+      // surface: complete L2 → currentLevel becomes 3 → Registration's
+      // `lockedUntilLevel: 3` should now be satisfied, but the door
+      // tile still reads 'L' so the player can't enter.
+      try { this.reapplyRoomUnlocks() } catch { debugEvent('wake:reapply-unlocks-err') }
+
       // Reapply NPC visibility against the fog state — defensive in
       // case any NPC alpha drifted during sleep. Anjali's thanks
       // sequence depends on her being visible at the desk.
@@ -1867,6 +1875,47 @@ export class HospitalScene extends Phaser.Scene {
       if (r.id) ids.push(r.id)
     }
     return ids
+  }
+
+  /** Re-run applyUnlocks against current state and diff against the
+   *  in-memory layout. For each tile whose lock state flipped, mutate
+   *  `this.mapDef.layout` (so movement-collision sees the new char)
+   *  and retint the corresponding floor sprite (so it visually reads
+   *  open vs locked). Called from the WAKE handler — the original
+   *  create() already did this once, but the iframe / puzzle return
+   *  path wakes the scene rather than rebuilding it. */
+  private reapplyRoomUnlocks() {
+    const state = getState()
+    const effectiveLevel = state.devFullMapAccess ? 999 : state.currentLevel
+    const effectiveDefeats = state.devFullMapAccess
+      ? collectAllGatedDefeats(HOSPITAL_MAP.roomDefs ?? [])
+      : state.defeatedObstacles
+    const newLayout = HOSPITAL_MAP.roomDefs
+      ? applyUnlocks(HOSPITAL_MAP.layout, HOSPITAL_MAP.roomDefs, effectiveLevel, effectiveDefeats)
+      : HOSPITAL_MAP.layout
+    const oldLayout = this.mapDef.layout
+    let changed = 0
+    for (let y = 0; y < newLayout.length; y++) {
+      const nRow = newLayout[y]
+      const oRow = oldLayout[y] ?? ''
+      if (nRow === oRow) continue
+      for (let x = 0; x < nRow.length; x++) {
+        const nCh = nRow[x]
+        const oCh = oRow[x]
+        if (nCh === oCh) continue
+        // Only door lock <-> open transitions need a visual repaint.
+        // Anything else (shouldn't happen in this code path) is left
+        // to whatever applyUnlocks intended.
+        const tile = this.tileFloorSprites[y]?.[x]
+        if (tile) {
+          const tileDef = TILE_TEXTURES[nCh] || TILE_TEXTURES['.']
+          if (tileDef.floorTint !== undefined) tile.setTint(tileDef.floorTint)
+        }
+        changed++
+      }
+    }
+    this.mapDef = { ...this.mapDef, layout: newLayout }
+    if (changed > 0) debugEvent(`wake:rooms-unlocked tiles=${changed}`)
   }
 
   private isRoomAccessible(
