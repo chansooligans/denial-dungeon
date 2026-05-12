@@ -226,13 +226,30 @@ export class PrototypeIframeScene extends Phaser.Scene {
     this.cameras.main.fadeOut(durationMs, 0, 0, 0)
     this.fadeOutRedRoomAmbience(durationMs)
     this.cameras.main.once('camerafadeoutcomplete', () => {
-      this.scene.start(this.returnScene)
+      this._transitionToReturn()
     })
     this.time.delayedCall(durationMs + 100, () => {
       if (this.scene.isActive(this.scene.key)) {
-        this.scene.start(this.returnScene)
+        this._transitionToReturn()
       }
     })
+  }
+
+  /** Wake a sleeping Hospital rather than recreating it from scratch —
+   *  mirrors PuzzleBattleScene._transitionToReturn. Without this, the
+   *  iframe-return path fully restarted Hospital, losing the wake-
+   *  handler's player + NPC visibility resets and forcing a 10k-tile
+   *  rebuild on mobile. Falls back to scene.start for any return
+   *  scene that isn't sleeping. */
+  private _transitionToReturn() {
+    const sleeping = this.scene.isSleeping(this.returnScene)
+    debugEvent(`return:${this.returnScene} sleeping=${sleeping}`)
+    if (sleeping) {
+      this.scene.stop()
+      this.scene.wake(this.returnScene)
+    } else {
+      this.scene.start(this.returnScene)
+    }
   }
 
   private fadeOutRedRoomAmbience(durationMs: number) {
