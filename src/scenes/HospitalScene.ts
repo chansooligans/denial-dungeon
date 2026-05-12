@@ -493,6 +493,15 @@ export class HospitalScene extends Phaser.Scene {
       this.player.setAngle(0)
       this.player.setScale(CHARACTER_SCALE)
       this.player.setTexture(`player_idle_${this.playerFacing}`)
+      // Stop any in-flight tween targeting the player. The descent
+      // cinematic's tween might still be live in the tween manager
+      // (Phaser sleep doesn't auto-kill tweens), and on wake it
+      // would resume pulling the player toward alpha:0.
+      this.tweens.killTweensOf(this.player)
+      // Re-snap the camera to the player so it doesn't lerp from the
+      // descent's end-position (below the desk) toward the reset.
+      this.cameras.main.centerOn(playerTargetX, playerTargetY)
+      debugEvent(`wake:player-reset @(${this.playerTileX},${this.playerTileY})`)
 
       // Reapply NPC visibility against the fog state — defensive in
       // case any NPC alpha drifted during sleep. Anjali's thanks
