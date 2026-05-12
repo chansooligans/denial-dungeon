@@ -1,4 +1,5 @@
 import Phaser from 'phaser'
+import { safeFinishSoundTween } from './soundFadeHelper'
 import { NPCS } from '../content/npcs'
 import { LEVELS } from '../content/levels'
 import { HOSPITAL_MAP } from '../content/maps'
@@ -989,17 +990,15 @@ export class HospitalScene extends Phaser.Scene {
         volume: 0,
         duration: durationMs,
         onComplete: () => {
-          // Just stop — don't destroy. The earlier setTimeout(0)-defer
-          // pattern still leaked the "Cannot set properties of null
-          // (setting volume)" crash on some scene-transition orderings.
-          // Destroyed WebAudioSounds null their currentConfig, and any
-          // tween that survives a scene sleep/shut and resumes stepping
-          // crashes when its setter hits that null. Leaving the sound
-          // stopped-but-alive avoids the race entirely; the next entry
-          // to WR/Hospital syncs out leftover sounds via the
-          // top-of-function `for (k of keys) s.stop(); s.destroy()`
-          // sweep, which runs OUTSIDE any tween so it's safe.
-          s.stop()
+          // Stop + destroy, but first kill any other tween across any
+          // scene that might still target this sound. The crash this
+          // guards: a tween that survived a scene sleep/shut steps
+          // after destroy() nulls the sound's currentConfig and
+          // throws "Cannot set properties of null (setting volume)".
+          // Leaving sounds stopped-but-alive (the previous fix) avoided
+          // the crash but created duplicate same-key Sound instances
+          // that produce audible cuts when a new ambience is added.
+          safeFinishSoundTween(this.game, s)
         },
       })
     }

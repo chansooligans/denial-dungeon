@@ -14,6 +14,7 @@
 // through the legacy HP-based BattleScene.
 
 import Phaser from 'phaser'
+import { safeFinishSoundTween } from './soundFadeHelper'
 import { ENCOUNTERS } from '../content/enemies'
 import {
   getState,
@@ -514,12 +515,9 @@ export class PuzzleBattleScene extends Phaser.Scene {
         volume: 0,
         duration: durationMs,
         onComplete: () => {
-          // Stop, don't destroy. See HospitalScene.fadeOutHospitalAmbience
-          // for the full story — destroyed sounds null their
-          // currentConfig and any tween surviving a scene shut/sleep
-          // crashes on its next step. The sync sweep at WR entry
-          // (s.stop(); s.destroy() outside any tween) cleans these up.
-          s.stop()
+          // Stop + destroy via the cross-scene-safe helper. See
+          // soundFadeHelper.ts for the race this guards against.
+          safeFinishSoundTween(this.game, s)
         },
       })
     }

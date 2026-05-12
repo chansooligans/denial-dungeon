@@ -20,6 +20,7 @@
 // signal and run the game-side bookkeeping when it fires.
 
 import Phaser from 'phaser'
+import { safeFinishSoundTween } from './soundFadeHelper'
 import { ENCOUNTERS } from '../content/enemies'
 import {
   getState,
@@ -263,11 +264,9 @@ export class PrototypeIframeScene extends Phaser.Scene {
         volume: 0,
         duration: durationMs,
         onComplete: () => {
-          // Stop, don't destroy — see HospitalScene.fadeOutHospitalAmbience
-          // for the reasoning. Destroy-in-onComplete (even deferred via
-          // setTimeout(0)) still raced with tween-manager teardown on
-          // some scene transitions.
-          s.stop()
+          // Stop + destroy via the cross-scene-safe helper. See
+          // soundFadeHelper.ts for the race this guards against.
+          safeFinishSoundTween(this.game, s)
         },
       })
     }

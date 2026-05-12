@@ -1,4 +1,5 @@
 import Phaser from 'phaser'
+import { safeFinishSoundTween } from './soundFadeHelper'
 import { getState, saveGame } from '../state'
 import { LEVELS } from '../content/levels'
 import { ENCOUNTERS } from '../content/enemies'
@@ -995,8 +996,9 @@ export class WaitingRoomScene extends Phaser.Scene {
         volume: 0,
         duration: durationMs,
         onComplete: () => {
-          // Stop, don't destroy — see HospitalScene.fadeOutHospitalAmbience.
-          s.stop()
+          // Stop + destroy via the cross-scene-safe helper. See
+          // soundFadeHelper.ts for the race this guards against.
+          safeFinishSoundTween(this.game, s)
         },
       })
     }
